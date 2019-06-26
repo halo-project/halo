@@ -1,6 +1,7 @@
 
 
 # find dependencies
+# TODO: link in boost_system. might just be to add "-lboost_system" here.
 find_library(PFM_LIB pfm)
 
 # create the halomon library
