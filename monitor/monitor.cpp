@@ -533,6 +533,8 @@ public:
     // start the monitor thread
     MonitorThread = std::thread(halo_monitor_loop,
                                   std::ref(State), std::ref(ShutdownRequested));
+
+    std::cerr << "Halo Running!\n";
   }
 
   /////////////////////////////////////////////////////////////////////////
