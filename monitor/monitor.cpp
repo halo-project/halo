@@ -194,13 +194,21 @@ bool setup_perf_events(int &PerfFD, uint8_t* &EventBuf, size_t &EventBufSz, size
   }
 
   //////////////
-  // create the perf file descriptor
+  // open the perf_events file descriptor
+
+  // Here are some large prime numbers to help deter periodicity:
+  //
+  //   https://primes.utm.edu/lists/small/millions/
+  //
+  // We want to avoid having as many divisors as possible in case of
+  // repetitive behavior, e.g., a long-running loop executing exactly 323
+  // instructions per iteration. There's a (slim) chance we sample the
+  // same instruction every time because our period is a multiple of 323.
+  // In reality, CPUs have noticable non-constant skid, but we don't want to
+  // rely on that for good samples.
 
   std::string EventName = "instructions";
-  uint64_t EventPeriod = 500'000'000;
-
-  // std::string EventName = "branches";
-  // uint64_t EventPeriod = 300'000'000;
+  uint64_t EventPeriod = 67'867'967;
 
   PerfFD = get_perf_events_fd(EventName, EventPeriod,
                                   MyPID, -1, NumBufPages, PageSz);
