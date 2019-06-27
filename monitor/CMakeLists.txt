@@ -9,7 +9,10 @@ include_directories(${Boost_INCLUDE_DIR})
 
 #####################
 # create the halomon shared library
-add_library(halomon SHARED monitor.cpp)
+add_library(halomon SHARED
+            monitor.cpp
+            error.cpp
+           )
 
 #####################
 # link in dependencies
