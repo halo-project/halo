@@ -51,22 +51,24 @@ namespace halo {
 // Please see the manpage for perf_event_open for more details on those args.
 //
 // The Name corresponds to a string describing the type of event
-// to track (?). libpfm allows you to use any valid name as defined in
-// the perf utility itself.
+// to track. The EventPeriod describes how many of that event should occur
+// before a sample is provided.
+// libpfm allows you to use any valid name as defined in
+// `perf list -v` utility itself.
 //
 // More info:
-// - run `perf list` in your terminal to get a list of events.
+// - run `perf list -v` in your terminal to get a list of events.
 // - http://web.eece.maine.edu/~vweaver/projects/perf_events/generalized_events/
 //
 // Based on code by Hal Finkel (hfinkel@anl.gov).
 // Modified by Kavon Farvardin.
 //
 int get_perf_events_fd(const std::string &Name,
+                       const uint64_t EventPeriod,
                        const pid_t TID,
                        const int CPU,
                        const int NumEventBufPages, // Must be set to (2^n)+1 for n >= 1
-                       const int PageSz,           // the system's page size
-                       const int EventSamplePeriod = 128*1024) {
+                       const int PageSz) {           // the system's page size
 
   assert(NumEventBufPages >= 3);
   assert(IS_POW_TWO(NumEventBufPages - 1));
@@ -133,7 +135,9 @@ int get_perf_events_fd(const std::string &Name,
   // back to the original code.
   Attr.mmap = 1;
 
-  Attr.sample_period = EventSamplePeriod;
+  // the period indicates how many events of kind "Name" should happen until
+  // a sample is provided.
+  Attr.sample_period = EventPeriod;
   Attr.sample_type = PERF_SAMPLE_IP | PERF_SAMPLE_DATA_SRC | PERF_SAMPLE_WEIGHT |
                      PERF_SAMPLE_ADDR | PERF_SAMPLE_TIME |
                      PERF_SAMPLE_TID | PERF_SAMPLE_IDENTIFIER |
@@ -189,8 +193,17 @@ bool setup_perf_events(int &PerfFD, uint8_t* &EventBuf, size_t &EventBufSz, size
     return false;
   }
 
+  //////////////
   // create the perf file descriptor
-  PerfFD = get_perf_events_fd("instructions", MyPID, -1, NumBufPages, PageSz);
+
+  std::string EventName = "instructions";
+  uint64_t EventPeriod = 500'000'000;
+
+  // std::string EventName = "branches";
+  // uint64_t EventPeriod = 300'000'000;
+
+  PerfFD = get_perf_events_fd(EventName, EventPeriod,
+                                  MyPID, -1, NumBufPages, PageSz);
   if (PerfFD == -1)
     return false;
 
