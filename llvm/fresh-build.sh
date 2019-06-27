@@ -22,12 +22,15 @@ else
   BUILD_CMD="make install -j${NUM_CPUS}"
 fi
 
-LLVM_PROJECTS="clang"
+####
+# select what parts of llvm we want
+PROJECTS="clang"
+BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"
 
 ########
 # configure and build
 rm -rf build install
 mkdir build install
 cd ./build
-cmake -G "$GENERATOR" -DLLVM_ENABLE_PROJECTS="$LLVM_PROJECTS" -DLLVM_USE_LINKER=gold -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install ../src/llvm
+cmake -G "$GENERATOR" -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" -DLLVM_USE_LINKER=gold -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install ../src/llvm
 $BUILD_CMD
