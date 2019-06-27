@@ -213,10 +213,6 @@ bool setup_perf_events(int &PerfFD, uint8_t* &EventBuf, size_t &EventBufSz, size
   (void) fcntl(PerfFD, F_SETSIG, SIGIO);
   (void) fcntl(PerfFD, F_SETOWN, MyPID);
 
-  // send commands to perf_event system.
-  ioctl(PerfFD, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
-  ioctl(PerfFD, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
-
   return true;
 }
 
@@ -386,6 +382,11 @@ struct MonitorState {
         !setup_sigio_fd(PerfSignalService, SigSD, SigFD) ) {
       exit(EXIT_FAILURE);
     }
+
+    ////////////////////
+    // finally, send commands to perf_event system to enable sampling
+    ioctl(PerfFD, PERF_EVENT_IOC_RESET, PERF_IOC_FLAG_GROUP);
+    ioctl(PerfFD, PERF_EVENT_IOC_ENABLE, PERF_IOC_FLAG_GROUP);
   }
 
   ~MonitorState() {
