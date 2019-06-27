@@ -152,7 +152,7 @@ int get_perf_events_fd(const std::string &Name,
   Attr.wakeup_watermark = (NumEventBufPages-1)*PageSz/2;
   Attr.watermark = 1;
 
-  // Request no-skid (CPU-sampled events).
+  // 2 = Request no-skid (CPU-sampled events), 1 = Request constant skid.
   Attr.precise_ip = 2;
 
   // Note: For Intel hardware, these LBR records are only really associated
@@ -281,9 +281,9 @@ void handle_perf_event(perf_event_header *EvtHeader) {
     SInfo2 *SI2 = (SInfo2 *) &SI->ips[SI->nr];
     SInfo3 *SI3 = (SInfo3 *) &SI2->lbr[SI2->bnr];
 
-    std::cout << "sample -- " << "br records: " << SI2->bnr
-              << ", at IP: " << std::hex << SI->ip
-              << ", profiling cost: " << SI3->weight << "\n";
+    // std::cout << "sample -- " << "br records: " << SI2->bnr
+    //           << ", at IP: " << std::hex << SI->ip
+    //           << ", profiling cost: " << SI3->weight << "\n";
 
   } else {
     // std::cout << "some other perf event was encountered.\n";
