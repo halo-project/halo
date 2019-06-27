@@ -530,13 +530,9 @@ public:
   /////////////////////////////////////////////////////////////////////////
   // The main entry-point to start halo's process monitoring system.
   HaloMonitor() : ShutdownRequested(false) {
-    std::cout << "Starting Halo Monitor...";
-
     // start the monitor thread
     MonitorThread = std::thread(halo_monitor_loop,
                                   std::ref(State), std::ref(ShutdownRequested));
-
-    std::cout << " done.\n";
   }
 
   /////////////////////////////////////////////////////////////////////////
@@ -545,8 +541,6 @@ public:
     // stop the monitor thread gracefully
     ShutdownRequested = true;
     MonitorThread.join();
-
-    std::cout << "Halo Monitor successfully shut down.\n";
   }
 };
 
