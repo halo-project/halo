@@ -1,13 +1,20 @@
 
-
+#####################
 # find dependencies
-# TODO: link in boost_system. might just be to add "-lboost_system" here.
-find_library(PFM_LIB pfm)
 
-# create the halomon library
+find_library(PFM_LIB pfm)  # http://perfmon2.sourceforge.net/
+
+find_package(Boost 1.65 COMPONENTS system REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+
+#####################
+# create the halomon shared library
 add_library(halomon SHARED monitor.cpp)
 
+#####################
 # link in dependencies
-target_link_libraries(halomon ${PFM_LIB})
+target_link_libraries(halomon PRIVATE ${PFM_LIB} ${Boost_LIBRARIES})
 
-install(TARGETS halomon DESTINATION lib/)
+#####################
+# install it
+install(TARGETS halomon DESTINATION lib)

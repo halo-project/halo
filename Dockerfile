@@ -13,17 +13,20 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       libboost-system-dev \
       libpfm4-dev \
       make \
+      cmake \
     && rm -rf /var/lib/apt/lists/*
 
 # copy over source code to the image
-COPY . /tmp/perf_test
+COPY . /tmp/halo
 
 # set the working directory
-WORKDIR /tmp/perf_test
+WORKDIR /tmp/halo
+
+# TODO: UPDATE THIS
 
 # build
 # TODO: update for new cmake build system
-RUN make
-
-# when the image is run, execute the test program.
-CMD ./test
+# RUN make
+#
+# # when the image is run, execute the test program.
+# CMD ./test
