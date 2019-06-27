@@ -22,11 +22,12 @@ COPY . /tmp/halo
 # set the working directory
 WORKDIR /tmp/halo
 
-# TODO: UPDATE THIS
-
 # build
-# TODO: update for new cmake build system
-# RUN make
-#
-# # when the image is run, execute the test program.
+RUN mkdir build install \
+ && cd build \
+ && cmake .. \
+ && make install
+
+
+# when the image is run, execute the test program.
 # CMD ./test
