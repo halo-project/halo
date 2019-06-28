@@ -10,6 +10,12 @@ include_directories(${Boost_INCLUDE_DIR})
 # include our local 'include' dir
 include_directories(SYSTEM ../include)
 
+# setup to use LLVM
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+llvm_map_components_to_libnames(LLVM_LIBS all)
+
+
 #####################
 # create the halomon shared library
 add_library(halomon SHARED
@@ -21,7 +27,7 @@ add_library(halomon SHARED
 
 #####################
 # link in dependencies
-target_link_libraries(halomon PRIVATE ${PFM_LIB} ${Boost_LIBRARIES})
+target_link_libraries(halomon PRIVATE ${LLVM_LIBS} ${PFM_LIB} ${Boost_LIBRARIES})
 
 #####################
 # install it

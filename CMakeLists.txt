@@ -2,6 +2,23 @@ cmake_minimum_required(VERSION 3.8)
 project(Halo)
 
 
+############################################
+### identify and configure LLVM
+
+if (DEFINED LLVM_ROOT)
+  set(LLVM_DIR "${LLVM_ROOT}/lib/cmake/llvm")
+endif()
+
+if (DEFINED LLVM_ROOT AND NOT (IS_ABSOLUTE ${LLVM_DIR}))
+    message(FATAL_ERROR "LLVM_DIR / LLVM_ROOT must be an absolute path. Tried dir: ${LLVM_DIR}")
+endif()
+
+find_package(LLVM REQUIRED CONFIG
+              NO_CMAKE_PATH NO_CMAKE_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
+
+
 
 ###################
 ### Setup compiler flags
