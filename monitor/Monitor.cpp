@@ -33,6 +33,8 @@
 
 #include <linux/version.h>
 
+#include "halo/Profiler.h"
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
   #error "Kernel versions older than 3.4 are incompatible."
 #endif
@@ -265,7 +267,7 @@ bool setup_sigio_fd(asio::io_service &PerfSignalService, asio::posix::stream_des
 }
 
 
-void handle_perf_event(perf_event_header *EvtHeader) {
+void handle_perf_event(Profiler &HaloProf, perf_event_header *EvtHeader) {
 
   if (EvtHeader->type == PERF_RECORD_SAMPLE) {
     struct SInfo {
@@ -309,7 +311,7 @@ void handle_perf_event(perf_event_header *EvtHeader) {
 }
 
 
-void process_new_samples(uint8_t *EventBuf, size_t EventBufSz, const size_t PageSz) {
+void process_new_samples(Profiler &HaloProf, uint8_t *EventBuf, size_t EventBufSz, const size_t PageSz) {
   perf_event_mmap_page *Header = (perf_event_mmap_page *) EventBuf;
   uint8_t *DataPtr = EventBuf + PageSz;
   const size_t NumEventBufPages = EventBufSz / PageSz;
@@ -370,7 +372,7 @@ void process_new_samples(uint8_t *EventBuf, size_t EventBufSz, const size_t Page
                 TmpBuffer.begin() + (DataPagesSize - Offset));
     }
 
-    handle_perf_event((perf_event_header*) TmpBuffer.data());
+    handle_perf_event(HaloProf, (perf_event_header*) TmpBuffer.data());
 
     TailProgress += EvtSz;
 
@@ -385,6 +387,7 @@ void process_new_samples(uint8_t *EventBuf, size_t EventBufSz, const size_t Page
 
 ///////////////
 // Maintains the working state of the Halo Monitor thread.
+// This is effectively the global state of the client-side Halo system.
 struct MonitorState {
   int PerfFD;       // a file descriptor
   uint8_t* EventBuf;   // from mmapping the perf file descriptor.
@@ -396,6 +399,8 @@ struct MonitorState {
   asio::posix::stream_descriptor SigSD;
   int SigFD; // TODO: do we need to close this, or will SigFD's destructor do that for us?
   signalfd_siginfo SigFDInfo;
+
+  Profiler HaloProf;
 
   MonitorState() : SigSD(PerfSignalService) {
     // setup the monitor's initial state.
@@ -479,7 +484,7 @@ struct MonitorState {
       return;
     }
 
-    process_new_samples(EventBuf, EventBufSz, PageSz);
+    process_new_samples(HaloProf, EventBuf, EventBufSz, PageSz);
 
     // schedule another read.
     schedule_signalfd_read();

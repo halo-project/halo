@@ -7,11 +7,15 @@ find_library(PFM_LIB pfm)  # http://perfmon2.sourceforge.net/
 find_package(Boost 1.65 COMPONENTS system REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
+# include our local 'include' dir
+include_directories(SYSTEM ../include)
+
 #####################
 # create the halomon shared library
 add_library(halomon SHARED
-            monitor.cpp
-            error.cpp
+            Monitor.cpp
+            Error.cpp
+            Profiler.cpp
            )
 
 #####################
