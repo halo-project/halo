@@ -46,5 +46,5 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-add_subdirectory(monitor)
+add_subdirectory(lib/halomon)
 add_subdirectory(test)

@@ -8,7 +8,7 @@ find_package(Boost 1.65 COMPONENTS system REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 # include our local 'include' dir
-include_directories(SYSTEM ../include)
+include_directories(SYSTEM ../../include)
 
 # setup to use LLVM
 include_directories(${LLVM_INCLUDE_DIRS})
