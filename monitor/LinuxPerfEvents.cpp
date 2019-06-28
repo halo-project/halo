@@ -39,6 +39,126 @@ namespace asio = boost::asio;
 
 namespace halo {
 
+void handle_perf_event(Profiler &Prof, perf_event_header *EvtHeader) {
+
+  if (EvtHeader->type == PERF_RECORD_SAMPLE) {
+    struct SInfo {
+      perf_event_header header;
+      uint64_t sample_id;           // PERF_SAMPLE_IDENTIFIER
+      uint64_t ip;                  // PERF_SAMPLE_IP
+      uint32_t pid, tid;            // PERF_SAMPLE_TID
+      uint64_t time;                // PERF_SAMPLE_TIME
+      uint64_t addr;                // PERF_SAMPLE_ADDR
+      uint64_t stream_id;           // PERF_SAMPLE_STREAM_ID
+
+      // PERF_SAMPLE_CALLCHAIN
+      uint64_t nr;
+      uint64_t ips[1];        // ips[nr] length array.
+    };
+
+    struct SInfo2 {
+      // PERF_SAMPLE_BRANCH_STACK
+      uint64_t bnr;
+      perf_branch_entry lbr[1];     // lbr[bnr] length array.
+    };
+
+    struct SInfo3 {
+      uint64_t weight;              // PERF_SAMPLE_WEIGHT
+      perf_mem_data_src data_src;   // PERF_SAMPLE_DATA_SRC
+    };
+
+    SInfo *SI = (SInfo *) EvtHeader;
+
+    SInfo2 *SI2 = (SInfo2 *) &SI->ips[SI->nr];
+    SInfo3 *SI3 = (SInfo3 *) &SI2->lbr[SI2->bnr];
+
+    std::cout << "sample -- " << "br records: " << SI2->bnr
+              << ", at IP: " << std::hex << SI->ip
+              << ", profiling cost: " << SI3->weight << "\n";
+
+  } else {
+    // std::cout << "some other perf event was encountered.\n";
+  }
+
+}
+
+// reads the ring-buffer of perf data from perf_events.
+void process_new_samples(Profiler &Prof, uint8_t *EventBuf, size_t EventBufSz, const size_t PageSz) {
+  perf_event_mmap_page *Header = (perf_event_mmap_page *) EventBuf;
+  uint8_t *DataPtr = EventBuf + PageSz;
+  const size_t NumEventBufPages = EventBufSz / PageSz;
+
+
+  /////////////////////
+  // This points to the head of the data section.  The value continu‐
+  // ously  increases, it does not wrap.  The value needs to be manu‐
+  // ally wrapped by the size of the mmap buffer before accessing the
+  // samples.
+  //
+  // On  SMP-capable  platforms,  after  reading the data_head value,
+  // user space should issue an rmb().
+  //
+  // NOTE -- an rmb is a memory synchronization operation.
+  // source: https://community.arm.com/developer/ip-products/processors/b/processors-ip-blog/posts/memory-access-ordering-part-2---barriers-and-the-linux-kernel
+  const uint64_t DataHead = Header->data_head;
+  __sync_synchronize();
+
+  const uint64_t TailStart = Header->data_tail;
+
+
+
+  // Run through the ring buffer and handle the new perf event samples.
+  // It's read from Tail --> Head.
+
+  // a contiguous buffer to hold the event data.
+  std::vector<uint8_t> TmpBuffer;
+
+  // It's always a power of two size, so we use & instead of % to wrap
+  const uint64_t DataPagesSize = (NumEventBufPages - 1)*PageSz;
+  const uint64_t DataPagesSizeMask = DataPagesSize - 1;
+  assert(IS_POW_TWO(DataPagesSize));
+
+  uint64_t TailProgress = 0;
+  while (TailStart + TailProgress != DataHead) {
+    uint64_t Offset = (TailStart + TailProgress) & DataPagesSizeMask;
+    perf_event_header *BEvtHeader = (perf_event_header*) (DataPtr + Offset);
+
+    uint16_t EvtSz = BEvtHeader->size;
+    if (EvtSz == 0)
+        break;
+
+    // we copy the data out whether it wraps around or not.
+    // TODO: an optimization would be to only copy if wrapping happened.
+    TmpBuffer.resize(EvtSz);
+
+    // copy this event's data, stopping at the end of the ring buffer if needed.
+    std::copy(DataPtr + Offset,
+              DataPtr + std::min(Offset + EvtSz, DataPagesSize),
+              TmpBuffer.begin());
+
+    // if the rest of the event's data wrapped around, copy the data
+    // from the start of the ring buff onto the end of our temp buffer.
+    if (Offset + EvtSz > DataPagesSize) {
+      uint64_t ODiff = (Offset + EvtSz) - DataPagesSize;
+      std::copy(DataPtr, DataPtr + ODiff,
+                TmpBuffer.begin() + (DataPagesSize - Offset));
+    }
+
+    handle_perf_event(Prof, (perf_event_header*) TmpBuffer.data());
+
+    TailProgress += EvtSz;
+
+  } // end of ring buffer processing loop
+
+  // done reading the ring buffer.
+  // issue a smp_store_release(header.data_tail, current_tail_position)
+  __sync_synchronize();
+  Header->data_tail = TailStart + TailProgress;
+}
+
+
+
+
 ////////////////////
 // This function enables Linux's perf_events monitoring on the given
 // "process/thread" and "cpu" as defined by perf_event_open.
@@ -259,129 +379,10 @@ bool setup_sigio_fd(asio::io_service &PerfSignalService, asio::posix::stream_des
 }
 
 
-void handle_perf_event(Profiler &Prof, perf_event_header *EvtHeader) {
-
-  if (EvtHeader->type == PERF_RECORD_SAMPLE) {
-    struct SInfo {
-      perf_event_header header;
-      uint64_t sample_id;           // PERF_SAMPLE_IDENTIFIER
-      uint64_t ip;                  // PERF_SAMPLE_IP
-      uint32_t pid, tid;            // PERF_SAMPLE_TID
-      uint64_t time;                // PERF_SAMPLE_TIME
-      uint64_t addr;                // PERF_SAMPLE_ADDR
-      uint64_t stream_id;           // PERF_SAMPLE_STREAM_ID
-
-      // PERF_SAMPLE_CALLCHAIN
-      uint64_t nr;
-      uint64_t ips[1];        // ips[nr] length array.
-    };
-
-    struct SInfo2 {
-      // PERF_SAMPLE_BRANCH_STACK
-      uint64_t bnr;
-      perf_branch_entry lbr[1];     // lbr[bnr] length array.
-    };
-
-    struct SInfo3 {
-      uint64_t weight;              // PERF_SAMPLE_WEIGHT
-      perf_mem_data_src data_src;   // PERF_SAMPLE_DATA_SRC
-    };
-
-    SInfo *SI = (SInfo *) EvtHeader;
-
-    SInfo2 *SI2 = (SInfo2 *) &SI->ips[SI->nr];
-    SInfo3 *SI3 = (SInfo3 *) &SI2->lbr[SI2->bnr];
-
-    std::cout << "sample -- " << "br records: " << SI2->bnr
-              << ", at IP: " << std::hex << SI->ip
-              << ", profiling cost: " << SI3->weight << "\n";
-
-  } else {
-    // std::cout << "some other perf event was encountered.\n";
-  }
-
-}
-
-
-void process_new_samples(Profiler &Prof, uint8_t *EventBuf, size_t EventBufSz, const size_t PageSz) {
-  perf_event_mmap_page *Header = (perf_event_mmap_page *) EventBuf;
-  uint8_t *DataPtr = EventBuf + PageSz;
-  const size_t NumEventBufPages = EventBufSz / PageSz;
-
-
-  /////////////////////
-  // This points to the head of the data section.  The value continu‐
-  // ously  increases, it does not wrap.  The value needs to be manu‐
-  // ally wrapped by the size of the mmap buffer before accessing the
-  // samples.
-  //
-  // On  SMP-capable  platforms,  after  reading the data_head value,
-  // user space should issue an rmb().
-  //
-  // NOTE -- an rmb is a memory synchronization operation.
-  // source: https://community.arm.com/developer/ip-products/processors/b/processors-ip-blog/posts/memory-access-ordering-part-2---barriers-and-the-linux-kernel
-  const uint64_t DataHead = Header->data_head;
-  __sync_synchronize();
-
-  const uint64_t TailStart = Header->data_tail;
-
-
-
-  // Run through the ring buffer and handle the new perf event samples.
-  // It's read from Tail --> Head.
-
-  // a contiguous buffer to hold the event data.
-  std::vector<uint8_t> TmpBuffer;
-
-  // It's always a power of two size, so we use & instead of % to wrap
-  const uint64_t DataPagesSize = (NumEventBufPages - 1)*PageSz;
-  const uint64_t DataPagesSizeMask = DataPagesSize - 1;
-  assert(IS_POW_TWO(DataPagesSize));
-
-  uint64_t TailProgress = 0;
-  while (TailStart + TailProgress != DataHead) {
-    uint64_t Offset = (TailStart + TailProgress) & DataPagesSizeMask;
-    perf_event_header *BEvtHeader = (perf_event_header*) (DataPtr + Offset);
-
-    uint16_t EvtSz = BEvtHeader->size;
-    if (EvtSz == 0)
-        break;
-
-    // we copy the data out whether it wraps around or not.
-    // TODO: an optimization would be to only copy if wrapping happened.
-    TmpBuffer.resize(EvtSz);
-
-    // copy this event's data, stopping at the end of the ring buffer if needed.
-    std::copy(DataPtr + Offset,
-              DataPtr + std::min(Offset + EvtSz, DataPagesSize),
-              TmpBuffer.begin());
-
-    // if the rest of the event's data wrapped around, copy the data
-    // from the start of the ring buff onto the end of our temp buffer.
-    if (Offset + EvtSz > DataPagesSize) {
-      uint64_t ODiff = (Offset + EvtSz) - DataPagesSize;
-      std::copy(DataPtr, DataPtr + ODiff,
-                TmpBuffer.begin() + (DataPagesSize - Offset));
-    }
-
-    handle_perf_event(Prof, (perf_event_header*) TmpBuffer.data());
-
-    TailProgress += EvtSz;
-
-  } // end of ring buffer processing loop
-
-  // done reading the ring buffer.
-  // issue a smp_store_release(header.data_tail, current_tail_position)
-  __sync_synchronize();
-  Header->data_tail = TailStart + TailProgress;
-}
-
-
-
-
 
 ////////////////////////
 // Implementation of MonitorState members.
+
 
 
 MonitorState::MonitorState() : SigSD(PerfSignalService) {
