@@ -10,3 +10,10 @@ void throw_exception(std::exception const& ex) {
 }
 
 }
+
+namespace halo {
+  void fatal_error(const std::string &msg) {
+    std::cerr << "fatal error: " << msg << "\n";
+    std::exit(EXIT_FAILURE);
+  }
+}

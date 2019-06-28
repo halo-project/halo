@@ -27,6 +27,7 @@
 #include <linux/version.h>
 
 #include "halo/MonitorState.h"
+#include "halo/Error.h"
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
   #error "Kernel versions older than 3.4 are incompatible."
@@ -389,8 +390,16 @@ bool setup_sigio_fd(asio::io_service &PerfSignalService, asio::posix::stream_des
 
 MonitorState::MonitorState() : SigSD(PerfSignalService) {
 
-  // TODO: get the process's executable _without_ access to argv.
-  Prof = new Profiler("asdf.exe");
+  // get the path to this process's executable.
+  std::vector<char> buf(PATH_MAX);
+  ssize_t len = readlink("/proc/self/exe", buf.data(), buf.size()-1);
+  if (len == -1) {
+    std::cerr << strerror(errno) << "\n";
+    fatal_error("path to process's executable not found.");
+  }
+  buf[len] = '\0'; // null terminate
+
+  Prof = new Profiler(buf.data());
 
   // setup the monitor's initial state.
   if (!setup_perf_events(PerfFD, EventBuf, EventBufSz, PageSz) ||
