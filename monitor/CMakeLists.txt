@@ -16,6 +16,7 @@ add_library(halomon SHARED
             Monitor.cpp
             Error.cpp
             Profiler.cpp
+            LinuxPerfEvents.cpp
            )
 
 #####################
