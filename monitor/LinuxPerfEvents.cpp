@@ -62,19 +62,20 @@ void handle_perf_event(Profiler &Prof, perf_event_header *EvtHeader) {
       perf_branch_entry lbr[1];     // lbr[bnr] length array.
     };
 
-    struct SInfo3 {
-      uint64_t weight;              // PERF_SAMPLE_WEIGHT
-      perf_mem_data_src data_src;   // PERF_SAMPLE_DATA_SRC
-    };
+    // struct SInfo3 {
+    //   uint64_t weight;              // PERF_SAMPLE_WEIGHT
+    //   perf_mem_data_src data_src;   // PERF_SAMPLE_DATA_SRC
+    // };
 
     SInfo *SI = (SInfo *) EvtHeader;
 
-    SInfo2 *SI2 = (SInfo2 *) &SI->ips[SI->nr];
-    SInfo3 *SI3 = (SInfo3 *) &SI2->lbr[SI2->bnr];
+    // SInfo2 *SI2 = (SInfo2 *) &SI->ips[SI->nr];
+    // SInfo3 *SI3 = (SInfo3 *) &SI2->lbr[SI2->bnr];
 
-    std::cout << "sample -- " << "br records: " << SI2->bnr
-              << ", at IP: " << std::hex << SI->ip
-              << ", profiling cost: " << SI3->weight << "\n";
+    auto SampleID = Prof.newSample();
+
+    Prof.recordData1(SampleID, DataKind::InstrPtr, SI->ip);
+    Prof.recordData1(SampleID, DataKind::TimeStamp, SI->time);
 
   } else {
     // std::cout << "some other perf event was encountered.\n";
