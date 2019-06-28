@@ -35,7 +35,7 @@ private:
   void schedule_signalfd_read();
 
 public:
-  Profiler Prof;
+  Profiler *Prof;
 
   MonitorState();
   ~MonitorState();

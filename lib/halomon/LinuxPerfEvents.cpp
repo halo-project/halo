@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <atomic>
@@ -39,7 +40,7 @@ namespace asio = boost::asio;
 
 namespace halo {
 
-void handle_perf_event(Profiler &Prof, perf_event_header *EvtHeader) {
+void handle_perf_event(Profiler *Prof, perf_event_header *EvtHeader) {
 
   if (EvtHeader->type == PERF_RECORD_SAMPLE) {
     struct SInfo {
@@ -72,10 +73,10 @@ void handle_perf_event(Profiler &Prof, perf_event_header *EvtHeader) {
     // SInfo2 *SI2 = (SInfo2 *) &SI->ips[SI->nr];
     // SInfo3 *SI3 = (SInfo3 *) &SI2->lbr[SI2->bnr];
 
-    auto SampleID = Prof.newSample();
+    auto SampleID = Prof->newSample();
 
-    Prof.recordData1(SampleID, DataKind::InstrPtr, SI->ip);
-    Prof.recordData1(SampleID, DataKind::TimeStamp, SI->time);
+    Prof->recordData1(SampleID, DataKind::InstrPtr, SI->ip);
+    Prof->recordData1(SampleID, DataKind::TimeStamp, SI->time);
 
   } else {
     // std::cout << "some other perf event was encountered.\n";
@@ -84,7 +85,7 @@ void handle_perf_event(Profiler &Prof, perf_event_header *EvtHeader) {
 }
 
 // reads the ring-buffer of perf data from perf_events.
-void process_new_samples(Profiler &Prof, uint8_t *EventBuf, size_t EventBufSz, const size_t PageSz) {
+void process_new_samples(Profiler *Prof, uint8_t *EventBuf, size_t EventBufSz, const size_t PageSz) {
   perf_event_mmap_page *Header = (perf_event_mmap_page *) EventBuf;
   uint8_t *DataPtr = EventBuf + PageSz;
   const size_t NumEventBufPages = EventBufSz / PageSz;
@@ -387,6 +388,10 @@ bool setup_sigio_fd(asio::io_service &PerfSignalService, asio::posix::stream_des
 
 
 MonitorState::MonitorState() : SigSD(PerfSignalService) {
+
+  // TODO: get the process's executable _without_ access to argv.
+  Prof = new Profiler("asdf.exe");
+
   // setup the monitor's initial state.
   if (!setup_perf_events(PerfFD, EventBuf, EventBufSz, PageSz) ||
       !setup_sigio_fd(PerfSignalService, SigSD, SigFD) ) {
@@ -404,6 +409,8 @@ MonitorState::MonitorState() : SigSD(PerfSignalService) {
 
 MonitorState::~MonitorState() {
   // clean-up
+  delete Prof;
+
   int ret = munmap(EventBuf, EventBufSz);
   if (ret) {
     std::cerr << "Failed to unmap event buffer: " << strerror(errno) << "\n";
