@@ -24,7 +24,7 @@ fi
 
 ####
 # select what parts of llvm we want
-PROJECTS="clang"
+PROJECTS="clang;compiler-rt"
 BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"
 
 ########
