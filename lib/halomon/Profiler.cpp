@@ -1,6 +1,8 @@
 
 #include "halo/Profiler.h"
 
+// #include "clang/9.0.0/"
+
 #include <iostream>
 
 namespace object = llvm::object;
@@ -11,6 +13,10 @@ void Profiler::recordData1(IDType ID, DataKind DK, uint64_t Val) {
   switch (DK) {
     case DataKind::InstrPtr: {
 
+      // TODO: use compiler-rt's symbolizer.
+
+
+      /*
       // TODO: this needs to be relative to the start of code section, not a VMA.
       uint64_t Offset = Val;
 
@@ -25,7 +31,7 @@ void Profiler::recordData1(IDType ID, DataKind DK, uint64_t Val) {
       auto DILineInfo = ResOrErr.get();
 
       std::cerr << "IP = " << std::hex << Val << " --> " << DILineInfo.FunctionName << "\n";
-
+      */
 
     } break;
 
