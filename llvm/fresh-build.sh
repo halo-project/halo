@@ -28,7 +28,7 @@ PROJECTS="clang;compiler-rt"
 BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"
 
 # build speed options / optimization.
-OPTIONS="-DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=lld"
+OPTIONS="-DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=gold"
 
 ########
 # configure and build
