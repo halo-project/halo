@@ -21,11 +21,24 @@
 // pick a number such that ITERS * fib(START_FIB) doesn't overflow unsigned long
 #define START_FIB 40
 
-NO_INLINE unsigned long fib(unsigned long n) {
+unsigned long fib_right(unsigned long n);
+
+NO_INLINE unsigned long fib_left(unsigned long n) {
   if (n < 2)
     return n;
 
-  return fib(n-1) + fib(n-2);
+  return fib_left(n-1) + fib_right(n-2);
+}
+
+NO_INLINE unsigned long fib_right(unsigned long n) {
+  if (n < 2)
+    return n;
+
+  return fib_left(n-1) + fib_right(n-2);
+}
+
+NO_INLINE unsigned long fib(unsigned long n) {
+  return fib_left(n);
 }
 
 NO_INLINE void compute_hailstone(long limit) {
