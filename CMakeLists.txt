@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(Halo)
+project(HaloServer)
 
 
 ############################################
@@ -11,19 +11,6 @@ option(HALO_KAVON "Flag indicating a build on Kavon's laptop." OFF)
 
 ############################################
 ### "superbuild" configuration for LLVM
-
-# defaults
-set(LLVM_ENABLE_PROJECTS "clang;compiler-rt")
-set(LLVM_TARGETS_TO_BUILD "AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86") # all supporting JIT
-
-# overrides
-if(HALO_RPI)
-  set(LLVM_TARGETS_TO_BUILD "Native")
-elseif(HALO_KAVON)
-  set(LLVM_TARGETS_TO_BUILD "Native")
-  set(LLVM_CCACHE_BUILD ON)
-  set(LLVM_USE_LINKER gold)
-endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llvm-project/llvm)
 

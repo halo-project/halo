@@ -28,12 +28,12 @@ PROJECTS="clang;compiler-rt"
 BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"
 
 # build speed options / optimization.
+TYPE="Release"
 OPTIONS="-DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=gold"
 
 ########
-# configure and build
+# configure
 rm -rf build install
 mkdir build install
 cd ./build
-cmake -G "$GENERATOR" -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install ../src/llvm
-$BUILD_CMD
+cmake -G "$GENERATOR" -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} -DCMAKE_BUILD_TYPE=${TYPE} -DCMAKE_INSTALL_PREFIX=../install ../src/llvm
