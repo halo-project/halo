@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       libpfm4-dev \
       make \
       cmake \
+      libprotobuf-dev \
+      protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
 
 # copy over source code to the image
@@ -22,11 +24,16 @@ COPY . /tmp/halo
 # set the working directory
 WORKDIR /tmp/halo
 
-# build
-RUN mkdir build install \
- && cd build \
- && cmake .. \
- && make install
+# build and install clang and halo library system-wide
+RUN cd llvm && ./llvm/fresh-build.sh && rm -rf src build
+
+# # build server
+# RUN mkdir build install \
+#  && cd build \
+#  && cmake .. \
+#  && make install
+
+
 
 
 # when the image is run, execute the test program.
