@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       cmake \
       libprotobuf-dev \
       protobuf-compiler \
+      libgrpc++-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # copy over source code to the image
