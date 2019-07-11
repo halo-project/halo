@@ -18,6 +18,15 @@ find_package(LLVM REQUIRED CONFIG
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in ${LLVM_DIR}")
 
+###########################################
+### find other dependencies
+
+find_package(Protobuf 3 REQUIRED)
+
+set(gRCP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+find_package(gRCP REQUIRED)
+
+
 
 
 ###################
@@ -46,5 +55,5 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-add_subdirectory(lib/halomon)
-add_subdirectory(test)
+add_subdirectory(tools)
+# add_subdirectory(test)
