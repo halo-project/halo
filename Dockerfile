@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       libpfm4-dev \
       ninja-build \
       cmake \
+      python2.7 \
+      zlib1g \
       libprotobuf-dev \
       protobuf-compiler \
       libgrpc++-dev \

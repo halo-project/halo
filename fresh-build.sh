@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 # first arg is the build environment nickname
 ENV_KIND=$1
 
