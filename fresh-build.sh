@@ -36,7 +36,7 @@ fi
 # default build options and setup
 PROJECTS="clang;compiler-rt"
 OPTIONS="-DCMAKE_INSTALL_PREFIX=../install"
-BUILD_TARGETS="install"
+BUILD_TARGETS="install-halo-server install-halomon install-clang"
 
 # environment specific build options / overrides
 if [ "${ENV_KIND}" == "docker" ]; then
