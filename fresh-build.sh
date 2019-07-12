@@ -5,7 +5,7 @@ set -ex
 # first arg is the build environment nickname
 ENV_KIND=$1
 
-ENV_KIND_OPTIONS="docker, rpi, kavon"
+ENV_KIND_OPTIONS="local, docker, rpi, kavon"
 
 if (( $# != 1 )); then
     echo "Must provide a build kind as first arg: $ENV_KIND_OPTIONS"
@@ -34,24 +34,29 @@ fi
 
 #########
 # default build options and setup
+BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"  # all those that support JIT
+TYPE="Release"
 PROJECTS="clang;compiler-rt"
 OPTIONS="-DCMAKE_INSTALL_PREFIX=../install"
-BUILD_TARGETS="install-halo-server install-halomon install-clang"
+BUILD_TARGETS="install-haloserver install-halomon install-clang"
+
+# NOTE: we build halo server as an external LLVM project.
+OURSELVES="-DLLVM_EXTERNAL_PROJECTS=haloserver -DLLVM_EXTERNAL_HALOSERVER_SOURCE_DIR=$(pwd)"
+PROTO_FILE_DIR="-DHALO_PROTO_DIR=$(pwd)/proto"
 
 # environment specific build options / overrides
 if [ "${ENV_KIND}" == "docker" ]; then
-  BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"
-  TYPE="Release"
   OPTIONS="" # want to install system-wide
+
+elif [ "${ENV_KIND}" == "local" ]; then
+  # by default, we install locally anyways.
 
 elif [ "${ENV_KIND}" == "rpi" ]; then
   BACKENDS="Native"
-  TYPE="Release"
   OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=lld -DLLVM_PARALLEL_LINK_JOBS=1 -DLLVM_PARALLEL_COMPILE_JOBS=2"
 
 elif [ "${ENV_KIND}" == "kavon" ]; then
   BACKENDS="Native"
-  TYPE="Release"
   OPTIONS="${OPTIONS} -DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=gold"
 
 else
@@ -64,7 +69,7 @@ fi
 rm -rf build install
 mkdir build install
 cd ./build || exit 1
-cmake -G "$GENERATOR" -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} -DCMAKE_BUILD_TYPE=${TYPE}  ..
+cmake -G "$GENERATOR" ${OURSELVES} ${PROTO_FILE_DIR} -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} -DCMAKE_BUILD_TYPE=${TYPE} ../llvm-project/llvm
 
 if [ "${ENV_KIND}" == "kavon" ]; then
   exit 0  # only want to configure

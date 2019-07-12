@@ -1,14 +1,18 @@
 
 
 
-set(SERVER_BIN "halo-server")
+set(SERVER_BIN "haloserver")
 
+
+# include LLVM itself
+add_definitions(${LLVM_DEFINITIONS})
+llvm_map_components_to_libnames(LLVM_LIBS all) # TODO: make this list shorter?
 
 add_executable(${SERVER_BIN}
   HaloServer.cpp
 )
 
-
+target_link_libraries(${SERVER_BIN} ${LLVM_LIBS})
 
 install(TARGETS ${SERVER_BIN}
         COMPONENT ${SERVER_BIN}   # gives a name to this install target for the phony target below.
