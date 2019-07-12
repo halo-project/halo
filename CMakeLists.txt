@@ -5,8 +5,7 @@ project(HaloServer)
 ############################################
 ### build options
 
-option(HALO_RPI "Flag indicating a build on Raspberry Pi." OFF)
-option(HALO_KAVON "Flag indicating a build on Kavon's laptop." OFF)
+# NONE
 
 
 ############################################
