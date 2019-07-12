@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package halo;
+
+message BranchInfo {
+  uint64 from = 1;
+  uint64 to = 2;
+  bool mispred = 3;
+  bool predicted = 4;
+}
+
+message RawSample {
+  uint64 instr_ptr = 1;
+  uint32 thread_id = 2;
+  uint64 time = 3;
+  repeated uint64 call_context = 4;
+  repeated BranchInfo branch = 5;
+}

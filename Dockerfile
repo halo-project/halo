@@ -18,8 +18,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       zlib1g \
       libprotobuf-dev \
       protobuf-compiler \
-      protobuf-compiler-grpc \
-      libgrpc++-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # copy over source code to the image

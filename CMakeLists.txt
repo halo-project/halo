@@ -7,6 +7,11 @@ project(HaloServer)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+# This is set globally here so it is accessable by halomon and halo server.
+# I don't know a better way to share these specs with both components
+# without copying it.
+file(GLOB HALO_PROTO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/proto/*.proto")
+
 
 ############################################
 ### "superbuild" configuration for LLVM
@@ -17,13 +22,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llvm-project/llvm)
 ###########################################
 ### find other dependencies of halo server
 
-find_package(GRCP REQUIRED)
-include_directories(${GRPC_INCLUDE_DIRS})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
-add_definitions(-DGOOGLE_PROTOBUF_NO_RTTI)
-
-# include_directories(${Protobuf_INCLUDE_DIRS} ${gRCP_INCLUDE_DIR})
+find_package(Protobuf 3 REQUIRED)
+include_directories(${Protobuf_INCLUDE_DIRS})
 
 
 ###################
@@ -45,12 +45,12 @@ if (${FORCE_COLORED_OUTPUT})
     endif ()
 endif ()
 
-add_definitions(-DBOOST_NO_RTTI -DBOOST_NO_EXCEPTIONS)
+add_definitions(-DBOOST_NO_RTTI -DBOOST_NO_EXCEPTIONS -DGOOGLE_PROTOBUF_NO_RTTI)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions -Wall -Wextra -Wpedantic -Werror=return-type -Wno-unused-parameter")
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
+# add_subdirectory(lib)
 add_subdirectory(tools)
-# add_subdirectory(test)
