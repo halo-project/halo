@@ -9,7 +9,11 @@ project(haloserver
 ############################################
 ### build options and setup
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+# make our custom modules available
+set(CMAKE_MODULE_PATH
+  ${CMAKE_MODULE_PATH}
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  )
 
 if (NOT HALO_PROTO_DIR)
   message( FATAL_ERROR "Please set HALO_PROTO_DIR to a directory containing protobuf files." )

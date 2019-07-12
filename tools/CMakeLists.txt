@@ -1,6 +1,3 @@
-
-
-
 set(SERVER_BIN "haloserver")
 
 
@@ -8,10 +5,15 @@ set(SERVER_BIN "haloserver")
 add_definitions(${LLVM_DEFINITIONS})
 llvm_map_components_to_libnames(LLVM_LIBS all) # TODO: make this list shorter?
 
+# DEBUG
+message(WARNING ${LLVM_MAIN_INCLUDE_DIR})
+message(WARNING ${LLVM_DEFINITIONS})
+
 add_executable(${SERVER_BIN}
   HaloServer.cpp
 )
 
+# target_include_directories(${SERVER_BIN} PRIVATE ${LLVM_MAIN_INCLUDE_DIR})
 target_link_libraries(${SERVER_BIN} ${LLVM_LIBS})
 
 install(TARGETS ${SERVER_BIN}
