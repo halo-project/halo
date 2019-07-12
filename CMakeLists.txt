@@ -5,7 +5,7 @@ project(HaloServer)
 ############################################
 ### build options
 
-# NONE
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 
 ############################################
@@ -17,10 +17,13 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/llvm-project/llvm)
 ###########################################
 ### find other dependencies of halo server
 
-find_package(Protobuf 3 REQUIRED)
+find_package(GRCP REQUIRED)
+include_directories(${GRPC_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-set(gRCP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-find_package(gRCP REQUIRED)
+add_definitions(-DGOOGLE_PROTOBUF_NO_RTTI)
+
+# include_directories(${Protobuf_INCLUDE_DIRS} ${gRCP_INCLUDE_DIR})
 
 
 ###################

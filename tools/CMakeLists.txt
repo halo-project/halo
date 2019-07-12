@@ -3,10 +3,20 @@
 
 set(SERVER_BIN "halo-server")
 
-add_executable(${SERVER_BIN} HaloServer.cpp)
+# perform protobuf & grcp compile step
+file(GLOB PROTO_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.proto")
+grpc_generate_cpp(GRPC_SRCS GRPC_HDRS ${PROTO_FILES})
+
+add_executable(${SERVER_BIN}
+  HaloServer.cpp
+  ${GRPC_SRCS}
+  ${GRPC_HDRS}
+)
 
 
-
+target_link_libraries(${SERVER_BIN}
+  ${GRPC_LIBRARIES}
+)
 
 
 

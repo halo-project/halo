@@ -65,4 +65,10 @@ rm -rf build install
 mkdir build install
 cd ./build || exit 1
 cmake -G "$GENERATOR" -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} -DCMAKE_BUILD_TYPE=${TYPE}  ..
+
+if [ "${ENV_KIND}" == "kavon" ]; then
+  exit 0  # only want to configure
+fi
+
+# actually perform the build
 ${BUILD_CMD} ${BUILD_TARGETS}
