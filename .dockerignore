@@ -2,5 +2,3 @@
 .dockerignore
 build/
 install/
-llvm/build/
-llvm/install/

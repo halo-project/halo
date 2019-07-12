@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       g++ \
       libboost-system-dev \
       libpfm4-dev \
-      make \
+      ninja-build \
       cmake \
       libprotobuf-dev \
       protobuf-compiler \
@@ -25,17 +25,10 @@ COPY . /tmp/halo
 # set the working directory
 WORKDIR /tmp/halo
 
-# build and install clang and halo library system-wide
-RUN cd llvm && ./llvm/fresh-build.sh && rm -rf src build
+# build and clean-up
+# TODO: run test suite before cleanup!
+RUN ./fresh-build.sh docker \
+    && rm -rf llvm-project build
 
-# # build server
-# RUN mkdir build install \
-#  && cd build \
-#  && cmake .. \
-#  && make install
-
-
-
-
-# when the image is run, execute the test program.
-# CMD ./test
+# when the image is run, start halo server by default.
+# CMD halo-server
