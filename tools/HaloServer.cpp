@@ -1,50 +1,104 @@
-#include "llvm/ExecutionEngine/RTDyldMemoryManager.h"
-#include "llvm/ExecutionEngine/Orc/OrcRemoteTargetServer.h"
-#include "llvm/ExecutionEngine/Orc/OrcABISupport.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/DynamicLibrary.h"
-#include "llvm/Support/Error.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/TargetSelect.h"
-#include <cstdint>
-#include <cstdio>
-#include <cstring>
-#include <string>
-#include <netinet/in.h>
-#include <sys/socket.h>
 
-using namespace llvm;
-using namespace llvm::orc;
+#include "boost/asio.hpp"
+#include "google/protobuf/util/json_util.h"
 
-// Command line argument for TCP port.
+#include "Comms.pb.h"
 
-// TODO: why does this not compile?!
-// cl::opt<uint32_t> Port("port",
-//                        cl::desc("TCP port to listen on"),
-//                        cl::init(20000));
+#include <cinttypes>
+#include <iostream>
+#include <list>
 
-ExitOnError ExitOnErr;
+namespace cl = llvm::cl;
+namespace asio = boost::asio;
+namespace ip = boost::asio::ip;
+namespace proto = google::protobuf;
 
-// currently based on Remote JIT example.
+/////////////
+// Command-line Options
+cl::opt<uint32_t> CL_Port("port",
+                       cl::desc("TCP port to listen on."),
+                       cl::init(29000));
 
-int main(int argc, char* argv[]) {
-  if (argc == 0)
-    ExitOnErr.setBanner("jit_server: ");
-  else
-    ExitOnErr.setBanner(std::string(argv[0]) + ": ");
+template <typename T>
+void printProto(T &Value) {
+  std::string AsJSON;
+  proto::util::JsonPrintOptions Opts;
+  Opts.add_whitespace = true;
+  proto::util::MessageToJsonString(Value, &AsJSON, Opts);
+  std::cout << AsJSON << "\n---\n";
+}
 
-  // --- Initialize LLVM ---
-  cl::ParseCommandLineOptions(argc, argv, "LLVM lazy JIT example.\n");
+class ClientSession {
+public:
+  ClientSession(std::unique_ptr<ip::tcp::socket> socket)
+      : Socket(std::move(socket)) {
+      }
 
-  InitializeNativeTarget();
-  InitializeNativeTargetAsmPrinter();
-  InitializeNativeTargetAsmParser();
+  void start() {  listen(); }
 
-  if (sys::DynamicLibrary::LoadLibraryPermanently(nullptr)) {
-    errs() << "Error loading program symbols.\n";
-    return 1;
+  void listen() {
+    boost::asio::async_read(*Socket, InputStreamBuffer,
+      [this](boost::system::error_code Err, size_t Size) {
+        std::istream is(&InputStreamBuffer);
+        MsgHdr.ParseFromIstream(&is);
+        printProto(MsgHdr);
+
+        listen();
+      });
   }
 
+private:
+  std::unique_ptr<ip::tcp::socket> Socket;
+  asio::streambuf InputStreamBuffer;
+  halo::MessageHeader MsgHdr;
+};
+
+
+class ClientRegistrar {
+public:
+  ClientRegistrar(asio::io_service &service, uint32_t port)
+      : Port(port),
+        IOService(service),
+        Endpoint(ip::tcp::v4(), Port),
+        Acceptor(IOService, Endpoint) {
+          accept_loop();
+        }
+
+private:
+  uint32_t Port;
+  asio::io_service &IOService;
+  ip::tcp::endpoint Endpoint;
+  ip::tcp::acceptor Acceptor;
+  std::unique_ptr<ip::tcp::socket> FreshSocket;
+
+  // TODO: periodically garbage collect dead sessions?
+  std::list<ClientSession> Sessions;
+
+  void accept_loop() {
+    FreshSocket = std::make_unique<ip::tcp::socket>(IOService);
+
+    Acceptor.async_accept(*FreshSocket,
+      [this](boost::system::error_code Err) {
+        if(!Err) {
+          std::cout << "Accepted a new connection on port " << Port << "\n";
+          Sessions.emplace_back(std::move(FreshSocket));
+          Sessions.back().start();
+        }
+        accept_loop();
+      });
+  }
+};
+
+
+int main(int argc, char* argv[]) {
+  cl::ParseCommandLineOptions(argc, argv, "Halo Server\n");
+
+  asio::io_service IOService;
+
+  ClientRegistrar CR(IOService, CL_Port);
+
+  IOService.run();
 
   return 0;
 

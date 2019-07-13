@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package halo;
+
+enum MessageKind {
+    HELLO = 0;
+    GOODBYE = 1;
+  }
+
+// Describes what the following message will be.
+message MessageHeader {
+  MessageKind kind = 1;
+  uint32 size = 2;
+}
