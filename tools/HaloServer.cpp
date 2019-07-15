@@ -20,6 +20,11 @@ cl::opt<uint32_t> CL_Port("port",
                        cl::desc("TCP port to listen on."),
                        cl::init(29000));
 
+std::vector<uint8_t> make_vector(asio::streambuf& streambuf) {
+  return {asio::buffers_begin(streambuf.data()),
+          asio::buffers_end(streambuf.data())};
+}
+
 template <typename T>
 void printProto(T &Value) {
   std::string AsJSON;
@@ -40,11 +45,23 @@ public:
   void listen() {
     boost::asio::async_read(*Socket, InputStreamBuffer,
       [this](boost::system::error_code Err, size_t Size) {
-        std::istream is(&InputStreamBuffer);
-        MsgHdr.ParseFromIstream(&is);
-        printProto(MsgHdr);
+        if (Size) {
+          std::cout << "read: ";
 
-        listen();
+          auto Vec = make_vector(InputStreamBuffer);
+          for (auto Byte : Vec)
+            std::cout << (uint32_t) Byte << " ";
+
+          std::cout << "\n";
+
+          // std::istream is(&InputStreamBuffer);
+          // bool Success = MsgHdr.ParseFromIstream(&is);
+          // if (Success) {
+          //   printProto(MsgHdr);
+          // }
+        } else {
+          listen();
+        }
       });
   }
 
