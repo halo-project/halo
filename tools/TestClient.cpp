@@ -6,6 +6,7 @@
 
 #include "RawSample.pb.h"
 #include "MessageHeader.h"
+#include "RPCSystem.h"
 
 #include <cinttypes>
 #include <iostream>
@@ -16,70 +17,43 @@ namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
 namespace hdr = halo::hdr;
 
-struct Client {
+namespace halo {
 
-  asio::io_service &IOService;
+class ClientRPC {
+private:
+  asio::io_service IOService;
   ip::tcp::resolver Resolver;
   ip::tcp::socket Socket;
-  ip::tcp::resolver::iterator EndpointIter;
+  ip::tcp::resolver::query Query;
 
+public:
+  halo::RPCSystem RPC;
 
-  Client(asio::io_service &ioservice) :
-    IOService(ioservice),
+  ClientRPC(std::string server_hostname, std::string port) :
+    IOService(),
     Resolver(IOService),
-    Socket(IOService) {
-      EndpointIter = Resolver.resolve({ "localhost", "29000" });
+    Socket(IOService),
+    Query(server_hostname, port),
+    RPC(Socket) { }
+
+  // returns true if connection established.
+  bool connect() {
+    boost::system::error_code Err;
+    ip::tcp::resolver::iterator I =
+        asio::connect(Socket, Resolver.resolve(Query), Err);
+
+    if (Err) {
+      std::cerr << "Failed to connect: " << Err.message() << "\n";
+      return false;
+    } else {
+      std::cerr << "Connected to: " << I->endpoint() << "\n";
+      return true;
     }
-
-  void send_msg() {
-    static uint64_t Count = 0;
-    std::cout << "Sending...\n";
-
-    halo::RawSample RS;
-    RS.set_instr_ptr(31337 + Count++);
-
-    std::vector<asio::const_buffer> Message;
-
-    std::string Blob;
-    RS.SerializeToString(&Blob);
-
-    hdr::MessageHeader Hdr;
-    hdr::setMessageKind(Hdr, hdr::RawSample);
-    hdr::setPayloadSize(Hdr, Blob.size());
-    hdr::encode(Hdr);
-
-    // queue up two items to write: the header followed by the body.
-    Message.push_back(asio::buffer(&Hdr, sizeof(Hdr)));
-    Message.push_back(asio::buffer(Blob));
-
-    asio::async_write(Socket, Message,
-      [this](const boost::system::error_code& ec,
-              std::size_t bytes_transferred) {
-                  if (ec) {
-                    std::cout << "there was an error!\n";
-                  }
-                  std::cout << "sent " << bytes_transferred << " bytes\n";
-                  if (Count < 10) send_msg();
-              });
-  }
-
-
-  void start_session() {
-    // first step is to try and connect
-    asio::async_connect(Socket, EndpointIter,
-          [this](boost::system::error_code Err, ip::tcp::resolver::iterator)
-          {
-            if (!Err) {
-              std::cout << "connected!\n";
-              send_msg();
-            } else {
-              std::cerr << "hit an error during connect phase.\n";
-              IOService.stop();
-            }
-          });
   }
 
 };
+
+} // namespace halo
 
 
 
@@ -87,10 +61,19 @@ int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv, "Halo Test Client\n");
 
   asio::io_service IOService;
-  Client client(IOService);
+  halo::ClientRPC client("localhost", "29000");
 
-  client.start_session();
-  IOService.run();
+  bool Connected = client.connect();
+
+  if (!Connected) return 1;
+
+  halo::RawSample RS;
+  RS.set_instr_ptr(31337);
+
+  client.RPC.send_proto(halo::hdr::RawSample, RS);
+
+  RS.set_instr_ptr(42);
+  client.RPC.send_proto(halo::hdr::RawSample, RS);
 
   return 0;
 
