@@ -50,7 +50,7 @@ if [ "${ENV_KIND}" == "docker" ]; then
 
 elif [ "${ENV_KIND}" == "local" ]; then
   # by default, we install locally anyways.
-
+  :
 elif [ "${ENV_KIND}" == "rpi" ]; then
   BACKENDS="Native"
   OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=lld -DLLVM_PARALLEL_LINK_JOBS=1 -DLLVM_PARALLEL_COMPILE_JOBS=2"

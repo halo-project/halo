@@ -3,9 +3,13 @@
 #include "llvm/BinaryFormat/MsgPackDocument.h"
 #include "llvm/Support/CommandLine.h"
 
+#include "google/protobuf/util/json_util.h"
+
 
 #include "boost/asio.hpp"
 
+#include "RawSample.pb.h"
+#include "MessageHeader.h"
 
 #include <cinttypes>
 #include <iostream>
@@ -14,7 +18,8 @@
 namespace cl = llvm::cl;
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
-namespace msgpack = llvm::msgpack;
+namespace hdr = halo::hdr;
+namespace proto = google::protobuf;
 
 /////////////
 // Command-line Options
@@ -46,10 +51,12 @@ public:
           end(); return;
         }
 
-        Hdr = ntohl(Hdr); // convert network encoding to host.
+        hdr::decode(Hdr);
+        hdr::MessageKind Kind = hdr::getMessageKind(Hdr);
+        uint32_t PayloadSz = hdr::getPayloadSize(Hdr);
 
         // perform another read for the body of specified length.
-        Body.resize(Hdr);
+        Body.resize(PayloadSz);
         boost::asio::async_read(*Socket, asio::buffer(Body),
           [this](boost::system::error_code Err, size_t Size) {
             if (Err) {
@@ -57,6 +64,17 @@ public:
               end(); return;
             }
 
+            halo::RawSample RS;
+            std::string Blob(Body.data(), Body.size());
+            RS.ParseFromString(Blob);
+
+            std::string AsJSON;
+            proto::util::JsonPrintOptions Opts;
+            Opts.add_whitespace = true;
+            proto::util::MessageToJsonString(RS, &AsJSON, Opts);
+            std::cerr << AsJSON << "\n---\n";
+
+            /*
             llvm::StringRef Blob(Body.data(), Body.size());
 
             msgpack::Document Doc;
@@ -67,6 +85,7 @@ public:
             } else {
               std::cerr << "Error parsing blob.\n";
             }
+            */
 
             // go back to starting state.
             listen();
@@ -77,7 +96,7 @@ public:
 private:
   std::unique_ptr<ip::tcp::socket> Socket;
   bool Stopped;
-  uint32_t Hdr;
+  hdr::MessageHeader Hdr;
   std::vector<char> Body;
 };
 

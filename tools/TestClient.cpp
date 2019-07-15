@@ -2,7 +2,10 @@
 
 #include "boost/asio.hpp"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/BinaryFormat/MsgPackDocument.h"
+
+
+#include "RawSample.pb.h"
+#include "MessageHeader.h"
 
 #include <cinttypes>
 #include <iostream>
@@ -11,7 +14,7 @@
 namespace cl = llvm::cl;
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
-namespace msgpack = llvm::msgpack;
+namespace hdr = halo::hdr;
 
 struct Client {
 
@@ -31,20 +34,22 @@ struct Client {
   void send_msg() {
     static uint64_t Count = 0;
     std::cout << "Sending...\n";
-    msgpack::Document Doc;
 
-    auto M = Doc.getRoot().getMap();
-    M["foo"] = Doc.getNode(int64_t(1));
-    M["count"] = Doc.getNode(uint64_t(Count++));
+    halo::RawSample RS;
+    RS.set_instr_ptr(31337 + Count++);
 
     std::vector<asio::const_buffer> Message;
 
     std::string Blob;
-    Doc.writeToBlob(Blob);
-    uint32_t Size = htonl(Blob.size()); // host -> net encoding.
+    RS.SerializeToString(&Blob);
+
+    hdr::MessageHeader Hdr;
+    hdr::setMessageKind(Hdr, hdr::RawSample);
+    hdr::setPayloadSize(Hdr, Blob.size());
+    hdr::encode(Hdr);
 
     // queue up two items to write: the header followed by the body.
-    Message.push_back(asio::buffer(&Size, sizeof(Size)));
+    Message.push_back(asio::buffer(&Hdr, sizeof(Hdr)));
     Message.push_back(asio::buffer(Blob));
 
     asio::async_write(Socket, Message,
