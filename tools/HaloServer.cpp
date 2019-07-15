@@ -1,9 +1,11 @@
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/BinaryFormat/MsgPackDocument.h"
 #include "llvm/Support/CommandLine.h"
 
-#include "boost/asio.hpp"
-#include "google/protobuf/util/json_util.h"
 
-#include "Comms.pb.h"
+#include "boost/asio.hpp"
+
 
 #include <cinttypes>
 #include <iostream>
@@ -12,7 +14,7 @@
 namespace cl = llvm::cl;
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
-namespace proto = google::protobuf;
+namespace msgpack = llvm::msgpack;
 
 /////////////
 // Command-line Options
@@ -25,50 +27,58 @@ std::vector<uint8_t> make_vector(asio::streambuf& streambuf) {
           asio::buffers_end(streambuf.data())};
 }
 
-template <typename T>
-void printProto(T &Value) {
-  std::string AsJSON;
-  proto::util::JsonPrintOptions Opts;
-  Opts.add_whitespace = true;
-  proto::util::MessageToJsonString(Value, &AsJSON, Opts);
-  std::cout << AsJSON << "\n---\n";
-}
-
 class ClientSession {
 public:
   ClientSession(std::unique_ptr<ip::tcp::socket> socket)
-      : Socket(std::move(socket)) {
+      : Socket(std::move(socket)), Stopped(false) {
       }
 
-  void start() {  listen(); }
+  void start() { listen(); }
+  void end() { Stopped = true; }
+  bool has_stopped() const { return Stopped; }
 
   void listen() {
-    boost::asio::async_read(*Socket, InputStreamBuffer,
+    // read the header
+    boost::asio::async_read(*Socket, asio::buffer(&Hdr, sizeof(Hdr)),
       [this](boost::system::error_code Err, size_t Size) {
-        if (Size) {
-          std::cout << "read: ";
-
-          auto Vec = make_vector(InputStreamBuffer);
-          for (auto Byte : Vec)
-            std::cout << (uint32_t) Byte << " ";
-
-          std::cout << "\n";
-
-          // std::istream is(&InputStreamBuffer);
-          // bool Success = MsgHdr.ParseFromIstream(&is);
-          // if (Success) {
-          //   printProto(MsgHdr);
-          // }
-        } else {
-          listen();
+        if (Err) {
+          std::cerr << "status: " << Err.message() << "\n";
+          end(); return;
         }
+
+        Hdr = ntohl(Hdr); // convert network encoding to host.
+
+        // perform another read for the body of specified length.
+        Body.resize(Hdr);
+        boost::asio::async_read(*Socket, asio::buffer(Body),
+          [this](boost::system::error_code Err, size_t Size) {
+            if (Err) {
+              std::cerr << "status @ body: " << Err.message() << "\n";
+              end(); return;
+            }
+
+            llvm::StringRef Blob(Body.data(), Body.size());
+
+            msgpack::Document Doc;
+            bool Success = Doc.readFromBlob(Blob, false);
+
+            if (Success) {
+              Doc.toYAML(llvm::errs());
+            } else {
+              std::cerr << "Error parsing blob.\n";
+            }
+
+            // go back to starting state.
+            listen();
+          });
       });
   }
 
 private:
   std::unique_ptr<ip::tcp::socket> Socket;
-  asio::streambuf InputStreamBuffer;
-  halo::MessageHeader MsgHdr;
+  bool Stopped;
+  uint32_t Hdr;
+  std::vector<char> Body;
 };
 
 
@@ -98,7 +108,7 @@ private:
     Acceptor.async_accept(*FreshSocket,
       [this](boost::system::error_code Err) {
         if(!Err) {
-          std::cout << "Accepted a new connection on port " << Port << "\n";
+          std::cerr << "Accepted a new connection on port " << Port << "\n";
           Sessions.emplace_back(std::move(FreshSocket));
           Sessions.back().start();
         }

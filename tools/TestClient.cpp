@@ -1,9 +1,8 @@
 #include "llvm/Support/CommandLine.h"
 
 #include "boost/asio.hpp"
-#include "google/protobuf/util/json_util.h"
-
-#include "Comms.pb.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/BinaryFormat/MsgPackDocument.h"
 
 #include <cinttypes>
 #include <iostream>
@@ -12,16 +11,7 @@
 namespace cl = llvm::cl;
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
-namespace proto = google::protobuf;
-
-template <typename T>
-void printProto(T &Value) {
-  std::string AsJSON;
-  proto::util::JsonPrintOptions Opts;
-  Opts.add_whitespace = true;
-  proto::util::MessageToJsonString(Value, &AsJSON, Opts);
-  std::cout << AsJSON << "\n---\n";
-}
+namespace msgpack = llvm::msgpack;
 
 struct Client {
 
@@ -29,8 +19,6 @@ struct Client {
   ip::tcp::resolver Resolver;
   ip::tcp::socket Socket;
   ip::tcp::resolver::iterator EndpointIter;
-
-  asio::streambuf OutputStreamBuffer;
 
 
   Client(asio::io_service &ioservice) :
@@ -41,24 +29,32 @@ struct Client {
     }
 
   void send_msg() {
+    static uint64_t Count = 0;
     std::cout << "Sending...\n";
-    halo::MessageHeader MsgHdr;
-    MsgHdr.set_kind(halo::MessageKind::HELLO);
+    msgpack::Document Doc;
 
-    std::ostream os(&OutputStreamBuffer);
+    auto M = Doc.getRoot().getMap();
+    M["foo"] = Doc.getNode(int64_t(1));
+    M["count"] = Doc.getNode(uint64_t(Count++));
 
-    MsgHdr.SerializeToOstream(&os);
+    std::vector<asio::const_buffer> Message;
 
-    // os << "hello."
-    //    << "world.";
+    std::string Blob;
+    Doc.writeToBlob(Blob);
+    uint32_t Size = htonl(Blob.size()); // host -> net encoding.
 
-    asio::async_write(Socket, OutputStreamBuffer,
+    // queue up two items to write: the header followed by the body.
+    Message.push_back(asio::buffer(&Size, sizeof(Size)));
+    Message.push_back(asio::buffer(Blob));
+
+    asio::async_write(Socket, Message,
       [this](const boost::system::error_code& ec,
               std::size_t bytes_transferred) {
                   if (ec) {
                     std::cout << "there was an error!\n";
                   }
-                  std::cout << "sent " << bytes_transferred << "\n";
+                  std::cout << "sent " << bytes_transferred << " bytes\n";
+                  if (Count < 10) send_msg();
               });
   }
 

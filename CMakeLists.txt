@@ -26,11 +26,10 @@ file(GLOB HALO_PROTO_FILES "${HALO_PROTO_DIR}/*.proto")
 ### find dependencies
 
 find_package(Boost 1.65 COMPONENTS system REQUIRED)
-find_package(Protobuf 3 REQUIRED)
 llvm_map_components_to_libnames(LLVM_LIBS all) # TODO: make this list shorter?
 
-include_directories(${Protobuf_INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
-add_definitions(${LLVM_DEFINITIONS} -DGOOGLE_PROTOBUF_NO_RTTI -DBOOST_EXCEPTION_DISABLE -DBOOST_NO_RTTI)
+include_directories(${Boost_INCLUDE_DIR})
+add_definitions(${LLVM_DEFINITIONS} -DBOOST_EXCEPTION_DISABLE -DBOOST_NO_RTTI)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti")
 
 add_subdirectory(tools)

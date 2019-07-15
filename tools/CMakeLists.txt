@@ -1,12 +1,8 @@
 set(SERVER_BIN "haloserver")
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${HALO_PROTO_FILES})
-
 add_executable(${SERVER_BIN}
   HaloServer.cpp
   Error.cpp
-  ${PROTO_SRCS}
-  ${PROTO_HDRS}
 )
 
 set_property(TARGET ${SERVER_BIN} PROPERTY CXX_STANDARD 14)
@@ -37,8 +33,6 @@ set(CLIENT_BIN "haloclient")
 add_executable(${CLIENT_BIN}
   TestClient.cpp
   Error.cpp
-  ${PROTO_SRCS}
-  ${PROTO_HDRS}
 )
 
 set_property(TARGET ${CLIENT_BIN} PROPERTY CXX_STANDARD 14)
