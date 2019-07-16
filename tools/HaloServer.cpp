@@ -9,8 +9,8 @@
 #include "boost/asio.hpp"
 
 #include "RawSample.pb.h"
-#include "MessageHeader.h"
-#include "RPCSystem.h"
+#include "MessageKind.h"
+#include "Channel.h"
 
 #include <cinttypes>
 #include <iostream>
@@ -19,7 +19,7 @@
 namespace cl = llvm::cl;
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
-namespace hdr = halo::hdr;
+namespace msg = halo::msg;
 namespace proto = google::protobuf;
 
 /////////////
@@ -30,14 +30,14 @@ cl::opt<uint32_t> CL_Port("port",
 
 struct ClientSession {
   ip::tcp::socket Socket;
-  halo::RPCSystem RPC;
+  halo::Channel Chan;
   ClientSession(asio::io_service &IOService) :
-    Socket(IOService), RPC(Socket) {}
+    Socket(IOService), Chan(Socket) {}
 
   void listen() {
-    RPC.recv_proto([](halo::hdr::MessageKind Kind, std::vector<char>& Body) {
+    Chan.recv_proto([](msg::Kind Kind, std::vector<char>& Body) {
         switch(Kind) {
-          case halo::hdr::RawSample: {
+          case msg::RawSample: {
             halo::RawSample RS;
             std::string Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);

@@ -5,8 +5,8 @@
 
 
 #include "RawSample.pb.h"
-#include "MessageHeader.h"
-#include "RPCSystem.h"
+#include "MessageKind.h"
+#include "Channel.h"
 
 #include <cinttypes>
 #include <iostream>
@@ -15,11 +15,10 @@
 namespace cl = llvm::cl;
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
-namespace hdr = halo::hdr;
 
 namespace halo {
 
-class ClientRPC {
+class ClientChan {
 private:
   asio::io_service IOService;
   ip::tcp::resolver Resolver;
@@ -27,14 +26,14 @@ private:
   ip::tcp::resolver::query Query;
 
 public:
-  halo::RPCSystem RPC;
+  halo::Channel Chan;
 
-  ClientRPC(std::string server_hostname, std::string port) :
+  ClientChan(std::string server_hostname, std::string port) :
     IOService(),
     Resolver(IOService),
     Socket(IOService),
     Query(server_hostname, port),
-    RPC(Socket) { }
+    Chan(Socket) { }
 
   // returns true if connection established.
   bool connect() {
@@ -61,7 +60,7 @@ int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv, "Halo Test Client\n");
 
   asio::io_service IOService;
-  halo::ClientRPC client("localhost", "29000");
+  halo::ClientChan client("localhost", "29000");
 
   bool Connected = client.connect();
 
@@ -70,10 +69,10 @@ int main(int argc, char* argv[]) {
   halo::RawSample RS;
   RS.set_instr_ptr(31337);
 
-  client.RPC.send_proto(halo::hdr::RawSample, RS);
+  client.Chan.send_proto(msg::RawSample, RS);
 
   RS.set_instr_ptr(42);
-  client.RPC.send_proto(halo::hdr::RawSample, RS);
+  client.Chan.send_proto(msg::RawSample, RS);
 
   return 0;
 

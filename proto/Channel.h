@@ -9,28 +9,29 @@
 
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
-namespace hdr = halo::hdr;
+namespace msg = halo::msg;
 
 namespace halo {
 
-  // This class contains common code for RPC-style duplex communication
-  // over a socket.
-  class RPCSystem {
+  // This class contains common code for implementing a duplex message channel
+  // over a common TCP socket. The 'channel' here loosly based on concepts from
+  // Concurrent ML.
+  class Channel {
   public:
-      RPCSystem(ip::tcp::socket &Socket) : Sock(Socket) {}
+      Channel(ip::tcp::socket &Socket) : Sock(Socket) {}
 
       // synchronous send operation for a given proto buffer.
       template<typename T>
-      void send_proto(hdr::MessageKind Kind, T& ProtoBuf) {
+      void send_proto(msg::Kind Kind, T& ProtoBuf) {
         std::vector<asio::const_buffer> Msg;
 
         std::string Blob;
         ProtoBuf.SerializeToString(&Blob);
 
-        hdr::MessageHeader Hdr;
-        hdr::setMessageKind(Hdr, Kind);
-        hdr::setPayloadSize(Hdr, Blob.size());
-        hdr::encode(Hdr);
+        msg::Header Hdr;
+        msg::setMessageKind(Hdr, Kind);
+        msg::setPayloadSize(Hdr, Blob.size());
+        msg::encode(Hdr);
 
         // queue up two items to write: the header followed by the body.
         Msg.push_back(asio::buffer(&Hdr, sizeof(Hdr)));
@@ -45,25 +46,25 @@ namespace halo {
         }
       }
 
-      void recv_proto(std::function<void(hdr::MessageKind, std::vector<char>&)> Callback) {
+      void recv_proto(std::function<void(msg::Kind, std::vector<char>&)> Callback) {
         // since it's async, we need to worry about lifetimes. could be
         // multiple enqueued reads.
-        hdr::MessageHeader *HdrBuf = new hdr::MessageHeader();
+        msg::Header *HdrBuf = new msg::Header();
 
         // read the header
-        asio::async_read(Sock, asio::buffer(HdrBuf, sizeof(hdr::MessageHeader)),
+        asio::async_read(Sock, asio::buffer(HdrBuf, sizeof(msg::Header)),
           [=](boost::system::error_code Err1, size_t Size) {
             if (Err1) {
               std::cerr << "status: " << Err1.message() << "\n";
               return;
             }
 
-            hdr::MessageHeader Hdr = *HdrBuf;
+            msg::Header Hdr = *HdrBuf;
             delete HdrBuf;
 
-            hdr::decode(Hdr);
-            hdr::MessageKind Kind = hdr::getMessageKind(Hdr);
-            uint32_t PayloadSz = hdr::getPayloadSize(Hdr);
+            msg::decode(Hdr);
+            msg::Kind Kind = msg::getMessageKind(Hdr);
+            uint32_t PayloadSz = msg::getPayloadSize(Hdr);
 
             std::vector<char> Body;
 
