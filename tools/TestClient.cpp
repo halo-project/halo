@@ -18,7 +18,7 @@ namespace ip = boost::asio::ip;
 
 namespace halo {
 
-class ClientChan {
+class Client {
 private:
   asio::io_service IOService;
   ip::tcp::resolver Resolver;
@@ -28,7 +28,7 @@ private:
 public:
   halo::Channel Chan;
 
-  ClientChan(std::string server_hostname, std::string port) :
+  Client(std::string server_hostname, std::string port) :
     IOService(),
     Resolver(IOService),
     Socket(IOService),
@@ -59,8 +59,7 @@ public:
 int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv, "Halo Test Client\n");
 
-  asio::io_service IOService;
-  halo::ClientChan client("localhost", "29000");
+  halo::Client client("localhost", "29000");
 
   bool Connected = client.connect();
 

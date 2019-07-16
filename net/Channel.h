@@ -46,7 +46,9 @@ namespace halo {
         }
       }
 
-      void recv_proto(std::function<void(msg::Kind, std::vector<char>&)> Callback) {
+      // asynchronously recieve an arbitrary message. To poll / query, you
+      // need to run the IOService associated with this Socket.
+      void async_recv(std::function<void(msg::Kind, std::vector<char>&)> Callback) {
         // since it's async, we need to worry about lifetimes. could be
         // multiple enqueued reads.
         msg::Header *HdrBuf = new msg::Header();
@@ -82,6 +84,15 @@ namespace halo {
 
             Callback(Kind, Body);
           });
+      }
+
+      // returns true if the socket has bytes available for reading.
+      bool has_data() {
+        return Sock.available() > 0;
+      }
+
+      asio::io_service& get_io_service() {
+        return Sock.get_io_service();
       }
 
   private:

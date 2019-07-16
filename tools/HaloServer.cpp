@@ -35,7 +35,7 @@ struct ClientSession {
     Socket(IOService), Chan(Socket) {}
 
   void listen() {
-    Chan.recv_proto([](msg::Kind Kind, std::vector<char>& Body) {
+    Chan.async_recv([](msg::Kind Kind, std::vector<char>& Body) {
         switch(Kind) {
           case msg::RawSample: {
             halo::RawSample RS;
