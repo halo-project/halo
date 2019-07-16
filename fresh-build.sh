@@ -42,7 +42,7 @@ BUILD_TARGETS="install-haloserver install-halomon install-clang"
 
 # NOTE: we build halo server as an external LLVM project.
 OURSELVES="-DLLVM_EXTERNAL_PROJECTS=haloserver -DLLVM_EXTERNAL_HALOSERVER_SOURCE_DIR=$(pwd)"
-PROTO_FILE_DIR="-DHALO_PROTO_DIR=$(pwd)/proto"
+NETWORK_DIR="-DHALO_NET_DIR=$(pwd)/net"
 
 # environment specific build options / overrides
 if [ "${ENV_KIND}" == "docker" ]; then
@@ -69,7 +69,7 @@ fi
 rm -rf build install
 mkdir build install
 cd ./build || exit 1
-cmake -G "$GENERATOR" ${OURSELVES} ${PROTO_FILE_DIR} -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} -DCMAKE_BUILD_TYPE=${TYPE} ../llvm-project/llvm
+cmake -G "$GENERATOR" ${OURSELVES} ${NETWORK_DIR} -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} -DCMAKE_BUILD_TYPE=${TYPE} ../llvm-project/llvm
 
 if [ "${ENV_KIND}" == "kavon" ]; then
   exit 0  # only want to configure

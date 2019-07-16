@@ -15,12 +15,12 @@ set(CMAKE_MODULE_PATH
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
   )
 
-if (NOT HALO_PROTO_DIR)
-  message( FATAL_ERROR "Please set HALO_PROTO_DIR to a directory containing protobuf files." )
+if (NOT HALO_NET_DIR)
+  message( FATAL_ERROR "Please set HALO_NET_DIR to a directory containing networking files." )
 endif()
 
-file(GLOB HALO_PROTO_FILES "${HALO_PROTO_DIR}/*.proto")
-include_directories(${HALO_PROTO_DIR}) # there are static header files in here.
+file(GLOB HALO_PROTO_FILES "${HALO_NET_DIR}/*.proto")
+include_directories(${HALO_NET_DIR}) # there are static header files in here.
 
 
 #######################
