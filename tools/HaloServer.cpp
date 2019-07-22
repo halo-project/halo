@@ -28,6 +28,15 @@ cl::opt<uint32_t> CL_Port("port",
                        cl::desc("TCP port to listen on."),
                        cl::init(29000));
 
+template<typename T>
+void printProto(T &Proto) {
+  std::string AsJSON;
+  proto::util::JsonPrintOptions Opts;
+  Opts.add_whitespace = true;
+  proto::util::MessageToJsonString(Proto, &AsJSON, Opts);
+  std::cerr << AsJSON << "\n---\n";
+}
+
 struct ClientSession {
   ip::tcp::socket Socket;
   halo::Channel Chan;
@@ -42,11 +51,21 @@ struct ClientSession {
             std::string Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);
 
-            std::string AsJSON;
-            proto::util::JsonPrintOptions Opts;
-            Opts.add_whitespace = true;
-            proto::util::MessageToJsonString(RS, &AsJSON, Opts);
-            std::cerr << AsJSON << "\n---\n";
+            printProto(RS);
+          } break;
+
+          case msg::ClientEnroll: {
+            halo::pb::ClientEnroll CE;
+            std::string Blob(Body.data(), Body.size());
+            CE.ParseFromString(Blob);
+
+            printProto(CE);
+
+          } break;
+
+          default: {
+            std::cerr << "Recieved unknown message ID: "
+              << (uint32_t)Kind << "\n";
           } break;
         };
 
