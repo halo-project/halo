@@ -42,8 +42,40 @@ namespace halo {
             asio::write(Sock, Msg, Err);
 
         if (Err) {
+          std::cerr << "send_proto error: " << Err.message() << "\n";
+        }
+      }
+
+      // send a message with no payload
+      void send(msg::Kind Kind) {
+        msg::Header Hdr;
+        msg::setMessageKind(Hdr, Kind);
+        msg::setPayloadSize(Hdr, 0);
+        msg::encode(Hdr);
+
+        boost::system::error_code Err;
+        // size_t BytesWritten =
+            asio::write(Sock, asio::buffer(&Hdr, sizeof(Hdr)), Err);
+
+        if (Err) {
           std::cerr << "send error: " << Err.message() << "\n";
         }
+      }
+
+      // synchronously recieve an arbitrary message
+      void recv(std::function<void(msg::Kind, std::vector<char>&)> Callback) {
+        msg::Header Hdr;
+        boost::system::error_code Err1;
+
+        /* size_t BytesRead = */
+          asio::read(Sock, asio::buffer(&Hdr, sizeof(msg::Header)), Err1);
+
+        if (Err1) {
+          std::cerr << "status: " << Err1.message() << "\n";
+          return;
+        }
+
+        recv_body(Hdr, Callback);
       }
 
       // asynchronously recieve an arbitrary message. To poll / query, you
@@ -64,25 +96,7 @@ namespace halo {
             msg::Header Hdr = *HdrBuf;
             delete HdrBuf;
 
-            msg::decode(Hdr);
-            msg::Kind Kind = msg::getMessageKind(Hdr);
-            uint32_t PayloadSz = msg::getPayloadSize(Hdr);
-
-            std::vector<char> Body;
-
-            // perform another read for the body of specified length.
-            // This one is synchronous since the body should already be here.
-            Body.resize(PayloadSz);
-            boost::system::error_code Err2;
-            // size_t BytesRead =
-              boost::asio::read(Sock, asio::buffer(Body), Err2);
-
-            if (Err2) {
-              std::cerr << "status @ body: " << Err2.message() << "\n";
-              return;
-            }
-
-            Callback(Kind, Body);
+            recv_body(Hdr, Callback);
           });
       }
 
@@ -97,6 +111,28 @@ namespace halo {
 
   private:
     ip::tcp::socket &Sock;
+
+    void recv_body(msg::Header Hdr, std::function<void(msg::Kind, std::vector<char>&)> Callback) {
+      msg::decode(Hdr);
+      msg::Kind Kind = msg::getMessageKind(Hdr);
+      uint32_t PayloadSz = msg::getPayloadSize(Hdr);
+
+      std::vector<char> Body;
+
+      // perform another read for the body of specified length.
+      // This one is synchronous since the body should already be here.
+      Body.resize(PayloadSz);
+      boost::system::error_code Err2;
+      // size_t BytesRead =
+        asio::read(Sock, asio::buffer(Body), Err2);
+
+      if (Err2) {
+        std::cerr << "status @ body: " << Err2.message() << "\n";
+        return;
+      }
+
+      Callback(Kind, Body);
+    }
 
   };
 
