@@ -45,6 +45,8 @@ struct ClientSession {
 
   void listen() {
     Chan.async_recv([this](msg::Kind Kind, std::vector<char>& Body) {
+      std::cerr << "got msg ID " << (uint32_t) Kind << "\n";
+
         switch(Kind) {
           case msg::RawSample: {
             halo::pb::RawSample RS;
@@ -60,6 +62,9 @@ struct ClientSession {
             CE.ParseFromString(Blob);
 
             printProto(CE);
+
+            // TEST: request sampling.
+            // Chan.send(msg::StartSampling);
 
           } break;
 
@@ -103,7 +108,7 @@ private:
     // Garbage collection should be okay though?
 
     Acceptor.async_accept(Session.Socket,
-      [=](boost::system::error_code Err) {
+      [&](boost::system::error_code Err) {
         if(!Err) {
           std::cerr << "Accepted a new connection on port " << Port << "\n";
           Sessions.back().listen();

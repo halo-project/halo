@@ -8,7 +8,9 @@ namespace halo {
 typedef enum Kind_{
   None = 0,
   ClientEnroll = 1,
-  RawSample = 2
+  RawSample = 2,
+  StartSampling = 3,
+  StopSampling = 4
 } Kind;
 
 } // namespace msg
