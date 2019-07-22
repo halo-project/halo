@@ -8,7 +8,7 @@
 
 #include "boost/asio.hpp"
 
-#include "RawSample.pb.h"
+#include "Messages.pb.h"
 #include "MessageKind.h"
 #include "Channel.h"
 
@@ -38,7 +38,7 @@ struct ClientSession {
     Chan.async_recv([this](msg::Kind Kind, std::vector<char>& Body) {
         switch(Kind) {
           case msg::RawSample: {
-            halo::RawSample RS;
+            halo::pb::RawSample RS;
             std::string Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);
 

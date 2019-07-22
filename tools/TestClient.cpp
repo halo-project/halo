@@ -4,7 +4,7 @@
 #include "llvm/ADT/StringRef.h"
 
 
-#include "RawSample.pb.h"
+#include "Messages.pb.h"
 #include "MessageKind.h"
 #include "Channel.h"
 
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
 
   if (!Connected) return 1;
 
-  halo::RawSample RS;
+  halo::pb::RawSample RS;
   RS.set_instr_ptr(31337);
 
   client.Chan.send_proto(msg::RawSample, RS);
