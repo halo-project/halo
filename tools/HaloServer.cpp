@@ -3,8 +3,6 @@
 #include "llvm/BinaryFormat/MsgPackDocument.h"
 #include "llvm/Support/CommandLine.h"
 
-#include "google/protobuf/util/json_util.h"
-
 
 #include "boost/asio.hpp"
 
@@ -20,22 +18,12 @@ namespace cl = llvm::cl;
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
 namespace msg = halo::msg;
-namespace proto = google::protobuf;
 
 /////////////
 // Command-line Options
 cl::opt<uint32_t> CL_Port("port",
                        cl::desc("TCP port to listen on."),
                        cl::init(29000));
-
-template<typename T>
-void printProto(T &Proto) {
-  std::string AsJSON;
-  proto::util::JsonPrintOptions Opts;
-  Opts.add_whitespace = true;
-  proto::util::MessageToJsonString(Proto, &AsJSON, Opts);
-  std::cerr << AsJSON << "\n---\n";
-}
 
 struct ClientSession {
   ip::tcp::socket Socket;
@@ -53,7 +41,7 @@ struct ClientSession {
             std::string Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);
 
-            printProto(RS);
+            msg::print_proto(RS);
           } break;
 
           case msg::ClientEnroll: {
@@ -61,7 +49,7 @@ struct ClientSession {
             std::string Blob(Body.data(), Body.size());
             CE.ParseFromString(Blob);
 
-            printProto(CE);
+            msg::print_proto(CE);
 
             // TEST: request sampling.
             // Chan.send(msg::StartSampling);
