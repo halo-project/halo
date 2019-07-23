@@ -11,11 +11,12 @@ namespace halo {
   namespace msg {
     // NOTE: changing any of the existing numbers here breaks backwards compatibility.
     typedef enum Kind_{
-      None = 0,
+      None = 0, // an invalid message kind to detect default-value errors.
       ClientEnroll = 1,
       RawSample = 2,
       StartSampling = 3,
-      StopSampling = 4
+      StopSampling = 4,
+      Shutdown = 5 // Not actually sent by anybody. it's "recieved" when a connection closes or hit an error.
     } Kind;
 
     template<typename T> // type param here mainly to prevent multiple redefinition.

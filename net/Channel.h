@@ -71,7 +71,7 @@ namespace halo {
           asio::read(Sock, asio::buffer(&Hdr, sizeof(msg::Header)), Err1);
 
         if (Err1) {
-          std::cerr << "status: " << Err1.message() << "\n";
+          recv_error(Callback, Err1.message());
           return;
         }
 
@@ -88,13 +88,13 @@ namespace halo {
         // read the header
         asio::async_read(Sock, asio::buffer(HdrBuf, sizeof(msg::Header)),
           [=](boost::system::error_code Err1, size_t Size) {
-            if (Err1) {
-              std::cerr << "status: " << Err1.message() << "\n";
-              return;
-            }
-
             msg::Header Hdr = *HdrBuf;
             delete HdrBuf;
+
+            if (Err1) {
+              recv_error(Callback, Err1.message());
+              return;
+            }
 
             recv_body(Hdr, Callback);
           });
@@ -127,11 +127,19 @@ namespace halo {
         asio::read(Sock, asio::buffer(Body), Err2);
 
       if (Err2) {
-        std::cerr << "status @ body: " << Err2.message() << "\n";
+        recv_error(Callback, Err2);
         return;
       }
 
       Callback(Kind, Body);
+    }
+
+    template<typename T>
+    void recv_error(const std::function<void(msg::Kind, std::vector<char>&)> &Callback,
+                    T ErrMsg) {
+      std::cerr << "socket event: " << ErrMsg << "\n";
+      std::vector<char> Empty;
+      Callback(msg::Shutdown, Empty);
     }
 
   };

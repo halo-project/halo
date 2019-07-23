@@ -45,13 +45,17 @@ struct ClientSession {
       std::cerr << "got msg ID " << (uint32_t) Kind << "\n";
 
         switch(Kind) {
+          case msg::Shutdown: {
+            std::cerr << "client session terminated.\n";
+          } return; // NOTE: the return.
+
           case msg::RawSample: {
             if (!Sampling)
               std::cerr << "warning: recieved sample data while not asking for it.\n";
 
             RawSamples.emplace_back();
             pb::RawSample &RS = RawSamples.back();
-            
+
             std::string Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);
 
