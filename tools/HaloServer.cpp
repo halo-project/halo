@@ -25,9 +25,18 @@ cl::opt<uint32_t> CL_Port("port",
                        cl::desc("TCP port to listen on."),
                        cl::init(29000));
 
+namespace halo {
+
 struct ClientSession {
   ip::tcp::socket Socket;
-  halo::Channel Chan;
+  Channel Chan;
+
+  bool Enrolled = false;
+  bool Sampling = false;
+  pb::ClientEnroll Client;
+
+  std::vector<pb::RawSample> RawSamples;
+
   ClientSession(asio::io_service &IOService) :
     Socket(IOService), Chan(Socket) {}
 
@@ -37,7 +46,12 @@ struct ClientSession {
 
         switch(Kind) {
           case msg::RawSample: {
-            halo::pb::RawSample RS;
+            if (!Sampling)
+              std::cerr << "warning: recieved sample data while not asking for it.\n";
+
+            RawSamples.emplace_back();
+            pb::RawSample &RS = RawSamples.back();
+            
             std::string Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);
 
@@ -45,14 +59,18 @@ struct ClientSession {
           } break;
 
           case msg::ClientEnroll: {
-            halo::pb::ClientEnroll CE;
+            if (Enrolled)
+              std::cerr << "warning: recieved client enroll when already enrolled!\n";
+            Enrolled = true;
+
             std::string Blob(Body.data(), Body.size());
-            CE.ParseFromString(Blob);
+            Client.ParseFromString(Blob);
 
-            msg::print_proto(CE);
+            msg::print_proto(Client);
 
-            // TEST: request sampling.
-            // Chan.send(msg::StartSampling);
+            // TEST: request sampling right away.
+            Sampling = true;
+            Chan.send(msg::StartSampling);
 
           } break;
 
@@ -106,13 +124,15 @@ private:
   }
 };
 
+} // end namespace halo
+
 
 int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv, "Halo Server\n");
 
   asio::io_service IOService;
 
-  ClientRegistrar CR(IOService, CL_Port);
+  halo::ClientRegistrar CR(IOService, CL_Port);
 
   IOService.run();
 
