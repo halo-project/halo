@@ -11,6 +11,16 @@ message FunctionInfo {
   uint64 start = 3;
 }
 
+message ModuleInfo {
+  string obj_path = 1;
+  uint64 vma_start = 2;
+  uint64 vma_end = 3;
+  uint64 vma_delta = 4;
+  repeated string build_flags = 5;
+  repeated FunctionInfo funcs = 6;
+  bytes bitcode = 7;
+}
+
 message ProcessInfo {
   bytes bitcode = 1;
 }
@@ -37,14 +47,12 @@ message BranchInfo {
 // First message expected by the server upon connection with information about
 // the client.
 message ClientEnroll {
-  string exe_path = 1;
-  string process_triple = 2;
-  string host_cpu = 3;
-  string build_cmd = 4;
-  // TODO: some sort of SHA hash of the object file. This way clients running
-  // identical code don't have to send bitcode if the server already has it.
+  string process_triple = 1;
+  string host_cpu = 2;
 
-  repeated FunctionInfo funcs = 5;
+  // TODO: some sort of SHA hash of the object file. This way clients running
+  // identical code don't have to send bitcode if the server already has it?
+  ModuleInfo module = 3;
 }
 
 
