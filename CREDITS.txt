@@ -1,0 +1,15 @@
+This file is a partial list of people who have contributed to the Halo
+project. If you have contributed a patch or made some other contribution to
+Halo, please submit a patch to this file to add yourself, and it will be
+done!
+
+The list is sorted by surname and formatted to allow easy grepping and
+beautification by scripts.  The fields are: name (N), email (E), web-address
+(W), PGP key ID and fingerprint (P), description (D), and snail-mail address
+(S).
+
+N: Kavon Farvardin
+E: kavon@farvard.in
+W: https://kavon.farvard.in/
+P: https://kavon.farvard.in/files/public_gpg.asc
+D: Main developer.
