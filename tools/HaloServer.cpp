@@ -2,6 +2,8 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/BinaryFormat/MsgPackDocument.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/ThreadPool.h"
+#include "llvm/Support/TaskQueue.h"
 
 
 #include "boost/asio.hpp"
@@ -30,6 +32,9 @@ namespace halo {
 struct ClientSession {
   ip::tcp::socket Socket;
   Channel Chan;
+  llvm::TaskQueue Queue;
+
+  // all fields below here must be accessed through the sequential task queue.
 
   bool Enrolled = false;
   bool Sampling = false;
@@ -37,8 +42,8 @@ struct ClientSession {
 
   std::vector<pb::RawSample> RawSamples;
 
-  ClientSession(asio::io_service &IOService) :
-    Socket(IOService), Chan(Socket) {}
+  ClientSession(asio::io_service &IOService, llvm::ThreadPool &TPool) :
+    Socket(IOService), Chan(Socket), Queue(TPool) {}
 
   void listen() {
     Chan.async_recv([this](msg::Kind Kind, std::vector<char>& Body) {
@@ -53,28 +58,42 @@ struct ClientSession {
             if (!Sampling)
               std::cerr << "warning: recieved sample data while not asking for it.\n";
 
-            RawSamples.emplace_back();
-            pb::RawSample &RS = RawSamples.back();
-
+            // copy the data out into a string and save it by value in closure
             std::string Blob(Body.data(), Body.size());
-            RS.ParseFromString(Blob);
 
-            msg::print_proto(RS);
+            Queue.async([this,Blob](){
+              RawSamples.emplace_back();
+              pb::RawSample &RS = RawSamples.back();
+              RS.ParseFromString(Blob);
+              // msg::print_proto(RS); // DEBUG
+
+              if (RawSamples.size() > 10)
+                Queue.async([this](){
+                  // TODO: process samples
+                  RawSamples.clear();
+                });
+
+            });
+
           } break;
 
           case msg::ClientEnroll: {
             if (Enrolled)
               std::cerr << "warning: recieved client enroll when already enrolled!\n";
-            Enrolled = true;
 
             std::string Blob(Body.data(), Body.size());
-            Client.ParseFromString(Blob);
 
-            msg::print_proto(Client);
+            Queue.async([this,Blob](){
+              Client.ParseFromString(Blob);
+              msg::print_proto(Client); // DEBUG
 
-            // TEST: request sampling right away.
-            Sampling = true;
-            Chan.send(msg::StartSampling);
+              // process this new enrollment
+
+
+              Enrolled = true;
+              Sampling = true;
+              Chan.send(msg::StartSampling);
+            });
 
           } break;
 
@@ -92,8 +111,9 @@ struct ClientSession {
 
 class ClientRegistrar {
 public:
-  ClientRegistrar(asio::io_service &service, uint32_t port)
-      : Port(port),
+  ClientRegistrar(asio::io_service &service, uint32_t port, llvm::ThreadPool &TPool)
+      : Pool(TPool),
+        Port(port),
         IOService(service),
         Endpoint(ip::tcp::v4(), Port),
         Acceptor(IOService, Endpoint) {
@@ -101,6 +121,7 @@ public:
         }
 
 private:
+  llvm::ThreadPool &Pool;
   uint32_t Port;
   asio::io_service &IOService;
   ip::tcp::endpoint Endpoint;
@@ -110,7 +131,7 @@ private:
   std::list<ClientSession> Sessions;
 
   void accept_loop() {
-    Sessions.emplace_back(IOService);
+    Sessions.emplace_back(IOService, Pool);
     auto &Session = Sessions.back();
     // NOTE: can't capture 'Session' in the lambda,
     // so currently I'm assuming we never call accept_loop
@@ -134,9 +155,10 @@ private:
 int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv, "Halo Server\n");
 
+  llvm::ThreadPool WorkPool;
   asio::io_service IOService;
 
-  halo::ClientRegistrar CR(IOService, CL_Port);
+  halo::ClientRegistrar CR(IOService, CL_Port, WorkPool);
 
   IOService.run();
 
