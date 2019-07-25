@@ -1,6 +1,4 @@
 
-#include "llvm/ADT/StringRef.h"
-#include "llvm/BinaryFormat/MsgPackDocument.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ThreadPool.h"
 #include "llvm/Support/TaskQueue.h"
@@ -8,9 +6,12 @@
 
 #include "boost/asio.hpp"
 
+// from the 'net' dir
 #include "Messages.pb.h"
 #include "MessageKind.h"
 #include "Channel.h"
+
+#include "halo/CodeRegionInfo.h"
 
 #include <cinttypes>
 #include <iostream>
@@ -30,15 +31,16 @@ cl::opt<uint32_t> CL_Port("port",
 namespace halo {
 
 struct ClientSession {
+  // thread-safe members
   ip::tcp::socket Socket;
   Channel Chan;
   llvm::TaskQueue Queue;
 
   // all fields below here must be accessed through the sequential task queue.
-
   bool Enrolled = false;
   bool Sampling = false;
   pb::ClientEnroll Client;
+  CodeRegionInfo CRI;
 
   std::vector<pb::RawSample> RawSamples;
 
@@ -47,7 +49,7 @@ struct ClientSession {
 
   void listen() {
     Chan.async_recv([this](msg::Kind Kind, std::vector<char>& Body) {
-      std::cerr << "got msg ID " << (uint32_t) Kind << "\n";
+      // std::cerr << "got msg ID " << (uint32_t) Kind << "\n";
 
         switch(Kind) {
           case msg::Shutdown: {
@@ -66,6 +68,11 @@ struct ClientSession {
               pb::RawSample &RS = RawSamples.back();
               RS.ParseFromString(Blob);
               // msg::print_proto(RS); // DEBUG
+
+              auto Info = CRI.lookup(RS.instr_ptr());
+
+              if (Info)
+                std::cerr << "sample from " << Info.getValue()->Name << "\n";
 
               if (RawSamples.size() > 10)
                 Queue.async([this](){
@@ -88,10 +95,12 @@ struct ClientSession {
               msg::print_proto(Client); // DEBUG
 
               // process this new enrollment
-
+              CRI.init(Client);
 
               Enrolled = true;
               Sampling = true;
+
+              // ask to sample right away for now.
               Chan.send(msg::StartSampling);
             });
 

@@ -20,7 +20,7 @@ if (NOT HALO_NET_DIR)
 endif()
 
 file(GLOB HALO_PROTO_FILES "${HALO_NET_DIR}/*.proto")
-include_directories(${HALO_NET_DIR}) # there are static header files in here.
+include_directories(${HALO_NET_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 
 #######################

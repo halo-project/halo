@@ -5,6 +5,7 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${HALO_PROTO_FILES})
 add_executable(${SERVER_BIN}
   HaloServer.cpp
   Error.cpp
+  CodeRegionInfo.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}
 )

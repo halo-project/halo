@@ -1,15 +1,10 @@
 #pragma once
 
-#include <cinttypes>
-#include <memory>
 #include <vector>
-
-#include "halomon/Client.h"
+#include <map>
 
 #include "llvm/ADT/Optional.h"
-#include "llvm/ADT/StringRef.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/Host.h" // for getProcessTriple
+// #include "llvm/IR/Module.h"
 
 // Function interface reference:
 // https://www.boost.org/doc/libs/1_65_0/libs/icl/doc/html/boost_icl/interface/function_synopsis.html
@@ -27,24 +22,38 @@ namespace icl = boost::icl;
 namespace halo {
 
 
-struct CodeSectionInfo {
-private:
-  using CodeMap = icl::interval_map<uint64_t, std::shared_ptr<pb::FunctionInfo>,
+struct FunctionInfo {
+    std::string Name;
+    FunctionInfo(std::string name) : Name(name) {}
+};
+
+class CodeRegionInfo {
+private:                                    // unique_ptr doesn't seem to work
+  using CodeMap = icl::interval_map<uint64_t, std::shared_ptr<FunctionInfo>,
                                     icl::partial_enricher>;
-public:
+
   CodeMap AddrMap;
   uint64_t VMABase;
+public:
+
+  void init(pb::ClientEnroll const& CE);
+
+  llvm::Optional<FunctionInfo*> lookup(uint64_t IP) const;
+
 
   // NOTE: possible double-free if Context outlives Module.
-  std::unique_ptr<llvm::LLVMContext> Cxt;
-  std::unique_ptr<llvm::Module> Module;
-
-  CodeSectionInfo () : Cxt(new llvm::LLVMContext()) {}
-
-  void dumpModule() const { Module->print(llvm::errs(), nullptr); }
+  // std::unique_ptr<llvm::LLVMContext> Cxt;
+  // std::unique_ptr<llvm::Module> Module;
+  //
+  // CodeSectionInfo () : Cxt(new llvm::LLVMContext()) {}
+  //
+  // void dumpModule() const { Module->print(llvm::errs(), nullptr); }
 };
 
 
+/* NOTE: currently assuming only one code region. below is old infrastructure
+         that had multiple disjoint code regions in mind (e.g., handle shared
+        libs with bitcode). Not currently a priority.
 class CodeRegionInfo {
 public:
 
@@ -52,13 +61,12 @@ public:
 
   ~CodeRegionInfo() {}
 
-  llvm::Optional<pb::FunctionInfo*> lookup(uint64_t IP) const;
-  void loadObjFile(std::string Path);
+  // llvm::Optional<pb::FunctionInfo*> lookup(uint64_t IP) const;
 
-  void dumpModules() const {
-    for (const auto &CSI : Data)
-      CSI.dumpModule();
-  }
+  // void dumpModules() const {
+  //   for (const auto &CSI : Data)
+  //     CSI.dumpModule();
+  // }
 
 private:
   // interval map FROM code address offset TO function information
@@ -83,27 +91,6 @@ private:
   std::vector<CodeSectionInfo> Data;
 
 };
-
-
-class Profiler {
-public:
-  void dumpSamples() const;
-
-  Profiler(std::string SelfBinPath) {
-    CRI.loadObjFile(SelfBinPath);
-
-    // CRI.dumpModules();
-  }
-
-  ~Profiler() {}
-
-private:
-
-  std::vector<pb::RawSample> RawSamples;
-
-  CodeRegionInfo CRI;
-
-};
-
+*/
 
 } // end halo namespace
