@@ -24,12 +24,15 @@ namespace halo {
 
 struct FunctionInfo {
     std::string Name;
+
+    // Ideally this would also provide block info.
+    
     FunctionInfo(std::string name) : Name(name) {}
 };
 
 class CodeRegionInfo {
-private:                                    // unique_ptr doesn't seem to work
-  using CodeMap = icl::interval_map<uint64_t, std::shared_ptr<FunctionInfo>,
+private:
+  using CodeMap = icl::interval_map<uint64_t, FunctionInfo*,
                                     icl::partial_enricher>;
 
   CodeMap AddrMap;
@@ -39,6 +42,15 @@ public:
   void init(pb::ClientEnroll const& CE);
 
   llvm::Optional<FunctionInfo*> lookup(uint64_t IP) const;
+
+  ~CodeRegionInfo() {
+    // unfortunately, we can't use unique_ptr as an element type in this map
+    // so we have to use new/delete.
+    for (auto Pair : AddrMap) {
+      FunctionInfo *FI = Pair.second;
+      delete FI;
+    }
+  }
 
 
   // NOTE: possible double-free if Context outlives Module.

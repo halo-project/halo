@@ -12,9 +12,7 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
     uint64_t End = Start + FI.size();
     auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
 
-    auto Info = std::shared_ptr<FunctionInfo>(new FunctionInfo(FI.label()));
-
-    AddrMap.insert(std::make_pair(FuncRange, std::move(Info)));
+    AddrMap.insert(std::make_pair(FuncRange, new FunctionInfo(FI.label())));
   }
 }
 
@@ -25,7 +23,7 @@ llvm::Optional<FunctionInfo*> CodeRegionInfo::lookup(uint64_t IP) const {
   if (FI == AddrMap.end())
     return llvm::None;
 
-  return FI->second.get();
+  return FI->second;
 }
 
 // some old code dealing with parsing of LLVM bitcode
