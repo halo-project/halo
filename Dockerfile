@@ -32,4 +32,4 @@ RUN ./fresh-build.sh docker \
     && rm -rf llvm-project build
 
 # when the image is run, start halo server by default.
-# CMD halo-server
+CMD haloserver

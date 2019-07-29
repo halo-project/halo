@@ -169,6 +169,9 @@ int main(int argc, char* argv[]) {
 
   halo::ClientRegistrar CR(IOService, CL_Port, WorkPool);
 
+  std::cout << "Started Halo Server.\nListening on port "
+            << CL_Port << std::endl;
+
   IOService.run();
 
   return 0;
