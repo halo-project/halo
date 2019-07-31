@@ -47,6 +47,7 @@ NETWORK_DIR="-DHALO_NET_DIR=$(pwd)/net"
 # environment specific build options / overrides
 if [ "${ENV_KIND}" == "docker" ]; then
   OPTIONS="" # want to install system-wide
+  BUILD_TARGETS="test-halo ${BUILD_TARGETS}"  # run tests first!
 
 elif [ "${ENV_KIND}" == "local" ]; then
   # by default, we install locally anyways.

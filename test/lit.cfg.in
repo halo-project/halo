@@ -1,0 +1,21 @@
+########################################################
+# THIS FILE IS AUTO-GENERATED. ONLY EDIT lit.cfg.in !! #
+########################################################
+
+import lit.formats
+import lit.util
+import os
+
+config.name = 'halo'
+config.suffixes = ['.c', '.cpp']
+
+config.test_format = lit.formats.ShTest(True)
+
+config.test_source_root = "@CMAKE_CURRENT_SOURCE_DIR@"
+config.test_exec_root = "@CMAKE_CURRENT_BINARY_DIR@"
+
+config.environment['PATH'] = os.pathsep.join(["@LLVM_TOOLS_BINARY_DIR@"] + [ config.environment['PATH'] ])
+
+########
+## substitutions
+config.substitutions.append(('%clang', os.path.join("@LLVM_TOOLS_BINARY_DIR@", "clang")))

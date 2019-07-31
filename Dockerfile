@@ -2,9 +2,11 @@ FROM ubuntu:18.04
 
 ### NOTES
 # 1. You must run this image with:  --cap-add sys_admin
-#    in order to use perf_events.
+#    in order to run programs compiled for Halo, because
+#    they utilize perf_events. If you are just running
+#    Halo Server, this is not required.
 #
-# 2. see https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+# 2. For self: https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #    for tips on writing a good docker file.
 
 # install dependencies.
@@ -15,9 +17,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       ninja-build \
       cmake \
       python2.7 \
+      python-pip \
       zlib1g \
       libprotobuf-dev \
       protobuf-compiler \
+    && pip install lit
     && rm -rf /var/lib/apt/lists/*
 
 # copy over source code to the image
@@ -27,7 +31,6 @@ COPY . /tmp/halo
 WORKDIR /tmp/halo
 
 # build and clean-up
-# TODO: run test suite before cleanup!
 RUN ./fresh-build.sh docker \
     && rm -rf llvm-project build
 
