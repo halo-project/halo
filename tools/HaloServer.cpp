@@ -28,13 +28,24 @@ cl::opt<uint32_t> CL_Port("port",
                        cl::desc("TCP port to listen on."),
                        cl::init(29000));
 
+cl::opt<bool> CL_NoPersist("no-persist",
+                      cl::desc("Quit once all clients have disconnected."),
+                      cl::init(false));
+
 namespace halo {
+
+enum SessionStatus {
+  Fresh,
+  Active,
+  Dead
+};
 
 struct ClientSession {
   // thread-safe members
   ip::tcp::socket Socket;
   Channel Chan;
   llvm::TaskQueue Queue;
+  std::atomic<enum SessionStatus> Status;
 
   // all fields below here must be accessed through the sequential task queue.
   bool Enrolled = false;
@@ -45,7 +56,12 @@ struct ClientSession {
   std::vector<pb::RawSample> RawSamples;
 
   ClientSession(asio::io_service &IOService, llvm::ThreadPool &TPool) :
-    Socket(IOService), Chan(Socket), Queue(TPool) {}
+    Socket(IOService), Chan(Socket), Queue(TPool), Status(Fresh) {}
+
+  void start() {
+    Status = Active;
+    listen();
+  }
 
   void listen() {
     Chan.async_recv([this](msg::Kind Kind, std::vector<char>& Body) {
@@ -53,8 +69,12 @@ struct ClientSession {
 
         switch(Kind) {
           case msg::Shutdown: {
-            std::cerr << "client session terminated.\n";
-          } return; // NOTE: the return.
+            // NOTE: we enqueue this so that the job queue is flushed out.
+            Queue.async([this](){
+              std::cerr << "client session terminated.\n";
+              Status = Dead;
+            });
+          } return; // NOTE: the return to ensure no more recvs are serviced.
 
           case msg::RawSample: {
             if (!Sampling)
@@ -129,6 +149,26 @@ public:
           accept_loop();
         }
 
+  // only safe to call within the IOService. Use io_service::dispatch.
+  // returns the number of sessions removed.
+  void cleanup() {
+    auto it = Sessions.begin();
+    size_t removed = 0;
+    while(it != Sessions.end()) {
+      if (it->Status == Dead)
+        { it = Sessions.erase(it); removed++; }
+      else
+        it++;
+    }
+    assert(removed <= ActiveSessions);
+    ActiveSessions -= removed;
+  }
+
+  void consider_shutdown() {
+    if (CL_NoPersist && TotalSessions > 0 && ActiveSessions == 0)
+      IOService.stop();
+  }
+
 private:
   llvm::ThreadPool &Pool;
   uint32_t Port;
@@ -136,8 +176,10 @@ private:
   ip::tcp::endpoint Endpoint;
   ip::tcp::acceptor Acceptor;
 
-  // TODO: periodically garbage collect dead sessions?
+  // these fields must only be accessed by the IOService's thread.
   std::list<ClientSession> Sessions;
+  size_t ActiveSessions = 0;
+  size_t TotalSessions = 0;
 
   void accept_loop() {
     Sessions.emplace_back(IOService, Pool);
@@ -151,7 +193,8 @@ private:
       [&](boost::system::error_code Err) {
         if(!Err) {
           std::cerr << "Accepted a new connection on port " << Port << "\n";
-          Sessions.back().listen();
+          TotalSessions++; ActiveSessions++;
+          Sessions.back().start();
         }
         accept_loop();
       });
@@ -169,11 +212,23 @@ int main(int argc, char* argv[]) {
 
   halo::ClientRegistrar CR(IOService, CL_Port, WorkPool);
 
+  std::thread io_thread([&](){ IOService.run(); });
+
   std::cout << "Started Halo Server.\nListening on port "
             << CL_Port << std::endl;
 
-  IOService.run();
+  // loop that dispatches clean-up actions in the io_thread.
+  do {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+    IOService.dispatch([&](){
+      CR.cleanup();
+      CR.consider_shutdown();
+    });
+
+  } while (!IOService.stopped());
+
+  io_thread.join();
 
   return 0;
-
 }
