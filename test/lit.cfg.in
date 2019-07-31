@@ -18,4 +18,9 @@ config.environment['PATH'] = os.pathsep.join(["@LLVM_TOOLS_BINARY_DIR@"] + [ con
 
 ########
 ## substitutions
-config.substitutions.append(('%clang', os.path.join("@LLVM_TOOLS_BINARY_DIR@", "clang")))
+config.substitutions.append(('%clang', "clang"))
+
+config.substitutions.append(('%server', "haloserver"))
+
+config.substitutions.append(('%testhalo',
+                            os.path.join(config.test_source_root, "util", "run_test.sh")))
