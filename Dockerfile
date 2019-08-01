@@ -22,8 +22,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       zlib1g \
       libprotobuf-dev \
       protobuf-compiler \
-    && pip install lit \
-    && rm -rf /var/lib/apt/lists/*
+  && python -m pip install --no-cache --upgrade pip setuptools wheel \
+  && python -m pip install --no-cache lit \
+  && rm -rf /var/lib/apt/lists/*
 
 # copy over source code to the image
 COPY . /tmp/halo
