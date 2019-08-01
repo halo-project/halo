@@ -28,14 +28,17 @@ cl::opt<uint32_t> CL_Port("port",
                        cl::desc("TCP port to listen on."),
                        cl::init(29000));
 
-// These options are mainly to aid in testing.
+//////////
+// These options are mainly to aid in building a test suite.
 
 cl::opt<bool> CL_NoPersist("no-persist",
-                      cl::desc("Quit once all clients have disconnected."),
+                      cl::desc("Gracefully quit once all clients have disconnected."),
                       cl::init(false));
 
-cl::opt<uint32_t> CL_Timeout("timeout",
-                      cl::desc("Quit with an error if N seconds have passed without a shutdown. Zero means disabled."),
+// NOTE: the timeout is really "at least N seconds". This is meant to prevent the
+// test suite from running forever, so set it much higher than you expect to need.
+cl::opt<uint32_t> CL_TimeoutSec("timeout",
+                      cl::desc("Quit with non-zero exit code if N seconds have elapsed. Zero means disabled."),
                       cl::init(0));
 
 namespace halo {
@@ -227,14 +230,17 @@ int main(int argc, char* argv[]) {
 
   // loop that dispatches clean-up actions in the io_thread.
   const uint32_t SleepMS = 1000;
-  const bool TimeLimited = CL_Timeout > 0;
-  int64_t RemainingTime = CL_Timeout;
+  const bool TimeLimited = CL_TimeoutSec > 0;
+  int64_t RemainingTime = CL_TimeoutSec * 1000;
   bool ForceShutdown = false;
 
   do {
     std::this_thread::sleep_for(std::chrono::milliseconds(SleepMS));
-    RemainingTime -= SleepMS;
-    ForceShutdown = TimeLimited && RemainingTime <= 0;
+
+    if (TimeLimited) {
+      RemainingTime -= SleepMS;
+      ForceShutdown = RemainingTime <= 0;
+    }
 
     IOService.dispatch([&](){
       CR.cleanup();
