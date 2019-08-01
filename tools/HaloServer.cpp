@@ -28,9 +28,15 @@ cl::opt<uint32_t> CL_Port("port",
                        cl::desc("TCP port to listen on."),
                        cl::init(29000));
 
+// These options are mainly to aid in testing.
+
 cl::opt<bool> CL_NoPersist("no-persist",
                       cl::desc("Quit once all clients have disconnected."),
                       cl::init(false));
+
+cl::opt<uint32_t> CL_Timeout("timeout",
+                      cl::desc("Quit with an error if N seconds have passed without a shutdown. Zero means disabled."),
+                      cl::init(0));
 
 namespace halo {
 
@@ -164,9 +170,11 @@ public:
     ActiveSessions -= removed;
   }
 
-  void consider_shutdown() {
-    if (CL_NoPersist && TotalSessions > 0 && ActiveSessions == 0)
+  void consider_shutdown(bool ForcedShutdown) {
+    if (ForcedShutdown ||
+        (CL_NoPersist && TotalSessions > 0 && ActiveSessions == 0)) {
       IOService.stop();
+    }
   }
 
 private:
@@ -218,17 +226,27 @@ int main(int argc, char* argv[]) {
             << CL_Port << std::endl;
 
   // loop that dispatches clean-up actions in the io_thread.
+  const uint32_t SleepMS = 1000;
+  const bool TimeLimited = CL_Timeout > 0;
+  int64_t RemainingTime = CL_Timeout;
+  bool ForceShutdown = false;
+
   do {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(SleepMS));
+    RemainingTime -= SleepMS;
+    ForceShutdown = TimeLimited && RemainingTime <= 0;
 
     IOService.dispatch([&](){
       CR.cleanup();
-      CR.consider_shutdown();
+      CR.consider_shutdown(ForceShutdown);
     });
 
   } while (!IOService.stopped());
 
   io_thread.join();
+
+  if (ForceShutdown)
+    return 1;
 
   return 0;
 }

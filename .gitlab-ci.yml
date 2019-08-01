@@ -22,8 +22,11 @@ test:
   stage: test
   script:
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run --cap-add sys_admin $CONTAINER_TEST_IMAGE /script/to/run/tests
-
+    - docker run --cap-add sys_admin -w /tmp/halo/build $CONTAINER_TEST_IMAGE ninja test-halo
+        # TODO: figure out how we can delete /tmp/halo after tests.
+        # I believe we have to make another dockerfile that uses $CONTAINER_TEST_IMAGE
+        # as the base and then deletes the dir, then push that image.
+    - docker run --cap-add sys_admin -w /tmp/halo/test/util $CONTAINER_TEST_IMAGE ./docker-post-install.sh
 
 release-image:
   stage: release

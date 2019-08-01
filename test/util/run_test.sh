@@ -6,7 +6,7 @@ SERVER_EXE=$1
 NUM_CLIENTS=$2
 PROG_EXE=$3
 
-${SERVER_EXE} --no-persist &
+${SERVER_EXE} --no-persist --timeout 30 &
 SERVER_PID=$!
 sleep 1s
 

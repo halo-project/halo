@@ -32,9 +32,8 @@ COPY . /tmp/halo
 # set the working directory
 WORKDIR /tmp/halo
 
-# build and clean-up
-RUN ./fresh-build.sh docker \
-    && rm -rf llvm-project
+# build
+RUN ./fresh-build.sh docker
 
 # when the image is run, start halo server by default.
 CMD haloserver
