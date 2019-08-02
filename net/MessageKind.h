@@ -16,7 +16,8 @@ namespace halo {
       RawSample = 2,
       StartSampling = 3,
       StopSampling = 4,
-      Shutdown = 5 // Not actually sent by anybody. it's "recieved" when a connection closes or hit an error.
+      Shutdown = 5, // Not actually sent by anybody. it's "recieved" when a connection closes or hit an error.
+      CodeReplacement = 6
     } Kind;
 
     template<typename T> // type param here mainly to prevent multiple redefinition.

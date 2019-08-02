@@ -34,5 +34,5 @@ include_directories(${Protobuf_INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
 add_definitions(${LLVM_DEFINITIONS} -DGOOGLE_PROTOBUF_NO_RTTI -DBOOST_EXCEPTION_DISABLE -DBOOST_NO_RTTI)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti")
 
-add_subdirectory(tools)
+add_subdirectory(tools/haloserver)
 add_subdirectory(test)

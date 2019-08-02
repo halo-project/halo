@@ -63,3 +63,11 @@ message RawSample {
   repeated uint64 call_context = 4;
   repeated BranchInfo branch = 5;
 }
+
+///////////////////// Server -> Client /////////////////////////
+
+message CodeReplacement {
+  uint64 func_addr = 1;
+  string func_name = 2;
+  bytes asm = 3;
+}
