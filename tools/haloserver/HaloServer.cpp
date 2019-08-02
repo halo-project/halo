@@ -173,11 +173,20 @@ public:
     ActiveSessions -= removed;
   }
 
-  void consider_shutdown(bool ForcedShutdown) {
+  bool consider_shutdown(bool ForcedShutdown) {
     if (ForcedShutdown ||
         (CL_NoPersist && TotalSessions > 0 && ActiveSessions == 0)) {
       IOService.stop();
+      return true;
     }
+    return false;
+  }
+
+  template <typename T>
+  void run_service(T Callable) {
+      for (ClientSession &CS : Sessions)
+        if (CS.Status == Active)
+          Callable(CS);
   }
 
 private:
@@ -210,7 +219,19 @@ private:
         accept_loop();
       });
   }
-};
+}; // end class ClientRegistrar
+
+// TODO: this needs to move into its own module.
+void service_session(ClientSession &CS) {
+  std::cout << "servicing active session...\n";
+
+  // to work up to code replacement, implement the following:
+  // 1. determine which function is the hottest for this session.
+  // 2. send a request to client to begin timing the execution of the function.
+
+  // then work on halomon's ability to service such a timing request.
+
+}
 
 } // end namespace halo
 
@@ -228,12 +249,12 @@ int main(int argc, char* argv[]) {
   std::cout << "Started Halo Server.\nListening on port "
             << CL_Port << std::endl;
 
-  // loop that dispatches clean-up actions in the io_thread.
   const uint32_t SleepMS = 1000;
   const bool TimeLimited = CL_TimeoutSec > 0;
   int64_t RemainingTime = CL_TimeoutSec * 1000;
   bool ForceShutdown = false;
 
+  // The main event loop that dispatches work, etc.
   do {
     std::this_thread::sleep_for(std::chrono::milliseconds(SleepMS));
 
@@ -242,11 +263,15 @@ int main(int argc, char* argv[]) {
       ForceShutdown = RemainingTime <= 0;
     }
 
+    // Modifications to the CR's state should occur in the IOService thread.
     IOService.dispatch([&](){
       CR.cleanup();
-      CR.consider_shutdown(ForceShutdown);
-    });
 
+      if (CR.consider_shutdown(ForceShutdown))
+        return;
+
+      CR.run_service(halo::service_session);
+    });
   } while (!IOService.stopped());
 
   io_thread.join();
