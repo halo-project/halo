@@ -38,7 +38,7 @@ BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"  # all those that support JIT
 TYPE="Release"
 PROJECTS="clang;compiler-rt"
 OPTIONS="-DCMAKE_INSTALL_PREFIX=../install"
-BUILD_TARGETS="install-haloserver install-halomon install-clang"
+BUILD_TARGETS="install-haloserver install-halomon install-clang install-clang-resource-headers"
 
 # NOTE: we build halo server as an external LLVM project.
 OURSELVES="-DLLVM_EXTERNAL_PROJECTS=haloserver -DLLVM_EXTERNAL_HALOSERVER_SOURCE_DIR=$(pwd)"

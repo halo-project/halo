@@ -12,7 +12,7 @@
 // Given enough iterations, the hailstone sequence will dominate the running
 // time both in aggregate and snapshot.
 
-// #include <cstdlib>
+#include <cstdio>
 
 #define NO_INLINE __attribute__((noinline))
 
@@ -82,6 +82,8 @@ int main() //(int argc, const char **argv)
       return 0;
     }
 
-    // printf("stoneSteps = %ul\n", stoneSteps); // force the value to be used.
+    // to ensure the computation doesn't get optimized away.
+    printf("stoneSteps = %lu\n", stoneSteps);
+
     return 1;
 }
