@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       zlib1g \
       libprotobuf-dev \
       protobuf-compiler \
-      libncurses5 \
+      libncurses5-dev \
   && python -m pip install --no-cache --upgrade pip setuptools wheel \
   && python -m pip install --no-cache lit \
   && rm -rf /var/lib/apt/lists/*
