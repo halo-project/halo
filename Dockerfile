@@ -10,7 +10,7 @@ FROM ubuntu:18.04
 # 2. For self: https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #    for tips on writing a good docker file.
 
-# install dependencies.
+# install dependencies. NOTE: curses really shouldn't be required I think.
 RUN apt-get update && apt-get install --no-install-recommends -y \
       g++ \
       libboost-system-dev \
@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       zlib1g \
       libprotobuf-dev \
       protobuf-compiler \
+      libncurses5 \
   && python -m pip install --no-cache --upgrade pip setuptools wheel \
   && python -m pip install --no-cache lit \
   && rm -rf /var/lib/apt/lists/*

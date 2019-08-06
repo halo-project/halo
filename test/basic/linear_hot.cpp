@@ -12,6 +12,8 @@
 // Given enough iterations, the hailstone sequence will dominate the running
 // time both in aggregate and snapshot.
 
+// #include <cstdlib>
+
 #define NO_INLINE __attribute__((noinline))
 
 // knobs to control workload
@@ -44,30 +46,35 @@ NO_INLINE unsigned long fib(unsigned long n) {
   return fib_left(n);
 }
 
-NO_INLINE void compute_hailstone(long limit) {
+NO_INLINE long compute_hailstone(long limit) {
   long x = START_HAILSTONE;
   long reachedOne = 0;
+  long totalSteps = 0;
 
   while (reachedOne < limit) {
     if (x == 1) {
-      x = START_HAILSTONE;
+      x = START_HAILSTONE + reachedOne;
       reachedOne++;
     }
+    totalSteps++;
 
     if (x % 2 == 0)
       x = x / 2;
     else
       x = 3 * x + 1;
   }
+
+  return totalSteps;
 }
 
 int main() //(int argc, const char **argv)
 {
     unsigned long ans = 0;
+    unsigned long stoneSteps = 0;
     int i;
 
     for (i = -NUM_FIB_ONLY; i < ITERS; i++) {
-      compute_hailstone(500'000 * i);
+      stoneSteps += compute_hailstone(500'000 * i);
       ans += fib(START_FIB);
     }
 
@@ -75,5 +82,6 @@ int main() //(int argc, const char **argv)
       return 0;
     }
 
+    // printf("stoneSteps = %ul\n", stoneSteps); // force the value to be used.
     return 1;
 }
