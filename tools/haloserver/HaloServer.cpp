@@ -11,7 +11,7 @@
 #include "MessageKind.h"
 #include "Channel.h"
 
-#include "halo/CodeRegionInfo.h"
+#include "halo/Profiler.h"
 
 #include <cinttypes>
 #include <iostream>
@@ -60,12 +60,13 @@ struct ClientSession {
   bool Enrolled = false;
   bool Sampling = false;
   pb::ClientEnroll Client;
-  CodeRegionInfo CRI;
+  Profiler Profile;
 
   std::vector<pb::RawSample> RawSamples;
 
   ClientSession(asio::io_service &IOService, llvm::ThreadPool &TPool) :
-    Socket(IOService), Chan(Socket), Queue(TPool), Status(Fresh) {}
+    Socket(IOService), Chan(Socket), Queue(TPool), Status(Fresh),
+    Profile(Client) {}
 
   void start() {
     Status = Active;
@@ -98,15 +99,12 @@ struct ClientSession {
               RS.ParseFromString(Blob);
               // msg::print_proto(RS); // DEBUG
 
-              auto Info = CRI.lookup(RS.instr_ptr());
-
-              if (Info)
-                std::cerr << "sample from " << Info.getValue()->Name << "\n";
-
-              if (RawSamples.size() > 10)
+              if (RawSamples.size() > 100)
                 Queue.async([this](){
-                  // TODO: process samples
+                  Profile.analyze(RawSamples);
                   RawSamples.clear();
+
+                  Profile.dump(std::cerr); // DEBUG
                 });
 
             });
@@ -124,7 +122,7 @@ struct ClientSession {
               msg::print_proto(Client); // DEBUG
 
               // process this new enrollment
-              CRI.init(Client);
+              Profile.init();
 
               Enrolled = true;
               Sampling = true;

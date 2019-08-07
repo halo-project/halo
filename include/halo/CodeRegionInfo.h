@@ -21,12 +21,14 @@ namespace icl = boost::icl;
 
 namespace halo {
 
+class Profiler;
+
 
 struct FunctionInfo {
     std::string Name;
 
     // Ideally this would also provide block info.
-    
+
     FunctionInfo(std::string name) : Name(name) {}
 };
 
@@ -34,12 +36,14 @@ class CodeRegionInfo {
 private:
   using CodeMap = icl::interval_map<uint64_t, FunctionInfo*,
                                     icl::partial_enricher>;
+  friend class Profiler;
 
   CodeMap AddrMap;
   uint64_t VMABase;
-public:
 
   void init(pb::ClientEnroll const& CE);
+
+public:
 
   llvm::Optional<FunctionInfo*> lookup(uint64_t IP) const;
 

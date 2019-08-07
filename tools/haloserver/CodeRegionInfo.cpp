@@ -6,6 +6,7 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
   pb::ModuleInfo const& MI = CE.module();
 
   VMABase = MI.vma_delta();
+  AddrMap = CodeMap();
 
   for (pb::FunctionInfo const& FI: MI.funcs()) {
     uint64_t Start = FI.start();
