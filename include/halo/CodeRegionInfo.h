@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <map>
+#include <unordered_map>
 
 #include "llvm/ADT/Optional.h"
 // #include "llvm/IR/Module.h"
@@ -26,8 +26,8 @@ class Profiler;
 
 struct FunctionInfo {
     std::string Name;
-
-    // Ideally this would also provide block info.
+    bool HaveBitcode = true; // FIXME
+    std::vector<pb::RawSample> Samples;
 
     FunctionInfo(std::string name) : Name(name) {}
 };
@@ -38,22 +38,39 @@ private:
                                     icl::partial_enricher>;
   friend class Profiler;
 
+  // Either map can be used to lookup the same function information pointer.
+  //
+  // The NameMap includes UnknownFn for convenience, but the AddrMap does _not_.
   CodeMap AddrMap;
+  std::unordered_map<std::string, FunctionInfo*> NameMap;
   uint64_t VMABase;
 
   void init(pb::ClientEnroll const& CE);
 
 public:
+  // A special category for unknown functions. The FunctionInfo for this
+  // "function" is returned on lookup failure.
+  const std::string UnknownFn = "???";
+  FunctionInfo *UnknownFI;
 
-  llvm::Optional<FunctionInfo*> lookup(uint64_t IP) const;
+  // Upon failure to lookup information for the given IP or Name, the
+  // UnknownFI is returned.
+  FunctionInfo* lookup(uint64_t IP) const;
+  FunctionInfo* lookup(std::string const& Name) const;
+
+  CodeRegionInfo() {
+    UnknownFI = new FunctionInfo(UnknownFn);
+    UnknownFI->HaveBitcode = false;
+  }
 
   ~CodeRegionInfo() {
-    // unfortunately, we can't use unique_ptr as an element type in this map
-    // so we have to use new/delete.
+    // All function infos _except_ the unknown FI are in the AddrMap, since it
+    // has no addr.
     for (auto Pair : AddrMap) {
       FunctionInfo *FI = Pair.second;
       delete FI;
     }
+    delete UnknownFI;
   }
 
 

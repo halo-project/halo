@@ -3,26 +3,41 @@
 namespace halo {
 
 void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
-  pb::ModuleInfo const& MI = CE.module();
-
-  VMABase = MI.vma_delta();
   AddrMap = CodeMap();
+  NameMap.clear();
 
-  for (pb::FunctionInfo const& FI: MI.funcs()) {
-    uint64_t Start = FI.start();
-    uint64_t End = Start + FI.size();
+  NameMap[UnknownFn] = UnknownFI;
+
+  pb::ModuleInfo const& MI = CE.module();
+  VMABase = MI.vma_delta();
+
+  for (pb::FunctionInfo const& PFI: MI.funcs()) {
+    uint64_t Start = PFI.start();
+    uint64_t End = Start + PFI.size();
+    std::string Name = PFI.label();
     auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
 
-    AddrMap.insert(std::make_pair(FuncRange, new FunctionInfo(FI.label())));
+    FunctionInfo *FI = new FunctionInfo(Name);
+
+    NameMap[Name] = FI;
+    AddrMap.insert(std::make_pair(FuncRange, FI));
   }
 }
 
-llvm::Optional<FunctionInfo*> CodeRegionInfo::lookup(uint64_t IP) const {
+FunctionInfo* CodeRegionInfo::lookup(uint64_t IP) const {
   IP -= VMABase;
 
   auto FI = AddrMap.find(IP);
   if (FI == AddrMap.end())
-    return llvm::None;
+    return lookup(UnknownFn);
+
+  return FI->second;
+}
+
+FunctionInfo* CodeRegionInfo::lookup(std::string const& Name) const {
+  auto FI = NameMap.find(Name);
+  if (FI == NameMap.end())
+    return lookup(UnknownFn);
 
   return FI->second;
 }

@@ -59,6 +59,7 @@ struct ClientSession {
   // all fields below here must be accessed through the sequential task queue.
   bool Enrolled = false;
   bool Sampling = false;
+  bool Measuring = false;
   pb::ClientEnroll Client;
   Profiler Profile;
 
@@ -90,6 +91,10 @@ struct ClientSession {
             if (!Sampling)
               std::cerr << "warning: recieved sample data while not asking for it.\n";
 
+            // The samples are likely to be noisy, so we ignore them.
+            if (Measuring)
+              break;
+
             // copy the data out into a string and save it by value in closure
             std::string Blob(Body.data(), Body.size());
 
@@ -104,7 +109,7 @@ struct ClientSession {
                   Profile.analyze(RawSamples);
                   RawSamples.clear();
 
-                  Profile.dump(std::cerr); // DEBUG
+                  // Profile.dump(std::cerr); // DEBUG
                 });
 
             });
@@ -220,15 +225,28 @@ private:
 }; // end class ClientRegistrar
 
 // TODO: this needs to move into its own module.
+
+// FIXME: this function is run in the IOService thread, so no message sends/recvs
+// are being handled in parallel. However, the sequential task queue is still
+// running in parallel. I think we need to refactor the listener to be more strict
+// about what fields are accessed / modified _outside_ the task queue.
 void service_session(ClientSession &CS) {
   std::cout << "servicing active session...\n";
 
-  // to work up to code replacement, implement the following:
-  // 1. determine which function is the hottest for this session.
-  // 2. send a request to client to begin timing the execution of the function.
+  if (!CS.Measuring) {
+    // 1. determine which function is the hottest for this session.
+    FunctionInfo *FI = CS.Profile.getMostSampled();
+    if (FI) {
+      std::cout << "Hottest function = " << FI->Name << "\n";
 
-  // then work on halomon's ability to service such a timing request.
+      // 2. send a request to client to begin timing the execution of the function.
+      CS.Measuring = true;
+      pb::ReqMeasureFunction MF;
+      MF.set_xray_id(1);
 
+      CS.Chan.send_proto(msg::ReqMeasureFunction, MF);
+    }
+  }
 }
 
 } // end namespace halo

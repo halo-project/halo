@@ -20,33 +20,43 @@ public:
   }
 
   void analyze(std::vector<pb::RawSample> const& Samples) {
-    SampleFrequency.clear();
-
     for (auto &RS : Samples) {
       uint64_t IP = RS.instr_ptr();
-
       auto Info = CRI.lookup(IP);
-      if (Info) {
-        auto Name = Info.getValue()->Name;
-        SampleFrequency[Name] = SampleFrequency[Name] + 1;
-      } else {
-        SampleFrequency[UnknownFn] = SampleFrequency[UnknownFn] + 1;
+      Info->Samples.push_back(RS);
+    }
+  }
+
+  // returns nullptr if no functions matching the critera exists.
+  FunctionInfo* getMostSampled(bool MustHaveBitcode = true) {
+    size_t Max = 0;
+    FunctionInfo *Hottest = nullptr;
+
+    for (auto &Pair : CRI.NameMap) {
+      auto FI = Pair.second;
+      auto Num = FI->Samples.size();
+      if (Num > Max && (!MustHaveBitcode || FI->HaveBitcode)) {
+        Max = Num;
+        Hottest = FI;
       }
     }
+
+    return Hottest;
   }
 
   void dump(std::ostream &out) {
     out << "--- Last Analysis Results ---\n";
-    for (auto &Pair : SampleFrequency) {
-      out << Pair.first << " was sampled " << Pair.second << " times.\n";
+    for (auto &Pair : CRI.NameMap) {
+      auto FI = Pair.second;
+      if (FI->Samples.size() > 0)
+        out << FI->Name << " was sampled " << FI->Samples.size() << " times.\n";
     }
     out << "-------\n";
   }
 
 
 private:
-  const std::string UnknownFn = "<unknown func>";
-  std::unordered_map<std::string, unsigned int> SampleFrequency;
+
 };
 
 }

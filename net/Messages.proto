@@ -71,3 +71,7 @@ message CodeReplacement {
   string func_name = 2;
   bytes asm = 3;
 }
+
+message ReqMeasureFunction {
+  uint32 xray_id = 1;
+}
