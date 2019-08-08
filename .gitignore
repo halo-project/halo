@@ -1,6 +1,8 @@
 # ignore build directories
 build/
 install/
+bench-build/
+bench-results/
 
 
 # Prerequisites
