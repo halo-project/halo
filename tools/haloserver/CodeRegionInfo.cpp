@@ -18,6 +18,7 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
     auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
 
     FunctionInfo *FI = new FunctionInfo(Name);
+    FI->AbsAddr = Start;
 
     NameMap[Name] = FI;
     AddrMap.insert(std::make_pair(FuncRange, FI));

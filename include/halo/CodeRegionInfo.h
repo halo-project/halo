@@ -26,6 +26,7 @@ class Profiler;
 
 struct FunctionInfo {
     std::string Name;
+    uint64_t AbsAddr = 0;
     bool HaveBitcode = true; // FIXME
     std::vector<pb::RawSample> Samples;
 

@@ -242,8 +242,7 @@ void service_session(ClientSession &CS) {
       // 2. send a request to client to begin timing the execution of the function.
       CS.Measuring = true;
       pb::ReqMeasureFunction MF;
-      MF.set_xray_id(1);
-
+      MF.set_func_addr(FI->AbsAddr);
       CS.Chan.send_proto(msg::ReqMeasureFunction, MF);
     }
   }

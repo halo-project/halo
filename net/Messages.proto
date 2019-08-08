@@ -73,5 +73,5 @@ message CodeReplacement {
 }
 
 message ReqMeasureFunction {
-  uint32 xray_id = 1;
+  uint64 func_addr = 1; // absolute address in client's addr space
 }
