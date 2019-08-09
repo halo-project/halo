@@ -5,7 +5,7 @@ stages:
   - release
 
 variables:
-  GIT_SUBMODULE_STRATEGY: normal  # there's no need to pull in the benchmarks
+  GIT_SUBMODULE_STRATEGY: normal  # no need to download benchmarks here.
   CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
 
@@ -24,11 +24,10 @@ test:
   stage: test
   script:
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run --cap-add sys_admin -w /tmp/halo/build $CONTAINER_TEST_IMAGE ninja test-halo
+    - docker run --cap-add sys_admin -w /tmp/halo $CONTAINER_TEST_IMAGE ./test.sh docker
         # TODO: figure out how we can delete /tmp/halo after tests.
         # I believe we have to make another dockerfile that uses $CONTAINER_TEST_IMAGE
         # as the base and then deletes the dir, then push that image.
-    - docker run --cap-add sys_admin -w /tmp/halo/test/util $CONTAINER_TEST_IMAGE ./docker-post-install.sh
 
 release-image:
   stage: release

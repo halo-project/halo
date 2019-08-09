@@ -2,6 +2,8 @@
 
 # See https://llvm.org/docs/TestSuiteGuide.html
 
+set -ex
+
 COMPILER_ROOT=$(pwd)/build
 STAMP=$(date +"%m_%d_%Y-%H_%M_%S")
 
@@ -12,7 +14,7 @@ mkdir -p bench-results
 # Mainly need llvm-lit, but there doesn't appear to be an install target
 # for it. so run `ninja` with no specified target.
 
-for TYPE in O2 O2-halo; do
+for TYPE in O2-halo O2-xray-all; do
   rm -rf bench-build
   mkdir bench-build
   pushd bench-build
