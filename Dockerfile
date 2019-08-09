@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       libpfm4-dev \
       ninja-build \
       cmake \
+      git \
       python2.7 \
       python-pip \
       zlib1g \
