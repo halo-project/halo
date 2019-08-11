@@ -67,13 +67,12 @@ struct ClientSession {
 
   ClientSession(asio::io_service &IOService, llvm::ThreadPool &TPool) :
     Socket(IOService), Chan(Socket), Queue(TPool), Status(Fresh),
-    Profile(Client) {
-      asio::socket_base::keep_alive option(true);
-      Socket.set_option(option);
-    }
+    Profile(Client) {}
 
   void start() {
     Status = Active;
+    asio::socket_base::keep_alive option(true);
+    Socket.set_option(option);
     listen();
   }
 
