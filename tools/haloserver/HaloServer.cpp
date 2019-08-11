@@ -71,8 +71,9 @@ struct ClientSession {
 
   void start() {
     Status = Active;
-    asio::socket_base::keep_alive option(true);
-    Socket.set_option(option);
+    // FIXME See github issue #6
+    // asio::socket_base::keep_alive option(true);
+    // Socket.set_option(option);
     listen();
   }
 
