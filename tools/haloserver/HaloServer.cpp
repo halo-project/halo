@@ -71,9 +71,8 @@ struct ClientSession {
 
   void start() {
     Status = Active;
-    // FIXME See github issue #6
-    // asio::socket_base::keep_alive option(true);
-    // Socket.set_option(option);
+    asio::socket_base::keep_alive option(true);
+    Socket.set_option(option);
     listen();
   }
 
@@ -182,6 +181,8 @@ public:
   bool consider_shutdown(bool ForcedShutdown) {
     if (ForcedShutdown ||
         (CL_NoPersist && TotalSessions > 0 && ActiveSessions == 0)) {
+      // TODO: a more graceful shutdown sould be nice. currently this
+      // will abruptly send an RST packet to clients.
       IOService.stop();
       return true;
     }

@@ -11,7 +11,9 @@ if [ "$PROG_OUT" == "" ]; then
   PROG_OUT="/dev/null"
 fi
 
-${SERVER_EXE} --no-persist --timeout 30 &
+# NOTE: the timeout is the maximum time (in secs) the server will stay up,
+# no matter what! 30min = 1800s
+${SERVER_EXE} --no-persist --timeout 1800 &
 SERVER_PID=$!
 sleep 1s
 
