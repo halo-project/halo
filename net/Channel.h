@@ -21,8 +21,12 @@ namespace halo {
       Channel(ip::tcp::socket &Socket) : Sock(Socket) {}
 
       // synchronous send operation for a given proto buffer.
+      // Returns true if there was an error.
       template<typename T>
-      void send_proto(msg::Kind Kind, T& ProtoBuf) {
+      bool send_proto(msg::Kind Kind, T& ProtoBuf) {
+        if(!Sock.is_open())
+          return true;
+
         std::vector<asio::const_buffer> Msg;
 
         std::string Blob;
@@ -43,11 +47,17 @@ namespace halo {
 
         if (Err) {
           std::cerr << "send_proto error: " << Err.message() << "\n";
+          return true;
         }
+        return false;
       }
 
       // send a message with no payload
-      void send(msg::Kind Kind) {
+      // returns True if there was an error.
+      bool send(msg::Kind Kind) {
+        if(!Sock.is_open())
+          return true;
+
         msg::Header Hdr;
         msg::setMessageKind(Hdr, Kind);
         msg::setPayloadSize(Hdr, 0);
@@ -59,7 +69,9 @@ namespace halo {
 
         if (Err) {
           std::cerr << "send error: " << Err.message() << "\n";
+          return true;
         }
+        return false;
       }
 
       // synchronously recieve an arbitrary message
