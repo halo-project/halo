@@ -24,17 +24,16 @@ public:
         Port(port),
         IOService(service),
         Endpoint(ip::tcp::v4(), Port),
-        Acceptor(IOService, Endpoint) {
+        Acceptor(IOService, Endpoint),
+        ActiveSessions(0) {
           accept_loop();
         }
 
   // only safe to call within the IOService. Use io_service::dispatch.
+  // Because the IOService thread can modify the Groups list.
   void cleanup() {
-    for (auto &Group : Groups) {
-      size_t removed = Group.cleanup();
-      assert(removed <= ActiveSessions);
-      ActiveSessions -= removed;
-    }
+    for (auto &Group : Groups)
+      Group.cleanup(ActiveSessions);
   }
 
   bool consider_shutdown(bool ForcedShutdown) {
@@ -68,9 +67,9 @@ private:
   // TODO: Groups needs to be accessed in parallel. I don't want to have
   // everything through IOService thread.
   // We might need a TaskQueue here!
-  
+
   std::list<ClientGroup> Groups;
-  size_t ActiveSessions = 0;
+  std::atomic<size_t> ActiveSessions;
   size_t TotalSessions = 0;
 
   void accept_loop() {
@@ -100,7 +99,11 @@ private:
     auto &Chan = CS->Chan;
     Chan.async_recv([this,CS](msg::Kind Kind, std::vector<char>& Body) {
       if (Kind == msg::Shutdown) {
+        // It never made it into a group, so we clean it up.
         CS->shutdown();
+        delete CS;
+        ActiveSessions--;
+
       } else if (Kind == msg::ClientEnroll) {
         std::string Blob(Body.data(), Body.size());
 

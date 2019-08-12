@@ -74,6 +74,7 @@ namespace halo {
 
         // ask to sample right away for now.
         Chan.send(msg::StartSampling);
+        Sampling = true;
       });
 
       listen();
