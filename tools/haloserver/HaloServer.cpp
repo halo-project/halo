@@ -277,9 +277,11 @@ int main(int argc, char* argv[]) {
   do {
     std::this_thread::sleep_for(std::chrono::milliseconds(SleepMS));
 
-    if (TimeLimited) {
+    if (TimeLimited && !ForceShutdown) {
       RemainingTime -= SleepMS;
       ForceShutdown = RemainingTime <= 0;
+      if (ForceShutdown)
+        std::cerr << "Server's running time limit reached. Shutting down.\n";
     }
 
     // Modifications to the CR's state should occur in the IOService thread.
