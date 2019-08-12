@@ -11,6 +11,7 @@
 #include "Channel.h"
 
 #include "halo/Profiler.h"
+#include "halo/Compiler.h"
 
 #include <vector>
 #include <cinttypes>
@@ -40,6 +41,7 @@ namespace halo {
     bool Measuring = false;
     pb::ClientEnroll Client;
     Profiler Profile;
+    // Compiler Compile;
 
     std::vector<pb::RawSample> RawSamples;
 
