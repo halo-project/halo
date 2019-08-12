@@ -2,11 +2,13 @@
 
 #include "llvm/Support/ThreadPool.h"
 
-#include "halo/ClientSession.h"
+#include "halo/ClientGroup.h"
 
 #include <cinttypes>
 #include <list>
 #include <iostream>
+#include <memory>
+#include <functional>
 
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
@@ -27,18 +29,12 @@ public:
         }
 
   // only safe to call within the IOService. Use io_service::dispatch.
-  // returns the number of sessions removed.
   void cleanup() {
-    auto it = Sessions.begin();
-    size_t removed = 0;
-    while(it != Sessions.end()) {
-      if (it->Status == Dead)
-        { it = Sessions.erase(it); removed++; }
-      else
-        it++;
+    for (auto &Group : Groups) {
+      size_t removed = Group.cleanup();
+      assert(removed <= ActiveSessions);
+      ActiveSessions -= removed;
     }
-    assert(removed <= ActiveSessions);
-    ActiveSessions -= removed;
   }
 
   bool consider_shutdown(bool ForcedShutdown) {
@@ -54,9 +50,10 @@ public:
 
   template <typename T>
   void run_service(T Callable) {
-      for (ClientSession &CS : Sessions)
-        if (CS.Status == Active)
-          CS.Queue.async( [&CS,Callable](){ Callable(CS); } );
+      // TODO: provide services to the groups!
+      // for (ClientSession &CS : Sessions)
+      //   if (CS.Status == Active)
+      //     CS.Queue.async( [&CS,Callable](){ Callable(CS); } );
   }
 
 private:
@@ -68,27 +65,63 @@ private:
   ip::tcp::acceptor Acceptor;
 
   // these fields must only be accessed by the IOService's thread.
-  std::list<ClientSession> Sessions;
+  // TODO: Groups needs to be accessed in parallel. I don't want to have
+  // everything through IOService thread.
+  // We might need a TaskQueue here!
+  
+  std::list<ClientGroup> Groups;
   size_t ActiveSessions = 0;
   size_t TotalSessions = 0;
 
   void accept_loop() {
-    Sessions.emplace_back(IOService, Pool);
-    auto &Session = Sessions.back();
-    // NOTE: can't capture 'Session' in the lambda,
-    // so currently I'm assuming we never call accept_loop
-    // non-recursively more than once!
-    // Garbage collection should be okay though?
+    // Not a unique_ptr because good luck moving one of those into the lambda!
+    auto CS = new ClientSession(IOService, Pool);
 
-    Acceptor.async_accept(Session.Socket,
-      [&](boost::system::error_code Err) {
+    auto &Socket = CS->Socket;
+    Acceptor.async_accept(Socket,
+      [this,CS](boost::system::error_code Err) {
         if(!Err) {
           std::cerr << "Accepted a new connection on port " << Port << "\n";
+
           TotalSessions++; ActiveSessions++;
-          Sessions.back().start();
+          CS->Status = Active;
+          asio::socket_base::keep_alive option(true);
+          CS->Socket.set_option(option);
+
+          register_loop(CS);
         }
         accept_loop();
       });
+  }
+
+  void register_loop(ClientSession *CS) {
+    // NOTE: It's only ok to access Groups here because we know the IOService
+    // of the client registrar = IOService of all clients.
+    auto &Chan = CS->Chan;
+    Chan.async_recv([this,CS](msg::Kind Kind, std::vector<char>& Body) {
+      if (Kind == msg::Shutdown) {
+        CS->shutdown();
+      } else if (Kind == msg::ClientEnroll) {
+        std::string Blob(Body.data(), Body.size());
+
+        CS->Client.ParseFromString(Blob);
+        CS->Enrolled = true;
+
+        msg::print_proto(CS->Client); // DEBUG
+
+        if (Groups.empty()) {
+          Groups.emplace_back(Pool);
+        }
+
+        // TODO: find the right group for this client.
+        auto &Group = Groups.back();
+        Group.add(CS);
+
+      } else {
+        // some other message?
+        register_loop(CS);
+      }
+    });
   }
 }; // end class ClientRegistrar
 
