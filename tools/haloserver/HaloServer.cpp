@@ -1,5 +1,6 @@
 
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/TargetSelect.h"
 
 #include "boost/asio.hpp"
 
@@ -58,7 +59,9 @@ void service_session(ClientSession &CS) {
 void service_group(ClientGroup &G) {
   // since this function is run in the IOService thread, it should avoid blocking
   // for too long.
+
   G.apply(service_session);
+  G.testCompile();
 }
 
 } // end namespace halo
@@ -66,6 +69,14 @@ void service_group(ClientGroup &G) {
 
 int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv, "Halo Server\n");
+
+  // Initialize parts of LLVM related to JIT compilation.
+  // See llvm/Support/TargetSelect.h for other items.
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmPrinters(); // might be handy for debug.
+
 
   asio::io_service IOService;
 

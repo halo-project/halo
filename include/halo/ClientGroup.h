@@ -1,8 +1,11 @@
 #pragma once
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Bitcode/BitcodeReader.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/ThreadPool.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "halo/ClientSession.h"
 #include "halo/Compiler.h"
@@ -44,12 +47,11 @@ public:
         // TODO: grab target triple, host cpu, and build flags.
 
 
-        { // take ownership of the bitcode and move it into this group.
-          std::string *BitcodeStr = Client.mutable_module()->release_bitcode();
-          llvm::StringRef BitcodeRef(*BitcodeStr);
-          Bitcode = std::move(llvm::MemoryBuffer::getMemBuffer(BitcodeRef));
-          delete BitcodeStr;
-        }
+        // take ownership of the bitcode, and maintain a MemoryBuffer view of it.
+        BitcodeStorage = std::move(
+            std::unique_ptr<std::string>(Client.mutable_module()->release_bitcode()));
+        Bitcode = std::move(
+            llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(*BitcodeStorage)));
 
         addUnsafe(CS);
       }
@@ -85,7 +87,40 @@ public:
   }
 
   void testCompile() {
+    static bool Done = false;
+
+    if (Done)
+      return;
+
+    Done = true;
+
     Queue.async([&] () {
+
+      auto MaybeCompiler = Compiler::Create(); // FIXME get the right target.
+      if (!MaybeCompiler) {
+        llvm::errs() << "Error creating a compiler: "
+                     << MaybeCompiler.takeError() << "\n";
+        return;
+      }
+
+      auto Compile = std::move(MaybeCompiler.get());
+
+      auto MaybeModule = llvm::getLazyBitcodeModule(Bitcode->getMemBufferRef(),
+                                                Compile->getContext());
+      if (!MaybeModule) {
+        llvm::errs() << "Error compiling module: "
+                     << MaybeModule.takeError() << "\n";
+        return;
+      }
+
+      std::unique_ptr<llvm::Module> Module = std::move(MaybeModule.get());
+
+      Module->print(llvm::errs(), nullptr);
+
+      // I believe this kicks off a compilation.
+      Compile->addModule(std::move(Module));
+
+      std::cerr << "test compilation done!\n";
 
     });
   }
@@ -117,6 +152,7 @@ private:
   llvm::ThreadPool &Pool;
   llvm::TaskQueueOverlay Queue;
   ClientCollection Clients;
+  std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
 
 };
