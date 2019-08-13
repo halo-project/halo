@@ -34,7 +34,7 @@ cl::opt<uint32_t> CL_TimeoutSec("timeout",
 
 namespace halo {
 
-// TODO: this needs to move into its own module?
+// TODO: this needs to move into its own module.
 
 void service_session(ClientSession &CS) {
   if (!CS.Measuring) {
@@ -55,6 +55,12 @@ void service_session(ClientSession &CS) {
   }
 }
 
+void service_group(ClientGroup &G) {
+  // since this function is run in the IOService thread, it should avoid blocking
+  // for too long.
+  G.apply(service_session);
+}
+
 } // end namespace halo
 
 
@@ -70,12 +76,13 @@ int main(int argc, char* argv[]) {
   std::cout << "Started Halo Server.\nListening on port "
             << CL_Port << std::endl;
 
-  const uint32_t SleepMS = 1000;
+  const uint32_t SleepMS = 50; // Lower this to be more aggressive.
   const bool TimeLimited = CL_TimeoutSec > 0;
   int64_t RemainingTime = CL_TimeoutSec * 1000;
   bool ForceShutdown = false;
 
-  // The main event loop that dispatches work, etc.
+  // The main event loop that drives actions performed by the server (i.e.,
+  // not just in response to clients). This is the heartbeat of the system.
   do {
     std::this_thread::sleep_for(std::chrono::milliseconds(SleepMS));
 
@@ -93,7 +100,7 @@ int main(int argc, char* argv[]) {
       if (CR.consider_shutdown(ForceShutdown))
         return;
 
-      CR.run_service(halo::service_session);
+      CR.apply(halo::service_group);
     });
   } while (!IOService.stopped());
 

@@ -69,11 +69,9 @@ DO_SHUTDOWN:
   }
 
   template <typename T>
-  void run_service(T Callable) {
-      // TODO: provide services to the groups!
-      // for (ClientSession &CS : Sessions)
-      //   if (CS.Status == Active)
-      //     CS.Queue.async( [&CS,Callable](){ Callable(CS); } );
+  void apply(T Callable) {
+    for (auto &Group : Groups)
+      Callable(Group);
   }
 
 private:
