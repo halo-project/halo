@@ -1,7 +1,7 @@
 #pragma once
 
 #include "llvm/Support/ThreadPool.h"
-#include "llvm/Support/TaskQueue.h"
+#include "halo/TaskQueueOverlay.h"
 
 #include "halo/ClientSession.h"
 
@@ -23,7 +23,7 @@ public:
 
   std::atomic<size_t> NumActive;
 
-  ClientGroup() : NumActive(0), Queue(Pool) {}
+  ClientGroup(llvm::ThreadPool &Pool) : NumActive(0), Pool(Pool), Queue(Pool) {}
 
   void add(ClientSession *CS) {
     NumActive++; // do this in the caller's thread eagarly.
@@ -66,8 +66,8 @@ public:
 
 private:
   // the queue provides sequentially consistent access the the members below it.
-  llvm::ThreadPool Pool{1};
-  llvm::TaskQueue Queue;
+  llvm::ThreadPool &Pool;
+  llvm::TaskQueueOverlay Queue;
   ClientCollection Clients;
 
 };

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "llvm/Support/ThreadPool.h"
-#include "llvm/Support/TaskQueue.h"
+#include "halo/TaskQueueOverlay.h"
 #include "halo/ClientGroup.h"
 
 #include "boost/asio.hpp"
@@ -35,8 +35,8 @@ namespace halo {
     // thread-safe members
     ip::tcp::socket Socket;
     Channel Chan;
-    llvm::ThreadPool Pool{1};
-    llvm::TaskQueue Queue;
+    llvm::ThreadPool &Pool;
+    llvm::TaskQueueOverlay Queue;
     std::atomic<enum SessionStatus> Status;
     ClientGroup *Parent = nullptr;
 
@@ -50,8 +50,8 @@ namespace halo {
 
     std::vector<pb::RawSample> RawSamples;
 
-    ClientSession(asio::io_service &IOService) :
-      Socket(IOService), Chan(Socket), Queue(Pool), Status(Fresh),
+    ClientSession(asio::io_service &IOService, llvm::ThreadPool &Pool) :
+      Socket(IOService), Chan(Socket), Pool(Pool), Queue(Pool), Status(Fresh),
       Profile(Client) {}
 
     void shutdown() {

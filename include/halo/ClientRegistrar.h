@@ -82,6 +82,7 @@ private:
   asio::io_service &IOService;
   ip::tcp::endpoint Endpoint;
   ip::tcp::acceptor Acceptor;
+  llvm::ThreadPool Pool;
 
   // these fields must only be accessed by the IOService's thread.
   // TODO: Groups needs to be accessed in parallel. I don't want to have
@@ -94,7 +95,7 @@ private:
 
   void accept_loop() {
     // Not a unique_ptr because good luck moving one of those into the lambda!
-    auto CS = new ClientSession(IOService);
+    auto CS = new ClientSession(IOService, Pool);
 
     auto &Socket = CS->Socket;
     Acceptor.async_accept(Socket,
@@ -133,7 +134,7 @@ private:
         msg::print_proto(CS->Client); // DEBUG
 
         if (Groups.empty()) {
-          Groups.emplace_back();
+          Groups.emplace_back(Pool);
         }
 
         // TODO: find the right group for this client.

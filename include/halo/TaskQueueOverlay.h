@@ -31,7 +31,7 @@ namespace llvm {
 /// TaskQueue executes serialized work on a user-defined Thread Pool.  It
 /// guarantees that if task B is enqueued after task A, task B begins after
 /// task A completes and there is no overlap between the two.
-class TaskQueue {
+class TaskQueueOverlay {
   // Because we don't have init capture to use move-only local variables that
   // are captured into a lambda, we create the promise inside an explicit
   // callable struct. We want to do as much of the wrapping in the
@@ -39,7 +39,7 @@ class TaskQueue {
   // std::function.
   template <typename Callable> struct Task {
     using ResultTy = typename std::result_of<Callable()>::type;
-    explicit Task(Callable C, TaskQueue &Parent)
+    explicit Task(Callable C, TaskQueueOverlay &Parent)
         : C(std::move(C)), P(std::make_shared<std::promise<ResultTy>>()),
           Parent(&Parent) {}
 
@@ -61,16 +61,17 @@ class TaskQueue {
 
     Callable C;
     std::shared_ptr<std::promise<ResultTy>> P;
-    TaskQueue *Parent;
+    TaskQueueOverlay *Parent;
   };
 
 public:
   /// Construct a task queue with no work.
-  TaskQueue(ThreadPool &Scheduler) : Scheduler(Scheduler) { (void)Scheduler; }
+  TaskQueueOverlay(ThreadPool &Scheduler) : Scheduler(Scheduler) { (void)Scheduler; }
 
-  /// Blocking destructor: the queue will wait for all work to complete.
-  ~TaskQueue() {
-    Scheduler.wait();
+  /// Blocking destructor: the queue waits for all enqueued work to complete.
+  ~TaskQueueOverlay() {
+    auto LastTask = async([](){});
+    LastTask.wait();
     assert(Tasks.empty());
   }
 
