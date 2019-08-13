@@ -12,7 +12,6 @@
 #include "Channel.h"
 
 #include "halo/Profiler.h"
-#include "halo/Compiler.h"
 
 #include <vector>
 #include <cinttypes>
@@ -32,6 +31,10 @@ namespace halo {
   };
 
   struct ClientSession {
+    // members initialized prior to usage of this object.
+    bool Enrolled = false;
+    pb::ClientEnroll Client;
+
     // thread-safe members
     ip::tcp::socket Socket;
     Channel Chan;
@@ -41,12 +44,10 @@ namespace halo {
     ClientGroup *Parent = nullptr;
 
     // all fields below here must be accessed through the sequential task queue.
-    bool Enrolled = false;
     bool Sampling = false;
     bool Measuring = false;
-    pb::ClientEnroll Client;
+
     Profiler Profile;
-    // Compiler Compile;
 
     std::vector<pb::RawSample> RawSamples;
 
