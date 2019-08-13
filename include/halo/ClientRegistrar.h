@@ -131,13 +131,19 @@ private:
 
         msg::print_proto(CS->Client); // DEBUG
 
-        if (Groups.empty()) {
-          Groups.emplace_back(Pool);
+        // Find similar clients.
+        bool Added = false;
+        for (auto &Group : Groups) {
+          if (Group.tryAdd(CS)) {
+            Added = true; break;
+          }
         }
 
-        // TODO: find the right group for this client.
-        auto &Group = Groups.back();
-        Group.add(CS);
+        if (!Added) {
+          // we've not seen a client like this before.
+          Groups.emplace_back(Pool, CS);
+        }
+
         UnregisteredSessions--;
 
       } else {

@@ -23,14 +23,22 @@ public:
 
   std::atomic<size_t> NumActive;
 
-  ClientGroup(llvm::ThreadPool &Pool) : NumActive(0), Pool(Pool), Queue(Pool) {}
+  // Construct a singleton client group based on its initial member.
+  ClientGroup(llvm::ThreadPool &Pool, ClientSession *CS)
+      : NumActive(1), Pool(Pool), Queue(Pool) {
+        // TODO: extract properties of this client
+        addUnsafe(CS);
+      }
 
-  void add(ClientSession *CS) {
+  // returns true if the session became a member of the group.
+  bool tryAdd(ClientSession *CS) {
+    // TODO: actually check if the client is compatible with this group.
+
     NumActive++; // do this in the caller's thread eagarly.
     Queue.async([this,CS] () {
-      CS->start(this);
-      Clients.push_back(std::unique_ptr<ClientSession>(CS));
+      addUnsafe(CS);
     });
+    return true;
   }
 
   void cleanup() {
@@ -65,6 +73,12 @@ public:
   }
 
 private:
+
+  void addUnsafe(ClientSession *CS) {
+    CS->start(this);
+    Clients.push_back(std::unique_ptr<ClientSession>(CS));
+  }
+
   // the queue provides sequentially consistent access the the members below it.
   llvm::ThreadPool &Pool;
   llvm::TaskQueueOverlay Queue;
