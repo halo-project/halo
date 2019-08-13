@@ -1,7 +1,5 @@
 #pragma once
 
-#include "llvm/Support/ThreadPool.h"
-
 #include "halo/ClientGroup.h"
 
 #include <cinttypes>
@@ -18,14 +16,12 @@ namespace halo {
 
 class ClientRegistrar {
 public:
-  ClientRegistrar(asio::io_service &service, uint32_t port, llvm::ThreadPool &TPool, bool nopersist)
+  ClientRegistrar(asio::io_service &service, uint32_t port, bool nopersist)
       : NoPersist(nopersist),
-        Pool(TPool),
         Port(port),
         IOService(service),
         Endpoint(ip::tcp::v4(), Port),
-        Acceptor(IOService, Endpoint),
-        ActiveSessions(0) {
+        Acceptor(IOService, Endpoint) {
           accept_loop();
         }
 
@@ -33,18 +29,43 @@ public:
   // Because the IOService thread can modify the Groups list.
   void cleanup() {
     for (auto &Group : Groups)
-      Group.cleanup(ActiveSessions);
+      Group.cleanup();
   }
 
   bool consider_shutdown(bool ForcedShutdown) {
-    if (ForcedShutdown ||
-        (NoPersist && TotalSessions > 0 && ActiveSessions == 0)) {
-      // TODO: a more graceful shutdown sould be nice. currently this
-      // will abruptly send an RST packet to clients.
-      IOService.stop();
-      return true;
+    if (ForcedShutdown)
+      goto DO_SHUTDOWN;
+
+    if (NoPersist && TotalSessions > 0) {
+      // if we've had at least one client connect, but have no active
+      // sessions right now, then we shutdown.
+
+      if (UnregisteredSessions == 0) {
+
+        // look for at least one active client.
+        bool OneActive = false;
+        for (auto &Group : Groups) {
+          size_t Active = Group.NumActive;
+          // std::cerr << "Group has " << Active << " active.\n";
+          if (Active > 0) {
+            OneActive = true;
+            break;
+          }
+        }
+
+        if (!OneActive)
+          goto DO_SHUTDOWN;
+
+      }
     }
-    return false;
+
+    return false; // no shutdown
+
+DO_SHUTDOWN:
+    // TODO: a more graceful shutdown sould be nice. currently this
+    // will abruptly send an RST packet to clients.
+    IOService.stop();
+    return true;
   }
 
   template <typename T>
@@ -57,7 +78,6 @@ public:
 
 private:
   bool NoPersist;
-  llvm::ThreadPool &Pool;
   uint32_t Port;
   asio::io_service &IOService;
   ip::tcp::endpoint Endpoint;
@@ -69,12 +89,12 @@ private:
   // We might need a TaskQueue here!
 
   std::list<ClientGroup> Groups;
-  std::atomic<size_t> ActiveSessions;
   size_t TotalSessions = 0;
+  size_t UnregisteredSessions = 0;
 
   void accept_loop() {
     // Not a unique_ptr because good luck moving one of those into the lambda!
-    auto CS = new ClientSession(IOService, Pool);
+    auto CS = new ClientSession(IOService);
 
     auto &Socket = CS->Socket;
     Acceptor.async_accept(Socket,
@@ -82,7 +102,7 @@ private:
         if(!Err) {
           std::cerr << "Accepted a new connection on port " << Port << "\n";
 
-          TotalSessions++; ActiveSessions++;
+          TotalSessions++; UnregisteredSessions++;
           CS->Status = Active;
           asio::socket_base::keep_alive option(true);
           CS->Socket.set_option(option);
@@ -102,7 +122,7 @@ private:
         // It never made it into a group, so we clean it up.
         CS->shutdown();
         delete CS;
-        ActiveSessions--;
+        UnregisteredSessions--;
 
       } else if (Kind == msg::ClientEnroll) {
         std::string Blob(Body.data(), Body.size());
@@ -113,12 +133,13 @@ private:
         msg::print_proto(CS->Client); // DEBUG
 
         if (Groups.empty()) {
-          Groups.emplace_back(Pool);
+          Groups.emplace_back();
         }
 
         // TODO: find the right group for this client.
         auto &Group = Groups.back();
         Group.add(CS);
+        UnregisteredSessions--;
 
       } else {
         // some other message?

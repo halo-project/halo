@@ -1,6 +1,5 @@
 
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/ThreadPool.h"
 
 #include "boost/asio.hpp"
 
@@ -62,10 +61,9 @@ void service_session(ClientSession &CS) {
 int main(int argc, char* argv[]) {
   cl::ParseCommandLineOptions(argc, argv, "Halo Server\n");
 
-  llvm::ThreadPool WorkPool;
   asio::io_service IOService;
 
-  halo::ClientRegistrar CR(IOService, CL_Port, WorkPool, CL_NoPersist);
+  halo::ClientRegistrar CR(IOService, CL_Port, CL_NoPersist);
 
   std::thread io_thread([&](){ IOService.run(); });
 

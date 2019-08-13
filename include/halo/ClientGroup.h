@@ -19,20 +19,22 @@ namespace halo {
 //
 class ClientGroup {
 public:
-
   using ClientCollection = std::list<std::unique_ptr<ClientSession>>;
 
-  ClientGroup(llvm::ThreadPool &Pool) : Pool(Pool), Queue(Pool) {}
+  std::atomic<size_t> NumActive;
+
+  ClientGroup() : NumActive(0), Queue(Pool) {}
 
   void add(ClientSession *CS) {
+    NumActive++; // do this in the caller's thread eagarly.
     Queue.async([this,CS] () {
       CS->start(this);
       Clients.push_back(std::unique_ptr<ClientSession>(CS));
     });
   }
 
-  void cleanup(std::atomic<size_t> &Active) {
-    Queue.async([this, &Active] () {
+  void cleanup() {
+    Queue.async([&] () {
       auto it = Clients.begin();
       size_t removed = 0;
       while(it != Clients.end()) {
@@ -41,7 +43,8 @@ public:
         else
           it++;
       }
-      Active -= removed;
+      if (removed)
+        NumActive -= removed;
     });
   }
 
@@ -62,9 +65,8 @@ public:
   }
 
 private:
-  llvm::ThreadPool &Pool;
-
   // the queue provides sequentially consistent access the the members below it.
+  llvm::ThreadPool Pool{1};
   llvm::TaskQueue Queue;
   ClientCollection Clients;
 

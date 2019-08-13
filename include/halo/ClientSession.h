@@ -35,6 +35,7 @@ namespace halo {
     // thread-safe members
     ip::tcp::socket Socket;
     Channel Chan;
+    llvm::ThreadPool Pool{1};
     llvm::TaskQueue Queue;
     std::atomic<enum SessionStatus> Status;
     ClientGroup *Parent = nullptr;
@@ -49,8 +50,8 @@ namespace halo {
 
     std::vector<pb::RawSample> RawSamples;
 
-    ClientSession(asio::io_service &IOService, llvm::ThreadPool &TPool) :
-      Socket(IOService), Chan(Socket), Queue(TPool), Status(Fresh),
+    ClientSession(asio::io_service &IOService) :
+      Socket(IOService), Chan(Socket), Queue(Pool), Status(Fresh),
       Profile(Client) {}
 
     void shutdown() {
