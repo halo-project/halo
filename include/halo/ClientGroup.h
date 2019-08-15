@@ -1,8 +1,10 @@
 #pragma once
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/Triple.h"
 #include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/DataLayout.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/ThreadPool.h"
 #include "llvm/Support/raw_ostream.h"
@@ -23,7 +25,9 @@ namespace halo {
 //
 //  1. Bitcode
 //  2. Target Triple
-//  3. Other compilation flags.
+//  3. Data Layout
+//  4. Host CPU  ??? Not sure if we want to be this discriminatory.
+//  5. Other compilation flags.
 //
 class ClientGroup {
 public:
@@ -44,7 +48,8 @@ public:
         pb::ClientEnroll &Client = CS->Client;
         pb::ModuleInfo const& Module = Client.module();
 
-        // TODO: grab target triple, host cpu, and build flags.
+        // TODO: grab Data Layout, host cpu, and build flags.
+        TargetTriple = llvm::Triple(Client.process_triple());
 
 
         // take ownership of the bitcode, and maintain a MemoryBuffer view of it.
@@ -96,17 +101,20 @@ public:
 
     Queue.async([&] () {
 
-      auto MaybeCompiler = Compiler::Create(); // FIXME get the right target.
-      if (!MaybeCompiler) {
-        llvm::errs() << "Error creating a compiler: "
-                     << MaybeCompiler.takeError() << "\n";
+      orc::JITTargetMachineBuilder JTMB(TargetTriple);
+
+      // FIXME: not only is this a slow call, it's also not correct!
+      auto DL = JTMB.getDefaultDataLayoutForTarget();
+      if (!DL) {
+        llvm::errs() << "Error compiling module: "
+                     << DL.takeError() << "\n";
         return;
       }
 
-      auto Compile = std::move(MaybeCompiler.get());
+      Compiler Compile(JTMB, std::move(*DL));
 
       auto MaybeModule = llvm::getLazyBitcodeModule(Bitcode->getMemBufferRef(),
-                                                Compile->getContext());
+                                                Compile.getContext());
       if (!MaybeModule) {
         llvm::errs() << "Error compiling module: "
                      << MaybeModule.takeError() << "\n";
@@ -117,10 +125,10 @@ public:
 
       Module->print(llvm::errs(), nullptr);
 
-      // I believe this kicks off a compilation.
-      Compile->addModule(std::move(Module));
+      // This does not kick off a compilation. You need to request a symbol.
+      Compile.addModule(std::move(Module));
 
-      std::cerr << "test compilation done!\n";
+      llvm::outs() << "triple = " << TargetTriple.str() << ". hit end of testcompile.\n";
 
     });
   }
@@ -154,6 +162,8 @@ private:
   ClientCollection Clients;
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
+
+  llvm::Triple TargetTriple;
 
 };
 

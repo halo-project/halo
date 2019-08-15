@@ -73,19 +73,6 @@ namespace halo {
 
     llvm::LLVMContext &getContext() { return *Ctx.getContext(); }
 
-    static llvm::Expected<std::unique_ptr<Compiler>> Create() {
-      auto JTMB = orc::JITTargetMachineBuilder::detectHost();
-
-      if (!JTMB)
-        return JTMB.takeError();
-
-      auto DL = JTMB->getDefaultDataLayoutForTarget();
-      if (!DL)
-        return DL.takeError();
-
-      return llvm::make_unique<Compiler>(std::move(*JTMB), std::move(*DL));
-    }
-
     llvm::Error addModule(std::unique_ptr<llvm::Module> M) {
       return OptimizeLayer.add(ES.getMainJITDylib(),
                                orc::ThreadSafeModule(std::move(M), Ctx));
@@ -108,6 +95,8 @@ namespace halo {
         FPM->add(llvm::createGVNPass());
         FPM->add(llvm::createCFGSimplificationPass());
         FPM->doInitialization();
+
+        llvm::outs() << "Optimizing functions...\n";
 
         // Run the optimizations over all functions in the module being added to
         // the JIT.
