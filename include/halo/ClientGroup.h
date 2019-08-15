@@ -2,7 +2,6 @@
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
-#include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/MemoryBuffer.h"
@@ -10,11 +9,12 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "halo/ClientSession.h"
-#include "halo/Compiler.h"
+#include "halo/CompilationPipeline.h"
 #include "halo/TaskQueueOverlay.h"
 
 #include <functional>
 #include <memory>
+#include <list>
 
 
 namespace halo {
@@ -48,15 +48,16 @@ public:
         pb::ClientEnroll &Client = CS->Client;
         pb::ModuleInfo const& Module = Client.module();
 
-        // TODO: grab Data Layout, host cpu, and build flags.
-        TargetTriple = llvm::Triple(Client.process_triple());
+        // TODO: grab host cpu, and build flags.
+        Pipeline = CompilationPipeline(llvm::Triple(Client.process_triple()));
 
 
         // take ownership of the bitcode, and maintain a MemoryBuffer view of it.
         BitcodeStorage = std::move(
             std::unique_ptr<std::string>(Client.mutable_module()->release_bitcode()));
         Bitcode = std::move(
-            llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(*BitcodeStorage)));
+            llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(*BitcodeStorage))
+                           );
 
         addUnsafe(CS);
       }
@@ -92,43 +93,13 @@ public:
   }
 
   void testCompile() {
-    static bool Done = false;
 
-    if (Done)
-      return;
+    // Just for fun, compile in parallel!
+    Pool.async([&] () {
 
-    Done = true;
+      Pipeline.run(*Bitcode);
 
-    Queue.async([&] () {
-
-      orc::JITTargetMachineBuilder JTMB(TargetTriple);
-
-      // FIXME: not only is this a slow call, it's also not correct!
-      auto DL = JTMB.getDefaultDataLayoutForTarget();
-      if (!DL) {
-        llvm::errs() << "Error compiling module: "
-                     << DL.takeError() << "\n";
-        return;
-      }
-
-      Compiler Compile(JTMB, std::move(*DL));
-
-      auto MaybeModule = llvm::getLazyBitcodeModule(Bitcode->getMemBufferRef(),
-                                                Compile.getContext());
-      if (!MaybeModule) {
-        llvm::errs() << "Error compiling module: "
-                     << MaybeModule.takeError() << "\n";
-        return;
-      }
-
-      std::unique_ptr<llvm::Module> Module = std::move(MaybeModule.get());
-
-      Module->print(llvm::errs(), nullptr);
-
-      // This does not kick off a compilation. You need to request a symbol.
-      Compile.addModule(std::move(Module));
-
-      llvm::outs() << "triple = " << TargetTriple.str() << ". hit end of testcompile.\n";
+      llvm::outs() << "Finished Pipeline!\n";
 
     });
   }
@@ -163,7 +134,7 @@ private:
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
 
-  llvm::Triple TargetTriple;
+  CompilationPipeline Pipeline;
 
 };
 

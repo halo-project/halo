@@ -75,7 +75,9 @@ int main(int argc, char* argv[]) {
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();
-  llvm::InitializeAllAsmPrinters(); // might be handy for debug.
+  llvm::InitializeAllAsmPrinters();
+  llvm::InitializeAllAsmParsers();
+  // llvm::InitializeAllDisassemblers(); // might be handy for debugging
 
 
   asio::io_service IOService;
