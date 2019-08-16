@@ -69,7 +69,7 @@ message RawSample {
 message CodeReplacement {
   uint64 func_addr = 1;
   string func_name = 2;
-  bytes asm = 3;
+  bytes objfile = 3;
 }
 
 message ReqMeasureFunction {

@@ -109,7 +109,7 @@ private:
                 RS.ParseFromString(Blob);
                 // msg::print_proto(RS); // DEBUG
 
-                if (RawSamples.size() > 100)
+                if (RawSamples.size() > 25) // FIXME try to avoid hyperparameter
                   Queue.async([this](){
                     Profile.analyze(RawSamples);
                     RawSamples.clear();

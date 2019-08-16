@@ -178,14 +178,23 @@ public:
 
             std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.get());
 
-            llvm::outs() << "TODO: send code to a client!\n";
+            pb::CodeReplacement CodeMsg;
+            CodeMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
+
+            // For now. send to all clients :)
+            for (auto &Client : State.Clients) {
+              Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
+            }
+
+            llvm::outs() << "Sent code to all clients!\n";
+
             Sent = true;
             break; // REMOVE ME LATER
           }
         }
       });
     }
-    
+
   }
 
 private:
