@@ -9,9 +9,16 @@
 
 namespace halo {
 
+  template<typename R>
+  std::future_status get_status(std::future<R> const& Future) {
+    return Future.wait_for(std::chrono::seconds(0));
+  }
+
 // A ThreadPool that supports submitting tasks that return a value.
 // See asyncRet
 class ThreadPool : public llvm::ThreadPool {
+
+  // TODO: why not use std::packaged_task ??
 
   // Based on llvm/Support/TaskQueue::Task.
   // LLVM's ThreadPool only returns std::shared_future<void>.

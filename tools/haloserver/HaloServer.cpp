@@ -60,7 +60,7 @@ void service_group(ClientGroup &G) {
   // since this function is run in the IOService thread, it should avoid blocking
   // for too long.
 
-  G.apply(service_session);
+  G.eachClient(service_session);
   G.testCompile();
 }
 

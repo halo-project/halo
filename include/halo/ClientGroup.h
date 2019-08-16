@@ -23,6 +23,56 @@ namespace halo {
 
   class ClientRegistrar;
 
+
+struct GroupState {
+  using ClientCollection = std::list<std::unique_ptr<ClientSession>>;
+
+  ClientCollection Clients;
+  std::list<std::future<CompilationPipeline::compile_expected>> InFlight;
+};
+
+// Manages members of a ClientGroup that require locking to ensure thread safety.
+class ClientGroupBase {
+public:
+  ClientGroupBase(ThreadPool &Pool) : Queue(Pool) {}
+
+  // ASYNC Apply the given callable to the state. Provides sequential and
+  // non-overlapping access to the group's state.
+  template <typename RetTy>
+  std::future<RetTy> withState(std::function<RetTy(GroupState&)> Callable) {
+    return Queue.async([this,Callable] () {
+              return Callable(State);
+            });
+  }
+
+  std::future<void> withState(std::function<void(GroupState&)> Callable) {
+    return Queue.async([this,Callable] () {
+              Callable(State);
+            });
+  }
+
+  std::future<void> eachClient(std::function<void(ClientSession&)> Callable) {
+    return withState([Callable] (GroupState& State) {
+      for (auto &Client : State.Clients)
+        Callable(*Client);
+    });
+  }
+
+private:
+  // The task queue provides sequential access to the group's state.
+  // The danger with locks when using a TaskPool is that if a task ever
+  // blocks on a lock, that thread is stuck. There's no ability to yield / preempt
+  // since there's no scheduler, so we lose threads this way.
+  llvm::TaskQueueOverlay Queue;
+  GroupState State;
+  /////////////////////////////////
+}; // end class
+
+void addSession (ClientGroup *Group, ClientSession *CS, GroupState &State) {
+  CS->start(Group);
+  State.Clients.push_back(std::unique_ptr<ClientSession>(CS));
+}
+
 // A group is a set of clients that are equal with respect to:
 //
 //  1. Bitcode
@@ -31,15 +81,13 @@ namespace halo {
 //  4. Host CPU  ??? Not sure if we want to be this discriminatory.
 //  5. Other compilation flags.
 //
-class ClientGroup {
+class ClientGroup : public ClientGroupBase {
 public:
-  using ClientCollection = std::list<std::unique_ptr<ClientSession>>;
-
   std::atomic<size_t> NumActive;
 
   // Construct a singleton client group based on its initial member.
   ClientGroup(ThreadPool &Pool, ClientSession *CS)
-      : NumActive(1), Pool(Pool), Queue(Pool) {
+      : ClientGroupBase(Pool), NumActive(1), Pool(Pool) {
 
         if (!CS->Enrolled) {
           std::cerr << "was given a non-enrolled client!!\n";
@@ -61,7 +109,9 @@ public:
             llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(*BitcodeStorage))
                            );
 
-        addUnsafe(CS);
+         withState([this,CS] (GroupState &State) {
+           addSession(this, CS, State);
+         });
       }
 
   // returns true if the session became a member of the group.
@@ -73,14 +123,16 @@ public:
     // TODO: actually check if the client is compatible with this group.
 
     NumActive++; // do this in the caller's thread eagarly.
-    Queue.async([this,CS] () {
-      addUnsafe(CS);
+    withState([this,CS] (GroupState &State) {
+      addSession(this, CS, State);
     });
+
     return true;
   }
 
   void cleanup() {
-    Queue.async([&] () {
+    withState([&] (GroupState &State) {
+      auto &Clients = State.Clients;
       auto it = Clients.begin();
       size_t removed = 0;
       while(it != Clients.end()) {
@@ -95,57 +147,53 @@ public:
   }
 
   void testCompile() {
-    Queue.async([&] () {
-      InFlight.push_back(Pool.asyncRet([&] () -> CompilationPipeline::compile_expected {
+    static bool Compiled = false;
+    static std::atomic<bool> Sent(false);
 
-        auto Result = Pipeline.run(*Bitcode);
+    if (!Compiled) {
+      Compiled = true;
+      withState([&] (GroupState &State) {
+        State.InFlight.push_back(Pool.asyncRet([&] () -> CompilationPipeline::compile_expected {
 
-        llvm::outs() << "Finished Pipeline!\n";
+          auto Result = Pipeline.run(*Bitcode);
 
-        return Result;
-      }));
-    });
-  }
+          llvm::outs() << "Finished Compile!\n";
 
-  // ASYNC Apply the given callable to the entire collection of clients.
-  template <typename RetTy>
-  std::future<RetTy> apply(std::function<RetTy(ClientCollection&)> Callable) {
-    return Queue.async([this,Callable] () {
-              return Callable(Clients);
-            });
-  }
+          return Result;
+        }));
+      });
+    }
 
-  // ASYNC Apply the callable to each client.
-  std::future<void> apply(std::function<void(ClientSession&)> Callable) {
-    return Queue.async([this,Callable] () {
-              for (auto &Client : Clients)
-                Callable(*Client);
-          });
+    if (!Sent) {
+      // TODO: this should also remove the future from the list.
+      withState([&] (GroupState &State) {
+        for (auto &Future : State.InFlight) {
+          if (get_status(Future) == std::future_status::ready) {
+            auto MaybeBuf = std::move(Future.get());
+
+            if (!MaybeBuf) {
+              llvm::outs() << "Error during compilation: "
+                << MaybeBuf.takeError() << "\n";
+            }
+
+            std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.get());
+
+            llvm::outs() << "TODO: send code to a client!\n";
+            Sent = true;
+            break; // REMOVE ME LATER
+          }
+        }
+      });
+    }
+    
   }
 
 private:
-
-  void addUnsafe(ClientSession *CS) {
-    CS->start(this);
-    Clients.push_back(std::unique_ptr<ClientSession>(CS));
-  }
-
 
   ThreadPool &Pool;
   CompilationPipeline Pipeline;
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
-
-  // The task queue provides sequential access to the fields below it.
-  // The danger with locks when using a TaskPool is that if a task ever
-  // blocks on a lock, that thread is stuck. There's no ability to yield / preempt
-  // since there's no scheduler, so we lose threads this way.
-  llvm::TaskQueueOverlay Queue;
-  ClientCollection Clients;
-  std::list<std::future<CompilationPipeline::compile_expected>> InFlight;
-  /////////////////////////////////
-
-
 
 };
 
