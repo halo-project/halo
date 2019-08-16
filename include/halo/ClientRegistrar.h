@@ -1,6 +1,7 @@
 #pragma once
 
 #include "halo/ClientGroup.h"
+#include "halo/ThreadPool.h"
 
 #include <cinttypes>
 #include <list>
@@ -80,7 +81,7 @@ private:
   asio::io_service &IOService;
   ip::tcp::endpoint Endpoint;
   ip::tcp::acceptor Acceptor;
-  llvm::ThreadPool Pool;
+  ThreadPool Pool;
 
   // these fields must only be accessed by the IOService's thread.
   // TODO: Groups needs to be accessed in parallel. I don't want to have

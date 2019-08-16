@@ -5,16 +5,18 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/ThreadPool.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include "halo/ClientSession.h"
 #include "halo/CompilationPipeline.h"
 #include "halo/TaskQueueOverlay.h"
+#include "halo/ThreadPool.h"
 
 #include <functional>
 #include <memory>
 #include <list>
+#include <utility>
+#include <queue>
 
 
 namespace halo {
@@ -36,7 +38,7 @@ public:
   std::atomic<size_t> NumActive;
 
   // Construct a singleton client group based on its initial member.
-  ClientGroup(llvm::ThreadPool &Pool, ClientSession *CS)
+  ClientGroup(ThreadPool &Pool, ClientSession *CS)
       : NumActive(1), Pool(Pool), Queue(Pool) {
 
         if (!CS->Enrolled) {
@@ -93,26 +95,27 @@ public:
   }
 
   void testCompile() {
+    Queue.async([&] () {
+      InFlight.push_back(Pool.asyncRet([&] () -> CompilationPipeline::compile_expected {
 
-    // Just for fun, compile in parallel!
-    Pool.async([&] () {
+        auto Result = Pipeline.run(*Bitcode);
 
-      Pipeline.run(*Bitcode);
+        llvm::outs() << "Finished Pipeline!\n";
 
-      llvm::outs() << "Finished Pipeline!\n";
-
+        return Result;
+      }));
     });
   }
 
-  // Apply the given callable to the entire collection of clients.
+  // ASYNC Apply the given callable to the entire collection of clients.
   template <typename RetTy>
-  std::future<RetTy> operator () (std::function<RetTy(ClientCollection&)> Callable) {
+  std::future<RetTy> apply(std::function<RetTy(ClientCollection&)> Callable) {
     return Queue.async([this,Callable] () {
               return Callable(Clients);
             });
   }
 
-  // Apply the callable to each client.
+  // ASYNC Apply the callable to each client.
   std::future<void> apply(std::function<void(ClientSession&)> Callable) {
     return Queue.async([this,Callable] () {
               for (auto &Client : Clients)
@@ -127,14 +130,22 @@ private:
     Clients.push_back(std::unique_ptr<ClientSession>(CS));
   }
 
-  // the queue provides sequentially consistent access the the members below it.
-  llvm::ThreadPool &Pool;
-  llvm::TaskQueueOverlay Queue;
-  ClientCollection Clients;
+
+  ThreadPool &Pool;
+  CompilationPipeline Pipeline;
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
 
-  CompilationPipeline Pipeline;
+  // The task queue provides sequential access to the fields below it.
+  // The danger with locks when using a TaskPool is that if a task ever
+  // blocks on a lock, that thread is stuck. There's no ability to yield / preempt
+  // since there's no scheduler, so we lose threads this way.
+  llvm::TaskQueueOverlay Queue;
+  ClientCollection Clients;
+  std::list<std::future<CompilationPipeline::compile_expected>> InFlight;
+  /////////////////////////////////
+
+
 
 };
 

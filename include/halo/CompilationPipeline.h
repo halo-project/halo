@@ -35,10 +35,13 @@ namespace halo {
   // given the configuration. Thread-safe.
   class CompilationPipeline {
   public:
+    using compile_result = std::unique_ptr<llvm::MemoryBuffer>;
+    using compile_expected = llvm::Expected<compile_result>;
+
     CompilationPipeline() {}
     CompilationPipeline(llvm::Triple Triple) : Triple(Triple) {}
 
-    llvm::Expected<std::unique_ptr<llvm::MemoryBuffer>> run(llvm::MemoryBuffer &Bitcode) {
+    compile_expected run(llvm::MemoryBuffer &Bitcode) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
       // NOTE: llvm::getLazyBitcodeModule is NOT thread-safe!
       auto MaybeModule = llvm::parseBitcodeFile(Bitcode.getMemBufferRef(), Cxt);
@@ -50,7 +53,7 @@ namespace halo {
       return _run(*Module);
     }
 
-    std::unique_ptr<llvm::MemoryBuffer> run(orc::ThreadSafeModule &TSM) {
+    compile_result run(orc::ThreadSafeModule &TSM) {
       return TSM.withModuleDo([&](llvm::Module &Module) {
           return _run(Module);
         });
