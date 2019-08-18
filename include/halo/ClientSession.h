@@ -1,5 +1,6 @@
 #pragma once
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ThreadPool.h"
 #include "halo/TaskQueueOverlay.h"
 #include "halo/ClientGroup.h"
@@ -100,12 +101,11 @@ private:
               if (Measuring)
                 break;
 
-              // copy the data out into a string and save it by value in closure
-              std::string Blob(Body.data(), Body.size());
 
-              Queue.async([this,Blob](){
+              Queue.async([this,Body](){
                 RawSamples.emplace_back();
                 pb::RawSample &RS = RawSamples.back();
+                llvm::StringRef Blob(Body.data(), Body.size());
                 RS.ParseFromString(Blob);
                 // msg::print_proto(RS); // DEBUG
 

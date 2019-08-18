@@ -1,5 +1,6 @@
 #pragma once
 
+#include "llvm/ADT/StringRef.h"
 #include "halo/ClientGroup.h"
 #include "halo/ThreadPool.h"
 
@@ -125,7 +126,7 @@ private:
         UnregisteredSessions--;
 
       } else if (Kind == msg::ClientEnroll) {
-        std::string Blob(Body.data(), Body.size());
+        llvm::StringRef Blob(Body.data(), Body.size());
 
         CS->Client.ParseFromString(Blob);
         CS->Enrolled = true;
