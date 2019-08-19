@@ -2,10 +2,13 @@
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ThreadPool.h"
+#include "llvm/Support/Error.h"
 #include "halo/TaskQueueOverlay.h"
 #include "halo/ClientGroup.h"
 
 #include "boost/asio.hpp"
+
+#include "google/protobuf/repeated_field.h"
 
 // from the 'net' dir
 #include "Messages.pb.h"
@@ -20,6 +23,7 @@
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
 namespace msg = halo::msg;
+namespace proto = google::protobuf;
 
 namespace halo {
 
@@ -55,6 +59,27 @@ namespace halo {
     ClientSession(asio::io_service &IOService, llvm::ThreadPool &Pool) :
       Socket(IOService), Chan(Socket), Pool(Pool), Queue(Pool), Status(Fresh),
       Profile(Client) {}
+
+    // Mutates the input CodeReplacement message, replacing the absolute addresses
+    // of the function symbols contained, such that they match this client session.
+    llvm::Error translateSymbols(pb::CodeReplacement &CR) {
+      // The translation here is to fill in the function addresses
+      // for this client. Note that this mutates CR, but for fields we expect
+      // to be overwritten.
+      CodeRegionInfo const& CRI = Profile.CRI;
+      proto::RepeatedPtrField<pb::FunctionSymbol> *Syms = CR.mutable_symbols();
+      for (pb::FunctionSymbol &FSym : *Syms) {
+        auto *FI = CRI.lookup(FSym.label());
+
+        if (FI == nullptr)
+          return llvm::createStringError(std::errc::not_supported,
+              "unable to find function addr for this client.");
+
+        FSym.set_addr(FI->AbsAddr);
+      }
+
+      return llvm::Error::success();
+    }
 
     void shutdown() {
       // NOTE: we enqueue this so that the job queue is flushed out.

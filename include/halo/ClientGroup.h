@@ -207,13 +207,16 @@ public:
           std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.get());
 
           pb::CodeReplacement CodeMsg;
-          // TODO: do something with the name, and allow each session to
-          // handle sending the proper message to each client,
-          // since they all may have different addresses.
           CodeMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
+
+          // Add the function symbols we request to replace on the client with
+          // the ones contained in the object file.
+          pb::FunctionSymbol *FS = CodeMsg.add_symbols();
+          FS->set_label(Name);
 
           // For now. send to all clients :)
           for (auto &Client : State.Clients) {
+            Client->translateSymbols(CodeMsg);
             Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
           }
 
