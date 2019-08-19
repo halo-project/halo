@@ -1,6 +1,9 @@
 // RUN: %clang -fhalo -O1 %s -o %t
 // RUN: %testhalo %server 1 %t
 
+// RUN: %clang -fhalo -O1 -fPIC -pie %s -o %t
+// RUN: %testhalo %server 1 %t
+
 //////
 // This test is designed such that it exhibits non-fixed code hotness.
 // The first few iterations are only calls to fib, each of which take take
