@@ -66,11 +66,14 @@ message RawSample {
 
 ///////////////////// Server -> Client /////////////////////////
 
+message FunctionSymbol {
+  string label = 1;
+  uint64 addr = 2;
+}
+
 message CodeReplacement {
-  uint64 func_addr = 1;
-  string func_name = 2;
-  string data_layout = 3;
-  bytes objfile = 4;
+  repeated FunctionSymbol symbols = 1;
+  bytes objfile = 2;
 }
 
 message ReqMeasureFunction {

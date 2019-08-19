@@ -28,7 +28,10 @@ struct GroupState {
   using ClientCollection = std::list<std::unique_ptr<ClientSession>>;
 
   ClientCollection Clients;
-  std::list<std::future<CompilationPipeline::compile_expected>> InFlight;
+  std::list<std::pair<std::string,
+                      std::future<CompilationPipeline::compile_expected>
+                     >
+           > InFlight;
 };
 
 // Manages members of a ClientGroup that require locking to ensure thread safety.
@@ -148,57 +151,113 @@ public:
     });
   }
 
-  void testCompile() {
-    static bool Compiled = false;
-    static std::atomic<bool> Sent(false);
-
-    if (!Compiled) {
-      Compiled = true;
-      withState([&] (GroupState &State) {
-        State.InFlight.push_back(Pool.asyncRet([&] () -> CompilationPipeline::compile_expected {
-
-          auto Result = Pipeline.run(*Bitcode);
-
-          llvm::outs() << "Finished Compile!\n";
-
-          return Result;
-        }));
-      });
-    }
-
-    if (!Sent) {
-      // TODO: this should also remove the future from the list.
-      withState([&] (GroupState &State) {
-        for (auto &Future : State.InFlight) {
-          if (get_status(Future) == std::future_status::ready) {
-            auto MaybeBuf = std::move(Future.get());
-
-            if (!MaybeBuf) {
-              llvm::outs() << "Error during compilation: "
-                << MaybeBuf.takeError() << "\n";
-            }
-
-            std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.get());
-
-            pb::CodeReplacement CodeMsg;
-            CodeMsg.set_data_layout(Layout.getStringRepresentation());
-            CodeMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
-
-            // For now. send to all clients :)
-            for (auto &Client : State.Clients) {
-              Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
-            }
-
-            llvm::outs() << "Sent code to all clients!\n";
-
-            Sent = true;
-            break; // REMOVE ME LATER
+  void service_async() {
+    withState([this] (GroupState &State) {
+      FunctionInfo *HottestFI = nullptr;
+      for (auto &Client : State.Clients) {
+        if (!Client->Measuring) {
+          // 1. determine which function is the hottest for this session.
+          FunctionInfo *FI = Client->Profile.getMostSampled();
+          if (FI) {
+            std::cout << "Hottest function = " << FI->Name << "\n";
+            HottestFI = FI;
+            break; // FIXME
           }
         }
-      });
-    }
+      }
+
+      if (HottestFI == nullptr)
+        return;
+
+
+
+      // 2. send a request to client to begin timing the execution of the function.
+      // CS.Measuring = true;
+      // pb::ReqMeasureFunction MF;
+      // MF.set_func_addr(FI->AbsAddr);
+      // CS.Chan.send_proto(msg::ReqMeasureFunction, MF);
+
+      // 3. queue up a new version.
+      State.InFlight.emplace_back(HottestFI->Name,
+        std::move(Pool.asyncRet([&] () -> CompilationPipeline::compile_expected {
+
+        auto Result = Pipeline.run(*Bitcode);
+
+        llvm::outs() << "Finished Compile!\n";
+
+        return Result;
+      })));
+
+      // 4. check if any versions are done, and send the first one that's done
+      //    to all clients.
+
+      // TODO: this needs to also remove the future from the list!
+      for (auto &Pair : State.InFlight) {
+        auto &Name = Pair.first;
+        auto &Future = Pair.second;
+
+        if (Future.valid() && get_status(Future) == std::future_status::ready) {
+          auto MaybeBuf = std::move(Future.get());
+
+          if (!MaybeBuf) {
+            llvm::outs() << "Error during compilation: "
+              << MaybeBuf.takeError() << "\n";
+          }
+
+          std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.get());
+
+          pb::CodeReplacement CodeMsg;
+          // TODO: do something with the name, and allow each session to
+          // handle sending the proper message to each client,
+          // since they all may have different addresses.
+          CodeMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
+
+          // For now. send to all clients :)
+          for (auto &Client : State.Clients) {
+            Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
+          }
+
+          llvm::outs() << "Sent code to all clients!\n";
+
+          break;
+        }
+      }
+
+    }); // end of lambda
+  }
+
+  /*
+  void service_session(ClientSession &CS) {
 
   }
+  */
+
+  // void compileTest() {
+  //   static bool Compiled = false;
+  //   static std::atomic<bool> Sent(false);
+  //
+  //   if (!Compiled) {
+  //     Compiled = true;
+  //     withState([&] (GroupState &State) {
+  //       State.InFlight.push_back(Pool.asyncRet([&] () -> CompilationPipeline::compile_expected {
+  //
+  //         auto Result = Pipeline.run(*Bitcode);
+  //
+  //         llvm::outs() << "Finished Compile!\n";
+  //
+  //         return Result;
+  //       }));
+  //     });
+  //   }
+  //
+  //   if (!Sent) {
+  //     // TODO: this should also remove the future from the list.
+  //     withState([&] (GroupState &State) {
+  //
+  //     });
+  //   }
+  //
+  // }
 
 private:
 

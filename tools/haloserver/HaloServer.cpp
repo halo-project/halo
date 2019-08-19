@@ -35,33 +35,10 @@ cl::opt<uint32_t> CL_TimeoutSec("timeout",
 
 namespace halo {
 
-// TODO: this needs to move into its own module.
-
-void service_session(ClientSession &CS) {
-  if (!CS.Measuring) {
-    // 1. determine which function is the hottest for this session.
-    FunctionInfo *FI = CS.Profile.getMostSampled();
-    if (FI) {
-      std::cout << "Hottest function = " << FI->Name << "\n";
-
-      // 2. send a request to client to begin timing the execution of the function.
-      CS.Measuring = true;
-      pb::ReqMeasureFunction MF;
-      MF.set_func_addr(FI->AbsAddr);
-      CS.Chan.send_proto(msg::ReqMeasureFunction, MF);
-
-      // 3. compile a new version in parallel for now.
-
-    }
-  }
-}
-
 void service_group(ClientGroup &G) {
   // since this function is run in the IOService thread, it should avoid blocking
   // for too long.
-
-  G.eachClient(service_session);
-  G.testCompile();
+  G.service_async();
 }
 
 } // end namespace halo
