@@ -42,25 +42,6 @@ namespace halo {
     CompilationPipeline() {}
     CompilationPipeline(llvm::Triple Triple) : Triple(Triple) {}
 
-    // NOTE:
-    //  this static method is NOT thread-safe with respect to the
-    //  input bitcode, because LLVM's lazy module loader is not TS!
-    //
-    // TODO: check if the .llvmcmd section has this info?
-    //
-    static llvm::DataLayout parseDataLayout(llvm::MemoryBuffer &Bitcode) {
-      llvm::LLVMContext Cxt;
-      auto MaybeModule = llvm::getLazyBitcodeModule(Bitcode.getMemBufferRef(), Cxt);
-
-      if (!MaybeModule) {
-        llvm::report_fatal_error(MaybeModule.takeError());
-      }
-
-      auto Module = std::move(MaybeModule.get());
-      llvm::DataLayout DL(Module.get());
-      return DL;
-    }
-
     compile_expected run(llvm::MemoryBuffer &Bitcode) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
       // NOTE: llvm::getLazyBitcodeModule is NOT thread-safe!

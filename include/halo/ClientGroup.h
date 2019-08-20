@@ -90,7 +90,7 @@ public:
 
   // Construct a singleton client group based on its initial member.
   ClientGroup(ThreadPool &Pool, ClientSession *CS)
-      : ClientGroupBase(Pool), NumActive(1), Pool(Pool), Layout("") {
+      : ClientGroupBase(Pool), NumActive(1), Pool(Pool) {
 
         if (!CS->Enrolled) {
           std::cerr << "was given a non-enrolled client!!\n";
@@ -111,8 +111,6 @@ public:
         Bitcode = std::move(
             llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(*BitcodeStorage))
                            );
-
-        Layout = CompilationPipeline::parseDataLayout(*Bitcode);
 
         withState([this,CS] (GroupState &State) {
           addSession(this, CS, State);
@@ -266,7 +264,6 @@ private:
 
   ThreadPool &Pool;
   CompilationPipeline Pipeline;
-  llvm::DataLayout Layout;
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
 
