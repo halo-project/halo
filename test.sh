@@ -7,7 +7,7 @@ set -ex
 KIND=$1
 
 pushd build
-cmake --build . -- test-halo
+cmake --build . -- check-xray test-halo
 popd
 
 ##### run benchmark suite
