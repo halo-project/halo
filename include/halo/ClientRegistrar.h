@@ -131,7 +131,7 @@ private:
         CS->Client.ParseFromString(Blob);
         CS->Enrolled = true;
 
-        msg::print_proto(CS->Client); // DEBUG
+        // msg::print_proto(CS->Client); // DEBUG
 
         // Find similar clients.
         bool Added = false;

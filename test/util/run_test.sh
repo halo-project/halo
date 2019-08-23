@@ -23,6 +23,11 @@ if [ "${NUM_CLIENTS}" -ne "1" ]; then
   exit 1
 fi
 
-${PROG_EXE} 2>&1 | tee ${PROG_OUT}
+CLIENT_ERROR=0
+${PROG_EXE} 2>&1 | tee ${PROG_OUT} || CLIENT_ERROR=1
 
 wait $SERVER_PID
+
+if [ "$CLIENT_ERROR" == "1" ]; then
+  exit 1
+fi

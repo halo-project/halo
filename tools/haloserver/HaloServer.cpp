@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Started Halo Server.\nListening on port "
             << CL_Port << std::endl;
 
-  const uint32_t SleepMS = 50; // Lower this to be more aggressive.
+  const uint32_t SleepMS = 500; // Lower this to be more aggressive.
   const bool TimeLimited = CL_TimeoutSec > 0;
   int64_t RemainingTime = CL_TimeoutSec * 1000;
   bool ForceShutdown = false;
