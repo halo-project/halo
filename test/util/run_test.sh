@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -o pipefail
 
 SERVER_EXE=$1
 NUM_CLIENTS=$2
