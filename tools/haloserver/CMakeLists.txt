@@ -26,6 +26,8 @@ add_executable(${SERVER_BIN}
   HaloServer.cpp
   Error.cpp
   CodeRegionInfo.cpp
+  ClientGroup.cpp
+  ClientSession.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}
 )

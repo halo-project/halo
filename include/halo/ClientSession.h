@@ -1,10 +1,9 @@
 #pragma once
 
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/ThreadPool.h"
 #include "llvm/Support/Error.h"
 #include "halo/TaskQueueOverlay.h"
-#include "halo/ClientGroup.h"
+#include "halo/SequentialAccess.h"
 
 #include "boost/asio.hpp"
 
@@ -32,10 +31,18 @@ namespace halo {
   enum SessionStatus {
     Fresh,
     Active,
+    Sampling,
+    Measuring,
     Dead
   };
 
-  struct ClientSession {
+  struct SessionState {
+    Profiler Profile;
+    std::vector<pb::RawSample> RawSamples;
+  };
+
+  class ClientSession : public SequentialAccess<SessionState> {
+  public:
     // members initialized prior to usage of this object.
     bool Enrolled = false;
     pb::ClientEnroll Client;
@@ -43,122 +50,30 @@ namespace halo {
     // thread-safe members
     ip::tcp::socket Socket;
     Channel Chan;
-    llvm::ThreadPool &Pool;
-    llvm::TaskQueueOverlay Queue;
+    halo::ThreadPool &Pool;
     std::atomic<enum SessionStatus> Status;
     ClientGroup *Parent = nullptr;
 
-    // all fields below here must be accessed through the sequential task queue.
-    bool Sampling = false;
-    bool Measuring = false;
-
-    Profiler Profile;
-
-    std::vector<pb::RawSample> RawSamples;
-
-    ClientSession(asio::io_service &IOService, llvm::ThreadPool &Pool) :
-      Socket(IOService), Chan(Socket), Pool(Pool), Queue(Pool), Status(Fresh),
-      Profile(Client) {}
+    ClientSession(asio::io_service &IOService, ThreadPool &Pool);
 
     // Mutates the input CodeReplacement message, replacing the absolute addresses
     // of the function symbols contained, such that they match this client session.
-    llvm::Error translateSymbols(pb::CodeReplacement &CR) {
-      // The translation here is to fill in the function addresses
-      // for this client. Note that this mutates CR, but for fields we expect
-      // to be overwritten.
-      CodeRegionInfo const& CRI = Profile.CRI;
-      proto::RepeatedPtrField<pb::FunctionSymbol> *Syms = CR.mutable_symbols();
-      for (pb::FunctionSymbol &FSym : *Syms) {
-        auto *FI = CRI.lookup(FSym.label());
+    llvm::Error translateSymbols(pb::CodeReplacement &CR);
 
-        if (FI == nullptr)
-          return llvm::createStringError(std::errc::not_supported,
-              "unable to find function addr for this client.");
+    // a blocking version of shutdown_async
+    void shutdown();
 
-        FSym.set_addr(FI->AbsAddr);
-      }
+    // shuts down this client by flushing all
+    // jobs in its queue and TODO closes the socket. The status is then
+    // set to Dead.
+    void shutdown_async();
 
-      return llvm::Error::success();
-    }
-
-    void shutdown() {
-      // NOTE: we enqueue this so that the job queue is flushed out.
-      Queue.async([this](){
-        std::cerr << "client session terminated.\n";
-        Status = Dead;
-      });
-    }
-
-    void start(ClientGroup *CG) {
-      Parent = CG;
-
-      // We expect that the registrar has taken care of client enrollment.
-      if (!Enrolled)
-        std::cerr << "WARNING: client is not enrolled before starting!\n";
-
-      Queue.async([this](){
-        // process this new enrollment
-        Profile.init();
-
-        // ask to sample right away for now.
-        Chan.send(msg::StartSampling);
-        Sampling = true;
-      });
-
-      listen();
-    }
+    // finishes initialization of the client and
+    // kicks off the async interaction loop for this client session in the IOService.
+    void start(ClientGroup *CG);
 
 private:
-    void listen() {
-      Chan.async_recv([this](msg::Kind Kind, std::vector<char>& Body) {
-        // std::cerr << "got msg ID " << (uint32_t) Kind << "\n";
-
-          switch(Kind) {
-            case msg::Shutdown: {
-              shutdown();
-            } return; // NOTE: the return to ensure no more recvs are serviced.
-
-            case msg::RawSample: {
-              if (!Sampling)
-                std::cerr << "warning: recieved sample data while not asking for it.\n";
-
-              // The samples are likely to be noisy, so we ignore them.
-              if (Measuring)
-                break;
-
-
-              Queue.async([this,Body](){
-                RawSamples.emplace_back();
-                pb::RawSample &RS = RawSamples.back();
-                llvm::StringRef Blob(Body.data(), Body.size());
-                RS.ParseFromString(Blob);
-                // msg::print_proto(RS); // DEBUG
-
-                if (RawSamples.size() > 25) // FIXME try to avoid hyperparameter
-                  Queue.async([this](){
-                    Profile.analyze(RawSamples);
-                    RawSamples.clear();
-
-                    // Profile.dump(std::cerr); // DEBUG
-                  });
-
-              });
-
-            } break;
-
-            case msg::ClientEnroll: {
-              std::cerr << "warning: recieved client enroll when already enrolled!\n";
-            } break;
-
-            default: {
-              std::cerr << "Recieved unknown message ID: "
-                << (uint32_t)Kind << "\n";
-            } break;
-          };
-
-          listen();
-      });
-    } // end listen
+    void listen();
 
   };
 

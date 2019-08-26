@@ -31,7 +31,7 @@ public:
   // Because the IOService thread can modify the Groups list.
   void cleanup() {
     for (auto &Group : Groups)
-      Group.cleanup();
+      Group.cleanup_async();
   }
 
   bool consider_shutdown(bool ForcedShutdown) {

@@ -11,12 +11,9 @@ namespace halo {
 class Profiler {
 public:
   CodeRegionInfo CRI;
-  pb::ClientEnroll &Client;
 
-  Profiler(pb::ClientEnroll &C) : Client(C) {}
-
-  void init() {
-    CRI.init(Client);
+  void init(pb::ClientEnroll &C) {
+    CRI.init(C);
   }
 
   void analyze(std::vector<pb::RawSample> const& Samples) {
