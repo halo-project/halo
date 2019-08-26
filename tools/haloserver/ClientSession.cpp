@@ -30,7 +30,7 @@ void ClientSession::listen()  {
 
       switch(Kind) {
         case msg::Shutdown: {
-          shutdown();
+          shutdown_async();
         } return; // NOTE: the return to ensure no more recvs are serviced.
 
         case msg::RawSample: {
@@ -111,7 +111,7 @@ void ClientSession::shutdown_async() {
 }
 
 ClientSession::ClientSession(asio::io_service &IOService, ThreadPool &Pool) :
-  SequentialAccess(Pool), Socket(IOService), Chan(Socket), Pool(Pool), Status(Fresh) {}
+  SequentialAccess(Pool), Socket(IOService), Chan(Socket), Status(Fresh) {}
 
 
 

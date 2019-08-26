@@ -8,14 +8,17 @@
 
 namespace halo {
 
+  // kicks off a continuous service loop for this group.
+  void ClientGroup::run_services() {
+    if (!RunningServices)
+      RunningServices = true;
 
-  void ClientGroup::service_async() {
     withState([this] (GroupState &State) {
       FunctionInfo *HottestFI = nullptr;
 
       // FIXME: this needs to be revised since the profile requires thread-safe
       // access.
-      
+
       // for (auto &Client : State.Clients) {
       //   if (Client->Status != Measuring) {
       //     // 1. determine which function is the hottest for this session.
@@ -88,6 +91,8 @@ namespace halo {
         }
       }
 
+      // TODO: sleep
+      run_services();
     }); // end of lambda
   }
 
@@ -164,7 +169,7 @@ bool ClientGroup::tryAdd(ClientSession *CS) {
 
 
 ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS)
-    : SequentialAccess(Pool), NumActive(1), Pool(Pool) {
+    : SequentialAccess(Pool), NumActive(1), RunningServices(false), Pool(Pool) {
 
       if (!CS->Enrolled) {
         std::cerr << "was given a non-enrolled client!!\n";

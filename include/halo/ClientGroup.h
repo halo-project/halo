@@ -38,6 +38,7 @@ struct GroupState {
 class ClientGroup : public SequentialAccess<GroupState> {
 public:
   std::atomic<size_t> NumActive;
+  std::atomic<bool> RunningServices;
 
   // Construct a singleton client group based on its initial member.
   ClientGroup(ThreadPool &Pool, ClientSession *CS);
@@ -48,8 +49,8 @@ public:
   // Drop dead / disconnected clients.
   void cleanup_async();
 
-  // Run one iteration of the main service loop.
-  void service_async();
+  // kicks off a continuous service loop for this group.
+  void run_services();
 
   std::future<void> eachClient(std::function<void(ClientSession&)> Callable) {
     return withState([Callable] (GroupState& State) {

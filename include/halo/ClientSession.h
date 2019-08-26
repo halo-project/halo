@@ -50,7 +50,6 @@ namespace halo {
     // thread-safe members
     ip::tcp::socket Socket;
     Channel Chan;
-    halo::ThreadPool &Pool;
     std::atomic<enum SessionStatus> Status;
     ClientGroup *Parent = nullptr;
 

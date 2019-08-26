@@ -36,9 +36,8 @@ cl::opt<uint32_t> CL_TimeoutSec("timeout",
 namespace halo {
 
 void service_group(ClientGroup &G) {
-  // since this function is run in the IOService thread, it should avoid blocking
-  // for too long.
-  G.service_async();
+  if (!G.RunningServices)
+    G.run_services();
 }
 
 } // end namespace halo
