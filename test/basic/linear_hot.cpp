@@ -1,8 +1,8 @@
 // RUN: %clang -fhalo -O1 %s -o %t
-// RUN: %testhalo %server 1 %t
+// RUN: %testhalo %server 4 %t
 
 // RUN: %clang -fhalo -O1 -fPIC -pie %s -o %t
-// RUN: %testhalo %server 1 %t
+// RUN: %testhalo %server 4 %t
 
 //////
 // This test is designed such that it exhibits non-fixed code hotness.
