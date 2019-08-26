@@ -45,17 +45,25 @@ FAILURE=0
 
 # wait for all clients to complete
 for PID in "${CLIENT_PIDS[@]}"; do
-  wait "$PID" || FAILURE=1
+  if [ $FAILURE -eq "1" ]; then
+    kill "$PID"
+  else
+    wait "$PID" || { echo "A client has failed." && FAILURE=1; }
+  fi
 done
 
-# wait for the server to finish
-wait "$SERVER_PID" || FAILURE=1
+if [ $FAILURE -eq "1" ]; then
+  kill "$SERVER_PID"
+else
+  # wait for the server to finish
+  wait "$SERVER_PID" || { echo "The server has failed." && FAILURE=1; }
+fi
 
 # wait for everything else to finish just in case
 wait
 
 if [ $FAILURE -eq "1" ]; then
-  echo "** Some part of the test has failed! **"
+  echo "Some part of the test has failed! See above."
   if [ $SAVING_OUTPUT -eq "1" ]; then
     echo -e "\n\n\tSERVER OUTPUT:"
     cat "$SERV_OUT"
