@@ -16,12 +16,16 @@ public:
     CRI.init(C);
   }
 
-  void analyze(std::vector<pb::RawSample> const& Samples) {
-    for (auto &RS : Samples) {
-      uint64_t IP = RS.instr_ptr();
-      auto Info = CRI.lookup(IP);
-      Info->Samples.push_back(RS);
+  void add(std::vector<pb::RawSample> const& Samples) {
+    for (auto const& RS : Samples) {
+      add(RS);
     }
+  }
+
+  void add(pb::RawSample const& RS) {
+    uint64_t IP = RS.instr_ptr();
+    auto Info = CRI.lookup(IP);
+    Info->Samples.push_back(RS);
   }
 
   // returns nullptr if no functions matching the critera exists.

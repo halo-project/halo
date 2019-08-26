@@ -8,6 +8,25 @@
 
 namespace halo {
 
+  llvm::Error translateSymbols(CodeRegionInfo const& CRI, pb::CodeReplacement &CR) {
+    // The translation here is to fill in the function addresses
+    // for a specific memory layout. Note that this mutates CR,
+    // but for fields we expect to be overwritten.
+
+    proto::RepeatedPtrField<pb::FunctionSymbol> *Syms = CR.mutable_symbols();
+    for (pb::FunctionSymbol &FSym : *Syms) {
+      auto *FI = CRI.lookup(FSym.label());
+
+      if (FI == nullptr)
+        return llvm::createStringError(std::errc::not_supported,
+            "unable to find function addr for this client.");
+
+      FSym.set_addr(FI->AbsAddr);
+    }
+
+    return llvm::Error::success();
+  }
+
   // kicks off a continuous service loop for this group.
   void ClientGroup::run_services() {
     if (!RunningServices)
@@ -16,20 +35,17 @@ namespace halo {
     withState([this] (GroupState &State) {
       FunctionInfo *HottestFI = nullptr;
 
-      // FIXME: this needs to be revised since the profile requires thread-safe
-      // access.
-
-      // for (auto &Client : State.Clients) {
-      //   if (Client->Status != Measuring) {
-      //     // 1. determine which function is the hottest for this session.
-      //     FunctionInfo *FI = Client->Profile.getMostSampled();
-      //     if (FI) {
-      //       std::cout << "Hottest function = " << FI->Name << "\n";
-      //       HottestFI = FI;
-      //       break; // FIXME
-      //     }
-      //   }
-      // }
+      for (auto &Client : State.Clients) {
+        if (Client->Status != Measuring) {
+          // 1. determine which function is the hottest for this session.
+          FunctionInfo *FI = Client->State.Profile.getMostSampled();
+          if (FI) {
+            std::cout << "Hottest function = " << FI->Name << "\n";
+            HottestFI = FI;
+            break; // FIXME
+          }
+        }
+      }
 
       if (HottestFI == nullptr)
         return;
@@ -81,7 +97,7 @@ namespace halo {
 
           // For now. send to all clients :)
           for (auto &Client : State.Clients) {
-            Client->translateSymbols(CodeMsg);
+            translateSymbols(Client->State.Profile.CRI, CodeMsg);
             Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
           }
 
@@ -91,7 +107,7 @@ namespace halo {
         }
       }
 
-      // TODO: sleep
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
       run_services();
     }); // end of lambda
   }

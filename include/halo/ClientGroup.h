@@ -59,6 +59,12 @@ public:
     });
   }
 
+  std::future<void> withClientState(ClientSession *CS, std::function<void(SessionState&)> Callable) {
+    return withState([CS, Callable] (GroupState& State) {
+      Callable(CS->State);
+    });
+  }
+
 private:
 
   ThreadPool &Pool;

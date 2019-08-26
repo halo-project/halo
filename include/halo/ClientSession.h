@@ -38,10 +38,20 @@ namespace halo {
 
   struct SessionState {
     Profiler Profile;
-    std::vector<pb::RawSample> RawSamples;
   };
 
-  class ClientSession : public SequentialAccess<SessionState> {
+  class GroupOwnedState {
+  // Rather than keep this state in a seperate group-managed map, we keep
+  // this state within the client session, but restrict access to it
+  // from within the session. The session must synchronize with the group's
+  // sequential access queue to modify its state via
+  // Parent->withClientState(this, ...).
+  private:
+    friend class ClientGroup;
+    SessionState State;
+  };
+
+  class ClientSession : public GroupOwnedState {
   public:
     // members initialized prior to usage of this object.
     bool Enrolled = false;
@@ -54,10 +64,6 @@ namespace halo {
     ClientGroup *Parent = nullptr;
 
     ClientSession(asio::io_service &IOService, ThreadPool &Pool);
-
-    // Mutates the input CodeReplacement message, replacing the absolute addresses
-    // of the function symbols contained, such that they match this client session.
-    llvm::Error translateSymbols(pb::CodeReplacement &CR);
 
     // a blocking version of shutdown_async
     void shutdown();
