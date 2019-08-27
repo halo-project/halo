@@ -29,6 +29,7 @@ add_executable(${SERVER_BIN}
   ClientGroup.cpp
   ClientSession.cpp
   CompilationPipeline.cpp
+  MDUtils.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}
 )

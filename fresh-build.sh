@@ -57,7 +57,7 @@ elif [ "${ENV_KIND}" == "rpi" ]; then
 
 elif [ "${ENV_KIND}" == "kavon" ]; then
   BACKENDS="Native"
-  OPTIONS="${OPTIONS} -DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=gold"
+  OPTIONS="${OPTIONS} -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=gold"
 
 else
   echo "Unknown build kind '${ENV_KIND}'. Options are: $ENV_KIND_OPTIONS"
