@@ -4,6 +4,8 @@
 // RUN: %clang -fhalo -O1 -fpic -fpie %s -o %t
 // RUN: %testhalo %server 1 %t
 
+// XFAIL: *
+
 #define NO_INLINE __attribute__((noinline))
 
 // knobs to control workload
