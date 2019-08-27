@@ -14,21 +14,8 @@ namespace orc = llvm::orc;
 
 namespace halo {
 
-  class CompilationPipeline;
-
-  // A thread-safe compiler functor.
-  class Compiler {
-  private:
-    friend class CompilationPipeline;
-
-    // Compile the given module to an in-memory object file.
-    std::unique_ptr<llvm::MemoryBuffer> operator()
-                                  (llvm::Triple const& Triple, llvm::Module &M);
-
-  };
-
-  // Coordinates the parallel optimization and compilation of a module
-  // given the configuration. Thread-safe.
+  // Performs the optimization and compilation of a module
+  // given a configuration. Thread-safe.
   class CompilationPipeline {
   public:
     using compile_result = std::unique_ptr<llvm::MemoryBuffer>;
@@ -58,10 +45,9 @@ namespace halo {
     // }
 
   private:
-    std::unique_ptr<llvm::MemoryBuffer> _run(llvm::Module&, llvm::StringRef);
+    compile_expected _run(llvm::Module&, llvm::StringRef);
 
     llvm::Triple Triple;
-    Compiler Compile;
   };
 
 } // end namespace halo

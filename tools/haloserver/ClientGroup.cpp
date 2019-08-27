@@ -1,5 +1,6 @@
 
 #include "halo/ClientGroup.h"
+#include "halo/Utility.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/Module.h"
