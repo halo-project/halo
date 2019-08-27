@@ -28,6 +28,7 @@ add_executable(${SERVER_BIN}
   CodeRegionInfo.cpp
   ClientGroup.cpp
   ClientSession.cpp
+  CompilationPipeline.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}
 )

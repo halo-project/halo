@@ -58,11 +58,12 @@ namespace halo {
       // MF.set_func_addr(FI->AbsAddr);
       // CS.Chan.send_proto(msg::ReqMeasureFunction, MF);
 
+      llvm::StringRef Name(HottestFI->Name);
       // 3. queue up a new version.
-      State.InFlight.emplace_back(HottestFI->Name,
-        std::move(Pool.asyncRet([&] () -> CompilationPipeline::compile_expected {
+      State.InFlight.emplace_back(Name,
+        std::move(Pool.asyncRet([this,Name] () -> CompilationPipeline::compile_expected {
 
-        auto Result = Pipeline.run(*Bitcode);
+        auto Result = Pipeline.run(*Bitcode, Name);
 
         llvm::outs() << "Finished Compile!\n";
 

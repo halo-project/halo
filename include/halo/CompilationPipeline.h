@@ -13,6 +13,7 @@
 namespace orc = llvm::orc;
 
 namespace halo {
+
   class CompilationPipeline;
 
   // A thread-safe compiler functor.
@@ -21,14 +22,8 @@ namespace halo {
     friend class CompilationPipeline;
 
     // Compile the given module to an in-memory object file.
-    std::unique_ptr<llvm::MemoryBuffer> operator()(llvm::Triple const& Triple, llvm::Module &M) {
-      orc::JITTargetMachineBuilder JTMB(Triple);
-      // TODO: modify the TargetMachine according to the input configuration.
-      auto TM = llvm::cantFail(JTMB.createTargetMachine());
-      // NOTE: their object cache ignores the TargetMachine's configuration.
-      orc::SimpleCompiler C(*TM, /*ObjCache*/ nullptr);
-      return C(M);
-    }
+    std::unique_ptr<llvm::MemoryBuffer> operator()
+                                  (llvm::Triple const& Triple, llvm::Module &M);
 
   };
 
@@ -42,33 +37,28 @@ namespace halo {
     CompilationPipeline() {}
     CompilationPipeline(llvm::Triple Triple) : Triple(Triple) {}
 
-    compile_expected run(llvm::MemoryBuffer &Bitcode) {
+    compile_expected run(llvm::MemoryBuffer &Bitcode, llvm::StringRef TargetFunc) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
-      // NOTE: llvm::getLazyBitcodeModule is NOT thread-safe!
+
+      // NOTE: do NOT use llvm::getLazyBitcodeModule b/c it is not thread-safe!
       auto MaybeModule = llvm::parseBitcodeFile(Bitcode.getMemBufferRef(), Cxt);
 
       if (!MaybeModule)
         return MaybeModule.takeError();
 
       std::unique_ptr<llvm::Module> Module = std::move(MaybeModule.get());
-      return _run(*Module);
+      return _run(*Module, TargetFunc);
     }
 
-    compile_result run(orc::ThreadSafeModule &TSM) {
-      return TSM.withModuleDo([&](llvm::Module &Module) {
-          return _run(Module);
-        });
-    }
+    // NOTE: not needed but may want this.
+    // compile_result run(orc::ThreadSafeModule &TSM) {
+    //   return TSM.withModuleDo([&](llvm::Module &Module) {
+    //       return _run(Module);
+    //     });
+    // }
 
   private:
-
-    // The complete pipeline
-    std::unique_ptr<llvm::MemoryBuffer> _run(llvm::Module &Module) {
-
-      // Module.print(llvm::outs(), nullptr);
-
-      return Compile(Triple, Module);
-    }
+    std::unique_ptr<llvm::MemoryBuffer> _run(llvm::Module&, llvm::StringRef);
 
     llvm::Triple Triple;
     Compiler Compile;
