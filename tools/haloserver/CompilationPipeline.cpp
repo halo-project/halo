@@ -38,9 +38,9 @@ llvm::Error optimize(llvm::Module &Module, llvm::TargetMachine &TM) {
 
   bool DebugPM = false;
   llvm::PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
-  llvm::PGOOptions PGO;
+  // llvm::PGOOptions PGO;
   llvm::PassInstrumentationCallbacks PIC;
-  llvm::PassBuilder PB(&TM, PTO, PGO, &PIC);
+  llvm::PassBuilder PB(&TM, PTO, llvm::None, &PIC);
 
   llvm::AAManager AA;
   llvm::LoopAnalysisManager LAM(DebugPM);
@@ -67,7 +67,7 @@ llvm::Error optimize(llvm::Module &Module, llvm::TargetMachine &TM) {
 }
 
 // The complete pipeline
-CompilationPipeline::compile_expected
+llvm::Expected<CompilationPipeline::compile_result>
   CompilationPipeline::_run(llvm::Module &Module, llvm::StringRef TargetFunc) {
 
   orc::JITTargetMachineBuilder JTMB(Triple);

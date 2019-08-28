@@ -38,7 +38,6 @@ struct GroupState {
 class ClientGroup : public SequentialAccess<GroupState> {
 public:
   std::atomic<size_t> NumActive;
-  std::atomic<bool> RunningServices;
 
   // Construct a singleton client group based on its initial member.
   ClientGroup(ThreadPool &Pool, ClientSession *CS);
@@ -50,7 +49,7 @@ public:
   void cleanup_async();
 
   // kicks off a continuous service loop for this group.
-  void run_services();
+  void start_services();
 
   std::future<void> eachClient(std::function<void(ClientSession&)> Callable) {
     return withState([Callable] (GroupState& State) {
@@ -67,10 +66,13 @@ public:
 
 private:
 
+  void run_service_loop();
+
   ThreadPool &Pool;
   CompilationPipeline Pipeline;
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
+  bool ServiceLoopActive;
 
 };
 

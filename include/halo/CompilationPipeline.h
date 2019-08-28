@@ -19,7 +19,7 @@ namespace halo {
   class CompilationPipeline {
   public:
     using compile_result = std::unique_ptr<llvm::MemoryBuffer>;
-    using compile_expected = llvm::Expected<compile_result>;
+    using compile_expected = llvm::Optional<compile_result>;
 
     CompilationPipeline() {}
     CompilationPipeline(llvm::Triple Triple) : Triple(Triple) {}
@@ -30,11 +30,20 @@ namespace halo {
       // NOTE: do NOT use llvm::getLazyBitcodeModule b/c it is not thread-safe!
       auto MaybeModule = llvm::parseBitcodeFile(Bitcode.getMemBufferRef(), Cxt);
 
-      if (!MaybeModule)
-        return MaybeModule.takeError();
+      if (!MaybeModule) {
+        llvm::outs() << "Compilation Error: " << MaybeModule.takeError() << "\n";
+        return llvm::None;
+      }
 
       std::unique_ptr<llvm::Module> Module = std::move(MaybeModule.get());
-      return _run(*Module, TargetFunc);
+
+      auto Result = _run(*Module, TargetFunc);
+      if (Result)
+        return std::move(Result.get());
+
+      llvm::outs() << "Compilation Error: " << Result.takeError() << "\n";
+
+      return llvm::None;
     }
 
     // NOTE: not needed but may want this.
@@ -45,7 +54,7 @@ namespace halo {
     // }
 
   private:
-    compile_expected _run(llvm::Module&, llvm::StringRef);
+    llvm::Expected<compile_result> _run(llvm::Module&, llvm::StringRef);
 
     llvm::Triple Triple;
   };

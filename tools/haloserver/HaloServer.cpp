@@ -36,8 +36,7 @@ cl::opt<uint32_t> CL_TimeoutSec("timeout",
 namespace halo {
 
 void service_group(ClientGroup &G) {
-  if (!G.RunningServices)
-    G.run_services();
+    G.start_services();
 }
 
 } // end namespace halo

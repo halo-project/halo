@@ -29,10 +29,15 @@ namespace halo {
   }
 
   // kicks off a continuous service loop for this group.
-  void ClientGroup::run_services() {
-    if (!RunningServices)
-      RunningServices = true;
+  void ClientGroup::start_services() {
+    if (ServiceLoopActive)
+      return;
 
+    ServiceLoopActive = true;
+    run_service_loop();
+  }
+
+  void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
       FunctionInfo *HottestFI = nullptr;
 
@@ -82,12 +87,10 @@ namespace halo {
         if (Future.valid() && get_status(Future) == std::future_status::ready) {
           auto MaybeBuf = std::move(Future.get());
 
-          if (!MaybeBuf) {
-            llvm::outs() << "Error during compilation: "
-              << MaybeBuf.takeError() << "\n";
-          }
+          if (!MaybeBuf)
+            continue; // an error etc happened and was logged elsewhere
 
-          std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.get());
+          std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.getValue());
 
           pb::CodeReplacement CodeMsg;
           CodeMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
@@ -99,7 +102,11 @@ namespace halo {
 
           // For now. send to all clients :)
           for (auto &Client : State.Clients) {
-            translateSymbols(Client->State.Profile.CRI, CodeMsg);
+            auto Error = translateSymbols(Client->State.Profile.CRI, CodeMsg);
+
+            if (Error) // TODO: log it
+              continue;
+
             Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
           }
 
@@ -110,7 +117,7 @@ namespace halo {
       }
 
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      run_services();
+      run_service_loop();
     }); // end of lambda
   }
 
@@ -187,7 +194,8 @@ bool ClientGroup::tryAdd(ClientSession *CS) {
 
 
 ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS)
-    : SequentialAccess(Pool), NumActive(1), RunningServices(false), Pool(Pool) {
+    : SequentialAccess(Pool), NumActive(1), Pool(Pool),
+      ServiceLoopActive(false){
 
       if (!CS->Enrolled) {
         std::cerr << "was given a non-enrolled client!!\n";
