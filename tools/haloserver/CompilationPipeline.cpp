@@ -2,7 +2,7 @@
 #include "halo/CompilationPipeline.h"
 #include "halo/ExternalizeGlobalsPass.h"
 #include "halo/LoopNamerPass.h"
-#include "llvm/Passes/PassBuilder.h"
+#include "halo/SimplePassBuilder.h"
 #include "llvm/Support/Error.h"
 
 namespace orc = llvm::orc;
@@ -17,51 +17,29 @@ llvm::Expected<std::unique_ptr<llvm::MemoryBuffer>> compile(llvm::TargetMachine 
 }
 
 llvm::Error cleanup(llvm::Module &Module, llvm::StringRef TargetFunc) {
-  return llvm::Error::success(); // FIXME: this causes segfaults. find out why!
-
-  bool DebugPM = false;
-  llvm::ModuleAnalysisManager MAM(DebugPM);
-  llvm::ModulePassManager MPM(DebugPM);
+  SimplePassBuilder PB;
+  llvm::ModulePassManager MPM;
 
   MPM.addPass(ExternalizeGlobalsPass());
   MPM.addPass(llvm::createModuleToFunctionPassAdaptor(
                 llvm::createFunctionToLoopPassAdaptor(
                   LoopNamerPass())));
 
-  MPM.run(Module, MAM);
+  MPM.run(Module, PB.getAnalyses());
 
   return llvm::Error::success();
 }
 
 llvm::Error optimize(llvm::Module &Module, llvm::TargetMachine &TM) {
-  // See llvm/tools/opt/NewPMDriver.cpp for reference.
-
-  bool DebugPM = false;
   llvm::PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
-  // llvm::PGOOptions PGO;
-  llvm::PassInstrumentationCallbacks PIC;
-  llvm::PassBuilder PB(&TM, PTO, llvm::None, &PIC);
-
-  llvm::AAManager AA;
-  llvm::LoopAnalysisManager LAM(DebugPM);
-  llvm::FunctionAnalysisManager FAM(DebugPM);
-  llvm::CGSCCAnalysisManager CGAM(DebugPM);
-  llvm::ModuleAnalysisManager MAM(DebugPM);
-
-  // Register the AA manager first so that our version is the one used.
-  FAM.registerPass([&] { return std::move(AA); });
-
-  // Register all the basic analyses with the managers.
-  PB.registerModuleAnalyses(MAM);
-  PB.registerCGSCCAnalyses(CGAM);
-  PB.registerFunctionAnalyses(FAM);
-  PB.registerLoopAnalyses(LAM);
-  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+  // llvm::PGOOptions PGO; // TODO: would want to use this later.
+  SimplePassBuilder PB(&TM, PTO);
 
   llvm::ModulePassManager MPM =
-        PB.buildPerModuleDefaultPipeline(llvm::PassBuilder::O3, DebugPM,
+        PB.buildPerModuleDefaultPipeline(llvm::PassBuilder::O3,
+                                          /*Debug*/ false,
                                           /*LTOPreLink*/ false);
-  MPM.run(Module, MAM);
+  MPM.run(Module, PB.getAnalyses());
 
   return llvm::Error::success();
 }
