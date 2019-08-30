@@ -9,9 +9,9 @@ public:
 
   llvm::PreservedAnalyses run(llvm::Module &M, llvm::ModuleAnalysisManager &MAM) {
 
-    for (llvm::GlobalVariable &Global : M.globals()) {
-      llvm::errs() << Global << "\n";
-    }
+    // for (llvm::GlobalVariable &Global : M.globals()) {
+    //   llvm::errs() << Global << "\n";
+    // }
 
     return llvm::PreservedAnalyses::all();
   }
