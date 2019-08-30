@@ -17,7 +17,7 @@ llvm::Expected<std::unique_ptr<llvm::MemoryBuffer>> compile(llvm::TargetMachine 
 }
 
 llvm::Error cleanup(llvm::Module &Module, llvm::StringRef TargetFunc) {
-  SimplePassBuilder PB;
+  SimplePassBuilder PB(/*Debug*/ false);
   llvm::ModulePassManager MPM;
 
   MPM.addPass(ExternalizeGlobalsPass());

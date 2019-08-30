@@ -25,25 +25,36 @@ namespace halo {
   /// (8/29/2019)
   class SimplePassBuilder : public llvm::PassBuilder {
   public:
+    SimplePassBuilder(bool Dbg)
+    : llvm::PassBuilder(nullptr, llvm::PipelineTuningOptions(), llvm::None, nullptr),
+    LAM(Dbg), FAM(Dbg), CGAM(Dbg), MAM(Dbg) {
+      
+      registerAnalyses();
+    }
+
     SimplePassBuilder(llvm::TargetMachine *TM = nullptr,
                       llvm::PipelineTuningOptions PTO = llvm::PipelineTuningOptions(),
                       llvm::Optional<llvm::PGOOptions> PGOOpt = llvm::None,
-                      bool Dbg = false) :
-
-      llvm::PassBuilder(TM, PTO, PGOOpt, nullptr), LAM(Dbg), FAM(Dbg),
+                      bool Dbg = false)
+    : llvm::PassBuilder(TM, PTO, PGOOpt, nullptr), LAM(Dbg), FAM(Dbg),
       CGAM(Dbg), MAM(Dbg) {
 
-        // Register all the things.
-        registerModuleAnalyses(MAM);
-        registerCGSCCAnalyses(CGAM);
-        registerFunctionAnalyses(FAM);
-        registerLoopAnalyses(LAM);
-        crossRegisterProxies(LAM, FAM, CGAM, MAM);
+        registerAnalyses();
     }
 
     llvm::ModuleAnalysisManager& getAnalyses() { return MAM; }
 
   private:
+
+    void registerAnalyses() {
+      // Register all the things.
+      registerModuleAnalyses(MAM);
+      registerCGSCCAnalyses(CGAM);
+      registerFunctionAnalyses(FAM);
+      registerLoopAnalyses(LAM);
+      crossRegisterProxies(LAM, FAM, CGAM, MAM);
+    }
+
     llvm::LoopAnalysisManager LAM;
     llvm::FunctionAnalysisManager FAM;
     llvm::CGSCCAnalysisManager CGAM;
