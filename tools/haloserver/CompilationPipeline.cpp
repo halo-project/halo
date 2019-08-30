@@ -17,13 +17,16 @@ llvm::Expected<std::unique_ptr<llvm::MemoryBuffer>> compile(llvm::TargetMachine 
 }
 
 llvm::Error cleanup(llvm::Module &Module, llvm::StringRef TargetFunc) {
-  SimplePassBuilder PB(/*Debug*/ false);
+  bool Pr = false; // printing?
+  SimplePassBuilder PB(/*DebugAnalyses*/ false);
   llvm::ModulePassManager MPM;
 
-  MPM.addPass(ExternalizeGlobalsPass());
-  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(
-                llvm::createFunctionToLoopPassAdaptor(
-                  LoopNamerPass())));
+  pb::addPrintPass(Pr, MPM, "START of cleanup");
+  pb::withPrintAfter(Pr, MPM, ExternalizeGlobalsPass());
+  pb::withPrintAfter(Pr, MPM,
+      llvm::createModuleToFunctionPassAdaptor(
+        llvm::createFunctionToLoopPassAdaptor(
+          LoopNamerPass())));
 
   MPM.run(Module, PB.getAnalyses());
 
@@ -39,6 +42,8 @@ llvm::Error optimize(llvm::Module &Module, llvm::TargetMachine &TM) {
         PB.buildPerModuleDefaultPipeline(llvm::PassBuilder::O3,
                                           /*Debug*/ false,
                                           /*LTOPreLink*/ false);
+
+  pb::addPrintPass(false, MPM, "after optimization pipeline.");
   MPM.run(Module, PB.getAnalyses());
 
   return llvm::Error::success();

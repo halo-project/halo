@@ -1,5 +1,6 @@
 #pragma once
 
+#include "halo/PrintIRPass.h"
 #include "llvm/Passes/PassBuilder.h"
 #include <utility>
 
@@ -28,7 +29,7 @@ namespace halo {
     SimplePassBuilder(bool Dbg)
     : llvm::PassBuilder(nullptr, llvm::PipelineTuningOptions(), llvm::None, nullptr),
     LAM(Dbg), FAM(Dbg), CGAM(Dbg), MAM(Dbg) {
-      
+
       registerAnalyses();
     }
 
@@ -60,4 +61,28 @@ namespace halo {
     llvm::CGSCCAnalysisManager CGAM;
     llvm::ModuleAnalysisManager MAM;
   };
+
+namespace pb {
+  // some utilities for dealing with passes, etc.
+
+  template <typename PassT>
+  inline void withPrintAfter(bool shouldPrint, llvm::ModulePassManager &MPM, PassT &&Pass) {
+    auto Name = Pass.name();
+
+    MPM.addPass(std::forward<PassT>(Pass));
+
+    if (shouldPrint) {
+      MPM.addPass(PrintIRPass(llvm::errs(), "After", Name));
+    }
+  }
+
+  inline void addPrintPass(bool shouldPrint, llvm::ModulePassManager &MPM, llvm::StringRef Msg) {
+    if (shouldPrint) {
+      MPM.addPass(PrintIRPass(llvm::errs(), "At", Msg));
+    }
+  }
+
+}
+
+
 }
