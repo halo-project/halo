@@ -18,9 +18,8 @@ Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
   return C(M);
 }
 
-// obtain the transitive closure of all directly-called functions starting
-// from the given function.
-Expected<std::vector<GlobalValue*>> getObviousCallees(Module &Module, StringRef Name) {
+// obtain the transitive closure of all functions needed by the given function.
+Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, StringRef Name) {
   Function* RootFn = Module.getFunction(Name);
   if (RootFn == nullptr)
     return makeError("target function " + Name + " is not in module!");
@@ -36,22 +35,16 @@ Expected<std::vector<GlobalValue*>> getObviousCallees(Module &Module, StringRef 
   while (!Work.empty()) {
     Function *Fn = &*Work.back();
     Work.pop_back();
+    Deps.insert(Fn);
 
-    for (auto &Blk : *Fn) {
-      for (auto &Inst : Blk) {
-        CallBase *Call = dyn_cast_or_null<CallBase>(&Inst);
-        if (!Call)
-          continue;
-        Function *Callee = Call->getCalledFunction();
-        if (!Callee)
-          continue;
-        if (Callee->isDeclaration() || Deps.count(Callee))
-          continue;
-
-        Deps.insert(Callee);
-        Work.push_back(Callee);
-      }
-    }
+    // search each instructino to find uses of functions.
+    for (auto &Blk : *Fn)
+      for (auto &Inst : Blk)
+        for (Value* Op : Inst.operands())
+          if (User* OpUse = dyn_cast_or_null<User>(Op))
+            if (Function* NewFn = dyn_cast_or_null<Function>(OpUse))
+              if (Deps.count(NewFn) == 0)
+                  Work.push_back(NewFn);
   }
 
   return Deps.takeVector();
@@ -68,7 +61,7 @@ Error cleanup(Module &Module, StringRef TargetFunc) {
   // the process of cleaning up the module in prep for JIT compilation is
   // very similar to what happens in the llvm-extract tool.
 
-  auto MaybeDeps = getObviousCallees(Module, TargetFunc);
+  auto MaybeDeps = findRequiredFuncs(Module, TargetFunc);
   if (!MaybeDeps)
     return MaybeDeps.takeError();
 

@@ -29,19 +29,20 @@ public:
 
     for (llvm::Function &Fun : M.functions()) {
       if ( ! Fun.isDeclaration()) {
-        // internalize this function and prepare it for optimization
+        // prepare this function definition for optimization
         Fun.removeFnAttr(llvm::Attribute::NoInline);
         Fun.removeFnAttr(llvm::Attribute::OptimizeNone);
         Fun.setVisibility(llvm::GlobalValue::DefaultVisibility);
 
+        // if it's not the root function (i.e., what will be patched in)
+        // then we can mark it with private linkage for calling convention
+        // benefits, etc.
         if (Fun.getName() == RootFunc)
           Fun.setLinkage(llvm::GlobalValue::ExternalLinkage);
         else
           Fun.setLinkage(llvm::GlobalValue::PrivateLinkage);
       }
     }
-
-    // TODO: llvm.ctors and aliases etc?
 
     // force all analyses to recompute
     return llvm::PreservedAnalyses::none();
