@@ -17,8 +17,9 @@
 
 NO_INLINE unsigned long fib() {
   static unsigned long n = START_FIB;
+  static const long MIN = 2;
 
-  if (n < 2)
+  if (n < MIN)
     return n;
 
   n -= 1;
