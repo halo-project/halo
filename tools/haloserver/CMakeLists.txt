@@ -4,7 +4,9 @@ if (NOT HALO_NET_DIR)
   message( FATAL_ERROR "Please set HALO_NET_DIR to a directory containing networking files." )
 endif()
 
-file(GLOB HALO_PROTO_FILES "${HALO_NET_DIR}/*.proto")
+set(HALO_PROTO_FILES
+  ${HALO_NET_DIR}/Messages.proto
+)
 include_directories(${HALO_NET_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/../../include")
 
 
@@ -24,12 +26,12 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 add_executable(${SERVER_BIN}
   HaloServer.cpp
-  Error.cpp
   CodeRegionInfo.cpp
   ClientGroup.cpp
   ClientSession.cpp
   CompilationPipeline.cpp
   MDUtils.cpp
+  ${HALO_NET_DIR}/Logging.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}
 )

@@ -3,7 +3,7 @@
 #include "halo/LinkageFixupPass.h"
 #include "halo/LoopNamerPass.h"
 #include "halo/SimplePassBuilder.h"
-#include "llvm/Support/Error.h"
+#include "Logging.h"
 
 namespace orc = llvm::orc;
 
@@ -16,10 +16,24 @@ llvm::Expected<std::unique_ptr<llvm::MemoryBuffer>> compile(llvm::TargetMachine 
   return C(M);
 }
 
+// obtain all dependencies this function has on globals in the module.
+llvm::Expected<std::list<llvm::GlobalValue*>> getDependencies(llvm::Module &Module, llvm::StringRef Name) {
+  llvm::GlobalValue* Root = Module.getNamedGlobal(Name);
+  if (Root == nullptr)
+    return makeError("target function is not in module!");
+
+  llvm::Function* RootFn = llvm::dyn_cast_or_null<llvm::Function>(Root);
+  if (RootFn == nullptr || RootFn->isDeclaration())
+    return makeError("target is not a defined function, but in module.");
+
+}
+
 llvm::Error cleanup(llvm::Module &Module, llvm::StringRef TargetFunc) {
   bool Pr = true; // printing?
   SimplePassBuilder PB(/*DebugAnalyses*/ false);
   llvm::ModulePassManager MPM;
+
+  auto Dependencies = getDependencies(Module, TargetFunc);
 
   pb::addPrintPass(Pr, MPM, "START of cleanup");
   pb::withPrintAfter(Pr, MPM, LinkageFixupPass());
