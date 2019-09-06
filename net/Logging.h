@@ -3,6 +3,7 @@
 #include <string>
 #include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/Twine.h"
 
 namespace halo {
   // LOG tells us whether we should be noisy.
@@ -15,6 +16,7 @@ namespace halo {
 
   llvm::Error makeError(const char* msg);
   llvm::Error makeError(const std::string &msg);
+  llvm::Error makeError(llvm::Twine msg);
 
   inline void info(const std::string &msg) {
     if (LOG) log() << "Halomon Info: " << msg << "\n";

@@ -5,7 +5,11 @@
 namespace halo {
 
 class LinkageFixupPass : public llvm::PassInfoMixin<LinkageFixupPass> {
+private:
+  llvm::StringRef RootFunc;
 public:
+
+  LinkageFixupPass(llvm::StringRef RootFuncName) : RootFunc(RootFuncName) {}
 
   llvm::PreservedAnalyses run(llvm::Module &M, llvm::ModuleAnalysisManager &MAM) {
 
@@ -17,9 +21,10 @@ public:
           Global.setInitializer(nullptr);
       }
 
-      // externalize this global
+      // externalize this global as one that has already been initialized.
       Global.setVisibility(llvm::GlobalValue::DefaultVisibility);
       Global.setLinkage(llvm::GlobalValue::ExternalLinkage);
+      Global.setExternallyInitialized(true);
     }
 
     for (llvm::Function &Fun : M.functions()) {
@@ -28,7 +33,11 @@ public:
         Fun.removeFnAttr(llvm::Attribute::NoInline);
         Fun.removeFnAttr(llvm::Attribute::OptimizeNone);
         Fun.setVisibility(llvm::GlobalValue::DefaultVisibility);
-        Fun.setLinkage(llvm::GlobalValue::PrivateLinkage);
+
+        if (Fun.getName() == RootFunc)
+          Fun.setLinkage(llvm::GlobalValue::ExternalLinkage);
+        else
+          Fun.setLinkage(llvm::GlobalValue::PrivateLinkage);
       }
     }
 

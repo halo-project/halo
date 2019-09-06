@@ -3,71 +3,127 @@
 #include "halo/LinkageFixupPass.h"
 #include "halo/LoopNamerPass.h"
 #include "halo/SimplePassBuilder.h"
+#include "llvm/Transforms/IPO.h"
+#include "llvm/IR/DebugInfo.h"
 #include "Logging.h"
 
-namespace orc = llvm::orc;
+using namespace llvm;
 
 namespace halo {
 
-llvm::Expected<std::unique_ptr<llvm::MemoryBuffer>> compile(llvm::TargetMachine &TM, llvm::Module &M) {
+Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
   // NOTE: their object cache ignores the TargetMachine's configuration, so we
   // pass in nullptr to disable its use.
-  orc::SimpleCompiler C(TM, /*ObjCache*/ nullptr);
+  llvm::orc::SimpleCompiler C(TM, /*ObjCache*/ nullptr);
   return C(M);
 }
 
-// obtain all dependencies this function has on globals in the module.
-llvm::Expected<std::list<llvm::GlobalValue*>> getDependencies(llvm::Module &Module, llvm::StringRef Name) {
-  llvm::GlobalValue* Root = Module.getNamedGlobal(Name);
-  if (Root == nullptr)
-    return makeError("target function is not in module!");
+// obtain the transitive closure of all directly-called functions starting
+// from the given function.
+Expected<std::vector<GlobalValue*>> getObviousCallees(Module &Module, StringRef Name) {
+  Function* RootFn = Module.getFunction(Name);
+  if (RootFn == nullptr)
+    return makeError("target function " + Name + " is not in module!");
 
-  llvm::Function* RootFn = llvm::dyn_cast_or_null<llvm::Function>(Root);
-  if (RootFn == nullptr || RootFn->isDeclaration())
-    return makeError("target is not a defined function, but in module.");
+  if (RootFn->isDeclaration())
+    return makeError("target global " + Name + " is not a defined function.");
 
+  // determine the transitive closure of dependencies
+  SetVector<GlobalValue*> Deps;
+  std::vector<Function*> Work;
+  Work.push_back(RootFn);
+
+  while (!Work.empty()) {
+    Function *Fn = &*Work.back();
+    Work.pop_back();
+
+    for (auto &Blk : *Fn) {
+      for (auto &Inst : Blk) {
+        CallBase *Call = dyn_cast_or_null<CallBase>(&Inst);
+        if (!Call)
+          continue;
+        Function *Callee = Call->getCalledFunction();
+        if (!Callee)
+          continue;
+        if (Callee->isDeclaration() || Deps.count(Callee))
+          continue;
+
+        Deps.insert(Callee);
+        Work.push_back(Callee);
+      }
+    }
+  }
+
+  return Deps.takeVector();
 }
 
-llvm::Error cleanup(llvm::Module &Module, llvm::StringRef TargetFunc) {
+Error cleanup(Module &Module, StringRef TargetFunc) {
   bool Pr = true; // printing?
   SimplePassBuilder PB(/*DebugAnalyses*/ false);
-  llvm::ModulePassManager MPM;
+  ModulePassManager MPM;
 
-  auto Dependencies = getDependencies(Module, TargetFunc);
+  StripDebugInfo(Module); // NOTE for now just drop all debug info.
 
-  pb::addPrintPass(Pr, MPM, "START of cleanup");
-  pb::withPrintAfter(Pr, MPM, LinkageFixupPass());
+  ///////
+  // the process of cleaning up the module in prep for JIT compilation is
+  // very similar to what happens in the llvm-extract tool.
+
+  auto MaybeDeps = getObviousCallees(Module, TargetFunc);
+  if (!MaybeDeps)
+    return MaybeDeps.takeError();
+
+  { // some passes haven't been updated to use NewPM :(
+    legacy::PassManager LegacyPM;
+    pb::legacy::addPrintPass(Pr, LegacyPM, "START of cleanup");
+
+    // slim down the module
+    pb::legacy::withPrintAfter(Pr, LegacyPM,
+            "GVExtract", createGVExtractionPass(MaybeDeps.get()));
+
+    pb::legacy::withPrintAfter(Pr, LegacyPM,
+            "GlobalDCE", createGlobalDCEPass()); // Delete unreachable globals
+
+    pb::legacy::withPrintAfter(Pr, LegacyPM,
+            "StripDeadDebug", createStripDeadDebugInfoPass()); // Remove dead debug info
+
+    pb::legacy::withPrintAfter(Pr, LegacyPM,
+            "StripDeadProto", createStripDeadPrototypesPass()); // Remove dead func decls
+
+    LegacyPM.run(Module);
+  }
+
+  pb::withPrintAfter(Pr, MPM, LinkageFixupPass(TargetFunc));
   pb::withPrintAfter(Pr, MPM,
-      llvm::createModuleToFunctionPassAdaptor(
-        llvm::createFunctionToLoopPassAdaptor(
+      createModuleToFunctionPassAdaptor(
+        createFunctionToLoopPassAdaptor(
           LoopNamerPass())));
 
   MPM.run(Module, PB.getAnalyses());
 
-  return llvm::Error::success();
+  return Error::success();
 }
 
-llvm::Error optimize(llvm::Module &Module, llvm::TargetMachine &TM) {
-  llvm::PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
-  // llvm::PGOOptions PGO; // TODO: would want to use this later.
+Error optimize(Module &Module, TargetMachine &TM) {
+  PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
+  // PGOOptions PGO; // TODO: would want to use this later.
   SimplePassBuilder PB(&TM, PTO);
 
-  llvm::ModulePassManager MPM =
-        PB.buildPerModuleDefaultPipeline(llvm::PassBuilder::O3,
+  ModulePassManager MPM =
+        PB.buildPerModuleDefaultPipeline(PassBuilder::O3,
                                           /*Debug*/ false,
                                           /*LTOPreLink*/ false);
 
   pb::addPrintPass(true, MPM, "after optimization pipeline.");
   MPM.run(Module, PB.getAnalyses());
 
-  return llvm::Error::success();
+  return Error::success();
 }
 
 // The complete pipeline
-llvm::Expected<CompilationPipeline::compile_result>
-  CompilationPipeline::_run(llvm::Module &Module, llvm::StringRef TargetFunc) {
+Expected<CompilationPipeline::compile_result>
+  CompilationPipeline::_run(Module &Module, StringRef TargetFunc) {
 
-  orc::JITTargetMachineBuilder JTMB(Triple);
+  llvm::orc::JITTargetMachineBuilder JTMB(Triple);
   auto MaybeTM = JTMB.createTargetMachine();
   if (!MaybeTM)
     return MaybeTM.takeError();
@@ -84,7 +140,7 @@ llvm::Expected<CompilationPipeline::compile_result>
   if (OptErr)
     return OptErr;
 
-  // Module.print(llvm::outs(), nullptr);
+  // Module.print(outs(), nullptr);
 
   return compile(*TM, Module);
 }

@@ -20,6 +20,10 @@ namespace halo {
     return makeError(msg.c_str());
   }
 
+  llvm::Error makeError(llvm::Twine msg) {
+    return makeError(msg.str());
+  }
+
   void fatal_error(const std::string &msg) {
     llvm::report_fatal_error(makeError(msg));
   }

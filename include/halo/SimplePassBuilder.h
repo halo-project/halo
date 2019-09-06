@@ -1,7 +1,13 @@
 #pragma once
 
+// for new PM
 #include "halo/PrintIRPass.h"
 #include "llvm/Passes/PassBuilder.h"
+
+// for legacy PM
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/IRPrintingPasses.h"
+
 #include <utility>
 
 namespace halo {
@@ -62,14 +68,26 @@ namespace halo {
     llvm::ModuleAnalysisManager MAM;
   };
 
+
+
+
 namespace pb {
-  // some utilities for dealing with passes, etc.
+  // some independent utilities for dealing with passes, etc.
 
   template <typename PassT>
   inline void withPrintAfter(bool shouldPrint, llvm::ModulePassManager &MPM, PassT &&Pass) {
     auto Name = Pass.name();
-
     MPM.addPass(std::forward<PassT>(Pass));
+
+    if (shouldPrint) {
+      MPM.addPass(PrintIRPass(llvm::errs(), "After", Name));
+    }
+  }
+
+  template <typename PassT>
+  inline void withPrintAfter(bool shouldPrint, llvm::ModulePassManager &MPM, PassT *Pass) {
+    auto Name = Pass->name();
+    MPM.addPass(Pass);
 
     if (shouldPrint) {
       MPM.addPass(PrintIRPass(llvm::errs(), "After", Name));
@@ -81,6 +99,25 @@ namespace pb {
       MPM.addPass(PrintIRPass(llvm::errs(), "At", Msg));
     }
   }
+
+  namespace legacy {
+    template <typename PassT>
+    inline void withPrintAfter(bool shouldPrint, llvm::legacy::PassManager &LegacyPM, std::string Name, PassT &&Pass) {
+      LegacyPM.add(std::forward<PassT>(Pass));
+
+      if (shouldPrint) {
+        Name = "\n\n;;;;;; IR Dump After " + Name + " ;;;;;;\n";
+        LegacyPM.add(llvm::createPrintModulePass(llvm::errs(), Name));
+      }
+    }
+
+    inline void addPrintPass(bool shouldPrint, llvm::legacy::PassManager &LegacyPM, std::string Msg) {
+      if (shouldPrint) {
+        Msg = "\n\n;;;;;; IR Dump At " + Msg + " ;;;;;;\n";
+        LegacyPM.add(llvm::createPrintModulePass(llvm::errs(), Msg));
+      }
+    }
+  } // end namespace legacy
 
 }
 
