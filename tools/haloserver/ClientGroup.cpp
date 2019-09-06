@@ -44,7 +44,7 @@ namespace halo {
       for (auto &Client : State.Clients) {
         if (Client->Status != Measuring) {
           // 1. determine which function is the hottest for this session.
-          FunctionInfo *FI = Client->State.Profile.getMostSampled();
+          FunctionInfo *FI = Client->State.Profile.getMostSampled("main");
           if (FI) {
             std::cout << "Hottest function = " << FI->Name << "\n";
             HottestFI = FI;

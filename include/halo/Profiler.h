@@ -29,12 +29,16 @@ public:
   }
 
   // returns nullptr if no functions matching the critera exists.
-  FunctionInfo* getMostSampled(bool MustHaveBitcode = true) {
+  FunctionInfo* getMostSampled(std::string Excluding = "", bool MustHaveBitcode = true) {
     size_t Max = 0;
     FunctionInfo *Hottest = nullptr;
 
     for (auto &Pair : CRI.NameMap) {
       auto FI = Pair.second;
+      
+      if (FI->Name == Excluding)
+        continue;
+
       auto Num = FI->Samples.size();
       if (Num > Max && (!MustHaveBitcode || FI->HaveBitcode)) {
         Max = Num;
