@@ -7,7 +7,6 @@
 #include "halo/ClientRegistrar.h"
 
 #include <cinttypes>
-#include <iostream>
 
 
 namespace cl = llvm::cl;
@@ -61,8 +60,8 @@ int main(int argc, char* argv[]) {
 
   std::thread io_thread([&](){ IOService.run(); });
 
-  std::cout << "Started Halo Server.\nListening on port "
-            << CL_Port << std::endl;
+  halo::log() << "Started Halo Server.\nListening on port "
+            << CL_Port << "\n";
 
   const uint32_t SleepMS = 500; // Lower this to be more aggressive.
   const bool TimeLimited = CL_TimeoutSec > 0;
@@ -78,7 +77,7 @@ int main(int argc, char* argv[]) {
       RemainingTime -= SleepMS;
       ForceShutdown = RemainingTime <= 0;
       if (ForceShutdown)
-        std::cerr << "Server's running time limit reached. Shutting down.\n";
+        halo::info("Server's running time limit reached. Shutting down.\n");
     }
 
     // Modifications to the CR's state should occur in the IOService thread.

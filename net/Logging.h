@@ -7,7 +7,11 @@
 
 namespace halo {
   // LOG tells us whether we should be noisy.
+#ifndef NDEBUG
+  constexpr bool LOG = true;
+#else
   constexpr bool LOG = false;
+#endif
 
   inline llvm::raw_ostream& log() {
     // This function exists b/c in the future we'd like to log to a file instead.
@@ -22,7 +26,10 @@ namespace halo {
     if (LOG) log() << "Halomon Info: " << msg << "\n";
   }
 
+  void info(const char *msg, bool MustShow = false);
+
   void warning(llvm::Error const& Error, bool MustShow = false);
   void warning(const std::string &msg, bool MustShow = false);
+
   void fatal_error(const std::string &msg);
 }

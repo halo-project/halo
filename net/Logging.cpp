@@ -28,7 +28,8 @@ namespace halo {
     llvm::report_fatal_error(makeError(msg));
   }
 
-  const char* WarnTag = "halomon warning: ";
+  const char* WarnTag = "halo warning: ";
+  const char* InfoTag = "halo info: ";
 
   void warning(llvm::Error const& err, bool MustShow) {
     if (LOG || MustShow) log() << WarnTag << err << "\n";
@@ -36,5 +37,9 @@ namespace halo {
 
   void warning(const std::string &msg, bool MustShow) {
     if (LOG || MustShow) log() << WarnTag << msg << "\n";
+  }
+
+  void info(const char *msg, bool MustShow) {
+    if (LOG || MustShow) log() << InfoTag << msg << "\n";
   }
 }

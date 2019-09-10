@@ -3,10 +3,10 @@
 #include "llvm/ADT/StringRef.h"
 #include "halo/ClientGroup.h"
 #include "halo/ThreadPool.h"
+#include "Logging.h"
 
 #include <cinttypes>
 #include <list>
-#include <iostream>
 #include <memory>
 #include <functional>
 
@@ -101,7 +101,7 @@ private:
     Acceptor.async_accept(Socket,
       [this,CS](boost::system::error_code Err) {
         if(!Err) {
-          std::cerr << "Accepted a new connection on port " << Port << "\n";
+          info("Received a new connection request.", true);
 
           TotalSessions++; UnregisteredSessions++;
           CS->Status = Active;
@@ -145,6 +145,8 @@ private:
           // we've not seen a client like this before.
           Groups.emplace_back(Pool, CS);
         }
+
+        info("Client has successfully registered.", true);
 
         UnregisteredSessions--;
 
