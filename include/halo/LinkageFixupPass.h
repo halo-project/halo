@@ -24,7 +24,8 @@ public:
       // externalize this global as one that has already been initialized.
       Global.setVisibility(llvm::GlobalValue::DefaultVisibility);
       Global.setLinkage(llvm::GlobalValue::ExternalLinkage);
-      Global.setExternallyInitialized(true);
+      Global.setDSOLocal(false);
+      // Global.setExternallyInitialized(true);
     }
 
     for (llvm::Function &Fun : M.functions()) {
