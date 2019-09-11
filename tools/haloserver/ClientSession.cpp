@@ -14,7 +14,7 @@ void ClientSession::start(ClientGroup *CG) {
 
   Parent->withClientState(this, [this](SessionState &State){
     // process this new enrollment
-    State.Profile.init(Client);
+    State.Data.init(Client);
 
     // ask to sample right away for now.
     Chan.send(msg::StartSampling);
@@ -34,13 +34,13 @@ void ClientSession::listen()  {
         } return; // NOTE: the return to ensure no more recvs are serviced.
 
         case msg::RawSample: {
-          
+
           Parent->withClientState(this, [this,Body](SessionState &State) {
             pb::RawSample RS;
             llvm::StringRef Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);
             // msg::print_proto(RS); // DEBUG
-            State.Profile.add(RS);
+            State.Data.add(RS);
           });
 
         } break;

@@ -21,14 +21,18 @@ namespace icl = boost::icl;
 
 namespace halo {
 
-class Profiler;
+class PerformanceData;
 
 
 struct FunctionInfo {
     std::string Name;
     uint64_t AbsAddr = 0;
-    bool HaveBitcode = true; // FIXME
     std::vector<pb::RawSample> Samples;
+
+    // TODO: i think it would be handy to have
+    // a vector of ptrs to FunctionInfo for callers and callees,
+    // perhaps with attached samples and/or metadata processed from the
+    // samples.
 
     FunctionInfo(std::string name) : Name(name) {}
 };
@@ -37,6 +41,7 @@ class CodeRegionInfo {
 private:
   using CodeMap = icl::interval_map<uint64_t, FunctionInfo*,
                                     icl::partial_enricher>;
+  friend class PerformanceData;
   friend class Profiler;
 
   // Either map can be used to lookup the same function information pointer.
@@ -51,7 +56,7 @@ private:
 public:
   // A special category for unknown functions. The FunctionInfo for this
   // "function" is returned on lookup failure.
-  const std::string UnknownFn = "???";
+  static const std::string UnknownFn;
   FunctionInfo *UnknownFI;
 
   // Upon failure to lookup information for the given IP or Name, the
@@ -61,7 +66,6 @@ public:
 
   CodeRegionInfo() {
     UnknownFI = new FunctionInfo(UnknownFn);
-    UnknownFI->HaveBitcode = false;
   }
 
   ~CodeRegionInfo() {

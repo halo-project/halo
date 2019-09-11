@@ -38,6 +38,7 @@ add_executable(${SERVER_BIN}
   ClientSession.cpp
   CompilationPipeline.cpp
   MDUtils.cpp
+  PerformanceData.cpp
   ${HALO_NET_DIR}/Logging.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}

@@ -14,7 +14,7 @@
 #include "MessageKind.h"
 #include "Channel.h"
 
-#include "halo/Profiler.h"
+#include "halo/PerformanceData.h"
 
 #include <vector>
 #include <cinttypes>
@@ -37,7 +37,7 @@ namespace halo {
   };
 
   struct SessionState {
-    Profiler Profile;
+    PerformanceData Data;
   };
 
   class GroupOwnedState {
@@ -48,6 +48,8 @@ namespace halo {
   // Parent->withClientState(this, ...).
   private:
     friend class ClientGroup;
+    friend class Profiler; // A profiler is owned by the group
+
     SessionState State;
   };
 

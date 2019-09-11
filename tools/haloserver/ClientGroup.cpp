@@ -39,22 +39,13 @@ namespace halo {
 
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
-      FunctionInfo *HottestFI = nullptr;
+      auto MaybeName = Profile.getMostSampled(State.Clients);
 
-      for (auto &Client : State.Clients) {
-        if (Client->Status != Measuring) {
-          // 1. determine which function is the hottest for this session.
-          FunctionInfo *FI = Client->State.Profile.getMostSampled("main");
-          if (FI) {
-            std::cout << "Hottest function = " << FI->Name << "\n";
-            HottestFI = FI;
-            break; // FIXME
-          }
-        }
-      }
-
-      if (HottestFI == nullptr)
+      if (!MaybeName)
         return;
+
+      llvm::StringRef Name = MaybeName.getValue();
+      llvm::outs() << "Hottest function = " << Name << "\n";
 
 
 
@@ -64,7 +55,6 @@ namespace halo {
       // MF.set_func_addr(FI->AbsAddr);
       // CS.Chan.send_proto(msg::ReqMeasureFunction, MF);
 
-      llvm::StringRef Name(HottestFI->Name);
       // 3. queue up a new version.
       State.InFlight.emplace_back(Name,
         std::move(Pool.asyncRet([this,Name] () -> CompilationPipeline::compile_expected {
@@ -102,7 +92,7 @@ namespace halo {
 
           // For now. send to all clients :)
           for (auto &Client : State.Clients) {
-            auto Error = translateSymbols(Client->State.Profile.CRI, CodeMsg);
+            auto Error = translateSymbols(Client->State.Data.CRI, CodeMsg);
 
             if (Error) // TODO: log it
               continue;

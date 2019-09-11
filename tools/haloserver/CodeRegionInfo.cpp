@@ -2,6 +2,8 @@
 
 namespace halo {
 
+const std::string CodeRegionInfo::UnknownFn = "???";
+
 void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
   AddrMap = CodeMap();
   NameMap.clear();
@@ -11,6 +13,7 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
   pb::ModuleInfo const& MI = CE.module();
   VMABase = MI.vma_delta();
 
+  // process the address-space mapping
   for (pb::FunctionInfo const& PFI: MI.funcs()) {
     uint64_t Start = PFI.start();
     uint64_t End = Start + PFI.size();
@@ -43,18 +46,4 @@ FunctionInfo* CodeRegionInfo::lookup(std::string const& Name) const {
   return FI->second;
 }
 
-// some old code dealing with parsing of LLVM bitcode
-
-// There's a potential for a double free if the unique_ptr to LLVMModule outlives the LLVMContext.
-
-// lvm::SMDiagnostic Err;
-// auto MemBuf = llvm::MemoryBuffer::getMemBuffer(MaybeData.get());
-// auto Module = llvm::parseIR(*MemBuf, Err, *Info.Cxt);
-//
-// if (Module.get() == nullptr) {
-//   Err.print(ObjPath.c_str(), llvm::errs());
-//   halo::fatal_error("invalid bitcode.");
-// }
-// Info.Module = std::move(Module);
-
-} // end namespace
+} // end namespace halo

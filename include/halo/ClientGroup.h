@@ -12,6 +12,7 @@
 #include "halo/TaskQueueOverlay.h"
 #include "halo/ThreadPool.h"
 #include "halo/SequentialAccess.h"
+#include "halo/Profiler.h"
 #include "llvm/Support/MemoryBuffer.h"
 
 namespace halo {
@@ -72,6 +73,7 @@ private:
   CompilationPipeline Pipeline;
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
+  Profiler Profile;
   bool ServiceLoopActive;
 
 };
