@@ -7,7 +7,7 @@
 
 namespace halo {
   // LOG tells us whether we should be noisy.
-#ifndef NDEBUG
+#ifdef HALO_VERBOSE
   constexpr bool LOG = true;
 #else
   constexpr bool LOG = false;

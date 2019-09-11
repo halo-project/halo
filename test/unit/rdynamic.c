@@ -1,12 +1,20 @@
-// RUN: %clang %s -ldl -o %t
+// RUN: %clang -rdynamic %s -ldl -o %t
 // RUN: nm %t | grep 'D fib_state'
 // RUN: %t
 
-// XFAIL: *
+// RUN: %clang %s -ldl -o %t
+// RUN: nm %t | grep 'D fib_state'
+// RUN: not %t
 
 /////////////////
 // This simple non-halo test just checks to see if we can access a global
-// variable through dlsym.
+// variable through dlsym. The reason this works is that we export fib_state
+// to the dynamic symbol table with -rdynamic / --export-dynamic. See
+// ld's man-page for a discussion of what export-dynamic does.
+//
+// Other References
+// https://stackoverflow.com/questions/36692315/what-exactly-does-rdynamic-do-and-when-exactly-is-it-needed
+// https://stackoverflow.com/questions/22086636/how-to-find-address-of-global-variable-at-runtime
 
 #include <dlfcn.h>
 #include <stddef.h>

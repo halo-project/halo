@@ -2,8 +2,6 @@
 // RUN: %testhalo %server 1 %t %t-out.txt
 // RUN: cat %t-out.txt | FileCheck %s.expected
 
-// XFAIL: *
-
 
 //---------------------------------------------------------------------------
 // number of loops to perform

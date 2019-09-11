@@ -12,6 +12,6 @@ add_custom_target(test-halo
                   USES_TERMINAL
                   )
 
-add_dependencies(test-halo haloserver halomon clang FileCheck)
+add_dependencies(test-halo haloserver halomon clang FileCheck not)
 
 configure_file("${TEST_ROOT}/lit.cfg.in" "${TEST_ROOT}/lit.cfg")

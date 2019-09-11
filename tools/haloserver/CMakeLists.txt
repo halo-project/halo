@@ -1,5 +1,7 @@
 set(SERVER_BIN "haloserver")
 
+
+
 if (NOT HALO_NET_DIR)
   message( FATAL_ERROR "Please set HALO_NET_DIR to a directory containing networking files." )
 endif()
@@ -9,6 +11,11 @@ set(HALO_PROTO_FILES
 )
 include_directories(${HALO_NET_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/../../include")
 
+
+option(HALO_VERBOSE "If set to ON, then debug / logging will be output." OFF)
+if (HALO_VERBOSE)
+  add_definitions(-DHALO_VERBOSE)
+endif()
 
 #######################
 ### find dependencies
