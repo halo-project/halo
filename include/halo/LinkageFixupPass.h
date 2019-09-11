@@ -14,10 +14,10 @@ public:
   llvm::PreservedAnalyses run(llvm::Module &M, llvm::ModuleAnalysisManager &MAM) {
 
     for (llvm::GlobalVariable &Global : M.globals()) {
-      if (Global.hasInitializer() && !Global.isConstant()) {
-          // NOTE: perhaps if it's not marked constant, it could be deduced
-          // through analysis? For example, internal and definitely only read
-          // from.
+      if (Global.hasInitializer()) {
+          // TODO: perhaps if it's marked constant, we can preserve the initializer
+          // until after optimizations have been applied? The problem right
+          // now is that ExtractGV will eliminate the initializer anyway.
           Global.setInitializer(nullptr);
       }
 
