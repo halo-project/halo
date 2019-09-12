@@ -138,4 +138,34 @@ Expected<CompilationPipeline::compile_result>
   return compile(*TM, Module);
 }
 
+llvm::Expected<std::unique_ptr<llvm::Module>>
+  CompilationPipeline::_parseBitcode(llvm::LLVMContext &Cxt, llvm::MemoryBuffer &Bitcode) {
+    // NOTE: do NOT use llvm::getLazyBitcodeModule b/c it is not thread-safe!
+    return llvm::parseBitcodeFile(Bitcode.getMemBufferRef(), Cxt);
+  }
+
+std::set<std::string>
+  CompilationPipeline::providedFns(llvm::MemoryBuffer &Bitcode) {
+  llvm::LLVMContext Cxt;
+  std::set<std::string> Provided;
+
+  auto MaybeModule = _parseBitcode(Cxt, Bitcode);
+  if (!MaybeModule) {
+    log() << MaybeModule.takeError() << "\n";
+    warning("Error parsing bitcode!\n", true);
+    return Provided;
+  }
+
+  auto Module = std::move(MaybeModule.get());
+
+  for (auto &Fn : Module->functions()) {
+    if (Fn.isDeclaration())
+      continue;
+
+    Provided.insert(Fn.getName());
+  }
+
+  return Provided;
+}
+
 } // end namespace

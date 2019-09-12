@@ -27,9 +27,7 @@ namespace halo {
     compile_expected run(llvm::MemoryBuffer &Bitcode, llvm::StringRef TargetFunc) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
 
-      // NOTE: do NOT use llvm::getLazyBitcodeModule b/c it is not thread-safe!
-      auto MaybeModule = llvm::parseBitcodeFile(Bitcode.getMemBufferRef(), Cxt);
-
+      auto MaybeModule = _parseBitcode(Cxt, Bitcode);
       if (!MaybeModule) {
         llvm::outs() << "Compilation Error: " << MaybeModule.takeError() << "\n";
         return llvm::None;
@@ -53,8 +51,11 @@ namespace halo {
     //     });
     // }
 
+    std::set<std::string> providedFns(llvm::MemoryBuffer &Bitcode);
+
   private:
     llvm::Expected<compile_result> _run(llvm::Module&, llvm::StringRef);
+    llvm::Expected<std::unique_ptr<llvm::Module>> _parseBitcode(llvm::LLVMContext&, llvm::MemoryBuffer&);
 
     llvm::Triple Triple;
   };

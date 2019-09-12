@@ -57,14 +57,17 @@ namespace halo {
       auto MaybeName = Profile.getMostSampled(State.Clients);
 
       if (!MaybeName) {
-        llvm::outs() << "No most-sampled patchable function\n";
+        llvm::outs() << "Most-sampled function is unknown\n";
         return end_service_iteration();
       }
 
       llvm::StringRef Name = MaybeName.getValue();
       llvm::outs() << "Hottest function = " << Name << "\n";
 
-
+      if (FuncsWithBitcode.count(Name) == 0) {
+        llvm::outs() << "  <no bitcode available>\n";
+        return end_service_iteration();
+      }
 
       // 2. send a request to client to begin timing the execution of the function.
       // CS.Measuring = true;
@@ -208,6 +211,8 @@ ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS)
       Bitcode = std::move(
           llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(*BitcodeStorage))
                          );
+
+      FuncsWithBitcode = Pipeline.providedFns(*Bitcode);
 
       withState([this,CS] (GroupState &State) {
         addSession(this, CS, State);
