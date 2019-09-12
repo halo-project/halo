@@ -18,14 +18,18 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
     uint64_t Start = PFI.start();
     uint64_t End = Start + PFI.size();
     std::string Name = PFI.label();
-    auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
-
-    FunctionInfo *FI = new FunctionInfo(Name);
-    FI->AbsAddr = Start;
-
-    NameMap[Name] = FI;
-    AddrMap.insert(std::make_pair(FuncRange, FI));
+    addRegion(Name, Start, End);
   }
+}
+
+void CodeRegionInfo::addRegion(std::string Name, uint64_t Start, uint64_t End) {
+  auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
+
+  FunctionInfo *FI = new FunctionInfo(Name);
+  FI->AbsAddr = Start;
+
+  NameMap[Name] = FI;
+  AddrMap.insert(std::make_pair(FuncRange, FI));
 }
 
 FunctionInfo* CodeRegionInfo::lookup(uint64_t IP) const {

@@ -63,6 +63,7 @@ public:
   // UnknownFI is returned.
   FunctionInfo* lookup(uint64_t IP) const;
   FunctionInfo* lookup(std::string const& Name) const;
+  void addRegion(std::string Name, uint64_t Start, uint64_t End);
 
   CodeRegionInfo() {
     UnknownFI = new FunctionInfo(UnknownFn);

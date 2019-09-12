@@ -39,7 +39,6 @@ void ClientSession::listen()  {
             pb::RawSample RS;
             llvm::StringRef Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);
-            // msg::print_proto(RS); // DEBUG
             State.Data.add(RS);
           });
 

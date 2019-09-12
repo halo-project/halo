@@ -31,6 +31,11 @@ public:
           BestName = FI->Name;
           Max = Num;
         }
+
+        // FIXME: this is an exceptionally awful way to determine "most sampled
+        // since last time we checked" because the samples have timestamps!
+        FI->Samples.clear();
+
       }
     }
 

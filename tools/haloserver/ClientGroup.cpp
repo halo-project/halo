@@ -146,39 +146,6 @@ namespace halo {
     }); // end of lambda
   }
 
-  /*
-  void service_session(ClientSession &CS) {
-
-  }
-  */
-
-  // void compileTest() {
-  //   static bool Compiled = false;
-  //   static std::atomic<bool> Sent(false);
-  //
-  //   if (!Compiled) {
-  //     Compiled = true;
-  //     withState([&] (GroupState &State) {
-  //       State.InFlight.push_back(Pool.asyncRet([&] () -> CompilationPipeline::compile_expected {
-  //
-  //         auto Result = Pipeline.run(*Bitcode);
-  //
-  //         llvm::outs() << "Finished Compile!\n";
-  //
-  //         return Result;
-  //       }));
-  //     });
-  //   }
-  //
-  //   if (!Sent) {
-  //     // TODO: this should also remove the future from the list.
-  //     withState([&] (GroupState &State) {
-  //
-  //     });
-  //   }
-  //
-  // }
-
 
 void ClientGroup::cleanup_async() {
   withState([&] (GroupState &State) {
@@ -219,8 +186,8 @@ bool ClientGroup::tryAdd(ClientSession *CS) {
 
 
 ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS)
-    : SequentialAccess(Pool), NumActive(1), Pool(Pool),
-      ServiceLoopActive(false), ShouldStop(false) {
+    : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
+      ShouldStop(false), Pool(Pool) {
 
       if (!CS->Enrolled) {
         std::cerr << "was given a non-enrolled client!!\n";
