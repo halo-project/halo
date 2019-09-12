@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <cinttypes>
+#include <set>
 
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
@@ -36,8 +37,10 @@ namespace halo {
     Dead
   };
 
+  // The client's state accessed in a thread-safe manner.
   struct SessionState {
     PerformanceData Data;
+    std::set<llvm::StringRef> DeployedCode;
   };
 
   class GroupOwnedState {

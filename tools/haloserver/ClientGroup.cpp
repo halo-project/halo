@@ -7,6 +7,8 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "Logging.h"
+
 namespace halo {
 
   llvm::Error translateSymbols(CodeRegionInfo const& CRI, pb::CodeReplacement &CR) {
@@ -37,12 +39,21 @@ namespace halo {
     run_service_loop();
   }
 
+  void ClientGroup::end_service_iteration() {
+    // This method should be called before the service loop function ends
+    // to queue up another iteration, otherwise we will be stalled forever.
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    run_service_loop();
+  }
+
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
       auto MaybeName = Profile.getMostSampled(State.Clients);
 
-      if (!MaybeName)
-        return;
+      if (!MaybeName) {
+        llvm::outs() << "No most sampled function\n";
+        return end_service_iteration();
+      }
 
       llvm::StringRef Name = MaybeName.getValue();
       llvm::outs() << "Hottest function = " << Name << "\n";
@@ -55,16 +66,30 @@ namespace halo {
       // MF.set_func_addr(FI->AbsAddr);
       // CS.Chan.send_proto(msg::ReqMeasureFunction, MF);
 
-      // 3. queue up a new version.
-      State.InFlight.emplace_back(Name,
-        std::move(Pool.asyncRet([this,Name] () -> CompilationPipeline::compile_expected {
+      // For now we're assuming only one compile configuration, so we just
+      // check to see if we should queue a new job if a client needs it.
+      // It's still wasteful because we don't check if there's an equivalent
+      // one already in flight, but whatever. FIXME
+      bool ShouldCompile = false;
+      for (auto &Client : State.Clients) {
+        if (Client->State.DeployedCode.count(Name))
+          continue;
+        ShouldCompile = true;
+        break;
+      }
 
-        auto Result = Pipeline.run(*Bitcode, Name);
+      // 3. queue up a new version. TODO: stop doing this blindly
+      if (ShouldCompile) {
+        State.InFlight.emplace_back(Name,
+          std::move(Pool.asyncRet([this,Name] () -> CompilationPipeline::compile_expected {
 
-        llvm::outs() << "Finished Compile!\n";
+          auto Result = Pipeline.run(*Bitcode, Name);
 
-        return Result;
-      })));
+          llvm::outs() << "Finished Compile!\n";
+
+          return Result;
+        })));
+      }
 
       // 4. check if any versions are done, and send the first one that's done
       //    to all clients.
@@ -90,14 +115,19 @@ namespace halo {
           pb::FunctionSymbol *FS = CodeMsg.add_symbols();
           FS->set_label(Name);
 
-          // For now. send to all clients :)
+          // For now. send to all clients who don't already have a JIT'd version
           for (auto &Client : State.Clients) {
-            auto Error = translateSymbols(Client->State.Data.CRI, CodeMsg);
 
-            if (Error) // TODO: log it
+            if (Client->State.DeployedCode.count(Name))
               continue;
 
+            auto Error = translateSymbols(Client->State.Data.CRI, CodeMsg);
+
+            if (Error)
+              log() << "Error translating symbols: " << Error << "\n";
+
             Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
+            Client->State.DeployedCode.insert(Name);
           }
 
           llvm::outs() << "Sent code to all clients!\n";
@@ -106,8 +136,7 @@ namespace halo {
         }
       }
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      run_service_loop();
+      return end_service_iteration();
     }); // end of lambda
   }
 

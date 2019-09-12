@@ -68,6 +68,7 @@ public:
 private:
 
   void run_service_loop();
+  void end_service_iteration();
 
   ThreadPool &Pool;
   CompilationPipeline Pipeline;
