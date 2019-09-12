@@ -1,6 +1,6 @@
 // RUN: %clang -DSMALL_PROBLEM_SIZE -fhalo -O1 %s -o %t
 // RUN: %testhalo %server 1 %t %t-out.txt
-// RUN: diff %t-out.txt %s.expected
+// RUN: diff -w %t-out.txt %s.expected
 
 
 //---------------------------------------------------------------------------
