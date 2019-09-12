@@ -39,6 +39,8 @@ struct GroupState {
 class ClientGroup : public SequentialAccess<GroupState> {
 public:
   std::atomic<size_t> NumActive;
+  std::atomic<bool> ServiceLoopActive;
+  std::atomic<bool> ShouldStop;
 
   // Construct a singleton client group based on its initial member.
   ClientGroup(ThreadPool &Pool, ClientSession *CS);
@@ -75,7 +77,6 @@ private:
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
   Profiler Profile;
-  bool ServiceLoopActive;
 
 };
 

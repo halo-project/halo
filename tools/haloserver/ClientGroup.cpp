@@ -42,6 +42,12 @@ namespace halo {
   void ClientGroup::end_service_iteration() {
     // This method should be called before the service loop function ends
     // to queue up another iteration, otherwise we will be stalled forever.
+
+    if (ShouldStop) {
+      ServiceLoopActive = false;
+      return;
+    }
+
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     run_service_loop();
   }
@@ -214,7 +220,7 @@ bool ClientGroup::tryAdd(ClientSession *CS) {
 
 ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS)
     : SequentialAccess(Pool), NumActive(1), Pool(Pool),
-      ServiceLoopActive(false){
+      ServiceLoopActive(false), ShouldStop(false) {
 
       if (!CS->Enrolled) {
         std::cerr << "was given a non-enrolled client!!\n";

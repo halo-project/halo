@@ -64,8 +64,16 @@ public:
     return false; // no shutdown
 
 DO_SHUTDOWN:
-    // TODO: a more graceful shutdown sould be nice. currently this
-    // will abruptly send an RST packet to clients.
+    // notify groups they should not queue up another service iteration
+    for (auto &Group : Groups)
+      Group.ShouldStop = true;
+
+    // wait until groups have signalled that they're not queueing up more work
+    for (auto &Group : Groups)
+      while (Group.ServiceLoopActive)
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+    // Kill all connections. This will send an RST packet to clients.
     IOService.stop();
     return true;
   }
