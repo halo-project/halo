@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/SHA1.h"
 #include "halo/ClientGroup.h"
 #include "halo/ThreadPool.h"
 #include "Logging.h"
@@ -139,7 +140,9 @@ private:
         CS->Client.ParseFromString(Blob);
         CS->Enrolled = true;
 
-        // msg::print_proto(CS->Client); // DEBUG
+        llvm::StringRef Bitcode(CS->Client.module().bitcode());
+        std::array<uint8_t, 20> Hash = llvm::SHA1::hash(llvm::arrayRefFromStringRef(Bitcode));
+        // TODO: pass the Hash around etc.
 
         // Find similar clients.
         bool Added = false;

@@ -177,7 +177,15 @@ bool ClientGroup::tryAdd(ClientSession *CS) {
   if (!CS->Enrolled)
     return false;
 
-  // TODO: actually check if the client is compatible with this group.
+  pb::ClientEnroll &CE = CS->Client;
+
+  // TODO: compare pre-computed SHAs of bitcode.
+
+  if (!Pipeline.getTriple().isCompatibleWith(llvm::Triple(CE.process_triple())))
+    return false;
+
+  if (Pipeline.getCPUName() != CE.host_cpu())
+    return false;
 
   NumActive++; // do this in the caller's thread eagarly.
   withState([this,CS] (GroupState &State) {
@@ -197,12 +205,14 @@ ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS)
         // TODO: proper error facilities.
       }
 
-      // TODO: extract properties of this client
       pb::ClientEnroll &Client = CS->Client;
-      pb::ModuleInfo const& Module = Client.module();
+      // pb::ModuleInfo const& Module = Client.module();
 
-      // TODO: grab host cpu, and build flags.
-      Pipeline = CompilationPipeline(llvm::Triple(Client.process_triple()));
+      // TODO: parse the build flags and perhaps have client
+      // send llvm::sys::getHostCPUFeatures() info for -mattr flags.
+      Pipeline = CompilationPipeline(
+                    llvm::Triple(Client.process_triple()),
+                    Client.host_cpu());
 
 
       // take ownership of the bitcode, and maintain a MemoryBuffer view of it.

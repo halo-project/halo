@@ -22,7 +22,8 @@ namespace halo {
     using compile_expected = llvm::Optional<compile_result>;
 
     CompilationPipeline() {}
-    CompilationPipeline(llvm::Triple Triple) : Triple(Triple) {}
+    CompilationPipeline(llvm::Triple Triple, llvm::StringRef CPU)
+      : Triple(Triple), CPUName(CPU) {}
 
     compile_expected run(llvm::MemoryBuffer &Bitcode, llvm::StringRef TargetFunc) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
@@ -53,11 +54,15 @@ namespace halo {
 
     std::set<std::string> providedFns(llvm::MemoryBuffer &Bitcode);
 
+    llvm::Triple const& getTriple() const { return Triple; }
+    llvm::StringRef getCPUName() const { return CPUName; }
+
   private:
     llvm::Expected<compile_result> _run(llvm::Module&, llvm::StringRef);
     llvm::Expected<std::unique_ptr<llvm::Module>> _parseBitcode(llvm::LLVMContext&, llvm::MemoryBuffer&);
 
     llvm::Triple Triple;
+    std::string CPUName;
   };
 
 } // end namespace halo
