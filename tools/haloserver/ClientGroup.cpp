@@ -57,7 +57,7 @@ namespace halo {
       auto MaybeName = Profile.getMostSampled(State.Clients);
 
       if (!MaybeName) {
-        llvm::outs() << "No most sampled function\n";
+        llvm::outs() << "No most-sampled patchable function\n";
         return end_service_iteration();
       }
 
