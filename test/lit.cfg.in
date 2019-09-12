@@ -24,3 +24,6 @@ config.substitutions.append(('%server', "haloserver"))
 
 config.substitutions.append(('%testhalo',
                             os.path.join(config.test_source_root, "util", "run_test.sh")))
+
+config.substitutions.append(('%testuniqhalo',
+                            os.path.join(config.test_source_root, "util", "run_uniq_test.sh")))

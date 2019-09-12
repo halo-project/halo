@@ -43,10 +43,10 @@ public:
   std::atomic<bool> ShouldStop;
 
   // Construct a singleton client group based on its initial member.
-  ClientGroup(ThreadPool &Pool, ClientSession *CS);
+  ClientGroup(ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);
 
   // returns true if the session became a member of the group.
-  bool tryAdd(ClientSession *CS);
+  bool tryAdd(ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);
 
   // Drop dead / disconnected clients.
   void cleanup_async();
@@ -78,6 +78,7 @@ private:
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
   std::set<std::string> FuncsWithBitcode;
   Profiler Profile;
+  std::array<uint8_t, 20> BitcodeHash;
 
 };
 

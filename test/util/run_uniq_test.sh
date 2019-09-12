@@ -3,20 +3,10 @@
 set -o pipefail
 
 SERVER_EXE=$1
-NUM_CLIENTS=$2
-PROG_EXE=$3
-PROG_OUT=$4
-SERV_OUT="$PROG_OUT.out"
-SAVING_OUTPUT=1
+SERV_OUT="$SERVER_EXE.out"
 
-if [ "$PROG_OUT" == "" ]; then
-  PROG_OUT="/dev/null"
-  SERV_OUT="/dev/null"
-  SAVING_OUTPUT=0
-fi
-
-if [ "${NUM_CLIENTS}" -ne "${NUM_CLIENTS}" ] || [ "${NUM_CLIENTS}" -eq "0" ]; then
-  echo "Can't run test with zero clients!"
+if [[ $# -lt 2 ]]; then
+  echo "must provide client executables after server exe"
   exit 1
 fi
 
@@ -26,15 +16,11 @@ ${SERVER_EXE} --no-persist --timeout 1800 > "$SERV_OUT" 2>&1 &
 SERVER_PID=$!
 sleep 2s
 
-# launch all clients and store PIDs
+
+# launch all clients and store PIDs. redirect their output to different files.
 CLIENT_PIDS=()
-# first client's output is the output of this script
-${PROG_EXE} 2>&1 | tee ${PROG_OUT} &
-PID=$!
-CLIENT_PIDS+=($PID)
-for ((i = 0 ; i < NUM_CLIENTS-1 ; i++)); do
-  # other clients dump output to file
-  ${PROG_EXE} > ${PROG_OUT} 2>&1 &
+for CLIENT_EXE in "${@:2}" ; do
+  ${CLIENT_EXE} > "${CLIENT_EXE}.out" 2>&1 &
   PID=$!
   CLIENT_PIDS+=($PID)
 done
@@ -64,11 +50,13 @@ wait
 
 if [ $FAILURE -eq "1" ]; then
   echo "Some part of the test has failed! See above."
-  if [ $SAVING_OUTPUT -eq "1" ]; then
-    echo -e "\n\n\tSERVER OUTPUT:"
-    cat "$SERV_OUT"
+  echo -e "\n\n\tSERVER OUTPUT:"
+  tail -n 100 "$SERV_OUT"
+
+  for CLIENT_EXE in "${@:2}" ; do
     echo -e "\n\n\tCLIENT OUTPUT:"
-    cat "$PROG_OUT"
-  fi
+    tail -n 10 "${CLIENT_EXE}.out"
+  done
+
   exit 1
 fi

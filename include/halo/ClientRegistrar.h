@@ -142,19 +142,18 @@ private:
 
         llvm::StringRef Bitcode(CS->Client.module().bitcode());
         std::array<uint8_t, 20> Hash = llvm::SHA1::hash(llvm::arrayRefFromStringRef(Bitcode));
-        // TODO: pass the Hash around etc.
 
         // Find similar clients.
         bool Added = false;
         for (auto &Group : Groups) {
-          if (Group.tryAdd(CS)) {
+          if (Group.tryAdd(CS, Hash)) {
             Added = true; break;
           }
         }
 
         if (!Added) {
           // we've not seen a client like this before.
-          Groups.emplace_back(Pool, CS);
+          Groups.emplace_back(Pool, CS, Hash);
         }
 
         info("Client has successfully registered.", true);

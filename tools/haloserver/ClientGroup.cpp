@@ -172,15 +172,13 @@ void addSession (ClientGroup *Group, ClientSession *CS, GroupState &State) {
   State.Clients.push_back(std::unique_ptr<ClientSession>(CS));
 }
 
-bool ClientGroup::tryAdd(ClientSession *CS) {
-  // can't determine anything until enrollment.
-  if (!CS->Enrolled)
+bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) {
+  assert(CS->Enrolled);
+
+  if (BitcodeHash != TheirHash)
     return false;
 
   pb::ClientEnroll &CE = CS->Client;
-
-  // TODO: compare pre-computed SHAs of bitcode.
-
   if (!Pipeline.getTriple().isCompatibleWith(llvm::Triple(CE.process_triple())))
     return false;
 
@@ -196,9 +194,9 @@ bool ClientGroup::tryAdd(ClientSession *CS) {
 }
 
 
-ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS)
+ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
-      ShouldStop(false), Pool(Pool) {
+      ShouldStop(false), Pool(Pool), BitcodeHash(BitcodeSHA1) {
 
       if (!CS->Enrolled) {
         std::cerr << "was given a non-enrolled client!!\n";
