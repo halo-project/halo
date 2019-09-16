@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # NOTE: run this script while inside the test root directory.
+set -o xtrace
 
 ROOT=$1
 OUTFILE="./bench.txt"
@@ -11,36 +12,42 @@ if [[ $# -lt 1 ]]; then
 fi
 
 SERVER_EXE="$ROOT/bin/haloserver"
-CLANG_EXE="$ROOT/bin/clang"
-TIME_EXE=`which time`  # do not want built-in bash 'time'
+CLANG_EXE="$ROOT/bin/clang++"
+TIME_EXE=$(which time)  # do not want built-in bash 'time'
 
 declare -a BENCHMARKS=(
-  "bench/c/almabench.c"
-  "bench/c/linpack-pc.c"
+  "bench/cpp/oopack_v1p8.cpp"
 )
 
 declare -a OPTIONS=(
   "-O0"
-  "-O0 -fhalo"
+  "-fhalo -O0"
   "-O1"
-  "-O1 -fhalo"
+  "-fhalo -O1"
+  "-O2"
+  "-fhalo -O2"
+  "-O3"
+  "-fhalo -O3"
 )
 
 # overwrite and create the file
-echo "minibench session" > ${OUTFILE}
+echo "** minibench test **" > ${OUTFILE}
 
-${SERVER_EXE} &
-SERVER_PID=$!
-sleep 2s
-
-for PROG in ${BENCHMARKS[@]}; do
+for PROG in "${BENCHMARKS[@]}"; do
   echo "${PROG}" >> ${OUTFILE}
-  for FLAGS in ${OPTIONS[@]}; do
-    echo "${FLAGS}" >> ${OUTFILE}
-    ${CLANG_EXE} -DSMALL_PROBLEM_SIZE ${FLAGS} ${PROG} -lm
-    ${TIME_EXE} --append --format="%e" --output=${OUTFILE} ./a.out
-    ${TIME_EXE} --append --format="%e" --output=${OUTFILE} ./a.out
-    ${TIME_EXE} --append --format="%e" --output=${OUTFILE} ./a.out
+  for FLAGS in "${OPTIONS[@]}"; do
+    echo -e "\n${FLAGS}" >> ${OUTFILE}
+    ${CLANG_EXE} -DSMALL_PROBLEM_SIZE ${FLAGS} "${PROG}"
+
+    for TRIAL in {1..2}; do
+      # ${SERVER_EXE} --no-persist &
+      # SERVER_PID=$!
+      # sleep 2s
+      ${TIME_EXE} --append --format="%e" --output=${OUTFILE} ./a.out
+      # kill $SERVER_PID
+      # wait
+    done
+
   done
   echo -e "\n------------------------\n" >> ${OUTFILE}
 done
