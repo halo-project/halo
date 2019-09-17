@@ -42,4 +42,8 @@ namespace halo {
   void info(const char *msg, bool MustShow) {
     if (LOG || MustShow) log() << InfoTag << msg << "\n";
   }
+
+  void info(const std::string &msg, bool MustShow) {
+    if (LOG || MustShow) log() << InfoTag << msg << "\n";
+  }
 }

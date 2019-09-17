@@ -15,17 +15,15 @@ namespace halo {
 
   inline llvm::raw_ostream& log() {
     // This function exists b/c in the future we'd like to log to a file instead.
-    return LOG ? llvm::errs() : llvm::nulls();
+    // return LOG ? llvm::errs() : llvm::nulls();
+    return llvm::errs();
   }
 
   llvm::Error makeError(const char* msg);
   llvm::Error makeError(const std::string &msg);
   llvm::Error makeError(llvm::Twine msg);
 
-  inline void info(const std::string &msg) {
-    if (LOG) log() << "Halomon Info: " << msg << "\n";
-  }
-
+  void info(const std::string &msg, bool MustShow = false);
   void info(const char *msg, bool MustShow = false);
 
   void warning(llvm::Error const& Error, bool MustShow = false);
