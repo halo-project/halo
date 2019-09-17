@@ -2,6 +2,10 @@
 // RUN: %testhalo %server 1 %t %t-out.txt
 // RUN: diff -w %t-out.txt %s.expected
 
+// RUN: %clang -DSMALL_PROBLEM_SIZE -fhalo -O3 %s -o %t
+// RUN: %testhalo %server 1 %t %t-out.txt
+// RUN: diff -w %t-out.txt %s.expected
+
 
 //---------------------------------------------------------------------------
 // number of loops to perform
