@@ -1,4 +1,9 @@
+/*
 
+RUN: %clang -std=c90 -fhalo %s -o %t
+RUN: %testhalo %server 5 '%t --best --stdout %p/gcc.c.src' > /dev/null
+
+*/
 
 /* originally from: http://people.csail.mit.edu/smcc/projects/single-file-programs/ */
 
@@ -2012,7 +2017,7 @@ static enum
 /* Value of POSIXLY_CORRECT environment variable.  */
 static char *posixly_correct;
 
-# define my_index	strchr
+# define my_index	strchr2
 
 /* Avoid depending on library functions or files
    whose names are inconsistent.  */
