@@ -1,3 +1,14 @@
+/*
+
+RUN: %clang %s -fhalo -lm -o %t
+RUN: false
+
+consider downloading the .WAV file suggested from the link below
+
+*/
+
+/* originally from: http://people.csail.mit.edu/smcc/projects/single-file-programs/ */
+
 /* OggEnc
  *
  * This program is distributed under the GNU General Public License, version 2.
@@ -199,7 +210,7 @@ typedef struct {
   long  e_o_s;
 
   ogg_int64_t  granulepos;
-  
+
   ogg_int64_t  packetno;     /* sequence number for decode; the framing
 				knows where there's a hole in the data,
 				but we need coupling so that the codec
@@ -307,14 +318,14 @@ typedef struct vorbis_info{
 
   /* The below bitrate declarations are *hints*.
      Combinations of the three values carry the following implications:
-     
-     all three set to the same value: 
+
+     all three set to the same value:
        implies a fixed rate bitstream
-     only nominal set: 
-       implies a VBR stream that averages the nominal bitrate.  No hard 
+     only nominal set:
+       implies a VBR stream that averages the nominal bitrate.  No hard
        upper/lower limit
-     upper and or lower set: 
-       implies a VBR bitstream that obeys the bitrate limits. nominal 
+     upper and or lower set:
+       implies a VBR bitstream that obeys the bitrate limits. nominal
        may also be set to give a nominal rate.
      none set:
        the coder does not care to speculate.
@@ -362,9 +373,9 @@ typedef struct vorbis_dsp_state{
 
 typedef struct vorbis_block{
   /* necessary stream state for linking to the framing abstraction */
-  float  **pcm;       /* this is a pointer into local storage */ 
+  float  **pcm;       /* this is a pointer into local storage */
   oggpack_buffer opb;
-  
+
   long  lW;
   long  W;
   long  nW;
@@ -441,8 +452,8 @@ extern void     vorbis_info_init(vorbis_info *vi);
 extern void     vorbis_info_clear(vorbis_info *vi);
 extern int      vorbis_info_blocksize(vorbis_info *vi,int zo);
 extern void     vorbis_comment_init(vorbis_comment *vc);
-extern void     vorbis_comment_add(vorbis_comment *vc, char *comment); 
-extern void     vorbis_comment_add_tag(vorbis_comment *vc, 
+extern void     vorbis_comment_add(vorbis_comment *vc, char *comment);
+extern void     vorbis_comment_add_tag(vorbis_comment *vc,
 				       char *tag, char *contents);
 extern char    *vorbis_comment_query(vorbis_comment *vc, char *tag, int count);
 extern int      vorbis_comment_query_count(vorbis_comment *vc, char *tag);
@@ -491,7 +502,7 @@ extern int      vorbis_synthesis_halfrate_p(vorbis_info *v);
 
 /* Vorbis ERRORS and return codes ***********************************/
 
-#define OV_FALSE      -1  
+#define OV_FALSE      -1
 #define OV_EOF        -2
 #define OV_HOLE       -3
 
@@ -509,11 +520,11 @@ extern int      vorbis_synthesis_halfrate_p(vorbis_info *v);
 
 typedef void TIMER;
 typedef long (*audio_read_func)(void *src, float **buffer, int samples);
-typedef void (*progress_func)(char *fn, long totalsamples, 
+typedef void (*progress_func)(char *fn, long totalsamples,
 		long samples, double time);
-typedef void (*enc_end_func)(char *fn, double time, int rate, 
+typedef void (*enc_end_func)(char *fn, double time, int rate,
 		long samples, long bytes);
-typedef void (*enc_start_func)(char *fn, char *outfn, int bitrate, 
+typedef void (*enc_start_func)(char *fn, char *outfn, int bitrate,
         float quality, int qset, int managed, int min_br, int max_br);
 typedef void (*error_func)(char *errormessage);
 
@@ -601,7 +612,7 @@ typedef struct
 	enc_end_func end_encode;
 	enc_start_func start_encode;
 	error_func error;
-	
+
 	void *readdata;
 
 	long total_samples_per_channel;
@@ -732,17 +743,17 @@ struct option long_options[] = {
     {"managed", 0, 0, 0},
     {"resample",1,0,0},
     {"downmix", 0,0,0},
-    {"scale", 1, 0, 0}, 
+    {"scale", 1, 0, 0},
     {"advanced-encode-option", 1, 0, 0},
 	{"discard-comments", 0, 0, 0},
 	{NULL,0,0,0}
 };
-	
-static char *generate_name_string(char *format, char *remove_list, 
-        char *replace_list, char *artist, char *title, char *album, 
+
+static char *generate_name_string(char *format, char *remove_list,
+        char *replace_list, char *artist, char *title, char *album,
         char *track, char *date, char *genre);
 static void parse_options(int argc, char **argv, oe_options *opt);
-static void build_comments(vorbis_comment *vc, oe_options *opt, int filenum, 
+static void build_comments(vorbis_comment *vc, oe_options *opt, int filenum,
 		char **artist,char **album, char **title, char **tracknum, char **date,
         char **genre);
 static void usage(void);
@@ -750,10 +761,10 @@ static void usage(void);
 int main(int argc, char **argv)
 {
 	/* Default values */
-	oe_options opt = {NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL, 
+	oe_options opt = {NULL, 0, NULL, 0, NULL, 0, NULL, 0, NULL,
 			  0, NULL, 0, NULL, 0, NULL, 0, 1, 0, 0,16,44100,2, 0, NULL,
-			  DEFAULT_NAMEFMT_REMOVE, DEFAULT_NAMEFMT_REPLACE, 
-			  NULL, 0, -1,-1,-1,.3,-1,0, 0,0.f, 0}; 
+			  DEFAULT_NAMEFMT_REMOVE, DEFAULT_NAMEFMT_REPLACE,
+			  NULL, 0, -1,-1,-1,.3,-1,0, 0,0.f, 0};
 
 	int i;
 
@@ -823,7 +834,7 @@ int main(int argc, char **argv)
 		enc_opts.copy_comments = opt.copy_comments;
 
 		/* OK, let's build the vorbis_comments structure */
-		build_comments(&vc, &opt, i, &artist, &album, &title, &track, 
+		build_comments(&vc, &opt, i, &artist, &album, &title, &track,
                 &date, &genre);
 
 		if(!strcmp(infiles[i], "-"))
@@ -871,7 +882,7 @@ int main(int argc, char **argv)
 			if(format)
 			{
                 if(!opt.quiet)
-				    fprintf(stderr, _("Opening with %s module: %s\n"), 
+				    fprintf(stderr, _("Opening with %s module: %s\n"),
 					    	format->format, format->description);
 				foundformat=1;
 			}
@@ -902,7 +913,7 @@ int main(int argc, char **argv)
 			}
 			else if(opt.namefmt)
 			{
-				out_fn = generate_name_string(opt.namefmt, opt.namefmt_remove, 
+				out_fn = generate_name_string(opt.namefmt, opt.namefmt_remove,
                         opt.namefmt_replace, artist, title, album, track,date,
                         genre);
 			}
@@ -923,7 +934,7 @@ int main(int argc, char **argv)
 				start = infiles[i];
 				end = strrchr(infiles[i], '.');
 				end = end?end:(start + strlen(infiles[i])+1);
-			
+
 				out_fn = malloc(end - start + 5);
 				strncpy(out_fn, start, end-start);
 				out_fn[end-start] = 0;
@@ -953,7 +964,7 @@ int main(int argc, char **argv)
 				errors++;
 				free(out_fn);
 				continue;
-			}	
+			}
 			closeout = 1;
 		}
 
@@ -963,7 +974,7 @@ int main(int argc, char **argv)
 		enc_opts.filename = out_fn;
 		enc_opts.infilename = infiles[i];
         enc_opts.managed = opt.managed;
-		enc_opts.bitrate = opt.nominal_bitrate; 
+		enc_opts.bitrate = opt.nominal_bitrate;
 		enc_opts.min_bitrate = opt.min_bitrate;
 		enc_opts.max_bitrate = opt.max_bitrate;
 		enc_opts.quality = opt.quality;
@@ -1028,7 +1039,7 @@ clear_all:
 		if(out_fn) free(out_fn);
         if(opt.outfile) free(opt.outfile);
 		vorbis_comment_clear(&vc);
-		if(!opt.rawmode) 
+		if(!opt.rawmode)
 			format->close_func(enc_opts.readdata);
 
 		if(closein)
@@ -1043,7 +1054,7 @@ clear_all:
 
 static void usage(void)
 {
-	fprintf(stdout, 
+	fprintf(stdout,
 		_("%s%s\n"
 		"Usage: oggenc [options] input.wav [...]\n"
 		"\n"
@@ -1126,7 +1137,7 @@ static void usage(void)
 		"\n"), VERSION_STRING, COPYRIGHT);
 }
 
-static int strncpy_filtered(char *dst, char *src, int len, char *remove_list, 
+static int strncpy_filtered(char *dst, char *src, int len, char *remove_list,
         char *replace_list)
 {
     char *hit, *drop_margin;
@@ -1164,7 +1175,7 @@ static int strncpy_filtered(char *dst, char *src, int len, char *remove_list,
 }
 
 static char *generate_name_string(char *format, char *remove_list,
-        char *replace_list, char *artist, char *title, char *album, 
+        char *replace_list, char *artist, char *title, char *album,
         char *track, char *date, char *genre)
 {
 	char *buffer;
@@ -1189,7 +1200,7 @@ static char *generate_name_string(char *format, char *remove_list,
 					break;
 				case 'a':
 					string = artist?artist:_("(none)");
-					used += strncpy_filtered(buffer+used, string, buflen-used, 
+					used += strncpy_filtered(buffer+used, string, buflen-used,
                             remove_list, replace_list);
 					break;
 				case 'd':
@@ -1234,7 +1245,7 @@ static void parse_options(int argc, char **argv, oe_options *opt)
 	int ret;
 	int option_index = 1;
 
-	while((ret = getopt_long(argc, argv, "A:a:b:B:c:C:d:G:hl:m:M:n:N:o:P:q:QrR:s:t:vX:", 
+	while((ret = getopt_long(argc, argv, "A:a:b:B:c:C:d:G:hl:m:M:n:N:o:P:q:QrR:s:t:vX:",
 					long_options, &option_index)) != -1)
 	{
 		switch(ret)
@@ -1243,12 +1254,12 @@ static void parse_options(int argc, char **argv, oe_options *opt)
                 if(!strcmp(long_options[option_index].name, "managed")) {
 		            if(!opt->managed){
                         if(!opt->quiet)
-            		        fprintf(stderr, 
+            		        fprintf(stderr,
                                     _("Enabling bitrate management engine\n"));
                         opt->managed = 1;
         		    }
                 }
-                else if(!strcmp(long_options[option_index].name, 
+                else if(!strcmp(long_options[option_index].name,
                             "raw-endianness")) {
 				    if (opt->rawmode != 1)
     				{
@@ -1268,8 +1279,8 @@ static void parse_options(int argc, char **argv, oe_options *opt)
                     }
                     if(opt->resamplefreq < 100) /* User probably specified it
                                                    in kHz accidently */
-                        fprintf(stderr, 
-                                _("Warning: Resample rate specified as %d Hz. Did you mean %d Hz?\n"), 
+                        fprintf(stderr,
+                                _("Warning: Resample rate specified as %d Hz. Did you mean %d Hz?\n"),
                                 opt->resamplefreq, opt->resamplefreq*1000);
                 }
                 else if(!strcmp(long_options[option_index].name, "downmix")) {
@@ -1279,7 +1290,7 @@ static void parse_options(int argc, char **argv, oe_options *opt)
                     opt->scale = atof(optarg);
 				    if(sscanf(optarg, "%f", &opt->scale) != 1) {
                         opt->scale = 0;
-                        fprintf(stderr, _("Warning: Couldn't parse scaling factor \"%s\"\n"), 
+                        fprintf(stderr, _("Warning: Couldn't parse scaling factor \"%s\"\n"),
                                 optarg);
                     }
                 }
@@ -1363,7 +1374,7 @@ static void parse_options(int argc, char **argv, oe_options *opt)
 				}
 				if(!opt->managed){
 				  if(!opt->quiet)
-				    fprintf(stderr, 
+				    fprintf(stderr,
 					    _("Enabling bitrate management engine\n"));
 				  opt->managed = 1;
 				}
@@ -1376,7 +1387,7 @@ static void parse_options(int argc, char **argv, oe_options *opt)
 				}
 				if(!opt->managed){
 				  if(!opt->quiet)
-				    fprintf(stderr, 
+				    fprintf(stderr,
 					    _("Enabling bitrate management engine\n"));
 				  opt->managed = 1;
 				}
@@ -1403,7 +1414,7 @@ static void parse_options(int argc, char **argv, oe_options *opt)
 				opt->namefmt = strdup(optarg);
 				break;
             case 'X':
-				if(opt->namefmt_remove && opt->namefmt_remove != 
+				if(opt->namefmt_remove && opt->namefmt_remove !=
                         DEFAULT_NAMEFMT_REMOVE)
 				{
 					fprintf(stderr, _("WARNING: Multiple name format filters specified, using final\n"));
@@ -1412,7 +1423,7 @@ static void parse_options(int argc, char **argv, oe_options *opt)
 				opt->namefmt_remove = strdup(optarg);
 				break;
             case 'P':
-				if(opt->namefmt_replace && opt->namefmt_replace != 
+				if(opt->namefmt_replace && opt->namefmt_replace !=
                         DEFAULT_NAMEFMT_REPLACE)
                 {
 					fprintf(stderr, _("WARNING: Multiple name format filter replacements specified, using final\n"));
@@ -1501,8 +1512,8 @@ static void add_tag(vorbis_comment *vc, oe_options *opt,char *name, char *value)
     vorbis_comment_add_tag(vc, name, value);
 }
 
-static void build_comments(vorbis_comment *vc, oe_options *opt, int filenum, 
-		char **artist, char **album, char **title, char **tracknum, 
+static void build_comments(vorbis_comment *vc, oe_options *opt, int filenum,
+		char **artist, char **album, char **title, char **tracknum,
         char **date, char **genre)
 {
 	int i;
@@ -1533,7 +1544,7 @@ static void build_comments(vorbis_comment *vc, oe_options *opt, int filenum,
 			i = opt->artist_count-1;
 		else
 			i = filenum;
-	
+
 		*artist = opt->artist[i];
 		add_tag(vc, opt, "artist", opt->artist[i]);
 	}
@@ -1555,11 +1566,11 @@ static void build_comments(vorbis_comment *vc, oe_options *opt, int filenum,
 			i = opt->date_count-1;
 		else
 			i = filenum;
-	
+
 		*date = opt->dates[i];
 		add_tag(vc, opt, "date", opt->dates[i]);
 	}
-	
+
 	if(opt->album_count)
 	{
 		if(filenum >= opt->album_count)
@@ -1569,7 +1580,7 @@ static void build_comments(vorbis_comment *vc, oe_options *opt, int filenum,
 		else
 			i = filenum;
 
-		*album = opt->album[i];	
+		*album = opt->album[i];
 		add_tag(vc, opt, "album", opt->album[i]);
 	}
 
@@ -1594,7 +1605,7 @@ static void build_comments(vorbis_comment *vc, oe_options *opt, int filenum,
 
 /* This program is licensed under the GNU Library General Public License,
  * version 2, a copy of which is included with this program (LICENCE.LGPL).
- *   
+ *
  * (c) 2002 Simon Hosie <gumboot@clear.net.nz>
  *
  *
@@ -1630,7 +1641,7 @@ typedef enum
 {
 	RES_END,
 	RES_GAIN,	/* (double)1.0 */
-	RES_CUTOFF,	/* (double)0.80 */ 
+	RES_CUTOFF,	/* (double)0.80 */
 	RES_TAPS,	/* (int)45 */
 	RES_BETA	/* (double)16.0 */
 } res_parameter;
@@ -1912,7 +1923,7 @@ int aiff_open(FILE *in, oe_enc_opt *opt, unsigned char *buf, int buflen)
 		return 0; /* EOF before COMM chunk */
 	}
 
-	if(len < 18) 
+	if(len < 18)
 	{
 		fprintf(stderr, _("Warning: Truncated common chunk in AIFF header\n"));
 		return 0; /* Weird common chunk */
@@ -1941,11 +1952,11 @@ int aiff_open(FILE *in, oe_enc_opt *opt, unsigned char *buf, int buflen)
 			return 0;
 		}
 
-		if(!memcmp(buffer+18, "NONE", 4)) 
+		if(!memcmp(buffer+18, "NONE", 4))
 		{
 			aiff->bigendian = 1;
 		}
-		else if(!memcmp(buffer+18, "sowt", 4)) 
+		else if(!memcmp(buffer+18, "sowt", 4))
 		{
 			aiff->bigendian = 0;
 		}
@@ -1962,10 +1973,10 @@ int aiff_open(FILE *in, oe_enc_opt *opt, unsigned char *buf, int buflen)
 		return 0; /* No SSND chunk -> no actual audio */
 	}
 
-	if(len < 8) 
+	if(len < 8)
 	{
 		fprintf(stderr, _("Warning: Corrupted SSND chunk in AIFF header\n"));
-		return 0; 
+		return 0;
 	}
 
 	if(fread(buf2,1,8, in) < 8)
@@ -1981,7 +1992,7 @@ int aiff_open(FILE *in, oe_enc_opt *opt, unsigned char *buf, int buflen)
 		(format.samplesize == 16 || format.samplesize == 8))
 	{
 		/* From here on, this is very similar to the wav code. Oh well. */
-		
+
 		opt->rate = format.rate;
 		opt->channels = format.channels;
 		opt->read_samples = wav_read; /* Similar enough, so we use the same */
@@ -2000,7 +2011,7 @@ int aiff_open(FILE *in, oe_enc_opt *opt, unsigned char *buf, int buflen)
 	}
 	else
 	{
-		fprintf(stderr, 
+		fprintf(stderr,
 				_("Warning: OggEnc does not support this type of AIFF/AIFC file\n"
 				" Must be 8, 16, or 24 bit PCM.\n"));
 		return 0;
@@ -2011,7 +2022,7 @@ int aiff_open(FILE *in, oe_enc_opt *opt, unsigned char *buf, int buflen)
 int wav_id(unsigned char *buf, int len)
 {
 	unsigned int flen;
-	
+
 	if(len<12) return 0; /* Something screwed up */
 
 	if(memcmp(buf, "RIFF", 4))
@@ -2042,20 +2053,20 @@ int wav_open(FILE *in, oe_enc_opt *opt, unsigned char *oldbuf, int buflen)
 	if(!find_wav_chunk(in, "fmt ", &len))
 		return 0; /* EOF */
 
-	if(len < 16) 
+	if(len < 16)
 	{
 		fprintf(stderr, _("Warning: Unrecognised format chunk in WAV header\n"));
 		return 0; /* Weird format chunk */
 	}
 
 	/* A common error is to have a format chunk that is not 16 or 18 bytes
-	 * in size.  This is incorrect, but not fatal, so we only warn about 
+	 * in size.  This is incorrect, but not fatal, so we only warn about
 	 * it instead of refusing to work with the file.  Please, if you
 	 * have a program that's creating format chunks of sizes other than
 	 * 16 or 18 bytes in size, report a bug to the author.
 	 */
 	if(len!=16 && len!=18)
-		fprintf(stderr, 
+		fprintf(stderr,
 				_("Warning: INVALID format chunk in wav header.\n"
 				" Trying to read anyway (may not work)...\n"));
 
@@ -2070,8 +2081,8 @@ int wav_open(FILE *in, oe_enc_opt *opt, unsigned char *oldbuf, int buflen)
 	if(len - 16 > 0 && !seek_forward(in, len-16))
 	    return 0;
 
-	format.format =      READ_U16_LE(buf); 
-	format.channels =    READ_U16_LE(buf+2); 
+	format.format =      READ_U16_LE(buf);
+	format.channels =    READ_U16_LE(buf+2);
 	format.samplerate =  READ_U32_LE(buf+4);
 	format.bytespersec = READ_U32_LE(buf+8);
 	format.align =       READ_U16_LE(buf+12);
@@ -2092,7 +2103,7 @@ int wav_open(FILE *in, oe_enc_opt *opt, unsigned char *oldbuf, int buflen)
 	}
 	else
 	{
-		fprintf(stderr, 
+		fprintf(stderr,
 				_("ERROR: Wav file is unsupported type (must be standard PCM\n"
 				" or type 3 floating point PCM\n"));
 		return 0;
@@ -2101,8 +2112,8 @@ int wav_open(FILE *in, oe_enc_opt *opt, unsigned char *oldbuf, int buflen)
 
 
 	if( format.align == format.channels*samplesize &&
-			format.samplesize == samplesize*8 && 
-    		(format.samplesize == 24 || format.samplesize == 16 || 
+			format.samplesize == samplesize*8 &&
+    		(format.samplesize == 24 || format.samplesize == 16 ||
              format.samplesize == 8 ||
 	     (format.samplesize == 32 && format.format == 3)))
 	{
@@ -2144,7 +2155,7 @@ int wav_open(FILE *in, oe_enc_opt *opt, unsigned char *oldbuf, int buflen)
 	}
 	else
 	{
-		fprintf(stderr, 
+		fprintf(stderr,
 				_("ERROR: Wav file is unsupported subformat (must be 8,16, or 24 bit PCM\n"
 				"or floating point PCM\n"));
 		return 0;
@@ -2160,14 +2171,14 @@ long wav_read(void *in, float **buffer, int samples)
 	int i,j;
 	long realsamples;
 
-	if(f->totalsamples && f->samplesread + 
+	if(f->totalsamples && f->samplesread +
 			bytes_read/(sampbyte*f->channels) > f->totalsamples) {
 		bytes_read = sampbyte*f->channels*(f->totalsamples - f->samplesread);
     }
 
 	realsamples = bytes_read/(sampbyte*f->channels);
 	f->samplesread += realsamples;
-		
+
 	if(f->samplesize==8)
 	{
 		unsigned char *bufu = (unsigned char *)buf;
@@ -2204,16 +2215,16 @@ long wav_read(void *in, float **buffer, int samples)
 			}
 		}
 	}
-    else if(f->samplesize==24) 
+    else if(f->samplesize==24)
     {
         if(!f->bigendian) {
             for(i = 0; i < realsamples; i++)
             {
-                for(j=0; j < f->channels; j++) 
+                for(j=0; j < f->channels; j++)
                 {
                     buffer[j][i] = ((buf[i*3*f->channels + 3*j + 2] << 16) |
                       (((unsigned char *)buf)[i*3*f->channels + 3*j + 1] << 8) |
-                      (((unsigned char *)buf)[i*3*f->channels + 3*j] & 0xff)) 
+                      (((unsigned char *)buf)[i*3*f->channels + 3*j] & 0xff))
                         / 8388608.0f;
 
                 }
@@ -2270,7 +2281,7 @@ int raw_open(FILE *in, oe_enc_opt *opt)
 	wavfile *wav = malloc(sizeof(wavfile));
 
 	/* construct fake wav header ;) */
-	format.format =      2; 
+	format.format =      2;
 	format.channels =    opt->channels;
 	format.samplerate =  opt->rate;
 	format.samplesize =  opt->samplesize;
@@ -2351,7 +2362,7 @@ int setup_resample(oe_enc_opt *opt) {
     opt->read_samples = read_resampled;
     opt->readdata = rs;
     if(opt->total_samples_per_channel)
-        opt->total_samples_per_channel = (int)((float)opt->total_samples_per_channel * 
+        opt->total_samples_per_channel = (int)((float)opt->total_samples_per_channel *
             ((float)opt->resamplefreq/(float)opt->rate));
     opt->rate = opt->resamplefreq;
 
@@ -2443,7 +2454,7 @@ void setup_downmix(oe_enc_opt *opt) {
         fprintf(stderr, "Internal error! Please report this bug.\n");
         return;
     }
-    
+
     d->bufs = malloc(2 * sizeof(float *));
     d->bufs[0] = malloc(4096 * sizeof(float));
     d->bufs[1] = malloc(4096 * sizeof(float));
@@ -2502,7 +2513,7 @@ void clear_downmix(oe_enc_opt *opt) {
 extern int vorbis_encode_init(vorbis_info *vi,
 			      long channels,
 			      long rate,
-			      
+
 			      long max_bitrate,
 			      long nominal_bitrate,
 			      long min_bitrate);
@@ -2510,22 +2521,22 @@ extern int vorbis_encode_init(vorbis_info *vi,
 extern int vorbis_encode_setup_managed(vorbis_info *vi,
 				       long channels,
 				       long rate,
-				       
+
 				       long max_bitrate,
 				       long nominal_bitrate,
 				       long min_bitrate);
-  
+
 extern int vorbis_encode_setup_vbr(vorbis_info *vi,
 				  long channels,
 				  long rate,
-				  
+
 				  float /* quality level from 0. (lo) to 1. (hi) */
 				  );
 
 extern int vorbis_encode_init_vbr(vorbis_info *vi,
 				  long channels,
 				  long rate,
-				  
+
 				  float base_quality /* quality level from 0. (lo) to 1. (hi) */
 				  );
 
@@ -2581,7 +2592,7 @@ int oe_write_page(ogg_page *page, FILE *fp);
             toset = lval;\
     } while(0)
 
-static void set_advanced_encoder_options(adv_opt *opts, int count, 
+static void set_advanced_encoder_options(adv_opt *opts, int count,
         vorbis_info *vi)
 {
     int hard = 0;
@@ -2638,7 +2649,7 @@ static void set_advanced_encoder_options(adv_opt *opts, int count,
             fprintf(stderr, _("Changed lowpass frequency from %f kHz to %f kHz\n"), prev, new);
         }
         else {
-            fprintf(stderr, _("Unrecognised advanced option \"%s\"\n"), 
+            fprintf(stderr, _("Unrecognised advanced option \"%s\"\n"),
                     opts[i].arg);
         }
     }
@@ -2686,12 +2697,12 @@ int oe_encode(oe_enc_opt *opt)
       opt->quality_set=1;
     }
 
-    opt->start_encode(opt->infilename, opt->filename, opt->bitrate, opt->quality, 
+    opt->start_encode(opt->infilename, opt->filename, opt->bitrate, opt->quality,
 		      opt->quality_set, opt->managed, opt->min_bitrate, opt->max_bitrate);
-    
+
     /* Have vorbisenc choose a mode for us */
     vorbis_info_init(&vi);
-    
+
     if(opt->quality_set > 0){
         if(vorbis_encode_setup_vbr(&vi, opt->channels, opt->rate, opt->quality)){
 	        fprintf(stderr, _("Mode initialisation failed: invalid parameters for quality\n"));
@@ -2703,7 +2714,7 @@ int oe_encode(oe_enc_opt *opt)
         if(opt->max_bitrate > 0 || opt->min_bitrate > 0){
             struct ovectl_ratemanage_arg ai;
 	        vorbis_encode_ctl(&vi, OV_ECTL_RATEMANAGE_GET, &ai);
-	
+
 	        ai.bitrate_hard_min=opt->min_bitrate;
 	        ai.bitrate_hard_max=opt->max_bitrate;
 	        ai.management_active=1;
@@ -2714,16 +2725,16 @@ int oe_encode(oe_enc_opt *opt)
 
 
     }else {
-        if(vorbis_encode_setup_managed(&vi, opt->channels, opt->rate, 
+        if(vorbis_encode_setup_managed(&vi, opt->channels, opt->rate,
 				     opt->max_bitrate>0?opt->max_bitrate*1000:-1,
-				     opt->bitrate*1000, 
+				     opt->bitrate*1000,
 				     opt->min_bitrate>0?opt->min_bitrate*1000:-1)){
 	        fprintf(stderr, _("Mode initialisation failed: invalid parameters for bitrate\n"));
 	        vorbis_info_clear(&vi);
 	        return 1;
         }
     }
-    
+
     if(opt->managed && opt->bitrate < 0)
     {
         vorbis_encode_ctl(&vi, OV_ECTL_RATEMANAGE_AVG, NULL);
@@ -2733,9 +2744,9 @@ int oe_encode(oe_enc_opt *opt)
         /* Turn off management entirely (if it was turned on). */
         vorbis_encode_ctl(&vi, OV_ECTL_RATEMANAGE_SET, NULL);
     }
-    
+
     set_advanced_encoder_options(opt->advopt, opt->advopt_count, &vi);
-    
+
     vorbis_encode_setup_init(&vi);
 
 
@@ -2748,7 +2759,7 @@ int oe_encode(oe_enc_opt *opt)
 
 	ogg_stream_init(&os, opt->serialno);
 
-	/* Now, build the three header packets and send through to the stream 
+	/* Now, build the three header packets and send through to the stream
 	   output stage (but defer actual file output until the main encode loop) */
 
 	{
@@ -2785,7 +2796,7 @@ int oe_encode(oe_enc_opt *opt)
 	while(!eos)
 	{
 		float **buffer = vorbis_analysis_buffer(&vd, READSIZE);
-		long samples_read = opt->read_samples(opt->readdata, 
+		long samples_read = opt->read_samples(opt->readdata,
 				buffer, READSIZE);
 
 		if(samples_read ==0)
@@ -2803,11 +2814,11 @@ int oe_encode(oe_enc_opt *opt)
 				packetsdone = 0;
 				time = timer_time(timer);
 
-				opt->progress_update(opt->filename, opt->total_samples_per_channel, 
+				opt->progress_update(opt->filename, opt->total_samples_per_channel,
 						samplesdone, time);
 			}
 
-			/* Tell the library how many samples (per channel) we wrote 
+			/* Tell the library how many samples (per channel) we wrote
 			   into the supplied buffer */
 			vorbis_analysis_wrote(&vd, samples_read);
 		}
@@ -2821,7 +2832,7 @@ int oe_encode(oe_enc_opt *opt)
 			vorbis_analysis(&vb, NULL);
 			vorbis_bitrate_addblock(&vb);
 
-			while(vorbis_bitrate_flushpacket(&vd, &op)) 
+			while(vorbis_bitrate_flushpacket(&vd, &op))
 			{
 				/* Add packet to bitstream */
 				ogg_stream_packetin(&os,&op);
@@ -2843,8 +2854,8 @@ int oe_encode(oe_enc_opt *opt)
 						goto cleanup; /* Bail */
 					}
 					else
-						bytes_written += ret; 
-	
+						bytes_written += ret;
+
 					if(ogg_page_eos(&og))
 						eos = 1;
 				}
@@ -2878,13 +2889,13 @@ void update_statistics_full(char *fn, long total, long done, double time)
 	static int spinpoint = 0;
 	double remain_time;
 	int minutes=0,seconds=0;
-	
+
 	remain_time = time/((double)done/(double)total) - time;
 	minutes = ((int)remain_time)/60;
 	seconds = (int)(remain_time - (double)((int)remain_time/60)*60);
 
 	fprintf(stderr, "\r");
-	fprintf(stderr, _("\t[%5.1f%%] [%2dm%.2ds remaining] %c"), 
+	fprintf(stderr, _("\t[%5.1f%%] [%2dm%.2ds remaining] %c"),
 			done*100.0/total, minutes, seconds, spinner[spinpoint++%4]);
 }
 
@@ -2892,9 +2903,9 @@ void update_statistics_notime(char *fn, long total, long done, double time)
 {
 	static char *spinner="|/-\\";
 	static int spinpoint =0;
-	
+
 	fprintf(stderr, "\r");
-	fprintf(stderr, _("\tEncoding [%2dm%.2ds so far] %c"), 
+	fprintf(stderr, _("\tEncoding [%2dm%.2ds so far] %c"),
             ((int)time)/60, (int)(time - (double)((int)time/60)*60),
 			spinner[spinpoint++%4]);
 }
@@ -2917,20 +2928,20 @@ void final_statistics(char *fn, double time, int rate, long samples, long bytes)
 		fprintf(stderr, _("\n\nDone encoding.\n"));
 
 	speed_ratio = (double)samples / (double)rate / time;
-	
+
 	fprintf(stderr, _("\n\tFile length:  %dm %04.1fs\n"),
 			(int)(samples/rate/60),
-			samples/rate - 
+			samples/rate -
 			floor(samples/rate/60)*60);
 	fprintf(stderr, _("\tElapsed time: %dm %04.1fs\n"),
 			(int)(time/60),
 			time - floor(time/60)*60);
 	fprintf(stderr, _("\tRate:         %.4f\n"), speed_ratio);
-	fprintf(stderr, _("\tAverage bitrate: %.1f kb/s\n\n"), 
+	fprintf(stderr, _("\tAverage bitrate: %.1f kb/s\n\n"),
 		8./1000.*((double)bytes/((double)samples/(double)rate)));
 }
 
-void final_statistics_null(char *fn, double time, int rate, long samples, 
+void final_statistics_null(char *fn, double time, int rate, long samples,
 		long bytes)
 {
 	/* Don't do anything, this is just a placeholder function for quiet mode */
@@ -3030,7 +3041,7 @@ void setbinmode(FILE *f)
 #endif /* win32 */
 
 #ifdef __EMX__
-void setbinmode(FILE *f) 
+void setbinmode(FILE *f)
 {
 	        _fsetmode( f, "b");
 }
@@ -3085,7 +3096,7 @@ double timer_time(void *timer)
 
 	gettimeofday(&now, NULL);
 
-	return (double)now.tv_sec - (double)start.tv_sec + 
+	return (double)now.tv_sec - (double)start.tv_sec +
 		((double)now.tv_usec - (double)start.tv_usec)/1000000.0;
 }
 
@@ -3139,7 +3150,7 @@ int create_directories(char *fn)
                 }
             }
             else {
-                fprintf(stderr, _("Error checking for existence of directory %s: %s\n"), 
+                fprintf(stderr, _("Error checking for existence of directory %s: %s\n"),
                             segment, strerror(errno));
                 free(segment);
                 return -1;
@@ -3173,7 +3184,7 @@ int create_directories(char *fn)
 
 /* Some systems don't define this */
 #ifndef M_PI
-#define M_PI       3.14159265358979323846 
+#define M_PI       3.14159265358979323846
 #endif
 
 static int hcf(int arg1, int arg2)
@@ -3207,7 +3218,7 @@ static void filt_sinc(float *dest, int N, int step, double fc, double gain, int 
 	float *endpoint = dest + N,
 		*base = dest,
 		*origdest = dest;
-	
+
 	assert(width <= N);
 
 	if ((N & 1) == 0)
@@ -3327,7 +3338,7 @@ int res_init(res_state *state, int channels, int outfreq, int infreq, res_parame
 				taps = va_arg(argp, int);
 				assert(taps > 2 && taps < 1000);
 				break;
-				
+
 			case RES_BETA:
 				beta = va_arg(argp, double);
 				assert(beta > 2.0);
@@ -3349,7 +3360,7 @@ int res_init(res_state *state, int channels, int outfreq, int infreq, res_parame
 	if (outfreq < infreq)
 	{
 		/* push the cutoff frequency down to the output frequency */
-		cutoff = cutoff * outfreq / infreq; 
+		cutoff = cutoff * outfreq / infreq;
 
         /* compensate for the sharper roll-off requirement
          * by using a bigger hammer */
@@ -3416,7 +3427,7 @@ static int push(res_state const * const state, SAMPLE *pool, int * const poolfil
 	assert(source);
 
 	assert(state->poolfill != -1);
-	
+
 	lencheck = res_push_check(state, srclen);
 
 	/* fill the pool before diving in */
@@ -3518,7 +3529,7 @@ int res_push(res_state *state, SAMPLE **dstlist, SAMPLE const **srclist, size_t 
 int res_push_interleaved(res_state *state, SAMPLE *dest, SAMPLE const *source, size_t srclen)
 {
 	int result = -1, poolfill = -1, offset = -1, i;
-	
+
 	assert(state);
 	assert(dest);
 	assert(source);
@@ -3555,7 +3566,7 @@ int res_drain(res_state *state, SAMPLE **dstlist)
 		offset = state->offset;
 		result = push(state, state->pool + i * state->taps, &poolfill, &offset, dstlist[i], 1, tail, 1, state->taps / 2 - 1);
 	}
-		
+
 	free(tail);
 
 	state->poolfill = -1;
@@ -3582,7 +3593,7 @@ int res_drain_interleaved(res_state *state, SAMPLE *dest)
 		offset = state->offset;
 		result = push(state, state->pool + i * state->taps, &poolfill, &offset, dest + i, state->channels, tail, 1, state->taps / 2 - 1);
 	}
-		
+
 	free(tail);
 
 	state->poolfill = -1;
@@ -4645,7 +4656,7 @@ getopt_long_only (argc, argv, options, long_options, opt_index)
 typedef struct {
   int n;
   int log2n;
-  
+
   DATA_TYPE *trig;
   int       *bitrev;
 
@@ -4753,7 +4764,7 @@ typedef struct static_codebook{
 
   /* mapping ***************************************************************/
   int    maptype;        /* 0=none
-			    1=implicitly populated values from map column 
+			    1=implicitly populated values from map column
 			    2=listed arbitrary values */
 
   /* The below does a linear, single monotonic sequence mapping. */
@@ -4784,15 +4795,15 @@ typedef struct encode_aux_nearestmatch{
   long   *p;         /* decision points (each is an entry) */
   long   *q;         /* decision points (each is an entry) */
   long   aux;        /* number of tree entries */
-  long   alloc;       
+  long   alloc;
 } encode_aux_nearestmatch;
 
 /* assumes a maptype of 1; encode side only, so that's OK */
 typedef struct encode_aux_threshmatch{
   float *quantthresh;
   long   *quantmap;
-  int     quantvals; 
-  int     threshvals; 
+  int     quantvals;
+  int     threshvals;
 } encode_aux_threshmatch;
 
 typedef struct encode_aux_pigeonhole{
@@ -4818,7 +4829,7 @@ typedef struct codebook{
   /* for encode, the below are entry-ordered, fully populated */
   /* for decode, the below are ordered by bitreversed codeword and only
      used entries are populated */
-  float        *valuelist;  /* list of dim*entries actual entry values */  
+  float        *valuelist;  /* list of dim*entries actual entry values */
   ogg_uint32_t *codelist;   /* list of bitstream codewords for each entry */
 
   int          *dec_index;  /* only used if sparseness collapsed */
@@ -4854,29 +4865,29 @@ extern int vorbis_staticbook_unpack(oggpack_buffer *b,static_codebook *c);
 
 extern int vorbis_book_encode(codebook *book, int a, oggpack_buffer *b);
 extern int vorbis_book_errorv(codebook *book, float *a);
-extern int vorbis_book_encodev(codebook *book, int best,float *a, 
+extern int vorbis_book_encodev(codebook *book, int best,float *a,
 			       oggpack_buffer *b);
 
 extern long vorbis_book_decode(codebook *book, oggpack_buffer *b);
-extern long vorbis_book_decodevs_add(codebook *book, float *a, 
+extern long vorbis_book_decodevs_add(codebook *book, float *a,
 				     oggpack_buffer *b,int n);
-extern long vorbis_book_decodev_set(codebook *book, float *a, 
+extern long vorbis_book_decodev_set(codebook *book, float *a,
 				    oggpack_buffer *b,int n);
-extern long vorbis_book_decodev_add(codebook *book, float *a, 
+extern long vorbis_book_decodev_add(codebook *book, float *a,
 				    oggpack_buffer *b,int n);
 extern long vorbis_book_decodevv_add(codebook *book, float **a,
-				     long off,int ch, 
+				     long off,int ch,
 				    oggpack_buffer *b,int n);
 
 #define BLOCKTYPE_IMPULSE    0
 #define BLOCKTYPE_PADDING    1
-#define BLOCKTYPE_TRANSITION 0 
+#define BLOCKTYPE_TRANSITION 0
 #define BLOCKTYPE_LONG       1
 
 #define PACKETBLOBS 15
 
 typedef struct vorbis_block_internal{
-  float  **pcmdelay;  /* this is a pointer into local storage */ 
+  float  **pcmdelay;  /* this is a pointer into local storage */
   float  ampmax;
   int    blocktype;
 
@@ -4961,7 +4972,7 @@ extern void drft_clear(drft_lookup *l);
  *                                                                  *
  ********************************************************************
 
- function: libvorbis backend and mapping structures; needed for 
+ function: libvorbis backend and mapping structures; needed for
            static mode headers
  last mod: $Id: backends.h,v 1.14 2002/07/11 06:40:48 xiphmont Exp $
 
@@ -5016,16 +5027,16 @@ typedef struct{
   int   class_subbook[VIF_CLASS][8]; /* [VIF_CLASS][subs] */
 
 
-  int   mult;                      /* 1 2 3 or 4 */ 
-  int   postlist[VIF_POSIT+2];    /* first two implicit */ 
+  int   mult;                      /* 1 2 3 or 4 */
+  int   postlist[VIF_POSIT+2];    /* first two implicit */
 
 
   /* encode side analysis parameters */
-  float maxover;     
-  float maxunder;  
-  float maxerr;    
+  float maxover;
+  float maxunder;
+  float maxerr;
 
-  float twofitweight;  
+  float twofitweight;
   float twofitatten;
 
   int   n;
@@ -5060,8 +5071,8 @@ typedef struct vorbis_info_residue0{
   int    secondstages[64]; /* expanded out to pointers in lookup */
   int    booklist[256];    /* list of second stage books */
 
-  float  classmetric1[64];  
-  float  classmetric2[64];  
+  float  classmetric1[64];
+  float  classmetric2[64];
 
 } vorbis_info_residue0;
 
@@ -5078,7 +5089,7 @@ typedef struct{
 typedef struct vorbis_info_mapping0{
   int   submaps;  /* <= 16 */
   int   chmuxlist[256];   /* up to 256 channels in a Vorbis stream */
-  
+
   int   floorsubmap[16];   /* [mux] submap to floors */
   int   residuesubmap[16]; /* [mux] submap to residue */
 
@@ -5142,11 +5153,11 @@ typedef struct{
   float ampmax_att_per_sec;
 
   /* channel coupling config */
-  int   coupling_pkHz[PACKETBLOBS];  
-  int   coupling_pointlimit[2][PACKETBLOBS];  
-  int   coupling_prepointamp[PACKETBLOBS];  
-  int   coupling_postpointamp[PACKETBLOBS];  
-  int   sliding_lowpass[2][PACKETBLOBS];  
+  int   coupling_pkHz[PACKETBLOBS];
+  int   coupling_pointlimit[2][PACKETBLOBS];
+  int   coupling_prepointamp[PACKETBLOBS];
+  int   coupling_postpointamp[PACKETBLOBS];
+  int   sliding_lowpass[2][PACKETBLOBS];
 
 } vorbis_info_psy_global;
 
@@ -5155,7 +5166,7 @@ typedef struct {
   int   channels;
 
   vorbis_info_psy_global *gi;
-  int   coupling_pointlimit[2][P_NOISECURVES];  
+  int   coupling_pointlimit[2][P_NOISECURVES];
 } vorbis_look_psy_global;
 
 
@@ -5173,7 +5184,7 @@ typedef struct {
   long  firstoc;
   long  shiftoc;
   int   eighth_octave_lines; /* power of two, please */
-  int   total_octave_lines;  
+  int   total_octave_lines;
   long  rate; /* cache it */
 } vorbis_look_psy;
 
@@ -5192,7 +5203,7 @@ extern void _vp_remove_floor(vorbis_look_psy *p,
 			     int sliding_lowpass);
 
 extern void _vp_noisemask(vorbis_look_psy *p,
-			  float *logmdct, 
+			  float *logmdct,
 			  float *logmask);
 
 extern void _vp_tonemask(vorbis_look_psy *p,
@@ -5435,7 +5446,7 @@ typedef struct bitrate_manager_state {
 
   int            next_to_flush;
   int            last_to_flush;
-  
+
   double         avgfloat;
 
   /* unfortunately, we need to hold queued packet data somewhere */
@@ -5467,7 +5478,7 @@ extern int vorbis_bitrate_flushpacket(vorbis_dsp_state *vd, ogg_packet *op);
 
 typedef struct private_state {
   /* local lookup storage */
-  envelope_lookup        *ve; /* envelope lookup */    
+  envelope_lookup        *ve; /* envelope lookup */
   int                     window[2];
   vorbis_look_transform **transform[2];    /* block, type */
   drft_lookup             fft_look[2];
@@ -5494,7 +5505,7 @@ typedef struct private_state {
 /* codec_setup_info contains all the setup information specific to the
    specific compression/decompression mode in progress (eg,
    psychoacoustic settings, channel setup, options, codebook
-   etc).  
+   etc).
 *********************************************************************/
 
 /********************************************************************
@@ -5520,7 +5531,7 @@ typedef struct highlevel_byblocktype {
   double noise_bias_setting;
   double noise_compand_setting;
 } highlevel_byblocktype;
-  
+
 typedef struct highlevel_encode_setup {
   void *setup;
   int   set_in_stone;
@@ -5538,7 +5549,7 @@ typedef struct highlevel_encode_setup {
   double bitrate_limit_window;
   double bitrate_av_window;
   double bitrate_av_window_center;
-  
+
   int impulse_block_p;
   int noise_normalize_p;
 
@@ -5550,7 +5561,7 @@ typedef struct highlevel_encode_setup {
 
   double amplitude_track_dBpersec;
   double trigger_setting;
-  
+
   highlevel_byblocktype block[4]; /* padding, impulse, transition, long */
 
 } highlevel_encode_setup;
@@ -5591,7 +5602,7 @@ typedef struct codec_setup_info {
   highlevel_encode_setup hi; /* used only by vorbisenc.c.  It's a
                                 highly redundant structure, but
                                 improves clarity of program flow. */
-  int         halfrate_flag; /* painless downsample for decode */  
+  int         halfrate_flag; /* painless downsample for decode */
 } codec_setup_info;
 
 extern vorbis_look_psy_global *_vp_global_look(vorbis_info *vi);
@@ -5640,7 +5651,7 @@ typedef struct {
   float boost;
   float decay;
 } att3;
-typedef struct { int data[P_NOISECURVES]; } adj3; 
+typedef struct { int data[P_NOISECURVES]; } adj3;
 
 typedef struct {
   int   pre[PACKETBLOBS];
@@ -7225,76 +7236,76 @@ static static_codebook *_floor_256x4_books[]={
 static static_codebook *_floor_128x7_books[]={
   &_huff_book_line_128x7_class0,
   &_huff_book_line_128x7_class1,
-  
+
   &_huff_book_line_128x7_0sub1,
   &_huff_book_line_128x7_0sub2,
   &_huff_book_line_128x7_0sub3,
   &_huff_book_line_128x7_1sub1,
   &_huff_book_line_128x7_1sub2,
-  &_huff_book_line_128x7_1sub3, 
+  &_huff_book_line_128x7_1sub3,
 };
 static static_codebook *_floor_256x7_books[]={
   &_huff_book_line_256x7_class0,
   &_huff_book_line_256x7_class1,
-  
+
   &_huff_book_line_256x7_0sub1,
   &_huff_book_line_256x7_0sub2,
   &_huff_book_line_256x7_0sub3,
   &_huff_book_line_256x7_1sub1,
   &_huff_book_line_256x7_1sub2,
-  &_huff_book_line_256x7_1sub3, 
+  &_huff_book_line_256x7_1sub3,
 };
 static static_codebook *_floor_128x11_books[]={
   &_huff_book_line_128x11_class1,
   &_huff_book_line_128x11_class2,
   &_huff_book_line_128x11_class3,
-  
+
   &_huff_book_line_128x11_0sub0,
   &_huff_book_line_128x11_1sub0,
   &_huff_book_line_128x11_1sub1,
   &_huff_book_line_128x11_2sub1,
   &_huff_book_line_128x11_2sub2,
-  &_huff_book_line_128x11_2sub3, 
+  &_huff_book_line_128x11_2sub3,
   &_huff_book_line_128x11_3sub1,
   &_huff_book_line_128x11_3sub2,
-  &_huff_book_line_128x11_3sub3, 
+  &_huff_book_line_128x11_3sub3,
 };
 static static_codebook *_floor_128x17_books[]={
   &_huff_book_line_128x17_class1,
   &_huff_book_line_128x17_class2,
   &_huff_book_line_128x17_class3,
-  
+
   &_huff_book_line_128x17_0sub0,
   &_huff_book_line_128x17_1sub0,
   &_huff_book_line_128x17_1sub1,
   &_huff_book_line_128x17_2sub1,
   &_huff_book_line_128x17_2sub2,
-  &_huff_book_line_128x17_2sub3, 
+  &_huff_book_line_128x17_2sub3,
   &_huff_book_line_128x17_3sub1,
   &_huff_book_line_128x17_3sub2,
-  &_huff_book_line_128x17_3sub3, 
+  &_huff_book_line_128x17_3sub3,
 };
 static static_codebook *_floor_512x17_books[]={
   &_huff_book_line_512x17_class1,
   &_huff_book_line_512x17_class2,
   &_huff_book_line_512x17_class3,
-  
+
   &_huff_book_line_512x17_0sub0,
   &_huff_book_line_512x17_1sub0,
   &_huff_book_line_512x17_1sub1,
   &_huff_book_line_512x17_2sub1,
   &_huff_book_line_512x17_2sub2,
-  &_huff_book_line_512x17_2sub3, 
+  &_huff_book_line_512x17_2sub3,
   &_huff_book_line_512x17_3sub1,
   &_huff_book_line_512x17_3sub2,
-  &_huff_book_line_512x17_3sub3, 
+  &_huff_book_line_512x17_3sub3,
 };
 static static_codebook *_floor_1024x27_books[]={
   &_huff_book_line_1024x27_class1,
   &_huff_book_line_1024x27_class2,
   &_huff_book_line_1024x27_class3,
   &_huff_book_line_1024x27_class4,
-  
+
   &_huff_book_line_1024x27_0sub0,
   &_huff_book_line_1024x27_1sub0,
   &_huff_book_line_1024x27_1sub1,
@@ -7343,7 +7354,7 @@ static vorbis_info_floor1 _floor[10]={
     2,{0,1},{3,4},{2,2},{0,1},
     {{-1,2,3,4},{-1,5,6,7}},
     4,{0,128, 14,4,58, 2,8,28,90},
-    
+
     60,30,500,   1.,18.,  -1
   },
   /* 256 x 7 */
@@ -7351,7 +7362,7 @@ static vorbis_info_floor1 _floor[10]={
     2,{0,1},{3,4},{2,2},{0,1},
     {{-1,2,3,4},{-1,5,6,7}},
     4,{0,256, 28,8,116, 4,16,56,180},
-    
+
     60,30,500,   1.,18.,  -1
   },
 
@@ -7359,28 +7370,28 @@ static vorbis_info_floor1 _floor[10]={
   {
     4,{0,1,2,3},{2,3,3,3},{0,1,2,2},{-1,0,1,2},
     {{3},{4,5},{-1,6,7,8},{-1,9,10,11}},
-    
+
     2,{0,128,  8,33,  4,16,70,  2,6,12,  23,46,90},
-    
+
      60,30,500,   1,18.,  -1
   },
-    
+
   /* 128 x 17 */
   {
     6,{0,1,1,2,3,3},{2,3,3,3},{0,1,2,2},{-1,0,1,2},
     {{3},{4,5},{-1,6,7,8},{-1,9,10,11}},
     2,{0,128,  12,46,  4,8,16,  23,33,70,  2,6,10,  14,19,28,  39,58,90},
 
-    60,30,500,    1,18.,  -1 
+    60,30,500,    1,18.,  -1
   },
-  
+
   /* 1024 x 17 */
   {
     6,{0,1,1,2,3,3},{2,3,3,3},{0,1,2,2},{-1,0,1,2},
     {{3},{4,5},{-1,6,7,8},{-1,9,10,11}},
-    2,{0,1024,  93,372,  33,65,130,  186,260,556,  
+    2,{0,1024,  93,372,  33,65,130,  186,260,556,
        14,46,79,  111,158,220,  312,464,720},
-    
+
     60,30,500,    1,18.,  -1 /* lowpass! */
   },
   /* 1024 x 27 */
@@ -7389,7 +7400,7 @@ static vorbis_info_floor1 _floor[10]={
     {{4},{5,6},{7,8},{-1,9,10,11},{-1,12,13,14}},
     2,{0,1024,   93,23,372, 6,46,186,750,  14,33,65, 130,260,556,
        3,10,18,28,  39,55,79,111,  158,220,312,  464,650,850},
-    
+
     60,30,500,    3,18.,  -1 /* lowpass */
   },
   /* 2048 x 27 */
@@ -7398,16 +7409,16 @@ static vorbis_info_floor1 _floor[10]={
     {{4},{5,6},{7,8},{-1,9,10,11},{-1,12,13,14}},
     2,{0,2048,   186,46,744, 12,92,372,1500,  28,66,130, 260,520,1112,
        6,20,36,56,  78,110,158,222,  316,440,624,  928,1300,1700},
-    
+
     60,30,500,    3,18.,  -1 /* lowpass */
   },
   /* 512 x 17 */
   {
     6,{0,1,1,2,3,3},{2,3,3,3},{0,1,2,2},{-1,0,1,2},
     {{3},{4,5},{-1,6,7,8},{-1,9,10,11}},
-    2,{0,512,  46,186,  16,33,65,  93,130,278,  
+    2,{0,512,  46,186,  16,33,65,  93,130,278,
        7,23,39,  55,79,110,  156,232,360},
-    
+
     60,30,500,    1,18.,  -1 /* lowpass! */
   },
 
@@ -7868,7 +7879,7 @@ static long _vq_lengthlist__16c0_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__16c0_s_p1_0[] = {
@@ -7945,7 +7956,7 @@ static long _vq_lengthlist__16c0_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16c0_s_p2_0[] = {
@@ -8022,7 +8033,7 @@ static long _vq_lengthlist__16c0_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16c0_s_p3_0[] = {
@@ -8069,7 +8080,7 @@ static long _vq_lengthlist__16c0_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16c0_s_p4_0[] = {
@@ -8117,7 +8128,7 @@ static long _vq_lengthlist__16c0_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16c0_s_p5_0[] = {
@@ -8186,8 +8197,8 @@ static long _vq_lengthlist__16c0_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__16c0_s_p6_0[] = {
@@ -8230,7 +8241,7 @@ static long _vq_lengthlist__16c0_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__16c0_s_p7_0[] = {
@@ -8281,8 +8292,8 @@ static long _vq_lengthlist__16c0_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__16c0_s_p7_1[] = {
@@ -8339,8 +8350,8 @@ static long _vq_lengthlist__16c0_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__16c0_s_p8_0[] = {
@@ -8380,7 +8391,7 @@ static long _vq_lengthlist__16c0_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16c0_s_p8_1[] = {
@@ -8421,7 +8432,7 @@ static long _vq_lengthlist__16c0_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p9_0[] = {
-	-157.5, 157.5, 
+	-157.5, 157.5,
 };
 
 static long _vq_quantmap__16c0_s_p9_0[] = {
@@ -8483,8 +8494,8 @@ static long _vq_lengthlist__16c0_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p9_1[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__16c0_s_p9_1[] = {
@@ -8566,9 +8577,9 @@ static long _vq_lengthlist__16c0_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__16c0_s_p9_2[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__16c0_s_p9_2[] = {
@@ -9058,7 +9069,7 @@ static long _vq_lengthlist__16c1_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__16c1_s_p1_0[] = {
@@ -9135,7 +9146,7 @@ static long _vq_lengthlist__16c1_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16c1_s_p2_0[] = {
@@ -9212,7 +9223,7 @@ static long _vq_lengthlist__16c1_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16c1_s_p3_0[] = {
@@ -9259,7 +9270,7 @@ static long _vq_lengthlist__16c1_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16c1_s_p4_0[] = {
@@ -9307,7 +9318,7 @@ static long _vq_lengthlist__16c1_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16c1_s_p5_0[] = {
@@ -9376,8 +9387,8 @@ static long _vq_lengthlist__16c1_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__16c1_s_p6_0[] = {
@@ -9420,7 +9431,7 @@ static long _vq_lengthlist__16c1_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__16c1_s_p7_0[] = {
@@ -9471,8 +9482,8 @@ static long _vq_lengthlist__16c1_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__16c1_s_p7_1[] = {
@@ -9529,8 +9540,8 @@ static long _vq_lengthlist__16c1_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__16c1_s_p8_0[] = {
@@ -9570,7 +9581,7 @@ static long _vq_lengthlist__16c1_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16c1_s_p8_1[] = {
@@ -9626,8 +9637,8 @@ static long _vq_lengthlist__16c1_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p9_0[] = {
-	-1732.5, -1417.5, -1102.5, -787.5, -472.5, -157.5, 157.5, 472.5, 
-	787.5, 1102.5, 1417.5, 1732.5, 
+	-1732.5, -1417.5, -1102.5, -787.5, -472.5, -157.5, 157.5, 472.5,
+	787.5, 1102.5, 1417.5, 1732.5,
 };
 
 static long _vq_quantmap__16c1_s_p9_0[] = {
@@ -9690,8 +9701,8 @@ static long _vq_lengthlist__16c1_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p9_1[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__16c1_s_p9_1[] = {
@@ -9773,9 +9784,9 @@ static long _vq_lengthlist__16c1_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__16c1_s_p9_2[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__16c1_s_p9_2[] = {
@@ -9860,7 +9871,7 @@ static long _vq_lengthlist__16c2_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__16c2_s_p1_0[] = {
@@ -9937,7 +9948,7 @@ static long _vq_lengthlist__16c2_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16c2_s_p2_0[] = {
@@ -9984,7 +9995,7 @@ static long _vq_lengthlist__16c2_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p3_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16c2_s_p3_0[] = {
@@ -10053,8 +10064,8 @@ static long _vq_lengthlist__16c2_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p4_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__16c2_s_p4_0[] = {
@@ -10097,7 +10108,7 @@ static long _vq_lengthlist__16c2_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p5_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__16c2_s_p5_0[] = {
@@ -10148,8 +10159,8 @@ static long _vq_lengthlist__16c2_s_p5_1[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p5_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__16c2_s_p5_1[] = {
@@ -10206,8 +10217,8 @@ static long _vq_lengthlist__16c2_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__16c2_s_p6_0[] = {
@@ -10247,7 +10258,7 @@ static long _vq_lengthlist__16c2_s_p6_1[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16c2_s_p6_1[] = {
@@ -10303,8 +10314,8 @@ static long _vq_lengthlist__16c2_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p7_0[] = {
-	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 
-	27.5, 38.5, 49.5, 60.5, 
+	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5,
+	27.5, 38.5, 49.5, 60.5,
 };
 
 static long _vq_quantmap__16c2_s_p7_0[] = {
@@ -10356,8 +10367,8 @@ static long _vq_lengthlist__16c2_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__16c2_s_p7_1[] = {
@@ -10420,8 +10431,8 @@ static long _vq_lengthlist__16c2_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p8_0[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__16c2_s_p8_0[] = {
@@ -10503,9 +10514,9 @@ static long _vq_lengthlist__16c2_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p8_1[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__16c2_s_p8_1[] = {
@@ -10563,8 +10574,8 @@ static long _vq_lengthlist__16c2_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p9_0[] = {
-	-5120.5, -4189.5, -3258.5, -2327.5, -1396.5, -465.5, 465.5, 1396.5, 
-	2327.5, 3258.5, 4189.5, 5120.5, 
+	-5120.5, -4189.5, -3258.5, -2327.5, -1396.5, -465.5, 465.5, 1396.5,
+	2327.5, 3258.5, 4189.5, 5120.5,
 };
 
 static long _vq_quantmap__16c2_s_p9_0[] = {
@@ -10633,8 +10644,8 @@ static long _vq_lengthlist__16c2_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p9_1[] = {
-	-367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5, -24.5, 
-	24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5, 367.5, 
+	-367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5, -24.5,
+	24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5, 367.5,
 };
 
 static long _vq_quantmap__16c2_s_p9_1[] = {
@@ -10697,10 +10708,10 @@ static long _vq_lengthlist__16c2_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__16c2_s_p9_2[] = {
-	-12.5, -11.5, -10.5, -9.5, -8.5, -7.5, -6.5, -5.5, 
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 
-	11.5, 12.5, 
+	-12.5, -11.5, -10.5, -9.5, -8.5, -7.5, -6.5, -5.5,
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5,
+	11.5, 12.5,
 };
 
 static long _vq_quantmap__16c2_s_p9_2[] = {
@@ -11191,7 +11202,7 @@ static long _vq_lengthlist__44c0_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c0_s_p1_0[] = {
@@ -11268,7 +11279,7 @@ static long _vq_lengthlist__44c0_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c0_s_p2_0[] = {
@@ -11345,7 +11356,7 @@ static long _vq_lengthlist__44c0_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c0_s_p3_0[] = {
@@ -11392,7 +11403,7 @@ static long _vq_lengthlist__44c0_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c0_s_p4_0[] = {
@@ -11440,7 +11451,7 @@ static long _vq_lengthlist__44c0_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c0_s_p5_0[] = {
@@ -11509,8 +11520,8 @@ static long _vq_lengthlist__44c0_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c0_s_p6_0[] = {
@@ -11553,7 +11564,7 @@ static long _vq_lengthlist__44c0_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c0_s_p7_0[] = {
@@ -11604,8 +11615,8 @@ static long _vq_lengthlist__44c0_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c0_s_p7_1[] = {
@@ -11662,8 +11673,8 @@ static long _vq_lengthlist__44c0_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c0_s_p8_0[] = {
@@ -11703,7 +11714,7 @@ static long _vq_lengthlist__44c0_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c0_s_p8_1[] = {
@@ -11780,7 +11791,7 @@ static long _vq_lengthlist__44c0_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p9_0[] = {
-	-331.5, -110.5, 110.5, 331.5, 
+	-331.5, -110.5, 110.5, 331.5,
 };
 
 static long _vq_quantmap__44c0_s_p9_0[] = {
@@ -11836,8 +11847,8 @@ static long _vq_lengthlist__44c0_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p9_1[] = {
-	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5, 
-	42.5, 59.5, 76.5, 93.5, 
+	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5,
+	42.5, 59.5, 76.5, 93.5,
 };
 
 static long _vq_quantmap__44c0_s_p9_1[] = {
@@ -11906,8 +11917,8 @@ static long _vq_lengthlist__44c0_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c0_s_p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c0_s_p9_2[] = {
@@ -12397,7 +12408,7 @@ static long _vq_lengthlist__44c0_sm_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c0_sm_p1_0[] = {
@@ -12474,7 +12485,7 @@ static long _vq_lengthlist__44c0_sm_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c0_sm_p2_0[] = {
@@ -12551,7 +12562,7 @@ static long _vq_lengthlist__44c0_sm_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c0_sm_p3_0[] = {
@@ -12598,7 +12609,7 @@ static long _vq_lengthlist__44c0_sm_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c0_sm_p4_0[] = {
@@ -12646,7 +12657,7 @@ static long _vq_lengthlist__44c0_sm_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c0_sm_p5_0[] = {
@@ -12715,8 +12726,8 @@ static long _vq_lengthlist__44c0_sm_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c0_sm_p6_0[] = {
@@ -12759,7 +12770,7 @@ static long _vq_lengthlist__44c0_sm_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c0_sm_p7_0[] = {
@@ -12810,8 +12821,8 @@ static long _vq_lengthlist__44c0_sm_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c0_sm_p7_1[] = {
@@ -12868,8 +12879,8 @@ static long _vq_lengthlist__44c0_sm_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c0_sm_p8_0[] = {
@@ -12909,7 +12920,7 @@ static long _vq_lengthlist__44c0_sm_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c0_sm_p8_1[] = {
@@ -12956,7 +12967,7 @@ static long _vq_lengthlist__44c0_sm_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p9_0[] = {
-	-773.5, -552.5, -331.5, -110.5, 110.5, 331.5, 552.5, 773.5, 
+	-773.5, -552.5, -331.5, -110.5, 110.5, 331.5, 552.5, 773.5,
 };
 
 static long _vq_quantmap__44c0_sm_p9_0[] = {
@@ -13013,8 +13024,8 @@ static long _vq_lengthlist__44c0_sm_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p9_1[] = {
-	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5, 
-	42.5, 59.5, 76.5, 93.5, 
+	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5,
+	42.5, 59.5, 76.5, 93.5,
 };
 
 static long _vq_quantmap__44c0_sm_p9_1[] = {
@@ -13083,8 +13094,8 @@ static long _vq_lengthlist__44c0_sm_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c0_sm_p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c0_sm_p9_2[] = {
@@ -13574,7 +13585,7 @@ static long _vq_lengthlist__44c1_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c1_s_p1_0[] = {
@@ -13651,7 +13662,7 @@ static long _vq_lengthlist__44c1_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c1_s_p2_0[] = {
@@ -13728,7 +13739,7 @@ static long _vq_lengthlist__44c1_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c1_s_p3_0[] = {
@@ -13775,7 +13786,7 @@ static long _vq_lengthlist__44c1_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c1_s_p4_0[] = {
@@ -13823,7 +13834,7 @@ static long _vq_lengthlist__44c1_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c1_s_p5_0[] = {
@@ -13892,8 +13903,8 @@ static long _vq_lengthlist__44c1_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c1_s_p6_0[] = {
@@ -13936,7 +13947,7 @@ static long _vq_lengthlist__44c1_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c1_s_p7_0[] = {
@@ -13987,8 +13998,8 @@ static long _vq_lengthlist__44c1_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c1_s_p7_1[] = {
@@ -14045,8 +14056,8 @@ static long _vq_lengthlist__44c1_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c1_s_p8_0[] = {
@@ -14086,7 +14097,7 @@ static long _vq_lengthlist__44c1_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c1_s_p8_1[] = {
@@ -14142,8 +14153,8 @@ static long _vq_lengthlist__44c1_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p9_0[] = {
-	-1215.5, -994.5, -773.5, -552.5, -331.5, -110.5, 110.5, 331.5, 
-	552.5, 773.5, 994.5, 1215.5, 
+	-1215.5, -994.5, -773.5, -552.5, -331.5, -110.5, 110.5, 331.5,
+	552.5, 773.5, 994.5, 1215.5,
 };
 
 static long _vq_quantmap__44c1_s_p9_0[] = {
@@ -14200,8 +14211,8 @@ static long _vq_lengthlist__44c1_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p9_1[] = {
-	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5, 
-	42.5, 59.5, 76.5, 93.5, 
+	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5,
+	42.5, 59.5, 76.5, 93.5,
 };
 
 static long _vq_quantmap__44c1_s_p9_1[] = {
@@ -14270,8 +14281,8 @@ static long _vq_lengthlist__44c1_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c1_s_p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c1_s_p9_2[] = {
@@ -14761,7 +14772,7 @@ static long _vq_lengthlist__44c1_sm_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c1_sm_p1_0[] = {
@@ -14838,7 +14849,7 @@ static long _vq_lengthlist__44c1_sm_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c1_sm_p2_0[] = {
@@ -14915,7 +14926,7 @@ static long _vq_lengthlist__44c1_sm_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c1_sm_p3_0[] = {
@@ -14962,7 +14973,7 @@ static long _vq_lengthlist__44c1_sm_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c1_sm_p4_0[] = {
@@ -15010,7 +15021,7 @@ static long _vq_lengthlist__44c1_sm_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c1_sm_p5_0[] = {
@@ -15079,8 +15090,8 @@ static long _vq_lengthlist__44c1_sm_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c1_sm_p6_0[] = {
@@ -15123,7 +15134,7 @@ static long _vq_lengthlist__44c1_sm_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c1_sm_p7_0[] = {
@@ -15174,8 +15185,8 @@ static long _vq_lengthlist__44c1_sm_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c1_sm_p7_1[] = {
@@ -15232,8 +15243,8 @@ static long _vq_lengthlist__44c1_sm_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c1_sm_p8_0[] = {
@@ -15273,7 +15284,7 @@ static long _vq_lengthlist__44c1_sm_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c1_sm_p8_1[] = {
@@ -15329,8 +15340,8 @@ static long _vq_lengthlist__44c1_sm_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p9_0[] = {
-	-1215.5, -994.5, -773.5, -552.5, -331.5, -110.5, 110.5, 331.5, 
-	552.5, 773.5, 994.5, 1215.5, 
+	-1215.5, -994.5, -773.5, -552.5, -331.5, -110.5, 110.5, 331.5,
+	552.5, 773.5, 994.5, 1215.5,
 };
 
 static long _vq_quantmap__44c1_sm_p9_0[] = {
@@ -15387,8 +15398,8 @@ static long _vq_lengthlist__44c1_sm_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p9_1[] = {
-	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5, 
-	42.5, 59.5, 76.5, 93.5, 
+	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5,
+	42.5, 59.5, 76.5, 93.5,
 };
 
 static long _vq_quantmap__44c1_sm_p9_1[] = {
@@ -15457,8 +15468,8 @@ static long _vq_lengthlist__44c1_sm_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c1_sm_p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c1_sm_p9_2[] = {
@@ -15948,7 +15959,7 @@ static long _vq_lengthlist__44c2_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c2_s_p1_0[] = {
@@ -16025,7 +16036,7 @@ static long _vq_lengthlist__44c2_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c2_s_p2_0[] = {
@@ -16102,7 +16113,7 @@ static long _vq_lengthlist__44c2_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c2_s_p3_0[] = {
@@ -16149,7 +16160,7 @@ static long _vq_lengthlist__44c2_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c2_s_p4_0[] = {
@@ -16197,7 +16208,7 @@ static long _vq_lengthlist__44c2_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c2_s_p5_0[] = {
@@ -16266,8 +16277,8 @@ static long _vq_lengthlist__44c2_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c2_s_p6_0[] = {
@@ -16310,7 +16321,7 @@ static long _vq_lengthlist__44c2_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c2_s_p7_0[] = {
@@ -16361,8 +16372,8 @@ static long _vq_lengthlist__44c2_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c2_s_p7_1[] = {
@@ -16419,8 +16430,8 @@ static long _vq_lengthlist__44c2_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c2_s_p8_0[] = {
@@ -16460,7 +16471,7 @@ static long _vq_lengthlist__44c2_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c2_s_p8_1[] = {
@@ -16516,8 +16527,8 @@ static long _vq_lengthlist__44c2_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p9_0[] = {
-	-1215.5, -994.5, -773.5, -552.5, -331.5, -110.5, 110.5, 331.5, 
-	552.5, 773.5, 994.5, 1215.5, 
+	-1215.5, -994.5, -773.5, -552.5, -331.5, -110.5, 110.5, 331.5,
+	552.5, 773.5, 994.5, 1215.5,
 };
 
 static long _vq_quantmap__44c2_s_p9_0[] = {
@@ -16574,8 +16585,8 @@ static long _vq_lengthlist__44c2_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p9_1[] = {
-	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5, 
-	42.5, 59.5, 76.5, 93.5, 
+	-93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 25.5,
+	42.5, 59.5, 76.5, 93.5,
 };
 
 static long _vq_quantmap__44c2_s_p9_1[] = {
@@ -16644,8 +16655,8 @@ static long _vq_lengthlist__44c2_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c2_s_p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c2_s_p9_2[] = {
@@ -17135,7 +17146,7 @@ static long _vq_lengthlist__44c3_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c3_s_p1_0[] = {
@@ -17212,7 +17223,7 @@ static long _vq_lengthlist__44c3_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c3_s_p2_0[] = {
@@ -17289,7 +17300,7 @@ static long _vq_lengthlist__44c3_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c3_s_p3_0[] = {
@@ -17336,7 +17347,7 @@ static long _vq_lengthlist__44c3_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c3_s_p4_0[] = {
@@ -17384,7 +17395,7 @@ static long _vq_lengthlist__44c3_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c3_s_p5_0[] = {
@@ -17453,8 +17464,8 @@ static long _vq_lengthlist__44c3_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c3_s_p6_0[] = {
@@ -17497,7 +17508,7 @@ static long _vq_lengthlist__44c3_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c3_s_p7_0[] = {
@@ -17548,8 +17559,8 @@ static long _vq_lengthlist__44c3_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c3_s_p7_1[] = {
@@ -17606,8 +17617,8 @@ static long _vq_lengthlist__44c3_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c3_s_p8_0[] = {
@@ -17647,7 +17658,7 @@ static long _vq_lengthlist__44c3_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c3_s_p8_1[] = {
@@ -17703,8 +17714,8 @@ static long _vq_lengthlist__44c3_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p9_0[] = {
-	-1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 382.5, 
-	637.5, 892.5, 1147.5, 1402.5, 
+	-1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 382.5,
+	637.5, 892.5, 1147.5, 1402.5,
 };
 
 static long _vq_quantmap__44c3_s_p9_0[] = {
@@ -17767,8 +17778,8 @@ static long _vq_lengthlist__44c3_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p9_1[] = {
-	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 
-	25.5, 42.5, 59.5, 76.5, 93.5, 110.5, 
+	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5,
+	25.5, 42.5, 59.5, 76.5, 93.5, 110.5,
 };
 
 static long _vq_quantmap__44c3_s_p9_1[] = {
@@ -17837,8 +17848,8 @@ static long _vq_lengthlist__44c3_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c3_s_p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c3_s_p9_2[] = {
@@ -18328,7 +18339,7 @@ static long _vq_lengthlist__44c4_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c4_s_p1_0[] = {
@@ -18405,7 +18416,7 @@ static long _vq_lengthlist__44c4_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c4_s_p2_0[] = {
@@ -18482,7 +18493,7 @@ static long _vq_lengthlist__44c4_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c4_s_p3_0[] = {
@@ -18529,7 +18540,7 @@ static long _vq_lengthlist__44c4_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c4_s_p4_0[] = {
@@ -18577,7 +18588,7 @@ static long _vq_lengthlist__44c4_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c4_s_p5_0[] = {
@@ -18646,8 +18657,8 @@ static long _vq_lengthlist__44c4_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c4_s_p6_0[] = {
@@ -18690,7 +18701,7 @@ static long _vq_lengthlist__44c4_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c4_s_p7_0[] = {
@@ -18741,8 +18752,8 @@ static long _vq_lengthlist__44c4_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c4_s_p7_1[] = {
@@ -18799,8 +18810,8 @@ static long _vq_lengthlist__44c4_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c4_s_p8_0[] = {
@@ -18840,7 +18851,7 @@ static long _vq_lengthlist__44c4_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c4_s_p8_1[] = {
@@ -18896,8 +18907,8 @@ static long _vq_lengthlist__44c4_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p9_0[] = {
-	-1732.5, -1417.5, -1102.5, -787.5, -472.5, -157.5, 157.5, 472.5, 
-	787.5, 1102.5, 1417.5, 1732.5, 
+	-1732.5, -1417.5, -1102.5, -787.5, -472.5, -157.5, 157.5, 472.5,
+	787.5, 1102.5, 1417.5, 1732.5,
 };
 
 static long _vq_quantmap__44c4_s_p9_0[] = {
@@ -18960,8 +18971,8 @@ static long _vq_lengthlist__44c4_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p9_1[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__44c4_s_p9_1[] = {
@@ -19043,9 +19054,9 @@ static long _vq_lengthlist__44c4_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c4_s_p9_2[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__44c4_s_p9_2[] = {
@@ -19535,7 +19546,7 @@ static long _vq_lengthlist__44c5_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c5_s_p1_0[] = {
@@ -19612,7 +19623,7 @@ static long _vq_lengthlist__44c5_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c5_s_p2_0[] = {
@@ -19689,7 +19700,7 @@ static long _vq_lengthlist__44c5_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c5_s_p3_0[] = {
@@ -19736,7 +19747,7 @@ static long _vq_lengthlist__44c5_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c5_s_p4_0[] = {
@@ -19784,7 +19795,7 @@ static long _vq_lengthlist__44c5_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c5_s_p5_0[] = {
@@ -19853,8 +19864,8 @@ static long _vq_lengthlist__44c5_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c5_s_p6_0[] = {
@@ -19897,7 +19908,7 @@ static long _vq_lengthlist__44c5_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c5_s_p7_0[] = {
@@ -19948,8 +19959,8 @@ static long _vq_lengthlist__44c5_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c5_s_p7_1[] = {
@@ -20006,8 +20017,8 @@ static long _vq_lengthlist__44c5_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c5_s_p8_0[] = {
@@ -20047,7 +20058,7 @@ static long _vq_lengthlist__44c5_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c5_s_p8_1[] = {
@@ -20109,8 +20120,8 @@ static long _vq_lengthlist__44c5_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p9_0[] = {
-	-2320.5, -1963.5, -1606.5, -1249.5, -892.5, -535.5, -178.5, 178.5, 
-	535.5, 892.5, 1249.5, 1606.5, 1963.5, 2320.5, 
+	-2320.5, -1963.5, -1606.5, -1249.5, -892.5, -535.5, -178.5, 178.5,
+	535.5, 892.5, 1249.5, 1606.5, 1963.5, 2320.5,
 };
 
 static long _vq_quantmap__44c5_s_p9_0[] = {
@@ -20179,8 +20190,8 @@ static long _vq_lengthlist__44c5_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p9_1[] = {
-	-157.5, -136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 
-	10.5, 31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 157.5, 
+	-157.5, -136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5,
+	10.5, 31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 157.5,
 };
 
 static long _vq_quantmap__44c5_s_p9_1[] = {
@@ -20263,9 +20274,9 @@ static long _vq_lengthlist__44c5_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c5_s_p9_2[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__44c5_s_p9_2[] = {
@@ -20350,7 +20361,7 @@ static long _vq_lengthlist__44c6_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c6_s_p1_0[] = {
@@ -20427,7 +20438,7 @@ static long _vq_lengthlist__44c6_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c6_s_p2_0[] = {
@@ -20474,7 +20485,7 @@ static long _vq_lengthlist__44c6_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p3_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c6_s_p3_0[] = {
@@ -20543,8 +20554,8 @@ static long _vq_lengthlist__44c6_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p4_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c6_s_p4_0[] = {
@@ -20587,7 +20598,7 @@ static long _vq_lengthlist__44c6_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p5_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c6_s_p5_0[] = {
@@ -20638,8 +20649,8 @@ static long _vq_lengthlist__44c6_s_p5_1[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p5_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c6_s_p5_1[] = {
@@ -20696,8 +20707,8 @@ static long _vq_lengthlist__44c6_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c6_s_p6_0[] = {
@@ -20737,7 +20748,7 @@ static long _vq_lengthlist__44c6_s_p6_1[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c6_s_p6_1[] = {
@@ -20793,8 +20804,8 @@ static long _vq_lengthlist__44c6_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p7_0[] = {
-	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 
-	27.5, 38.5, 49.5, 60.5, 
+	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5,
+	27.5, 38.5, 49.5, 60.5,
 };
 
 static long _vq_quantmap__44c6_s_p7_0[] = {
@@ -20846,8 +20857,8 @@ static long _vq_lengthlist__44c6_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c6_s_p7_1[] = {
@@ -20910,8 +20921,8 @@ static long _vq_lengthlist__44c6_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p8_0[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__44c6_s_p8_0[] = {
@@ -20993,9 +21004,9 @@ static long _vq_lengthlist__44c6_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p8_1[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__44c6_s_p8_1[] = {
@@ -21053,8 +21064,8 @@ static long _vq_lengthlist__44c6_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p9_0[] = {
-	-3503.5, -2866.5, -2229.5, -1592.5, -955.5, -318.5, 318.5, 955.5, 
-	1592.5, 2229.5, 2866.5, 3503.5, 
+	-3503.5, -2866.5, -2229.5, -1592.5, -955.5, -318.5, 318.5, 955.5,
+	1592.5, 2229.5, 2866.5, 3503.5,
 };
 
 static long _vq_quantmap__44c6_s_p9_0[] = {
@@ -21111,8 +21122,8 @@ static long _vq_lengthlist__44c6_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p9_1[] = {
-	-269.5, -220.5, -171.5, -122.5, -73.5, -24.5, 24.5, 73.5, 
-	122.5, 171.5, 220.5, 269.5, 
+	-269.5, -220.5, -171.5, -122.5, -73.5, -24.5, 24.5, 73.5,
+	122.5, 171.5, 220.5, 269.5,
 };
 
 static long _vq_quantmap__44c6_s_p9_1[] = {
@@ -21198,12 +21209,12 @@ static long _vq_lengthlist__44c6_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c6_s_p9_2[] = {
-	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5, 
-	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5, 
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
-	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 
+	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5,
+	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5,
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5,
+	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5,
 };
 
 static long _vq_quantmap__44c6_s_p9_2[] = {
@@ -21292,7 +21303,7 @@ static long _vq_lengthlist__44c7_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c7_s_p1_0[] = {
@@ -21369,7 +21380,7 @@ static long _vq_lengthlist__44c7_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c7_s_p2_0[] = {
@@ -21416,7 +21427,7 @@ static long _vq_lengthlist__44c7_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p3_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c7_s_p3_0[] = {
@@ -21485,8 +21496,8 @@ static long _vq_lengthlist__44c7_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p4_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c7_s_p4_0[] = {
@@ -21529,7 +21540,7 @@ static long _vq_lengthlist__44c7_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p5_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c7_s_p5_0[] = {
@@ -21580,8 +21591,8 @@ static long _vq_lengthlist__44c7_s_p5_1[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p5_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c7_s_p5_1[] = {
@@ -21638,8 +21649,8 @@ static long _vq_lengthlist__44c7_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c7_s_p6_0[] = {
@@ -21679,7 +21690,7 @@ static long _vq_lengthlist__44c7_s_p6_1[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c7_s_p6_1[] = {
@@ -21735,8 +21746,8 @@ static long _vq_lengthlist__44c7_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p7_0[] = {
-	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 
-	27.5, 38.5, 49.5, 60.5, 
+	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5,
+	27.5, 38.5, 49.5, 60.5,
 };
 
 static long _vq_quantmap__44c7_s_p7_0[] = {
@@ -21788,8 +21799,8 @@ static long _vq_lengthlist__44c7_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c7_s_p7_1[] = {
@@ -21852,8 +21863,8 @@ static long _vq_lengthlist__44c7_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p8_0[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__44c7_s_p8_0[] = {
@@ -21935,9 +21946,9 @@ static long _vq_lengthlist__44c7_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p8_1[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__44c7_s_p8_1[] = {
@@ -21995,8 +22006,8 @@ static long _vq_lengthlist__44c7_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p9_0[] = {
-	-3503.5, -2866.5, -2229.5, -1592.5, -955.5, -318.5, 318.5, 955.5, 
-	1592.5, 2229.5, 2866.5, 3503.5, 
+	-3503.5, -2866.5, -2229.5, -1592.5, -955.5, -318.5, 318.5, 955.5,
+	1592.5, 2229.5, 2866.5, 3503.5,
 };
 
 static long _vq_quantmap__44c7_s_p9_0[] = {
@@ -22053,8 +22064,8 @@ static long _vq_lengthlist__44c7_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p9_1[] = {
-	-269.5, -220.5, -171.5, -122.5, -73.5, -24.5, 24.5, 73.5, 
-	122.5, 171.5, 220.5, 269.5, 
+	-269.5, -220.5, -171.5, -122.5, -73.5, -24.5, 24.5, 73.5,
+	122.5, 171.5, 220.5, 269.5,
 };
 
 static long _vq_quantmap__44c7_s_p9_1[] = {
@@ -22140,12 +22151,12 @@ static long _vq_lengthlist__44c7_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c7_s_p9_2[] = {
-	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5, 
-	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5, 
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
-	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 
+	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5,
+	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5,
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5,
+	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5,
 };
 
 static long _vq_quantmap__44c7_s_p9_2[] = {
@@ -22234,7 +22245,7 @@ static long _vq_lengthlist__44c8_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c8_s_p1_0[] = {
@@ -22311,7 +22322,7 @@ static long _vq_lengthlist__44c8_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c8_s_p2_0[] = {
@@ -22358,7 +22369,7 @@ static long _vq_lengthlist__44c8_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p3_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c8_s_p3_0[] = {
@@ -22427,8 +22438,8 @@ static long _vq_lengthlist__44c8_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p4_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c8_s_p4_0[] = {
@@ -22471,7 +22482,7 @@ static long _vq_lengthlist__44c8_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p5_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c8_s_p5_0[] = {
@@ -22522,8 +22533,8 @@ static long _vq_lengthlist__44c8_s_p5_1[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p5_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c8_s_p5_1[] = {
@@ -22580,8 +22591,8 @@ static long _vq_lengthlist__44c8_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c8_s_p6_0[] = {
@@ -22621,7 +22632,7 @@ static long _vq_lengthlist__44c8_s_p6_1[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c8_s_p6_1[] = {
@@ -22677,8 +22688,8 @@ static long _vq_lengthlist__44c8_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p7_0[] = {
-	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 
-	27.5, 38.5, 49.5, 60.5, 
+	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5,
+	27.5, 38.5, 49.5, 60.5,
 };
 
 static long _vq_quantmap__44c8_s_p7_0[] = {
@@ -22730,8 +22741,8 @@ static long _vq_lengthlist__44c8_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c8_s_p7_1[] = {
@@ -22794,8 +22805,8 @@ static long _vq_lengthlist__44c8_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p8_0[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__44c8_s_p8_0[] = {
@@ -22877,9 +22888,9 @@ static long _vq_lengthlist__44c8_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p8_1[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__44c8_s_p8_1[] = {
@@ -22949,8 +22960,8 @@ static long _vq_lengthlist__44c8_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p9_0[] = {
-	-6982.5, -6051.5, -5120.5, -4189.5, -3258.5, -2327.5, -1396.5, -465.5, 
-	465.5, 1396.5, 2327.5, 3258.5, 4189.5, 5120.5, 6051.5, 6982.5, 
+	-6982.5, -6051.5, -5120.5, -4189.5, -3258.5, -2327.5, -1396.5, -465.5,
+	465.5, 1396.5, 2327.5, 3258.5, 4189.5, 5120.5, 6051.5, 6982.5,
 };
 
 static long _vq_quantmap__44c8_s_p9_0[] = {
@@ -23026,9 +23037,9 @@ static long _vq_lengthlist__44c8_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p9_1[] = {
-	-416.5, -367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5, 
-	-24.5, 24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5, 
-	367.5, 416.5, 
+	-416.5, -367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5,
+	-24.5, 24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5,
+	367.5, 416.5,
 };
 
 static long _vq_quantmap__44c8_s_p9_1[] = {
@@ -23115,12 +23126,12 @@ static long _vq_lengthlist__44c8_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c8_s_p9_2[] = {
-	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5, 
-	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5, 
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
-	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 
+	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5,
+	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5,
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5,
+	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5,
 };
 
 static long _vq_quantmap__44c8_s_p9_2[] = {
@@ -23209,7 +23220,7 @@ static long _vq_lengthlist__44c9_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44c9_s_p1_0[] = {
@@ -23286,7 +23297,7 @@ static long _vq_lengthlist__44c9_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c9_s_p2_0[] = {
@@ -23333,7 +23344,7 @@ static long _vq_lengthlist__44c9_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p3_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44c9_s_p3_0[] = {
@@ -23402,8 +23413,8 @@ static long _vq_lengthlist__44c9_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p4_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44c9_s_p4_0[] = {
@@ -23446,7 +23457,7 @@ static long _vq_lengthlist__44c9_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p5_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44c9_s_p5_0[] = {
@@ -23497,8 +23508,8 @@ static long _vq_lengthlist__44c9_s_p5_1[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p5_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c9_s_p5_1[] = {
@@ -23555,8 +23566,8 @@ static long _vq_lengthlist__44c9_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44c9_s_p6_0[] = {
@@ -23596,7 +23607,7 @@ static long _vq_lengthlist__44c9_s_p6_1[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44c9_s_p6_1[] = {
@@ -23652,8 +23663,8 @@ static long _vq_lengthlist__44c9_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p7_0[] = {
-	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 
-	27.5, 38.5, 49.5, 60.5, 
+	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5,
+	27.5, 38.5, 49.5, 60.5,
 };
 
 static long _vq_quantmap__44c9_s_p7_0[] = {
@@ -23705,8 +23716,8 @@ static long _vq_lengthlist__44c9_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44c9_s_p7_1[] = {
@@ -23769,8 +23780,8 @@ static long _vq_lengthlist__44c9_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p8_0[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__44c9_s_p8_0[] = {
@@ -23852,9 +23863,9 @@ static long _vq_lengthlist__44c9_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p8_1[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__44c9_s_p8_1[] = {
@@ -23930,9 +23941,9 @@ static long _vq_lengthlist__44c9_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p9_0[] = {
-	-7913.5, -6982.5, -6051.5, -5120.5, -4189.5, -3258.5, -2327.5, -1396.5, 
-	-465.5, 465.5, 1396.5, 2327.5, 3258.5, 4189.5, 5120.5, 6051.5, 
-	6982.5, 7913.5, 
+	-7913.5, -6982.5, -6051.5, -5120.5, -4189.5, -3258.5, -2327.5, -1396.5,
+	-465.5, 465.5, 1396.5, 2327.5, 3258.5, 4189.5, 5120.5, 6051.5,
+	6982.5, 7913.5,
 };
 
 static long _vq_quantmap__44c9_s_p9_0[] = {
@@ -24008,9 +24019,9 @@ static long _vq_lengthlist__44c9_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p9_1[] = {
-	-416.5, -367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5, 
-	-24.5, 24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5, 
-	367.5, 416.5, 
+	-416.5, -367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5,
+	-24.5, 24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5,
+	367.5, 416.5,
 };
 
 static long _vq_quantmap__44c9_s_p9_1[] = {
@@ -24097,12 +24108,12 @@ static long _vq_lengthlist__44c9_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__44c9_s_p9_2[] = {
-	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5, 
-	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5, 
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
-	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 
+	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5,
+	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5,
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5,
+	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5,
 };
 
 static long _vq_quantmap__44c9_s_p9_2[] = {
@@ -24575,7 +24586,7 @@ static long _vq_lengthlist__8c0_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__8c0_s_p1_0[] = {
@@ -24652,7 +24663,7 @@ static long _vq_lengthlist__8c0_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8c0_s_p2_0[] = {
@@ -24729,7 +24740,7 @@ static long _vq_lengthlist__8c0_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8c0_s_p3_0[] = {
@@ -24776,7 +24787,7 @@ static long _vq_lengthlist__8c0_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__8c0_s_p4_0[] = {
@@ -24824,7 +24835,7 @@ static long _vq_lengthlist__8c0_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__8c0_s_p5_0[] = {
@@ -24893,8 +24904,8 @@ static long _vq_lengthlist__8c0_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__8c0_s_p6_0[] = {
@@ -24937,7 +24948,7 @@ static long _vq_lengthlist__8c0_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__8c0_s_p7_0[] = {
@@ -24988,8 +24999,8 @@ static long _vq_lengthlist__8c0_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__8c0_s_p7_1[] = {
@@ -25046,8 +25057,8 @@ static long _vq_lengthlist__8c0_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__8c0_s_p8_0[] = {
@@ -25087,7 +25098,7 @@ static long _vq_lengthlist__8c0_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8c0_s_p8_1[] = {
@@ -25128,7 +25139,7 @@ static long _vq_lengthlist__8c0_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p9_0[] = {
-	-157.5, 157.5, 
+	-157.5, 157.5,
 };
 
 static long _vq_quantmap__8c0_s_p9_0[] = {
@@ -25190,8 +25201,8 @@ static long _vq_lengthlist__8c0_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p9_1[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__8c0_s_p9_1[] = {
@@ -25273,9 +25284,9 @@ static long _vq_lengthlist__8c0_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__8c0_s_p9_2[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__8c0_s_p9_2[] = {
@@ -25744,7 +25755,7 @@ static long _vq_lengthlist__8c1_s_p1_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__8c1_s_p1_0[] = {
@@ -25821,7 +25832,7 @@ static long _vq_lengthlist__8c1_s_p2_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8c1_s_p2_0[] = {
@@ -25898,7 +25909,7 @@ static long _vq_lengthlist__8c1_s_p3_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8c1_s_p3_0[] = {
@@ -25945,7 +25956,7 @@ static long _vq_lengthlist__8c1_s_p4_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p4_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__8c1_s_p4_0[] = {
@@ -25993,7 +26004,7 @@ static long _vq_lengthlist__8c1_s_p5_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__8c1_s_p5_0[] = {
@@ -26062,8 +26073,8 @@ static long _vq_lengthlist__8c1_s_p6_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p6_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__8c1_s_p6_0[] = {
@@ -26106,7 +26117,7 @@ static long _vq_lengthlist__8c1_s_p7_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__8c1_s_p7_0[] = {
@@ -26157,8 +26168,8 @@ static long _vq_lengthlist__8c1_s_p7_1[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__8c1_s_p7_1[] = {
@@ -26215,8 +26226,8 @@ static long _vq_lengthlist__8c1_s_p8_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p8_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__8c1_s_p8_0[] = {
@@ -26256,7 +26267,7 @@ static long _vq_lengthlist__8c1_s_p8_1[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p8_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8c1_s_p8_1[] = {
@@ -26312,8 +26323,8 @@ static long _vq_lengthlist__8c1_s_p9_0[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p9_0[] = {
-	-1732.5, -1417.5, -1102.5, -787.5, -472.5, -157.5, 157.5, 472.5, 
-	787.5, 1102.5, 1417.5, 1732.5, 
+	-1732.5, -1417.5, -1102.5, -787.5, -472.5, -157.5, 157.5, 472.5,
+	787.5, 1102.5, 1417.5, 1732.5,
 };
 
 static long _vq_quantmap__8c1_s_p9_0[] = {
@@ -26376,8 +26387,8 @@ static long _vq_lengthlist__8c1_s_p9_1[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p9_1[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__8c1_s_p9_1[] = {
@@ -26459,9 +26470,9 @@ static long _vq_lengthlist__8c1_s_p9_2[] = {
 };
 
 static float _vq_quantthresh__8c1_s_p9_2[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__8c1_s_p9_2[] = {
@@ -26766,31 +26777,31 @@ static vorbis_mapping_template _mapres_template_44_stereo[]={
 static vorbis_info_psy_global _psy_global_44[5]={
 
   {8,   /* lines per eighth octave */
-   {20.f,14.f,12.f,12.f,12.f,12.f,12.f}, 
+   {20.f,14.f,12.f,12.f,12.f,12.f,12.f},
    {-60.f,-30.f,-40.f,-40.f,-40.f,-40.f,-40.f}, 2,-75.f,
    -6.f,
    {99.},{{99.},{99.}},{0},{0},{{0.},{0.}}
   },
   {8,   /* lines per eighth octave */
-   {14.f,10.f,10.f,10.f,10.f,10.f,10.f}, 
+   {14.f,10.f,10.f,10.f,10.f,10.f,10.f},
    {-40.f,-30.f,-25.f,-25.f,-25.f,-25.f,-25.f}, 2,-80.f,
    -6.f,
    {99.},{{99.},{99.}},{0},{0},{{0.},{0.}}
   },
   {8,   /* lines per eighth octave */
-   {12.f,10.f,10.f,10.f,10.f,10.f,10.f}, 
+   {12.f,10.f,10.f,10.f,10.f,10.f,10.f},
    {-20.f,-20.f,-15.f,-15.f,-15.f,-15.f,-15.f}, 0,-80.f,
    -6.f,
    {99.},{{99.},{99.}},{0},{0},{{0.},{0.}}
   },
   {8,   /* lines per eighth octave */
-   {10.f,8.f,8.f,8.f,8.f,8.f,8.f}, 
+   {10.f,8.f,8.f,8.f,8.f,8.f,8.f},
    {-20.f,-15.f,-12.f,-12.f,-12.f,-12.f,-12.f}, 0,-80.f,
    -6.f,
    {99.},{{99.},{99.}},{0},{0},{{0.},{0.}}
   },
   {8,   /* lines per eighth octave */
-   {10.f,6.f,6.f,6.f,6.f,6.f,6.f}, 
+   {10.f,6.f,6.f,6.f,6.f,6.f,6.f},
    {-15.f,-15.f,-12.f,-12.f,-12.f,-12.f,-12.f}, 0,-85.f,
    -6.f,
    {99.},{{99.},{99.}},{0},{0},{{0.},{0.}}
@@ -27120,8 +27131,8 @@ static vorbis_info_psy _psy_info_template={
   -1,
   -140.,-140.,
   /* tonemask att boost/decay,suppr,curves */
-  {0.f,0.f,0.f},     0.,0.,    -40.f, {0.},  
-  
+  {0.f,0.f,0.f},     0.,0.,    -40.f, {0.},
+
   /*noisemaskp,supp, low/high window, low/hi guard, minimum */
   1,          -0.f,         .5f, .5f,         0,0,0,
   {{-1},{-1},{-1}},{-1},105.f,
@@ -27336,7 +27347,7 @@ ve_setup_data_template ve_setup_44_stereo={
   2,
   40000,
   50000,
-  
+
   blocksize_short_44,
   blocksize_long_44,
 
@@ -27354,7 +27365,7 @@ ve_setup_data_template ve_setup_44_stereo={
   _psy_noisebias_trans,
   _psy_noisebias_long,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -27365,7 +27376,7 @@ ve_setup_data_template ve_setup_44_stereo={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_44,
 
   _psy_global_44,
@@ -27387,7 +27398,7 @@ ve_setup_data_template ve_setup_44_stereo_low={
   2,
   40000,
   50000,
-  
+
   blocksize_short_44_low,
   blocksize_long_44_low,
 
@@ -27405,7 +27416,7 @@ ve_setup_data_template ve_setup_44_stereo_low={
   _psy_noisebias_trans_low,
   _psy_noisebias_long_low,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -27416,7 +27427,7 @@ ve_setup_data_template ve_setup_44_stereo_low={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_44_low,
 
   _psy_global_44,
@@ -27498,7 +27509,7 @@ static long _vq_lengthlist__16u0__p1_0[] = {
 };
 
 static float _vq_quantthresh__16u0__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__16u0__p1_0[] = {
@@ -27539,7 +27550,7 @@ static long _vq_lengthlist__16u0__p2_0[] = {
 };
 
 static float _vq_quantthresh__16u0__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__16u0__p2_0[] = {
@@ -27616,7 +27627,7 @@ static long _vq_lengthlist__16u0__p3_0[] = {
 };
 
 static float _vq_quantthresh__16u0__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16u0__p3_0[] = {
@@ -27693,7 +27704,7 @@ static long _vq_lengthlist__16u0__p4_0[] = {
 };
 
 static float _vq_quantthresh__16u0__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16u0__p4_0[] = {
@@ -27740,7 +27751,7 @@ static long _vq_lengthlist__16u0__p5_0[] = {
 };
 
 static float _vq_quantthresh__16u0__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16u0__p5_0[] = {
@@ -27797,8 +27808,8 @@ static long _vq_lengthlist__16u0__p6_0[] = {
 };
 
 static float _vq_quantthresh__16u0__p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__16u0__p6_0[] = {
@@ -27838,7 +27849,7 @@ static long _vq_lengthlist__16u0__p6_1[] = {
 };
 
 static float _vq_quantthresh__16u0__p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16u0__p6_1[] = {
@@ -27879,7 +27890,7 @@ static long _vq_lengthlist__16u0__p7_0[] = {
 };
 
 static float _vq_quantthresh__16u0__p7_0[] = {
-	-157.5, 157.5, 
+	-157.5, 157.5,
 };
 
 static long _vq_quantmap__16u0__p7_0[] = {
@@ -27941,8 +27952,8 @@ static long _vq_lengthlist__16u0__p7_1[] = {
 };
 
 static float _vq_quantthresh__16u0__p7_1[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__16u0__p7_1[] = {
@@ -28024,9 +28035,9 @@ static long _vq_lengthlist__16u0__p7_2[] = {
 };
 
 static float _vq_quantthresh__16u0__p7_2[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__16u0__p7_2[] = {
@@ -28108,7 +28119,7 @@ static long _vq_lengthlist__16u1__p1_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__16u1__p1_0[] = {
@@ -28149,7 +28160,7 @@ static long _vq_lengthlist__16u1__p2_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__16u1__p2_0[] = {
@@ -28226,7 +28237,7 @@ static long _vq_lengthlist__16u1__p3_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16u1__p3_0[] = {
@@ -28303,7 +28314,7 @@ static long _vq_lengthlist__16u1__p4_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16u1__p4_0[] = {
@@ -28350,7 +28361,7 @@ static long _vq_lengthlist__16u1__p5_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16u1__p5_0[] = {
@@ -28398,7 +28409,7 @@ static long _vq_lengthlist__16u1__p6_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p6_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16u1__p6_0[] = {
@@ -28440,7 +28451,7 @@ static long _vq_lengthlist__16u1__p7_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__16u1__p7_0[] = {
@@ -28491,8 +28502,8 @@ static long _vq_lengthlist__16u1__p7_1[] = {
 };
 
 static float _vq_quantthresh__16u1__p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__16u1__p7_1[] = {
@@ -28544,8 +28555,8 @@ static long _vq_lengthlist__16u1__p8_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p8_0[] = {
-	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5, 
-	38.5, 49.5, 
+	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5,
+	38.5, 49.5,
 };
 
 static long _vq_quantmap__16u1__p8_0[] = {
@@ -28597,8 +28608,8 @@ static long _vq_lengthlist__16u1__p8_1[] = {
 };
 
 static float _vq_quantthresh__16u1__p8_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__16u1__p8_1[] = {
@@ -28661,8 +28672,8 @@ static long _vq_lengthlist__16u1__p9_0[] = {
 };
 
 static float _vq_quantthresh__16u1__p9_0[] = {
-	-1657.5, -1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 
-	382.5, 637.5, 892.5, 1147.5, 1402.5, 1657.5, 
+	-1657.5, -1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5,
+	382.5, 637.5, 892.5, 1147.5, 1402.5, 1657.5,
 };
 
 static long _vq_quantmap__16u1__p9_0[] = {
@@ -28725,8 +28736,8 @@ static long _vq_lengthlist__16u1__p9_1[] = {
 };
 
 static float _vq_quantthresh__16u1__p9_1[] = {
-	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 
-	25.5, 42.5, 59.5, 76.5, 93.5, 110.5, 
+	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5,
+	25.5, 42.5, 59.5, 76.5, 93.5, 110.5,
 };
 
 static long _vq_quantmap__16u1__p9_1[] = {
@@ -28795,8 +28806,8 @@ static long _vq_lengthlist__16u1__p9_2[] = {
 };
 
 static float _vq_quantthresh__16u1__p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__16u1__p9_2[] = {
@@ -28902,7 +28913,7 @@ static long _vq_lengthlist__16u2_p1_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__16u2_p1_0[] = {
@@ -28979,7 +28990,7 @@ static long _vq_lengthlist__16u2_p2_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16u2_p2_0[] = {
@@ -29026,7 +29037,7 @@ static long _vq_lengthlist__16u2_p3_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p3_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__16u2_p3_0[] = {
@@ -29095,8 +29106,8 @@ static long _vq_lengthlist__16u2_p4_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p4_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__16u2_p4_0[] = {
@@ -29139,7 +29150,7 @@ static long _vq_lengthlist__16u2_p5_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p5_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__16u2_p5_0[] = {
@@ -29190,8 +29201,8 @@ static long _vq_lengthlist__16u2_p5_1[] = {
 };
 
 static float _vq_quantthresh__16u2_p5_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__16u2_p5_1[] = {
@@ -29248,8 +29259,8 @@ static long _vq_lengthlist__16u2_p6_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__16u2_p6_0[] = {
@@ -29289,7 +29300,7 @@ static long _vq_lengthlist__16u2_p6_1[] = {
 };
 
 static float _vq_quantthresh__16u2_p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__16u2_p6_1[] = {
@@ -29345,8 +29356,8 @@ static long _vq_lengthlist__16u2_p7_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p7_0[] = {
-	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 
-	27.5, 38.5, 49.5, 60.5, 
+	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5,
+	27.5, 38.5, 49.5, 60.5,
 };
 
 static long _vq_quantmap__16u2_p7_0[] = {
@@ -29398,8 +29409,8 @@ static long _vq_lengthlist__16u2_p7_1[] = {
 };
 
 static float _vq_quantthresh__16u2_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__16u2_p7_1[] = {
@@ -29462,8 +29473,8 @@ static long _vq_lengthlist__16u2_p8_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p8_0[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__16u2_p8_0[] = {
@@ -29545,9 +29556,9 @@ static long _vq_lengthlist__16u2_p8_1[] = {
 };
 
 static float _vq_quantthresh__16u2_p8_1[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__16u2_p8_1[] = {
@@ -29611,8 +29622,8 @@ static long _vq_lengthlist__16u2_p9_0[] = {
 };
 
 static float _vq_quantthresh__16u2_p9_0[] = {
-	-5120.5, -4189.5, -3258.5, -2327.5, -1396.5, -498, -32.5, 32.5, 
-	498, 1396.5, 2327.5, 3258.5, 4189.5, 5120.5, 
+	-5120.5, -4189.5, -3258.5, -2327.5, -1396.5, -498, -32.5, 32.5,
+	498, 1396.5, 2327.5, 3258.5, 4189.5, 5120.5,
 };
 
 static long _vq_quantmap__16u2_p9_0[] = {
@@ -29687,9 +29698,9 @@ static long _vq_lengthlist__16u2_p9_1[] = {
 };
 
 static float _vq_quantthresh__16u2_p9_1[] = {
-	-367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5, -26.5, 
-	-2, 2, 26.5, 73.5, 122.5, 171.5, 220.5, 269.5, 
-	318.5, 367.5, 
+	-367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5, -26.5,
+	-2, 2, 26.5, 73.5, 122.5, 171.5, 220.5, 269.5,
+	318.5, 367.5,
 };
 
 static long _vq_quantmap__16u2_p9_1[] = {
@@ -29776,12 +29787,12 @@ static long _vq_lengthlist__16u2_p9_2[] = {
 };
 
 static float _vq_quantthresh__16u2_p9_2[] = {
-	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5, 
-	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5, 
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
-	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 
+	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5,
+	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5,
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5,
+	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5,
 };
 
 static long _vq_quantmap__16u2_p9_2[] = {
@@ -29846,7 +29857,7 @@ static long _vq_lengthlist__44u0__p1_0[] = {
 };
 
 static float _vq_quantthresh__44u0__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u0__p1_0[] = {
@@ -29887,7 +29898,7 @@ static long _vq_lengthlist__44u0__p2_0[] = {
 };
 
 static float _vq_quantthresh__44u0__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u0__p2_0[] = {
@@ -29964,7 +29975,7 @@ static long _vq_lengthlist__44u0__p3_0[] = {
 };
 
 static float _vq_quantthresh__44u0__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u0__p3_0[] = {
@@ -30041,7 +30052,7 @@ static long _vq_lengthlist__44u0__p4_0[] = {
 };
 
 static float _vq_quantthresh__44u0__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u0__p4_0[] = {
@@ -30088,7 +30099,7 @@ static long _vq_lengthlist__44u0__p5_0[] = {
 };
 
 static float _vq_quantthresh__44u0__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u0__p5_0[] = {
@@ -30145,8 +30156,8 @@ static long _vq_lengthlist__44u0__p6_0[] = {
 };
 
 static float _vq_quantthresh__44u0__p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44u0__p6_0[] = {
@@ -30186,7 +30197,7 @@ static long _vq_lengthlist__44u0__p6_1[] = {
 };
 
 static float _vq_quantthresh__44u0__p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u0__p6_1[] = {
@@ -30263,7 +30274,7 @@ static long _vq_lengthlist__44u0__p7_0[] = {
 };
 
 static float _vq_quantthresh__44u0__p7_0[] = {
-	-253.5, -84.5, 84.5, 253.5, 
+	-253.5, -84.5, 84.5, 253.5,
 };
 
 static long _vq_quantmap__44u0__p7_0[] = {
@@ -30319,8 +30330,8 @@ static long _vq_lengthlist__44u0__p7_1[] = {
 };
 
 static float _vq_quantthresh__44u0__p7_1[] = {
-	-71.5, -58.5, -45.5, -32.5, -19.5, -6.5, 6.5, 19.5, 
-	32.5, 45.5, 58.5, 71.5, 
+	-71.5, -58.5, -45.5, -32.5, -19.5, -6.5, 6.5, 19.5,
+	32.5, 45.5, 58.5, 71.5,
 };
 
 static long _vq_quantmap__44u0__p7_1[] = {
@@ -30377,8 +30388,8 @@ static long _vq_lengthlist__44u0__p7_2[] = {
 };
 
 static float _vq_quantthresh__44u0__p7_2[] = {
-	-5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 
-	2.5, 3.5, 4.5, 5.5, 
+	-5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5,
+	2.5, 3.5, 4.5, 5.5,
 };
 
 static long _vq_quantmap__44u0__p7_2[] = {
@@ -30456,7 +30467,7 @@ static long _vq_lengthlist__44u1__p1_0[] = {
 };
 
 static float _vq_quantthresh__44u1__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u1__p1_0[] = {
@@ -30497,7 +30508,7 @@ static long _vq_lengthlist__44u1__p2_0[] = {
 };
 
 static float _vq_quantthresh__44u1__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u1__p2_0[] = {
@@ -30574,7 +30585,7 @@ static long _vq_lengthlist__44u1__p3_0[] = {
 };
 
 static float _vq_quantthresh__44u1__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u1__p3_0[] = {
@@ -30651,7 +30662,7 @@ static long _vq_lengthlist__44u1__p4_0[] = {
 };
 
 static float _vq_quantthresh__44u1__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u1__p4_0[] = {
@@ -30698,7 +30709,7 @@ static long _vq_lengthlist__44u1__p5_0[] = {
 };
 
 static float _vq_quantthresh__44u1__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u1__p5_0[] = {
@@ -30755,8 +30766,8 @@ static long _vq_lengthlist__44u1__p6_0[] = {
 };
 
 static float _vq_quantthresh__44u1__p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44u1__p6_0[] = {
@@ -30796,7 +30807,7 @@ static long _vq_lengthlist__44u1__p6_1[] = {
 };
 
 static float _vq_quantthresh__44u1__p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u1__p6_1[] = {
@@ -30839,7 +30850,7 @@ static long _vq_lengthlist__44u1__p7_0[] = {
 };
 
 static float _vq_quantthresh__44u1__p7_0[] = {
-	-422.5, -253.5, -84.5, 84.5, 253.5, 422.5, 
+	-422.5, -253.5, -84.5, 84.5, 253.5, 422.5,
 };
 
 static long _vq_quantmap__44u1__p7_0[] = {
@@ -30895,8 +30906,8 @@ static long _vq_lengthlist__44u1__p7_1[] = {
 };
 
 static float _vq_quantthresh__44u1__p7_1[] = {
-	-71.5, -58.5, -45.5, -32.5, -19.5, -6.5, 6.5, 19.5, 
-	32.5, 45.5, 58.5, 71.5, 
+	-71.5, -58.5, -45.5, -32.5, -19.5, -6.5, 6.5, 19.5,
+	32.5, 45.5, 58.5, 71.5,
 };
 
 static long _vq_quantmap__44u1__p7_1[] = {
@@ -30953,8 +30964,8 @@ static long _vq_lengthlist__44u1__p7_2[] = {
 };
 
 static float _vq_quantthresh__44u1__p7_2[] = {
-	-5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 
-	2.5, 3.5, 4.5, 5.5, 
+	-5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5,
+	2.5, 3.5, 4.5, 5.5,
 };
 
 static long _vq_quantmap__44u1__p7_2[] = {
@@ -31032,7 +31043,7 @@ static long _vq_lengthlist__44u2__p1_0[] = {
 };
 
 static float _vq_quantthresh__44u2__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u2__p1_0[] = {
@@ -31073,7 +31084,7 @@ static long _vq_lengthlist__44u2__p2_0[] = {
 };
 
 static float _vq_quantthresh__44u2__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u2__p2_0[] = {
@@ -31150,7 +31161,7 @@ static long _vq_lengthlist__44u2__p3_0[] = {
 };
 
 static float _vq_quantthresh__44u2__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u2__p3_0[] = {
@@ -31227,7 +31238,7 @@ static long _vq_lengthlist__44u2__p4_0[] = {
 };
 
 static float _vq_quantthresh__44u2__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u2__p4_0[] = {
@@ -31274,7 +31285,7 @@ static long _vq_lengthlist__44u2__p5_0[] = {
 };
 
 static float _vq_quantthresh__44u2__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u2__p5_0[] = {
@@ -31331,8 +31342,8 @@ static long _vq_lengthlist__44u2__p6_0[] = {
 };
 
 static float _vq_quantthresh__44u2__p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44u2__p6_0[] = {
@@ -31372,7 +31383,7 @@ static long _vq_lengthlist__44u2__p6_1[] = {
 };
 
 static float _vq_quantthresh__44u2__p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u2__p6_1[] = {
@@ -31419,7 +31430,7 @@ static long _vq_lengthlist__44u2__p7_0[] = {
 };
 
 static float _vq_quantthresh__44u2__p7_0[] = {
-	-591.5, -422.5, -253.5, -84.5, 84.5, 253.5, 422.5, 591.5, 
+	-591.5, -422.5, -253.5, -84.5, 84.5, 253.5, 422.5, 591.5,
 };
 
 static long _vq_quantmap__44u2__p7_0[] = {
@@ -31476,8 +31487,8 @@ static long _vq_lengthlist__44u2__p7_1[] = {
 };
 
 static float _vq_quantthresh__44u2__p7_1[] = {
-	-71.5, -58.5, -45.5, -32.5, -19.5, -6.5, 6.5, 19.5, 
-	32.5, 45.5, 58.5, 71.5, 
+	-71.5, -58.5, -45.5, -32.5, -19.5, -6.5, 6.5, 19.5,
+	32.5, 45.5, 58.5, 71.5,
 };
 
 static long _vq_quantmap__44u2__p7_1[] = {
@@ -31534,8 +31545,8 @@ static long _vq_lengthlist__44u2__p7_2[] = {
 };
 
 static float _vq_quantthresh__44u2__p7_2[] = {
-	-5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 
-	2.5, 3.5, 4.5, 5.5, 
+	-5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5,
+	2.5, 3.5, 4.5, 5.5,
 };
 
 static long _vq_quantmap__44u2__p7_2[] = {
@@ -31613,7 +31624,7 @@ static long _vq_lengthlist__44u3__p1_0[] = {
 };
 
 static float _vq_quantthresh__44u3__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u3__p1_0[] = {
@@ -31654,7 +31665,7 @@ static long _vq_lengthlist__44u3__p2_0[] = {
 };
 
 static float _vq_quantthresh__44u3__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u3__p2_0[] = {
@@ -31731,7 +31742,7 @@ static long _vq_lengthlist__44u3__p3_0[] = {
 };
 
 static float _vq_quantthresh__44u3__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u3__p3_0[] = {
@@ -31808,7 +31819,7 @@ static long _vq_lengthlist__44u3__p4_0[] = {
 };
 
 static float _vq_quantthresh__44u3__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u3__p4_0[] = {
@@ -31855,7 +31866,7 @@ static long _vq_lengthlist__44u3__p5_0[] = {
 };
 
 static float _vq_quantthresh__44u3__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u3__p5_0[] = {
@@ -31912,8 +31923,8 @@ static long _vq_lengthlist__44u3__p6_0[] = {
 };
 
 static float _vq_quantthresh__44u3__p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44u3__p6_0[] = {
@@ -31953,7 +31964,7 @@ static long _vq_lengthlist__44u3__p6_1[] = {
 };
 
 static float _vq_quantthresh__44u3__p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u3__p6_1[] = {
@@ -32000,7 +32011,7 @@ static long _vq_lengthlist__44u3__p7_0[] = {
 };
 
 static float _vq_quantthresh__44u3__p7_0[] = {
-	-892.5, -637.5, -382.5, -127.5, 127.5, 382.5, 637.5, 892.5, 
+	-892.5, -637.5, -382.5, -127.5, 127.5, 382.5, 637.5, 892.5,
 };
 
 static long _vq_quantmap__44u3__p7_0[] = {
@@ -32063,8 +32074,8 @@ static long _vq_lengthlist__44u3__p7_1[] = {
 };
 
 static float _vq_quantthresh__44u3__p7_1[] = {
-	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 
-	25.5, 42.5, 59.5, 76.5, 93.5, 110.5, 
+	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5,
+	25.5, 42.5, 59.5, 76.5, 93.5, 110.5,
 };
 
 static long _vq_quantmap__44u3__p7_1[] = {
@@ -32133,8 +32144,8 @@ static long _vq_lengthlist__44u3__p7_2[] = {
 };
 
 static float _vq_quantthresh__44u3__p7_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44u3__p7_2[] = {
@@ -32213,7 +32224,7 @@ static long _vq_lengthlist__44u4__p1_0[] = {
 };
 
 static float _vq_quantthresh__44u4__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u4__p1_0[] = {
@@ -32254,7 +32265,7 @@ static long _vq_lengthlist__44u4__p2_0[] = {
 };
 
 static float _vq_quantthresh__44u4__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u4__p2_0[] = {
@@ -32331,7 +32342,7 @@ static long _vq_lengthlist__44u4__p3_0[] = {
 };
 
 static float _vq_quantthresh__44u4__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u4__p3_0[] = {
@@ -32408,7 +32419,7 @@ static long _vq_lengthlist__44u4__p4_0[] = {
 };
 
 static float _vq_quantthresh__44u4__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u4__p4_0[] = {
@@ -32455,7 +32466,7 @@ static long _vq_lengthlist__44u4__p5_0[] = {
 };
 
 static float _vq_quantthresh__44u4__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u4__p5_0[] = {
@@ -32512,8 +32523,8 @@ static long _vq_lengthlist__44u4__p6_0[] = {
 };
 
 static float _vq_quantthresh__44u4__p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44u4__p6_0[] = {
@@ -32553,7 +32564,7 @@ static long _vq_lengthlist__44u4__p6_1[] = {
 };
 
 static float _vq_quantthresh__44u4__p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u4__p6_1[] = {
@@ -32609,8 +32620,8 @@ static long _vq_lengthlist__44u4__p7_0[] = {
 };
 
 static float _vq_quantthresh__44u4__p7_0[] = {
-	-1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 382.5, 
-	637.5, 892.5, 1147.5, 1402.5, 
+	-1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 382.5,
+	637.5, 892.5, 1147.5, 1402.5,
 };
 
 static long _vq_quantmap__44u4__p7_0[] = {
@@ -32673,8 +32684,8 @@ static long _vq_lengthlist__44u4__p7_1[] = {
 };
 
 static float _vq_quantthresh__44u4__p7_1[] = {
-	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 
-	25.5, 42.5, 59.5, 76.5, 93.5, 110.5, 
+	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5,
+	25.5, 42.5, 59.5, 76.5, 93.5, 110.5,
 };
 
 static long _vq_quantmap__44u4__p7_1[] = {
@@ -32743,8 +32754,8 @@ static long _vq_lengthlist__44u4__p7_2[] = {
 };
 
 static float _vq_quantthresh__44u4__p7_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44u4__p7_2[] = {
@@ -32826,7 +32837,7 @@ static long _vq_lengthlist__44u5__p1_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u5__p1_0[] = {
@@ -32867,7 +32878,7 @@ static long _vq_lengthlist__44u5__p2_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u5__p2_0[] = {
@@ -32944,7 +32955,7 @@ static long _vq_lengthlist__44u5__p3_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u5__p3_0[] = {
@@ -33021,7 +33032,7 @@ static long _vq_lengthlist__44u5__p4_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u5__p4_0[] = {
@@ -33068,7 +33079,7 @@ static long _vq_lengthlist__44u5__p5_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u5__p5_0[] = {
@@ -33116,7 +33127,7 @@ static long _vq_lengthlist__44u5__p6_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p6_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u5__p6_0[] = {
@@ -33158,7 +33169,7 @@ static long _vq_lengthlist__44u5__p7_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44u5__p7_0[] = {
@@ -33209,8 +33220,8 @@ static long _vq_lengthlist__44u5__p7_1[] = {
 };
 
 static float _vq_quantthresh__44u5__p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u5__p7_1[] = {
@@ -33262,8 +33273,8 @@ static long _vq_lengthlist__44u5__p8_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p8_0[] = {
-	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5, 
-	38.5, 49.5, 
+	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5,
+	38.5, 49.5,
 };
 
 static long _vq_quantmap__44u5__p8_0[] = {
@@ -33315,8 +33326,8 @@ static long _vq_lengthlist__44u5__p8_1[] = {
 };
 
 static float _vq_quantthresh__44u5__p8_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u5__p8_1[] = {
@@ -33373,8 +33384,8 @@ static long _vq_lengthlist__44u5__p9_0[] = {
 };
 
 static float _vq_quantthresh__44u5__p9_0[] = {
-	-1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 382.5, 
-	637.5, 892.5, 1147.5, 1402.5, 
+	-1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 382.5,
+	637.5, 892.5, 1147.5, 1402.5,
 };
 
 static long _vq_quantmap__44u5__p9_0[] = {
@@ -33437,8 +33448,8 @@ static long _vq_lengthlist__44u5__p9_1[] = {
 };
 
 static float _vq_quantthresh__44u5__p9_1[] = {
-	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 
-	25.5, 42.5, 59.5, 76.5, 93.5, 110.5, 
+	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5,
+	25.5, 42.5, 59.5, 76.5, 93.5, 110.5,
 };
 
 static long _vq_quantmap__44u5__p9_1[] = {
@@ -33507,8 +33518,8 @@ static long _vq_lengthlist__44u5__p9_2[] = {
 };
 
 static float _vq_quantthresh__44u5__p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44u5__p9_2[] = {
@@ -33593,7 +33604,7 @@ static long _vq_lengthlist__44u6__p1_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u6__p1_0[] = {
@@ -33634,7 +33645,7 @@ static long _vq_lengthlist__44u6__p2_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u6__p2_0[] = {
@@ -33711,7 +33722,7 @@ static long _vq_lengthlist__44u6__p3_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u6__p3_0[] = {
@@ -33788,7 +33799,7 @@ static long _vq_lengthlist__44u6__p4_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u6__p4_0[] = {
@@ -33835,7 +33846,7 @@ static long _vq_lengthlist__44u6__p5_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u6__p5_0[] = {
@@ -33883,7 +33894,7 @@ static long _vq_lengthlist__44u6__p6_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p6_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u6__p6_0[] = {
@@ -33925,7 +33936,7 @@ static long _vq_lengthlist__44u6__p7_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44u6__p7_0[] = {
@@ -33976,8 +33987,8 @@ static long _vq_lengthlist__44u6__p7_1[] = {
 };
 
 static float _vq_quantthresh__44u6__p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u6__p7_1[] = {
@@ -34029,8 +34040,8 @@ static long _vq_lengthlist__44u6__p8_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p8_0[] = {
-	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5, 
-	38.5, 49.5, 
+	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5,
+	38.5, 49.5,
 };
 
 static long _vq_quantmap__44u6__p8_0[] = {
@@ -34082,8 +34093,8 @@ static long _vq_lengthlist__44u6__p8_1[] = {
 };
 
 static float _vq_quantthresh__44u6__p8_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u6__p8_1[] = {
@@ -34146,8 +34157,8 @@ static long _vq_lengthlist__44u6__p9_0[] = {
 };
 
 static float _vq_quantthresh__44u6__p9_0[] = {
-	-1657.5, -1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 
-	382.5, 637.5, 892.5, 1147.5, 1402.5, 1657.5, 
+	-1657.5, -1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5,
+	382.5, 637.5, 892.5, 1147.5, 1402.5, 1657.5,
 };
 
 static long _vq_quantmap__44u6__p9_0[] = {
@@ -34210,8 +34221,8 @@ static long _vq_lengthlist__44u6__p9_1[] = {
 };
 
 static float _vq_quantthresh__44u6__p9_1[] = {
-	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 
-	25.5, 42.5, 59.5, 76.5, 93.5, 110.5, 
+	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5,
+	25.5, 42.5, 59.5, 76.5, 93.5, 110.5,
 };
 
 static long _vq_quantmap__44u6__p9_1[] = {
@@ -34280,8 +34291,8 @@ static long _vq_lengthlist__44u6__p9_2[] = {
 };
 
 static float _vq_quantthresh__44u6__p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44u6__p9_2[] = {
@@ -34366,7 +34377,7 @@ static long _vq_lengthlist__44u7__p1_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u7__p1_0[] = {
@@ -34407,7 +34418,7 @@ static long _vq_lengthlist__44u7__p2_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u7__p2_0[] = {
@@ -34484,7 +34495,7 @@ static long _vq_lengthlist__44u7__p3_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u7__p3_0[] = {
@@ -34561,7 +34572,7 @@ static long _vq_lengthlist__44u7__p4_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u7__p4_0[] = {
@@ -34608,7 +34619,7 @@ static long _vq_lengthlist__44u7__p5_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u7__p5_0[] = {
@@ -34656,7 +34667,7 @@ static long _vq_lengthlist__44u7__p6_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p6_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u7__p6_0[] = {
@@ -34698,7 +34709,7 @@ static long _vq_lengthlist__44u7__p7_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44u7__p7_0[] = {
@@ -34749,8 +34760,8 @@ static long _vq_lengthlist__44u7__p7_1[] = {
 };
 
 static float _vq_quantthresh__44u7__p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u7__p7_1[] = {
@@ -34802,8 +34813,8 @@ static long _vq_lengthlist__44u7__p8_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p8_0[] = {
-	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5, 
-	38.5, 49.5, 
+	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5,
+	38.5, 49.5,
 };
 
 static long _vq_quantmap__44u7__p8_0[] = {
@@ -34855,8 +34866,8 @@ static long _vq_lengthlist__44u7__p8_1[] = {
 };
 
 static float _vq_quantthresh__44u7__p8_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u7__p8_1[] = {
@@ -34908,8 +34919,8 @@ static long _vq_lengthlist__44u7__p9_0[] = {
 };
 
 static float _vq_quantthresh__44u7__p9_0[] = {
-	-2866.5, -2229.5, -1592.5, -955.5, -318.5, 318.5, 955.5, 1592.5, 
-	2229.5, 2866.5, 
+	-2866.5, -2229.5, -1592.5, -955.5, -318.5, 318.5, 955.5, 1592.5,
+	2229.5, 2866.5,
 };
 
 static long _vq_quantmap__44u7__p9_0[] = {
@@ -34966,8 +34977,8 @@ static long _vq_lengthlist__44u7__p9_1[] = {
 };
 
 static float _vq_quantthresh__44u7__p9_1[] = {
-	-269.5, -220.5, -171.5, -122.5, -73.5, -24.5, 24.5, 73.5, 
-	122.5, 171.5, 220.5, 269.5, 
+	-269.5, -220.5, -171.5, -122.5, -73.5, -24.5, 24.5, 73.5,
+	122.5, 171.5, 220.5, 269.5,
 };
 
 static long _vq_quantmap__44u7__p9_1[] = {
@@ -35053,12 +35064,12 @@ static long _vq_lengthlist__44u7__p9_2[] = {
 };
 
 static float _vq_quantthresh__44u7__p9_2[] = {
-	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5, 
-	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5, 
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
-	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 
+	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5,
+	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5,
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5,
+	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5,
 };
 
 static long _vq_quantmap__44u7__p9_2[] = {
@@ -35168,7 +35179,7 @@ static long _vq_lengthlist__44u8_p1_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u8_p1_0[] = {
@@ -35245,7 +35256,7 @@ static long _vq_lengthlist__44u8_p2_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u8_p2_0[] = {
@@ -35292,7 +35303,7 @@ static long _vq_lengthlist__44u8_p3_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p3_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u8_p3_0[] = {
@@ -35361,8 +35372,8 @@ static long _vq_lengthlist__44u8_p4_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p4_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44u8_p4_0[] = {
@@ -35405,7 +35416,7 @@ static long _vq_lengthlist__44u8_p5_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p5_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44u8_p5_0[] = {
@@ -35456,8 +35467,8 @@ static long _vq_lengthlist__44u8_p5_1[] = {
 };
 
 static float _vq_quantthresh__44u8_p5_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u8_p5_1[] = {
@@ -35514,8 +35525,8 @@ static long _vq_lengthlist__44u8_p6_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44u8_p6_0[] = {
@@ -35555,7 +35566,7 @@ static long _vq_lengthlist__44u8_p6_1[] = {
 };
 
 static float _vq_quantthresh__44u8_p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u8_p6_1[] = {
@@ -35611,8 +35622,8 @@ static long _vq_lengthlist__44u8_p7_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p7_0[] = {
-	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 
-	27.5, 38.5, 49.5, 60.5, 
+	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5,
+	27.5, 38.5, 49.5, 60.5,
 };
 
 static long _vq_quantmap__44u8_p7_0[] = {
@@ -35664,8 +35675,8 @@ static long _vq_lengthlist__44u8_p7_1[] = {
 };
 
 static float _vq_quantthresh__44u8_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u8_p7_1[] = {
@@ -35728,8 +35739,8 @@ static long _vq_lengthlist__44u8_p8_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p8_0[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__44u8_p8_0[] = {
@@ -35811,9 +35822,9 @@ static long _vq_lengthlist__44u8_p8_1[] = {
 };
 
 static float _vq_quantthresh__44u8_p8_1[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__44u8_p8_1[] = {
@@ -35862,7 +35873,7 @@ static long _vq_lengthlist__44u8_p9_0[] = {
 };
 
 static float _vq_quantthresh__44u8_p9_0[] = {
-	-3258.5, -2327.5, -1396.5, -465.5, 465.5, 1396.5, 2327.5, 3258.5, 
+	-3258.5, -2327.5, -1396.5, -465.5, 465.5, 1396.5, 2327.5, 3258.5,
 };
 
 static long _vq_quantmap__44u8_p9_0[] = {
@@ -35937,9 +35948,9 @@ static long _vq_lengthlist__44u8_p9_1[] = {
 };
 
 static float _vq_quantthresh__44u8_p9_1[] = {
-	-416.5, -367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5, 
-	-24.5, 24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5, 
-	367.5, 416.5, 
+	-416.5, -367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5,
+	-24.5, 24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5,
+	367.5, 416.5,
 };
 
 static long _vq_quantmap__44u8_p9_1[] = {
@@ -36026,12 +36037,12 @@ static long _vq_lengthlist__44u8_p9_2[] = {
 };
 
 static float _vq_quantthresh__44u8_p9_2[] = {
-	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5, 
-	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5, 
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
-	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 
+	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5,
+	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5,
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5,
+	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5,
 };
 
 static long _vq_quantmap__44u8_p9_2[] = {
@@ -36120,7 +36131,7 @@ static long _vq_lengthlist__44u9_p1_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__44u9_p1_0[] = {
@@ -36197,7 +36208,7 @@ static long _vq_lengthlist__44u9_p2_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p2_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u9_p2_0[] = {
@@ -36244,7 +36255,7 @@ static long _vq_lengthlist__44u9_p3_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p3_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__44u9_p3_0[] = {
@@ -36313,8 +36324,8 @@ static long _vq_lengthlist__44u9_p4_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p4_0[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__44u9_p4_0[] = {
@@ -36357,7 +36368,7 @@ static long _vq_lengthlist__44u9_p5_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p5_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__44u9_p5_0[] = {
@@ -36408,8 +36419,8 @@ static long _vq_lengthlist__44u9_p5_1[] = {
 };
 
 static float _vq_quantthresh__44u9_p5_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u9_p5_1[] = {
@@ -36466,8 +36477,8 @@ static long _vq_lengthlist__44u9_p6_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__44u9_p6_0[] = {
@@ -36507,7 +36518,7 @@ static long _vq_lengthlist__44u9_p6_1[] = {
 };
 
 static float _vq_quantthresh__44u9_p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__44u9_p6_1[] = {
@@ -36563,8 +36574,8 @@ static long _vq_lengthlist__44u9_p7_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p7_0[] = {
-	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 
-	27.5, 38.5, 49.5, 60.5, 
+	-60.5, -49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5,
+	27.5, 38.5, 49.5, 60.5,
 };
 
 static long _vq_quantmap__44u9_p7_0[] = {
@@ -36616,8 +36627,8 @@ static long _vq_lengthlist__44u9_p7_1[] = {
 };
 
 static float _vq_quantthresh__44u9_p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__44u9_p7_1[] = {
@@ -36680,8 +36691,8 @@ static long _vq_lengthlist__44u9_p8_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p8_0[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__44u9_p8_0[] = {
@@ -36763,9 +36774,9 @@ static long _vq_lengthlist__44u9_p8_1[] = {
 };
 
 static float _vq_quantthresh__44u9_p8_1[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__44u9_p8_1[] = {
@@ -36829,8 +36840,8 @@ static long _vq_lengthlist__44u9_p9_0[] = {
 };
 
 static float _vq_quantthresh__44u9_p9_0[] = {
-	-6051.5, -5120.5, -4189.5, -3258.5, -2327.5, -1396.5, -465.5, 465.5, 
-	1396.5, 2327.5, 3258.5, 4189.5, 5120.5, 6051.5, 
+	-6051.5, -5120.5, -4189.5, -3258.5, -2327.5, -1396.5, -465.5, 465.5,
+	1396.5, 2327.5, 3258.5, 4189.5, 5120.5, 6051.5,
 };
 
 static long _vq_quantmap__44u9_p9_0[] = {
@@ -36905,9 +36916,9 @@ static long _vq_lengthlist__44u9_p9_1[] = {
 };
 
 static float _vq_quantthresh__44u9_p9_1[] = {
-	-416.5, -367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5, 
-	-24.5, 24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5, 
-	367.5, 416.5, 
+	-416.5, -367.5, -318.5, -269.5, -220.5, -171.5, -122.5, -73.5,
+	-24.5, 24.5, 73.5, 122.5, 171.5, 220.5, 269.5, 318.5,
+	367.5, 416.5,
 };
 
 static long _vq_quantmap__44u9_p9_1[] = {
@@ -36994,12 +37005,12 @@ static long _vq_lengthlist__44u9_p9_2[] = {
 };
 
 static float _vq_quantthresh__44u9_p9_2[] = {
-	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5, 
-	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5, 
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
-	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 
-	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 
+	-23.5, -22.5, -21.5, -20.5, -19.5, -18.5, -17.5, -16.5,
+	-15.5, -14.5, -13.5, -12.5, -11.5, -10.5, -9.5, -8.5,
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
+	8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5,
+	16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5,
 };
 
 static long _vq_quantmap__44u9_p9_2[] = {
@@ -37046,7 +37057,7 @@ static long _vq_lengthlist__8u0__p1_0[] = {
 };
 
 static float _vq_quantthresh__8u0__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__8u0__p1_0[] = {
@@ -37087,7 +37098,7 @@ static long _vq_lengthlist__8u0__p2_0[] = {
 };
 
 static float _vq_quantthresh__8u0__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__8u0__p2_0[] = {
@@ -37164,7 +37175,7 @@ static long _vq_lengthlist__8u0__p3_0[] = {
 };
 
 static float _vq_quantthresh__8u0__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8u0__p3_0[] = {
@@ -37241,7 +37252,7 @@ static long _vq_lengthlist__8u0__p4_0[] = {
 };
 
 static float _vq_quantthresh__8u0__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8u0__p4_0[] = {
@@ -37288,7 +37299,7 @@ static long _vq_lengthlist__8u0__p5_0[] = {
 };
 
 static float _vq_quantthresh__8u0__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__8u0__p5_0[] = {
@@ -37345,8 +37356,8 @@ static long _vq_lengthlist__8u0__p6_0[] = {
 };
 
 static float _vq_quantthresh__8u0__p6_0[] = {
-	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5, 
-	12.5, 17.5, 22.5, 27.5, 
+	-27.5, -22.5, -17.5, -12.5, -7.5, -2.5, 2.5, 7.5,
+	12.5, 17.5, 22.5, 27.5,
 };
 
 static long _vq_quantmap__8u0__p6_0[] = {
@@ -37386,7 +37397,7 @@ static long _vq_lengthlist__8u0__p6_1[] = {
 };
 
 static float _vq_quantthresh__8u0__p6_1[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8u0__p6_1[] = {
@@ -37427,7 +37438,7 @@ static long _vq_lengthlist__8u0__p7_0[] = {
 };
 
 static float _vq_quantthresh__8u0__p7_0[] = {
-	-157.5, 157.5, 
+	-157.5, 157.5,
 };
 
 static long _vq_quantmap__8u0__p7_0[] = {
@@ -37489,8 +37500,8 @@ static long _vq_lengthlist__8u0__p7_1[] = {
 };
 
 static float _vq_quantthresh__8u0__p7_1[] = {
-	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5, 
-	31.5, 52.5, 73.5, 94.5, 115.5, 136.5, 
+	-136.5, -115.5, -94.5, -73.5, -52.5, -31.5, -10.5, 10.5,
+	31.5, 52.5, 73.5, 94.5, 115.5, 136.5,
 };
 
 static long _vq_quantmap__8u0__p7_1[] = {
@@ -37572,9 +37583,9 @@ static long _vq_lengthlist__8u0__p7_2[] = {
 };
 
 static float _vq_quantthresh__8u0__p7_2[] = {
-	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5, 
-	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 
-	6.5, 7.5, 8.5, 9.5, 
+	-9.5, -8.5, -7.5, -6.5, -5.5, -4.5, -3.5, -2.5,
+	-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5,
+	6.5, 7.5, 8.5, 9.5,
 };
 
 static long _vq_quantmap__8u0__p7_2[] = {
@@ -37635,7 +37646,7 @@ static long _vq_lengthlist__8u1__p1_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p1_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__8u1__p1_0[] = {
@@ -37676,7 +37687,7 @@ static long _vq_lengthlist__8u1__p2_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p2_0[] = {
-	-0.5, 0.5, 
+	-0.5, 0.5,
 };
 
 static long _vq_quantmap__8u1__p2_0[] = {
@@ -37753,7 +37764,7 @@ static long _vq_lengthlist__8u1__p3_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p3_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8u1__p3_0[] = {
@@ -37830,7 +37841,7 @@ static long _vq_lengthlist__8u1__p4_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p4_0[] = {
-	-1.5, -0.5, 0.5, 1.5, 
+	-1.5, -0.5, 0.5, 1.5,
 };
 
 static long _vq_quantmap__8u1__p4_0[] = {
@@ -37877,7 +37888,7 @@ static long _vq_lengthlist__8u1__p5_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p5_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__8u1__p5_0[] = {
@@ -37925,7 +37936,7 @@ static long _vq_lengthlist__8u1__p6_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p6_0[] = {
-	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 
+	-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 3.5,
 };
 
 static long _vq_quantmap__8u1__p6_0[] = {
@@ -37967,7 +37978,7 @@ static long _vq_lengthlist__8u1__p7_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p7_0[] = {
-	-5.5, 5.5, 
+	-5.5, 5.5,
 };
 
 static long _vq_quantmap__8u1__p7_0[] = {
@@ -38018,8 +38029,8 @@ static long _vq_lengthlist__8u1__p7_1[] = {
 };
 
 static float _vq_quantthresh__8u1__p7_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__8u1__p7_1[] = {
@@ -38071,8 +38082,8 @@ static long _vq_lengthlist__8u1__p8_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p8_0[] = {
-	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5, 
-	38.5, 49.5, 
+	-49.5, -38.5, -27.5, -16.5, -5.5, 5.5, 16.5, 27.5,
+	38.5, 49.5,
 };
 
 static long _vq_quantmap__8u1__p8_0[] = {
@@ -38124,8 +38135,8 @@ static long _vq_lengthlist__8u1__p8_1[] = {
 };
 
 static float _vq_quantthresh__8u1__p8_1[] = {
-	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 
-	3.5, 4.5, 
+	-4.5, -3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5,
+	3.5, 4.5,
 };
 
 static long _vq_quantmap__8u1__p8_1[] = {
@@ -38188,8 +38199,8 @@ static long _vq_lengthlist__8u1__p9_0[] = {
 };
 
 static float _vq_quantthresh__8u1__p9_0[] = {
-	-1657.5, -1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5, 
-	382.5, 637.5, 892.5, 1147.5, 1402.5, 1657.5, 
+	-1657.5, -1402.5, -1147.5, -892.5, -637.5, -382.5, -127.5, 127.5,
+	382.5, 637.5, 892.5, 1147.5, 1402.5, 1657.5,
 };
 
 static long _vq_quantmap__8u1__p9_0[] = {
@@ -38252,8 +38263,8 @@ static long _vq_lengthlist__8u1__p9_1[] = {
 };
 
 static float _vq_quantthresh__8u1__p9_1[] = {
-	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5, 
-	25.5, 42.5, 59.5, 76.5, 93.5, 110.5, 
+	-110.5, -93.5, -76.5, -59.5, -42.5, -25.5, -8.5, 8.5,
+	25.5, 42.5, 59.5, 76.5, 93.5, 110.5,
 };
 
 static long _vq_quantmap__8u1__p9_1[] = {
@@ -38322,8 +38333,8 @@ static long _vq_lengthlist__8u1__p9_2[] = {
 };
 
 static float _vq_quantthresh__8u1__p9_2[] = {
-	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5, 
-	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 
+	-7.5, -6.5, -5.5, -4.5, -3.5, -2.5, -1.5, -0.5,
+	0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5,
 };
 
 static long _vq_quantmap__8u1__p9_2[] = {
@@ -38664,7 +38675,7 @@ ve_setup_data_template ve_setup_44_uncoupled={
   -1,
   40000,
   50000,
-  
+
   blocksize_short_44,
   blocksize_long_44,
 
@@ -38682,7 +38693,7 @@ ve_setup_data_template ve_setup_44_uncoupled={
   _psy_noisebias_trans,
   _psy_noisebias_long,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -38693,7 +38704,7 @@ ve_setup_data_template ve_setup_44_uncoupled={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_44,
 
   _psy_global_44,
@@ -38715,7 +38726,7 @@ ve_setup_data_template ve_setup_44_uncoupled_low={
   -1,
   40000,
   50000,
-  
+
   blocksize_short_44_low,
   blocksize_long_44_low,
 
@@ -38733,7 +38744,7 @@ ve_setup_data_template ve_setup_44_uncoupled_low={
   _psy_noisebias_trans_low,
   _psy_noisebias_long_low,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -38744,7 +38755,7 @@ ve_setup_data_template ve_setup_44_uncoupled_low={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_44_low,
 
   _psy_global_44,
@@ -38808,7 +38819,7 @@ ve_setup_data_template ve_setup_32_stereo={
   2,
   26000,
   40000,
-  
+
   blocksize_short_44,
   blocksize_long_44,
 
@@ -38826,7 +38837,7 @@ ve_setup_data_template ve_setup_32_stereo={
   _psy_noisebias_trans,
   _psy_noisebias_long,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -38837,7 +38848,7 @@ ve_setup_data_template ve_setup_32_stereo={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_32,
 
   _psy_global_44,
@@ -38859,7 +38870,7 @@ ve_setup_data_template ve_setup_32_uncoupled={
   -1,
   26000,
   40000,
-  
+
   blocksize_short_44,
   blocksize_long_44,
 
@@ -38877,7 +38888,7 @@ ve_setup_data_template ve_setup_32_uncoupled={
   _psy_noisebias_trans,
   _psy_noisebias_long,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -38888,7 +38899,7 @@ ve_setup_data_template ve_setup_32_uncoupled={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_32,
 
   _psy_global_44,
@@ -38910,7 +38921,7 @@ ve_setup_data_template ve_setup_32_stereo_low={
   2,
   26000,
   40000,
-  
+
   blocksize_short_44_low,
   blocksize_long_44_low,
 
@@ -38928,7 +38939,7 @@ ve_setup_data_template ve_setup_32_stereo_low={
   _psy_noisebias_trans_low,
   _psy_noisebias_long_low,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -38939,7 +38950,7 @@ ve_setup_data_template ve_setup_32_stereo_low={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_32_low,
 
   _psy_global_44,
@@ -38962,7 +38973,7 @@ ve_setup_data_template ve_setup_32_uncoupled_low={
   -1,
   26000,
   40000,
-  
+
   blocksize_short_44_low,
   blocksize_long_44_low,
 
@@ -38980,7 +38991,7 @@ ve_setup_data_template ve_setup_32_uncoupled_low={
   _psy_noisebias_trans_low,
   _psy_noisebias_long_low,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -38991,7 +39002,7 @@ ve_setup_data_template ve_setup_32_uncoupled_low={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_32_low,
 
   _psy_global_44,
@@ -39018,7 +39029,7 @@ ve_setup_data_template ve_setup_32_uncoupled_low={
  *                                                                  *
  ********************************************************************
 
- function: 8kHz settings 
+ function: 8kHz settings
  last mod: $Id: setup_8.h,v 1.2 2002/07/11 06:41:05 xiphmont Exp $
 
  ********************************************************************/
@@ -39035,7 +39046,7 @@ ve_setup_data_template ve_setup_32_uncoupled_low={
  *                                                                  *
  ********************************************************************
 
- function: 8kHz psychoacoustic settings 
+ function: 8kHz psychoacoustic settings
  last mod: $Id: psych_8.h,v 1.3 2003/09/02 06:05:47 xiphmont Exp $
 
  ********************************************************************/
@@ -39252,7 +39263,7 @@ ve_setup_data_template ve_setup_8_stereo={
   2,
   8000,
   9000,
-  
+
   blocksize_8,
   blocksize_8,
 
@@ -39270,7 +39281,7 @@ ve_setup_data_template ve_setup_8_stereo={
   NULL,
   NULL,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_8_mapping,
   NULL,
@@ -39281,7 +39292,7 @@ ve_setup_data_template ve_setup_8_stereo={
 
   _psy_ath_floater_8,
   _psy_ath_abs_8,
-  
+
   _psy_lowpass_8,
 
   _psy_global_44,
@@ -39303,7 +39314,7 @@ ve_setup_data_template ve_setup_8_uncoupled={
   -1,
   8000,
   9000,
-  
+
   blocksize_8,
   blocksize_8,
 
@@ -39321,7 +39332,7 @@ ve_setup_data_template ve_setup_8_uncoupled={
   NULL,
   NULL,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_8_mapping,
   NULL,
@@ -39332,7 +39343,7 @@ ve_setup_data_template ve_setup_8_uncoupled={
 
   _psy_ath_floater_8,
   _psy_ath_abs_8,
-  
+
   _psy_lowpass_8,
 
   _psy_global_44,
@@ -39359,7 +39370,7 @@ ve_setup_data_template ve_setup_8_uncoupled={
  *                                                                  *
  ********************************************************************
 
- function: 11kHz settings 
+ function: 11kHz settings
  last mod: $Id: setup_11.h,v 1.2 2002/07/11 06:41:04 xiphmont Exp $
 
  ********************************************************************/
@@ -39376,7 +39387,7 @@ ve_setup_data_template ve_setup_8_uncoupled={
  *                                                                  *
  ********************************************************************
 
- function: 11kHz settings 
+ function: 11kHz settings
  last mod: $Id: psych_11.h,v 1.1 2002/07/10 03:04:22 xiphmont Exp $
 
  ********************************************************************/
@@ -39442,7 +39453,7 @@ ve_setup_data_template ve_setup_11_stereo={
   2,
   9000,
   15000,
-  
+
   blocksize_11,
   blocksize_11,
 
@@ -39460,7 +39471,7 @@ ve_setup_data_template ve_setup_11_stereo={
   NULL,
   NULL,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_8_mapping,
   NULL,
@@ -39471,7 +39482,7 @@ ve_setup_data_template ve_setup_11_stereo={
 
   _psy_ath_floater_8,
   _psy_ath_abs_8,
-  
+
   _psy_lowpass_11,
 
   _psy_global_44,
@@ -39493,7 +39504,7 @@ ve_setup_data_template ve_setup_11_uncoupled={
   -1,
   9000,
   15000,
-  
+
   blocksize_11,
   blocksize_11,
 
@@ -39511,7 +39522,7 @@ ve_setup_data_template ve_setup_11_uncoupled={
   NULL,
   NULL,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_8_mapping,
   NULL,
@@ -39522,7 +39533,7 @@ ve_setup_data_template ve_setup_11_uncoupled={
 
   _psy_ath_floater_8,
   _psy_ath_abs_8,
-  
+
   _psy_lowpass_11,
 
   _psy_global_44,
@@ -39549,7 +39560,7 @@ ve_setup_data_template ve_setup_11_uncoupled={
  *                                                                  *
  ********************************************************************
 
- function: 16kHz settings 
+ function: 16kHz settings
  last mod: $Id: setup_16.h,v 1.5 2002/10/11 11:14:42 xiphmont Exp $
 
  ********************************************************************/
@@ -39566,7 +39577,7 @@ ve_setup_data_template ve_setup_11_uncoupled={
  *                                                                  *
  ********************************************************************
 
- function: 16kHz settings 
+ function: 16kHz settings
  last mod: $Id: psych_16.h,v 1.3 2003/09/02 06:05:47 xiphmont Exp $
 
  ********************************************************************/
@@ -39752,7 +39763,7 @@ static vorbis_residue_template _res_16s_1[]={
   {2,0,  &_residue_44_mid,
    &_huff_book__16c1_s_short,&_huff_book__16c1_s_short,
    &_resbook_16s_1,&_resbook_16s_1},
-  
+
   {2,0,  &_residue_44_mid,
    &_huff_book__16c1_s_long,&_huff_book__16c1_s_long,
    &_resbook_16s_1,&_resbook_16s_1}
@@ -39761,7 +39772,7 @@ static vorbis_residue_template _res_16s_2[]={
   {2,0,  &_residue_44_high,
    &_huff_book__16c2_s_short,&_huff_book__16c2_s_short,
    &_resbook_16s_2,&_resbook_16s_2},
-  
+
   {2,0,  &_residue_44_high,
    &_huff_book__16c2_s_long,&_huff_book__16c2_s_long,
    &_resbook_16s_2,&_resbook_16s_2}
@@ -39823,7 +39834,7 @@ static vorbis_residue_template _res_16u_1[]={
   {1,0,  &_residue_44_mid_un,
    &_huff_book__16u1__short,&_huff_book__16u1__short,
    &_resbook_16u_1,&_resbook_16u_1},
-  
+
   {1,0,  &_residue_44_mid_un,
    &_huff_book__16u1__long,&_huff_book__16u1__long,
    &_resbook_16u_1,&_resbook_16u_1}
@@ -39832,7 +39843,7 @@ static vorbis_residue_template _res_16u_2[]={
   {1,0,  &_residue_44_hi_un,
    &_huff_book__16u2__short,&_huff_book__16u2__short,
    &_resbook_16u_2,&_resbook_16u_2},
-  
+
   {1,0,  &_residue_44_hi_un,
    &_huff_book__16u2__long,&_huff_book__16u2__long,
    &_resbook_16u_2,&_resbook_16u_2}
@@ -39880,7 +39891,7 @@ ve_setup_data_template ve_setup_16_stereo={
   2,
   15000,
   19000,
-  
+
   blocksize_16_short,
   blocksize_16_long,
 
@@ -39898,7 +39909,7 @@ ve_setup_data_template ve_setup_16_stereo={
   _psy_noisebias_16_short,
   _psy_noisebias_16,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_16_mapping,
   _psy_compand_16_mapping,
@@ -39909,7 +39920,7 @@ ve_setup_data_template ve_setup_16_stereo={
 
   _psy_ath_floater_16,
   _psy_ath_abs_16,
-  
+
   _psy_lowpass_16,
 
   _psy_global_44,
@@ -39931,7 +39942,7 @@ ve_setup_data_template ve_setup_16_uncoupled={
   -1,
   15000,
   19000,
-  
+
   blocksize_16_short,
   blocksize_16_long,
 
@@ -39949,7 +39960,7 @@ ve_setup_data_template ve_setup_16_uncoupled={
   _psy_noisebias_16_short,
   _psy_noisebias_16,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_16_mapping,
   _psy_compand_16_mapping,
@@ -39960,7 +39971,7 @@ ve_setup_data_template ve_setup_16_uncoupled={
 
   _psy_ath_floater_16,
   _psy_ath_abs_16,
-  
+
   _psy_lowpass_16,
 
   _psy_global_44,
@@ -39987,7 +39998,7 @@ ve_setup_data_template ve_setup_16_uncoupled={
  *                                                                  *
  ********************************************************************
 
- function: 22kHz settings 
+ function: 22kHz settings
  last mod: $Id: setup_22.h,v 1.3 2002/07/11 10:02:29 xiphmont Exp $
 
  ********************************************************************/
@@ -40009,7 +40020,7 @@ ve_setup_data_template ve_setup_22_stereo={
   2,
   19000,
   26000,
-  
+
   blocksize_16_short,
   blocksize_16_long,
 
@@ -40027,7 +40038,7 @@ ve_setup_data_template ve_setup_22_stereo={
   _psy_noisebias_16_short,
   _psy_noisebias_16,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_8_mapping,
   _psy_compand_8_mapping,
@@ -40038,7 +40049,7 @@ ve_setup_data_template ve_setup_22_stereo={
 
   _psy_ath_floater_16,
   _psy_ath_abs_16,
-  
+
   _psy_lowpass_22,
 
   _psy_global_44,
@@ -40060,7 +40071,7 @@ ve_setup_data_template ve_setup_22_uncoupled={
   -1,
   19000,
   26000,
-  
+
   blocksize_16_short,
   blocksize_16_long,
 
@@ -40078,7 +40089,7 @@ ve_setup_data_template ve_setup_22_uncoupled={
   _psy_noisebias_16_short,
   _psy_noisebias_16,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_8_mapping,
   _psy_compand_8_mapping,
@@ -40089,7 +40100,7 @@ ve_setup_data_template ve_setup_22_uncoupled={
 
   _psy_ath_floater_16,
   _psy_ath_abs_16,
-  
+
   _psy_lowpass_22,
 
   _psy_global_44,
@@ -40133,7 +40144,7 @@ ve_setup_data_template ve_setup_X_stereo={
   2,
   50000,
   200000,
-  
+
   blocksize_short_44,
   blocksize_long_44,
 
@@ -40151,7 +40162,7 @@ ve_setup_data_template ve_setup_X_stereo={
   _psy_noisebias_trans,
   _psy_noisebias_long,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -40162,7 +40173,7 @@ ve_setup_data_template ve_setup_X_stereo={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_44,
 
   _psy_global_44,
@@ -40184,7 +40195,7 @@ ve_setup_data_template ve_setup_X_uncoupled={
   -1,
   50000,
   200000,
-  
+
   blocksize_short_44,
   blocksize_long_44,
 
@@ -40202,7 +40213,7 @@ ve_setup_data_template ve_setup_X_uncoupled={
   _psy_noisebias_trans,
   _psy_noisebias_long,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -40213,7 +40224,7 @@ ve_setup_data_template ve_setup_X_uncoupled={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_44,
 
   _psy_global_44,
@@ -40235,7 +40246,7 @@ ve_setup_data_template ve_setup_X_stereo_low={
   2,
   50000,
   200000,
-  
+
   blocksize_short_44_low,
   blocksize_long_44_low,
 
@@ -40253,7 +40264,7 @@ ve_setup_data_template ve_setup_X_stereo_low={
   _psy_noisebias_trans_low,
   _psy_noisebias_long_low,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -40264,7 +40275,7 @@ ve_setup_data_template ve_setup_X_stereo_low={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_44_low,
 
   _psy_global_44,
@@ -40287,7 +40298,7 @@ ve_setup_data_template ve_setup_X_uncoupled_low={
   -1,
   50000,
   200000,
-  
+
   blocksize_short_44_low,
   blocksize_long_44_low,
 
@@ -40305,7 +40316,7 @@ ve_setup_data_template ve_setup_X_uncoupled_low={
   _psy_noisebias_trans_low,
   _psy_noisebias_long_low,
   _psy_noise_suppress,
-  
+
   _psy_compand_44,
   _psy_compand_short_mapping,
   _psy_compand_long_mapping,
@@ -40316,7 +40327,7 @@ ve_setup_data_template ve_setup_X_uncoupled_low={
 
   _psy_ath_floater,
   _psy_ath_abs,
-  
+
   _psy_lowpass_44_low,
 
   _psy_global_44,
@@ -40338,7 +40349,7 @@ ve_setup_data_template ve_setup_XX_stereo={
   2,
   0,
   8000,
-  
+
   blocksize_8,
   blocksize_8,
 
@@ -40356,7 +40367,7 @@ ve_setup_data_template ve_setup_XX_stereo={
   NULL,
   NULL,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_8_mapping,
   NULL,
@@ -40367,7 +40378,7 @@ ve_setup_data_template ve_setup_XX_stereo={
 
   _psy_ath_floater_8,
   _psy_ath_abs_8,
-  
+
   _psy_lowpass_8,
 
   _psy_global_44,
@@ -40389,7 +40400,7 @@ ve_setup_data_template ve_setup_XX_uncoupled={
   -1,
   0,
   8000,
-  
+
   blocksize_8,
   blocksize_8,
 
@@ -40407,7 +40418,7 @@ ve_setup_data_template ve_setup_XX_uncoupled={
   NULL,
   NULL,
   _psy_noise_suppress,
-  
+
   _psy_compand_8,
   _psy_compand_8_mapping,
   NULL,
@@ -40418,7 +40429,7 @@ ve_setup_data_template ve_setup_XX_uncoupled={
 
   _psy_ath_floater_8,
   _psy_ath_abs_8,
-  
+
   _psy_lowpass_8,
 
   _psy_global_44,
@@ -40477,8 +40488,8 @@ static int vorbis_encode_toplevel_setup(vorbis_info *vi,int ch,long rate){
 }
 
 static void vorbis_encode_floor_setup(vorbis_info *vi,double s,int block,
-				     static_codebook    ***books, 
-				     vorbis_info_floor1 *in, 
+				     static_codebook    ***books,
+				     vorbis_info_floor1 *in,
 				     int *x){
   int i,k,is=s;
   vorbis_info_floor1 *f=_ogg_calloc(1,sizeof(*f));
@@ -40517,15 +40528,15 @@ static void vorbis_encode_floor_setup(vorbis_info *vi,double s,int block,
 }
 
 static void vorbis_encode_global_psych_setup(vorbis_info *vi,double s,
-					    vorbis_info_psy_global *in, 
+					    vorbis_info_psy_global *in,
 					    double *x){
   int i,is=s;
   double ds=s-is;
   codec_setup_info *ci=vi->codec_setup;
   vorbis_info_psy_global *g=&ci->psy_g_param;
-  
+
   memcpy(g,in+(int)x[is],sizeof(*g));
-  
+
   ds=x[is]*(1.-ds)+x[is+1]*ds;
   is=(int)ds;
   ds-=is;
@@ -40533,7 +40544,7 @@ static void vorbis_encode_global_psych_setup(vorbis_info *vi,double s,
     is--;
     ds=1.;
   }
-  
+
   /* interpolate the trigger threshholds */
   for(i=0;i<4;i++){
     g->preecho_thresh[i]=in[is].preecho_thresh[i]*(1.-ds)+in[is+1].preecho_thresh[i]*ds;
@@ -40563,11 +40574,11 @@ static void vorbis_encode_global_stereo(vorbis_info *vi,
 	g->coupling_pointlimit[0][i]=kHz*1000./vi->rate*ci->blocksizes[0];
 	g->coupling_pointlimit[1][i]=kHz*1000./vi->rate*ci->blocksizes[1];
 	g->coupling_pkHz[i]=kHz;
-	
+
 	kHz=p[is].lowpasskHz[i]*(1.-ds)+p[is+1].lowpasskHz[i]*ds;
 	g->sliding_lowpass[0][i]=kHz*1000./vi->rate*ci->blocksizes[0];
 	g->sliding_lowpass[1][i]=kHz*1000./vi->rate*ci->blocksizes[1];
-	
+
       }
     }else{
       float kHz=p[is].kHz[PACKETBLOBS/2]*(1.-ds)+p[is+1].kHz[PACKETBLOBS/2]*ds;
@@ -40576,7 +40587,7 @@ static void vorbis_encode_global_stereo(vorbis_info *vi,
 	g->coupling_pointlimit[1][i]=kHz*1000./vi->rate*ci->blocksizes[1];
 	g->coupling_pkHz[i]=kHz;
       }
-      
+
       kHz=p[is].lowpasskHz[PACKETBLOBS/2]*(1.-ds)+p[is+1].lowpasskHz[PACKETBLOBS/2]*ds;
       for(i=0;i<PACKETBLOBS;i++){
 	g->sliding_lowpass[0][i]=kHz*1000./vi->rate*ci->blocksizes[0];
@@ -40601,14 +40612,14 @@ static void vorbis_encode_psyset_setup(vorbis_info *vi,double s,
   vorbis_info_psy *p=ci->psy_param[block];
   highlevel_encode_setup *hi=&ci->hi;
   int is=s;
-  
+
   if(block>=ci->psys)
     ci->psys=block+1;
   if(!p){
     p=_ogg_calloc(1,sizeof(*p));
     ci->psy_param[block]=p;
   }
-  
+
   memcpy(p,&_psy_info_template,sizeof(*p));
   p->blockflag=block>>1;
 
@@ -40619,7 +40630,7 @@ static void vorbis_encode_psyset_setup(vorbis_info *vi,double s,
     p->normal_partition=nn_partition[is];
     p->normal_thresh=nn_thresh[is];
   }
-    
+
   return;
 }
 
@@ -40727,7 +40738,7 @@ static int book_dup_or_new(codec_setup_info *ci,static_codebook *book){
   int i;
   for(i=0;i<ci->books;i++)
     if(ci->book_param[i]==book)return(i);
-  
+
   return(ci->books++);
 }
 
@@ -40736,7 +40747,7 @@ static void vorbis_encode_blocksize_setup(vorbis_info *vi,double s,
 
   codec_setup_info *ci=vi->codec_setup;
   int is=s;
-  
+
   int blockshort=shortb[is];
   int blocklong=longb[is];
   ci->blocksizes[0]=blockshort;
@@ -40750,10 +40761,10 @@ static void vorbis_encode_residue_setup(vorbis_info *vi,
 
   codec_setup_info *ci=vi->codec_setup;
   int i,n;
-  
+
   vorbis_info_residue0 *r=ci->residue_param[number]=
     _ogg_malloc(sizeof(*r));
-  
+
   memcpy(r,res->res,sizeof(*r));
   if(ci->residues<=number)ci->residues=number+1;
 
@@ -40768,14 +40779,14 @@ static void vorbis_encode_residue_setup(vorbis_info *vi,
   ci->residue_type[number]=res->res_type;
 
   /* to be adjusted by lowpass/pointlimit later */
-  n=r->end=ci->blocksizes[block]>>1; 
+  n=r->end=ci->blocksizes[block]>>1;
   if(res->res_type==2)
     n=r->end*=vi->channels;
-  
+
   /* fill in all the books */
   {
     int booklist=0,k;
-    
+
     if(ci->hi.managed){
       for(i=0;i<r->partitions;i++)
 	for(k=0;k<3;k++)
@@ -40783,8 +40794,8 @@ static void vorbis_encode_residue_setup(vorbis_info *vi,
 	    r->secondstages[i]|=(1<<k);
 
       r->groupbook=book_dup_or_new(ci,res->book_aux_managed);
-      ci->book_param[r->groupbook]=res->book_aux_managed;      
-    
+      ci->book_param[r->groupbook]=res->book_aux_managed;
+
       for(i=0;i<r->partitions;i++){
 	for(k=0;k<3;k++){
 	  if(res->books_base_managed->books[i][k]){
@@ -40801,10 +40812,10 @@ static void vorbis_encode_residue_setup(vorbis_info *vi,
 	for(k=0;k<3;k++)
 	  if(res->books_base->books[i][k])
 	    r->secondstages[i]|=(1<<k);
-  
+
       r->groupbook=book_dup_or_new(ci,res->book_aux);
       ci->book_param[r->groupbook]=res->book_aux;
-      
+
       for(i=0;i<r->partitions;i++){
 	for(k=0;k<3;k++){
 	  if(res->books_base->books[i][k]){
@@ -40816,7 +40827,7 @@ static void vorbis_encode_residue_setup(vorbis_info *vi,
       }
     }
   }
-  
+
   /* lowpass setup/pointlimit */
   {
     double freq=ci->hi.lowpass_kHz*1000.;
@@ -40824,12 +40835,12 @@ static void vorbis_encode_residue_setup(vorbis_info *vi,
     double nyq=vi->rate/2.;
     long blocksize=ci->blocksizes[block]>>1;
 
-    /* lowpass needs to be set in the floor and the residue. */    
+    /* lowpass needs to be set in the floor and the residue. */
     if(freq>nyq)freq=nyq;
     /* in the floor, the granularity can be very fine; it doesn't alter
        the encoding structure, only the samples used to fit the floor
        approximation */
-    f->n=freq/nyq*blocksize; 
+    f->n=freq/nyq*blocksize;
 
     /* this res may by limited by the maximum pointlimit of the mode,
        not the lowpass. the floor is always lowpass limited. */
@@ -40840,7 +40851,7 @@ static void vorbis_encode_residue_setup(vorbis_info *vi,
 	freq=ci->psy_g_param.coupling_pkHz[PACKETBLOBS/2]*1000.;
       if(freq>nyq)freq=nyq;
     }
-    
+
     /* in the residue, we're constrained, physically, by partition
        boundaries.  We still lowpass 'wherever', but we have to round up
        here to next boundary, or the vorbis spec will round it *down* to
@@ -40852,7 +40863,7 @@ static void vorbis_encode_residue_setup(vorbis_info *vi,
       r->end=(int)((freq/nyq*blocksize)/r->grouping+.9)* /* round up only if we're well past */
 	r->grouping;
   }
-}      
+}
 
 /* we assume two maps in this encoder */
 static void vorbis_encode_map_n_res_setup(vorbis_info *vi,double s,
@@ -40870,14 +40881,14 @@ static void vorbis_encode_map_n_res_setup(vorbis_info *vi,double s,
 
     ci->map_param[i]=_ogg_calloc(1,sizeof(*map));
     ci->mode_param[i]=_ogg_calloc(1,sizeof(*mode));
-  
+
     memcpy(ci->mode_param[i],mode+i,sizeof(*_mode_template));
     if(i>=ci->modes)ci->modes=i+1;
 
     ci->map_type[i]=0;
     memcpy(ci->map_param[i],map+i,sizeof(*map));
     if(i>=ci->maps)ci->maps=i+1;
-    
+
     for(j=0;j<map[i].submaps;j++)
       vorbis_encode_residue_setup(vi,map[i].residuesubmap[j],i
 				  ,res+map[i].residuesubmap[j]);
@@ -40895,8 +40906,8 @@ static double setting_to_approx_bitrate(vorbis_info *vi){
 
   if(r==NULL)
     return(-1);
-  
-  return((r[is]*(1.-ds)+r[is+1]*ds)*ch);  
+
+  return((r[is]*(1.-ds)+r[is+1]*ds)*ch);
 }
 
 static void get_setup_template(vorbis_info *vi,
@@ -40938,7 +40949,7 @@ static void get_setup_template(vorbis_info *vi,
     }
     i++;
   }
-  
+
   hi->setup=NULL;
 }
 
@@ -40966,7 +40977,7 @@ int vorbis_encode_setup_init(vorbis_info *vi){
      too badly */
   if(hi->amplitude_track_dBpersec>0.)hi->amplitude_track_dBpersec=0.;
   if(hi->amplitude_track_dBpersec<-99999.)hi->amplitude_track_dBpersec=-99999.;
-  
+
   /* get the appropriate setup template; matches the fetch in previous
      stages */
   setup=(ve_setup_data_template *)hi->setup;
@@ -40981,7 +40992,7 @@ int vorbis_encode_setup_init(vorbis_info *vi){
 				setup->blocksize_short,
 				setup->blocksize_long);
   if(ci->blocksizes[0]==ci->blocksizes[1])singleblock=1;
-  
+
   /* floor setup; choose proper floor params.  Allocated on the floor
      stack in order; if we alloc only long floor, it's 0 */
   vorbis_encode_floor_setup(vi,hi->short_setting,0,
@@ -40993,7 +41004,7 @@ int vorbis_encode_setup_init(vorbis_info *vi){
 			      setup->floor_books,
 			      setup->floor_params,
 			      setup->floor_long_mapping);
-  
+
   /* setup of [mostly] short block detection and stereo*/
   vorbis_encode_global_psych_setup(vi,hi->trigger_setting,
 				   setup->global_params,
@@ -41003,24 +41014,24 @@ int vorbis_encode_setup_init(vorbis_info *vi){
   /* basic psych setup and noise normalization */
   vorbis_encode_psyset_setup(vi,hi->short_setting,
 			     setup->psy_noise_normal_start[0],
-			     setup->psy_noise_normal_partition[0],  
-			     setup->psy_noise_normal_thresh,  
+			     setup->psy_noise_normal_partition[0],
+			     setup->psy_noise_normal_thresh,
 			     0);
   vorbis_encode_psyset_setup(vi,hi->short_setting,
 			     setup->psy_noise_normal_start[0],
-			     setup->psy_noise_normal_partition[0],  
-			     setup->psy_noise_normal_thresh,  
+			     setup->psy_noise_normal_partition[0],
+			     setup->psy_noise_normal_thresh,
 			     1);
   if(!singleblock){
     vorbis_encode_psyset_setup(vi,hi->long_setting,
 			       setup->psy_noise_normal_start[1],
-			       setup->psy_noise_normal_partition[1],  
-				    setup->psy_noise_normal_thresh,  
+			       setup->psy_noise_normal_partition[1],
+				    setup->psy_noise_normal_thresh,
 			       2);
     vorbis_encode_psyset_setup(vi,hi->long_setting,
 			       setup->psy_noise_normal_start[1],
-			       setup->psy_noise_normal_partition[1],  
-			       setup->psy_noise_normal_thresh,  
+			       setup->psy_noise_normal_partition[1],
+			       setup->psy_noise_normal_thresh,
 			       3);
   }
 
@@ -41121,7 +41132,7 @@ int vorbis_encode_setup_init(vorbis_info *vi){
   }
 
   return(0);
-  
+
 }
 
 static int vorbis_encode_setup_setting(vorbis_info *vi,
@@ -41149,8 +41160,8 @@ static int vorbis_encode_setup_setting(vorbis_info *vi,
 
   hi->stereo_point_setting=hi->base_setting;
   hi->lowpass_kHz=
-    setup->psy_lowpass[is]*(1.-ds)+setup->psy_lowpass[is+1]*ds;  
-  
+    setup->psy_lowpass[is]*(1.-ds)+setup->psy_lowpass[is+1]*ds;
+
   hi->ath_floating_dB=setup->psy_ath_float[is]*(1.-ds)+
     setup->psy_ath_float[is+1]*ds;
   hi->ath_absolute_dB=setup->psy_ath_abs[is]*(1.-ds)+
@@ -41171,7 +41182,7 @@ static int vorbis_encode_setup_setting(vorbis_info *vi,
 
 int vorbis_encode_setup_vbr(vorbis_info *vi,
 			    long  channels,
-			    long  rate,			    
+			    long  rate,
 			    float quality){
   codec_setup_info *ci=vi->codec_setup;
   highlevel_encode_setup *hi=&ci->hi;
@@ -41181,23 +41192,23 @@ int vorbis_encode_setup_vbr(vorbis_info *vi,
 
   get_setup_template(vi,channels,rate,quality,0);
   if(!hi->setup)return OV_EIMPL;
-  
+
   return vorbis_encode_setup_setting(vi,channels,rate);
 }
 
 int vorbis_encode_init_vbr(vorbis_info *vi,
 			   long channels,
 			   long rate,
-			   
+
 			   float base_quality /* 0. to 1. */
 			   ){
   int ret=0;
 
   ret=vorbis_encode_setup_vbr(vi,channels,rate,base_quality);
-  
+
   if(ret){
     vorbis_info_clear(vi);
-    return ret; 
+    return ret;
   }
   ret=vorbis_encode_setup_init(vi);
   if(ret)
@@ -41208,7 +41219,7 @@ int vorbis_encode_init_vbr(vorbis_info *vi,
 int vorbis_encode_setup_managed(vorbis_info *vi,
 				long channels,
 				long rate,
-				
+
 				long max_bitrate,
 				long nominal_bitrate,
 				long min_bitrate){
@@ -41232,11 +41243,11 @@ int vorbis_encode_setup_managed(vorbis_info *vi,
 
   get_setup_template(vi,channels,rate,nominal_bitrate,1);
   if(!hi->setup)return OV_EIMPL;
-  
+
   ret=vorbis_encode_setup_setting(vi,channels,rate);
   if(ret){
     vorbis_info_clear(vi);
-    return ret; 
+    return ret;
   }
 
   /* initialize management with sane defaults */
@@ -41288,10 +41299,10 @@ int vorbis_encode_ctl(vorbis_info *vi,int number,void *arg){
     switch(number){
     case OV_ECTL_RATEMANAGE_GET:
       {
-	
+
 	struct ovectl_ratemanage_arg *ai=
 	  (struct ovectl_ratemanage_arg *)arg;
-	
+
 	ai->management_active=hi->managed;
 	ai->bitrate_av_window=hi->bitrate_av_window;
 	ai->bitrate_av_window_center=hi->bitrate_av_window_center;
@@ -41300,10 +41311,10 @@ int vorbis_encode_ctl(vorbis_info *vi,int number,void *arg){
 	ai->bitrate_hard_max=hi->bitrate_max;
 	ai->bitrate_av_lo=hi->bitrate_av_lo;
 	ai->bitrate_av_hi=hi->bitrate_av_hi;
-	
+
       }
       return(0);
-    
+
     case OV_ECTL_RATEMANAGE_SET:
       {
 	struct ovectl_ratemanage_arg *ai=
@@ -41337,7 +41348,7 @@ int vorbis_encode_ctl(vorbis_info *vi,int number,void *arg){
 	if(hi->bitrate_av_window>10.)hi->bitrate_av_window=10.;
 	if(hi->bitrate_av_window_center<0.)hi->bitrate_av_window=0.;
 	if(hi->bitrate_av_window_center>1.)hi->bitrate_av_window=1.;
-	
+
 	if( ( (hi->bitrate_av_lo<=0 && hi->bitrate_av_hi<=0)||
 	      (hi->bitrate_av_window<=0) ) &&
 	    ( (hi->bitrate_min<=0 && hi->bitrate_max<=0)||
@@ -41360,7 +41371,7 @@ int vorbis_encode_ctl(vorbis_info *vi,int number,void *arg){
 	}
 	if(hi->bitrate_limit_window<0.)hi->bitrate_limit_window=0.;
 	if(hi->bitrate_limit_window>10.)hi->bitrate_limit_window=10.;
-	
+
 	if( ( (hi->bitrate_av_lo<=0 && hi->bitrate_av_hi<=0)||
 	      (hi->bitrate_av_window<=0) ) &&
 	    ( (hi->bitrate_min<=0 && hi->bitrate_max<=0)||
@@ -41398,7 +41409,7 @@ int vorbis_encode_ctl(vorbis_info *vi,int number,void *arg){
 	if(hi->impulse_noisetune>0.)hi->impulse_noisetune=0.;
 	if(hi->impulse_noisetune<-15.)hi->impulse_noisetune=-15.;
       }
-      return(0);      
+      return(0);
     }
 
 
@@ -41444,11 +41455,11 @@ int vorbis_encode_ctl(vorbis_info *vi,int number,void *arg){
 #define _OV_FILE_H_
 
 /* The function prototypes for the callbacks are basically the same as for
- * the stdio functions fread, fseek, fclose, ftell. 
+ * the stdio functions fread, fseek, fclose, ftell.
  * The one difference is that the FILE * arguments have been replaced with
  * a void * - this is to be used as a pointer to whatever internal data these
  * functions might need. In the stdio case, it's just a FILE * cast to a void *
- * 
+ *
  * If you use other functions, check the docs for these functions and return
  * the right values. For seek_func(), you *MUST* return -1 if the stream is
  * unseekable
@@ -41471,7 +41482,7 @@ typedef struct OggVorbis_File {
   int              seekable;
   ogg_int64_t      offset;
   ogg_int64_t      end;
-  ogg_sync_state   oy; 
+  ogg_sync_state   oy;
 
   /* If the FILE handle isn't seekable (eg, a pipe), only the current
      stream appears */
@@ -41575,8 +41586,8 @@ extern int ov_halfrate_p(OggVorbis_File *vf);
    we only want coarse navigation through the stream. */
 
 /*************************************************************************
- * Many, many internal helpers.  The intention is not to be confusing; 
- * rampant duplication and monolithic function implementation would be 
+ * Many, many internal helpers.  The intention is not to be confusing;
+ * rampant duplication and monolithic function implementation would be
  * harder to understand anyway.  The high level functions are last.  Begin
  * grokking near the end of the file */
 
@@ -41598,7 +41609,7 @@ static long _get_data(OggVorbis_File *vf){
 
 /* save a tiny smidge of verbosity to make the code more readable */
 static void _seek_helper(OggVorbis_File *vf,ogg_int64_t offset){
-  if(vf->datasource){ 
+  if(vf->datasource){
     (vf->callbacks.seek_func)(vf->datasource, offset, SEEK_SET);
     vf->offset=offset;
     ogg_sync_reset(&vf->oy);
@@ -41629,7 +41640,7 @@ static ogg_int64_t _get_next_page(OggVorbis_File *vf,ogg_page *og,
 
     if(boundary>0 && vf->offset>=boundary)return(OV_FALSE);
     more=ogg_sync_pageseek(&vf->oy,og);
-    
+
     if(more<0){
       /* skipped n bytes */
       vf->offset-=more;
@@ -41648,7 +41659,7 @@ static ogg_int64_t _get_next_page(OggVorbis_File *vf,ogg_page *og,
 	ogg_int64_t ret=vf->offset;
 	vf->offset+=more;
 	return(ret);
-	
+
       }
     }
   }
@@ -41705,18 +41716,18 @@ static int _bisect_forward_serialno(OggVorbis_File *vf,
   ogg_int64_t next=end;
   ogg_page og;
   ogg_int64_t ret;
-  
+
   /* the below guards against garbage seperating the last and
      first pages of two links. */
   while(searched<endsearched){
     ogg_int64_t bisect;
-    
+
     if(endsearched-searched<CHUNKSIZE){
       bisect=searched;
     }else{
       bisect=(searched+endsearched)/2;
     }
-    
+
     _seek_helper(vf,bisect);
     ret=_get_next_page(vf,&og,-1);
     if(ret==OV_EREAD)return(OV_EREAD);
@@ -41731,7 +41742,7 @@ static int _bisect_forward_serialno(OggVorbis_File *vf,
   _seek_helper(vf,next);
   ret=_get_next_page(vf,&og,-1);
   if(ret==OV_EREAD)return(OV_EREAD);
-  
+
   if(searched>=end || ret<0){
     vf->links=m+1;
     vf->offsets=_ogg_malloc((vf->links+1)*sizeof(*vf->offsets));
@@ -41742,7 +41753,7 @@ static int _bisect_forward_serialno(OggVorbis_File *vf,
 				 end,ogg_page_serialno(&og),m+1);
     if(ret==OV_EREAD)return(OV_EREAD);
   }
-  
+
   vf->offsets[m]=begin;
   vf->serialnos[m]=currentno;
   return(0);
@@ -41755,7 +41766,7 @@ static int _fetch_headers(OggVorbis_File *vf,vorbis_info *vi,vorbis_comment *vc,
   ogg_page og;
   ogg_packet op;
   int i,ret;
-  
+
   if(!og_ptr){
     ogg_int64_t llret=_get_next_page(vf,&og,CHUNKSIZE);
     if(llret==OV_EREAD)return(OV_EREAD);
@@ -41766,13 +41777,13 @@ static int _fetch_headers(OggVorbis_File *vf,vorbis_info *vi,vorbis_comment *vc,
   ogg_stream_reset_serialno(&vf->os,ogg_page_serialno(og_ptr));
   if(serialno)*serialno=vf->os.serialno;
   vf->ready_state=STREAMSET;
-  
+
   /* extract the initial header from the first page and verify that the
      Ogg bitstream is in fact Vorbis data */
-  
+
   vorbis_info_init(vi);
   vorbis_comment_init(vc);
-  
+
   i=0;
   while(i<3){
     ogg_stream_pagein(&vf->os,og_ptr);
@@ -41794,7 +41805,7 @@ static int _fetch_headers(OggVorbis_File *vf,vorbis_info *vi,vorbis_comment *vc,
 	goto bail_header;
       }
   }
-  return 0; 
+  return 0;
 
  bail_header:
   vorbis_info_clear(vi);
@@ -41817,12 +41828,12 @@ static void _prefetch_all_headers(OggVorbis_File *vf, ogg_int64_t dataoffset){
   ogg_page og;
   int i;
   ogg_int64_t ret;
-  
+
   vf->vi=_ogg_realloc(vf->vi,vf->links*sizeof(*vf->vi));
   vf->vc=_ogg_realloc(vf->vc,vf->links*sizeof(*vf->vc));
   vf->dataoffsets=_ogg_malloc(vf->links*sizeof(*vf->dataoffsets));
   vf->pcmlengths=_ogg_malloc(vf->links*2*sizeof(*vf->pcmlengths));
-  
+
   for(i=0;i<vf->links;i++){
     if(i==0){
       /* we already grabbed the initial header earlier.  Just set the offset */
@@ -41858,10 +41869,10 @@ static void _prefetch_all_headers(OggVorbis_File *vf, ogg_int64_t dataoffset){
 	  /* this should not be possible unless the file is
              truncated/mangled */
 	  break;
-       
+
 	if(ogg_page_serialno(&og)!=vf->serialnos[i])
 	  break;
-	
+
 	/* count blocksizes of all frames in the page */
 	ogg_stream_pagein(&vf->os,&og);
 	while((result=ogg_stream_packetout(&vf->os,&op))){
@@ -41920,7 +41931,7 @@ static int _make_decode_ready(OggVorbis_File *vf){
   }else{
     if(vorbis_synthesis_init(&vf->vd,vf->vi))
       return OV_EBADLINK;
-  }    
+  }
   vorbis_block_init(&vf->vd,&vf->vb);
   vf->ready_state=INITSET;
   vf->bittrack=0.f;
@@ -41938,7 +41949,7 @@ static int _open_seekable2(OggVorbis_File *vf){
   /* we can seek, so set out learning all about this file */
   (vf->callbacks.seek_func)(vf->datasource,0,SEEK_END);
   vf->offset=vf->end=(vf->callbacks.tell_func)(vf->datasource);
-  
+
   /* We get the offset for the last page of the physical bitstream.
      Most OggVorbis files will contain a single logical bitstream */
   end=_get_prev_page(vf,&og);
@@ -41963,7 +41974,7 @@ static int _open_seekable2(OggVorbis_File *vf){
   return(ov_raw_seek(vf,0));
 }
 
-/* clear out the current logical bitstream decoder */ 
+/* clear out the current logical bitstream decoder */
 static void _decode_clear(OggVorbis_File *vf){
   vorbis_dsp_clear(&vf->vd);
   vorbis_block_clear(&vf->vb);
@@ -41974,11 +41985,11 @@ static void _decode_clear(OggVorbis_File *vf){
    bitstream boundary and dumps the decoding machine.  If the decoding
    machine is unloaded, it loads it.  It also keeps pcm_offset up to
    date (seek and read both use this.  seek uses a special hack with
-   readp). 
+   readp).
 
    return: <0) error, OV_HOLE (lost packet) or OV_EOF
             0) need more data (only if readp==0)
-	    1) got a packet 
+	    1) got a packet
 */
 
 static int _fetch_and_process_packet(OggVorbis_File *vf,
@@ -41990,7 +42001,7 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
   /* handle one packet.  Try to fetch it from current stream state */
   /* extract packets from page */
   while(1){
-    
+
     /* process a packet if we can.  If the machine isn't loaded,
        neither is a page */
     if(vf->ready_state==INITSET){
@@ -42019,17 +42030,17 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
 	      /* for proper use of libvorbis within libvorbisfile,
                  oldsamples will always be zero. */
 	      if(oldsamples)return(OV_EFAULT);
-	      
+
 	      vorbis_synthesis_blockin(&vf->vd,&vf->vb);
 	      vf->samptrack+=vorbis_synthesis_pcmout(&vf->vd,NULL)-oldsamples;
 	      vf->bittrack+=op_ptr->bytes*8;
 	    }
-	  
+
 	    /* update the pcm offset. */
 	    if(granulepos!=-1 && !op_ptr->e_o_s){
 	      int link=(vf->seekable?vf->current_link:0);
 	      int i,samples;
-	    
+
 	      /* this packet has a pcm_offset on it (the last packet
 	         completed on a page carries the offset) After processing
 	         (above), we know the pcm position of the *last* sample
@@ -42051,7 +42062,7 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
 					       is very broken */
 
 	      samples=vorbis_synthesis_pcmout(&vf->vd,NULL);
-	    
+
 	      granulepos-=samples;
 	      for(i=0;i<link;i++)
 	        granulepos+=vf->pcmlengths[i*2+1];
@@ -42060,7 +42071,7 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
 	    return(1);
 	  }
 	}
-	else 
+	else
 	  break;
       }
     }
@@ -42069,14 +42080,14 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
       int ret;
       if(!readp)return(0);
       if((ret=_get_next_page(vf,&og,-1))<0){
-	return(OV_EOF); /* eof. 
+	return(OV_EOF); /* eof.
 			   leave unitialized */
       }
 
 	/* bitrate tracking; add the header's bytes here, the body bytes
 	   are done by packet above */
       vf->bittrack+=og.header_len*8;
-      
+
       /* has our decoding just traversed a bitstream boundary? */
       if(vf->ready_state==INITSET){
 	if(vf->current_serialno!=ogg_page_serialno(&og)){
@@ -42084,7 +42095,7 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
 	    return(OV_EOF);
 
 	  _decode_clear(vf);
-	  
+
 	  if(!vf->seekable){
 	    vorbis_info_clear(vf->vi);
 	    vorbis_comment_clear(vf->vc);
@@ -42094,7 +42105,7 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
     }
 
     /* Do we need to load a new machine before submitting the page? */
-    /* This is different in the seekable and non-seekable cases.  
+    /* This is different in the seekable and non-seekable cases.
 
        In the seekable case, we already have all the header
        information loaded and cached; we just initialize the machine
@@ -42105,13 +42116,13 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
        we're now nominally at the header of the next bitstream
     */
 
-    if(vf->ready_state!=INITSET){ 
+    if(vf->ready_state!=INITSET){
       int link;
 
       if(vf->ready_state<STREAMSET){
 	if(vf->seekable){
 	  vf->current_serialno=ogg_page_serialno(&og);
-	  
+
 	  /* match the serialno to bitstream section.  We use this rather than
 	     offset positions to avoid problems near logical bitstream
 	     boundaries */
@@ -42121,23 +42132,23 @@ static int _fetch_and_process_packet(OggVorbis_File *vf,
 						     stream.  error out,
 						     leave machine
 						     uninitialized */
-	  
+
 	  vf->current_link=link;
-	  
+
 	  ogg_stream_reset_serialno(&vf->os,vf->current_serialno);
 	  vf->ready_state=STREAMSET;
-	  
+
 	}else{
 	  /* we're streaming */
 	  /* fetch the three header packets, build the info struct */
-	  
+
 	  int ret=_fetch_headers(vf,vf->vi,vf->vc,&vf->current_serialno,&og);
 	  if(ret)return(ret);
 	  vf->current_link++;
 	  link=0;
 	}
       }
-      
+
       {
 	int ret=_make_decode_ready(vf);
 	if(ret<0)return ret;
@@ -42190,7 +42201,7 @@ static int _ov_open1(void *f,OggVorbis_File *vf,char *initial,
   if((ret=_fetch_headers(vf,vf->vi,vf->vc,&vf->current_serialno,NULL))<0){
     vf->datasource=NULL;
     ov_clear(vf);
-  }else 
+  }else
     vf->ready_state=PARTOPEN;
   return(ret);
 }
@@ -42218,7 +42229,7 @@ int ov_clear(OggVorbis_File *vf){
     vorbis_block_clear(&vf->vb);
     vorbis_dsp_clear(&vf->vd);
     ogg_stream_clear(&vf->os);
-    
+
     if(vf->vi && vf->links){
       int i;
       for(i=0;i<vf->links;i++){
@@ -42244,7 +42255,7 @@ int ov_clear(OggVorbis_File *vf){
 
 /* inspects the OggVorbis file and finds/documents all the logical
    bitstreams contained in it.  Tries to be tolerant of logical
-   bitstream sections that are truncated/woogie. 
+   bitstream sections that are truncated/woogie.
 
    return: -1) error
             0) OK
@@ -42267,10 +42278,10 @@ int ov_open(FILE *f,OggVorbis_File *vf,char *initial,long ibytes){
 
   return ov_open_callbacks((void *)f, vf, initial, ibytes, callbacks);
 }
- 
+
 /* cheap hack for game usage where downsampling is desirable; there's
    no need for SRC as we can just do it cheaply in libvorbis. */
- 
+
 int ov_halfrate(OggVorbis_File *vf,int flag){
   int i;
   if(vf->vi==NULL)return OV_EINVAL;
@@ -42281,7 +42292,7 @@ int ov_halfrate(OggVorbis_File *vf,int flag){
                           for now dumping the decode machine is needed
                           to reinit the MDCT lookups.  1.1 libvorbis
                           is planned to be able to switch on the fly */
-  
+
   for(i=0;i<vf->links;i++){
     if(vorbis_synthesis_halfrate(vf->vi+i,flag)){
       ov_halfrate(vf,0);
@@ -42317,7 +42328,7 @@ int ov_test(FILE *f,OggVorbis_File *vf,char *initial,long ibytes){
 
   return ov_test_callbacks((void *)f, vf, initial, ibytes, callbacks);
 }
-  
+
 int ov_test_open(OggVorbis_File *vf){
   if(vf->ready_state!=PARTOPEN)return(OV_EINVAL);
   return _ov_open2(vf);
@@ -42382,7 +42393,7 @@ long ov_bitrate(OggVorbis_File *vf,int i){
 
 /* returns the actual bitrate since last call.  returns -1 if no
    additional data to offer since last call (or at beginning of stream),
-   EINVAL if stream is only partially open 
+   EINVAL if stream is only partially open
 */
 long ov_bitrate_instant(OggVorbis_File *vf){
   int link=(vf->seekable?vf->current_link:0);
@@ -42428,7 +42439,7 @@ ogg_int64_t ov_raw_total(OggVorbis_File *vf,int i){
 /* returns: total PCM length (samples) of content if i==-1 PCM length
 	    (samples) of that logical bitstream for i==0 to n
 	    OV_EINVAL if the stream is not seekable (we can't know the
-	    length) or only partially open 
+	    length) or only partially open
 */
 ogg_int64_t ov_pcm_total(OggVorbis_File *vf,int i){
   if(vf->ready_state<OPENED)return(OV_EINVAL);
@@ -42447,7 +42458,7 @@ ogg_int64_t ov_pcm_total(OggVorbis_File *vf,int i){
 /* returns: total seconds of content if i==-1
             seconds in that logical bitstream for i==0 to n
 	    OV_EINVAL if the stream is not seekable (we can't know the
-	    length) or only partially open 
+	    length) or only partially open
 */
 double ov_time_total(OggVorbis_File *vf,int i){
   if(vf->ready_state<OPENED)return(OV_EINVAL);
@@ -42487,7 +42498,7 @@ int ov_raw_seek(OggVorbis_File *vf,ogg_int64_t pos){
   ogg_stream_reset_serialno(&vf->os,
 			    vf->current_serialno); /* must set serialno */
   vorbis_synthesis_restart(&vf->vd);
-    
+
   _seek_helper(vf,pos);
 
   /* we need to make sure the pcm_offset is set, but we don't want to
@@ -42497,12 +42508,12 @@ int ov_raw_seek(OggVorbis_File *vf,ogg_int64_t pos){
 
      So, a hack.  We use two stream states; a local scratch state and
      the shared vf->os stream state.  We use the local state to
-     scan, and the shared state as a buffer for later decode. 
+     scan, and the shared state as a buffer for later decode.
 
      Unfortuantely, on the last page we still advance to last packet
      because the granulepos on the last page is not necessarily on a
      packet boundary, and we need to make sure the granpos is
-     correct. 
+     correct.
   */
 
   {
@@ -42522,7 +42533,7 @@ int ov_raw_seek(OggVorbis_File *vf,ogg_int64_t pos){
       if(vf->ready_state>=STREAMSET){
 	/* snarf/scan a packet if we can */
 	int result=ogg_stream_packetout(&work_os,&op);
-      
+
 	if(result>0){
 
 	  if(vf->vi[vf->current_link].codec_setup){
@@ -42531,18 +42542,18 @@ int ov_raw_seek(OggVorbis_File *vf,ogg_int64_t pos){
 	      ogg_stream_packetout(&vf->os,NULL);
 	      thisblock=0;
 	    }else{
-	      
+
 	      if(eosflag)
 	      ogg_stream_packetout(&vf->os,NULL);
 	      else
 		if(lastblock)accblock+=(lastblock+thisblock)>>2;
-	    }	    
+	    }
 
 	    if(op.granulepos!=-1){
 	      int i,link=vf->current_link;
 	      ogg_int64_t granulepos=op.granulepos-vf->pcmlengths[link*2];
 	      if(granulepos<0)granulepos=0;
-	      
+
 	      for(i=0;i<link;i++)
 		granulepos+=vf->pcmlengths[i*2+1];
 	      vf->pcm_offset=granulepos-accblock;
@@ -42554,7 +42565,7 @@ int ov_raw_seek(OggVorbis_File *vf,ogg_int64_t pos){
 	    ogg_stream_packetout(&vf->os,NULL);
 	}
       }
-      
+
       if(!lastblock){
 	if(_get_next_page(vf,&og,-1)<0){
 	  vf->pcm_offset=ov_pcm_total(vf,-1);
@@ -42565,7 +42576,7 @@ int ov_raw_seek(OggVorbis_File *vf,ogg_int64_t pos){
 	vf->pcm_offset=-1;
 	break;
       }
-      
+
       /* has our decoding just traversed a bitstream boundary? */
       if(vf->ready_state>=STREAMSET)
 	if(vf->current_serialno!=ogg_page_serialno(&og)){
@@ -42575,7 +42586,7 @@ int ov_raw_seek(OggVorbis_File *vf,ogg_int64_t pos){
 
       if(vf->ready_state<STREAMSET){
 	int link;
-	
+
 	vf->current_serialno=ogg_page_serialno(&og);
 	for(link=0;link<vf->links;link++)
 	  if(vf->serialnos[link]==vf->current_serialno)break;
@@ -42583,13 +42594,13 @@ int ov_raw_seek(OggVorbis_File *vf,ogg_int64_t pos){
 					       error out, leave
 					       machine uninitialized */
 	vf->current_link=link;
-	
+
 	ogg_stream_reset_serialno(&vf->os,vf->current_serialno);
-	ogg_stream_reset_serialno(&work_os,vf->current_serialno); 
+	ogg_stream_reset_serialno(&work_os,vf->current_serialno);
 	vf->ready_state=STREAMSET;
-	
+
       }
-    
+
       ogg_stream_pagein(&vf->os,&og);
       ogg_stream_pagein(&work_os,&og);
       eosflag=ogg_page_eos(&og);
@@ -42624,7 +42635,7 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
   if(!vf->seekable)return(OV_ENOSEEK);
 
   if(pos<0 || pos>total)return(OV_EINVAL);
- 
+
   /* which bitstream section does this pcm offset occur in? */
   for(link=vf->links-1;link>=0;link--){
     total-=vf->pcmlengths[link*2+1];
@@ -42645,23 +42656,23 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
     ogg_int64_t endtime = vf->pcmlengths[link*2+1]+begintime;
     ogg_int64_t target=pos-total+begintime;
     ogg_int64_t best=begin;
-    
+
     ogg_page og;
     while(begin<end){
       ogg_int64_t bisect;
-      
+
       if(end-begin<CHUNKSIZE){
 	bisect=begin;
       }else{
 	/* take a (pretty decent) guess. */
-	bisect=begin + 
+	bisect=begin +
 	  (target-begintime)*(end-begin)/(endtime-begintime) - CHUNKSIZE;
 	if(bisect<=begin)
 	  bisect=begin+1;
       }
-      
+
       _seek_helper(vf,bisect);
-    
+
       while(begin<end){
 	result=_get_next_page(vf,&og,end-vf->offset);
 	if(result==OV_EREAD) goto seek_error;
@@ -42678,10 +42689,10 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
 	  ogg_int64_t granulepos=ogg_page_granulepos(&og);
 	  if(granulepos==-1)continue;
 	  if(granulepos<target){
-	    best=result;  /* raw offset of packet with granulepos */ 
+	    best=result;  /* raw offset of packet with granulepos */
 	    begin=vf->offset; /* raw offset of next page */
 	    begintime=granulepos;
-	    
+
 	    if(target-begintime>44100)break;
 	    bisect=begin; /* *not* begin + 1 */
 	  }else{
@@ -42709,21 +42720,21 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
     {
       ogg_page og;
       ogg_packet op;
-      
+
       /* seek */
       _seek_helper(vf,best);
       vf->pcm_offset=-1;
-      
+
       if(_get_next_page(vf,&og,-1)<0)return(OV_EOF); /* shouldn't happen */
-      
+
       if(link!=vf->current_link){
 	/* Different link; dump entire decode machine */
-	_decode_clear(vf);  
-	
+	_decode_clear(vf);
+
 	vf->current_link=link;
 	vf->current_serialno=ogg_page_serialno(&og);
 	vf->ready_state=STREAMSET;
-	
+
       }else{
 	vorbis_synthesis_restart(&vf->vd);
       }
@@ -42739,9 +42750,9 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
              preceeding page. Keep fetching previous pages until we
              get one with a granulepos or without the 'continued' flag
              set.  Then just use raw_seek for simplicity. */
-	  
+
 	  _seek_helper(vf,best);
-	  
+
 	  while(1){
 	    result=_get_prev_page(vf,&og);
 	    if(result<0) goto seek_error;
@@ -42753,7 +42764,7 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
 	  }
 	}
 	if(result<0){
-	  result = OV_EBADPACKET; 
+	  result = OV_EBADPACKET;
 	  goto seek_error;
 	}
 	if(op.granulepos!=-1){
@@ -42766,7 +42777,7 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
       }
     }
   }
-  
+
   /* verify result */
   if(vf->pcm_offset>pos || pos>ov_pcm_total(vf,-1)){
     result=OV_EFAULT;
@@ -42775,7 +42786,7 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
   vf->bittrack=0.f;
   vf->samptrack=0.f;
   return(0);
-  
+
  seek_error:
   /* dump machine so we're in a known state */
   vf->pcm_offset=-1;
@@ -42783,7 +42794,7 @@ int ov_pcm_seek_page(OggVorbis_File *vf,ogg_int64_t pos){
   return (int)result;
 }
 
-/* seek to a sample offset relative to the decompressed pcm stream 
+/* seek to a sample offset relative to the decompressed pcm stream
    returns zero on success, nonzero on failure */
 
 int ov_pcm_seek(OggVorbis_File *vf,ogg_int64_t pos){
@@ -42807,20 +42818,20 @@ int ov_pcm_seek(OggVorbis_File *vf,ogg_int64_t pos){
 	continue; /* non audio packet */
       }
       if(lastblock)vf->pcm_offset+=(lastblock+thisblock)>>2;
-      
+
       if(vf->pcm_offset+((thisblock+
 			  vorbis_info_blocksize(vf->vi,1))>>2)>=pos)break;
-      
+
       /* remove the packet from packet queue and track its granulepos */
       ogg_stream_packetout(&vf->os,NULL);
       vorbis_synthesis_trackonly(&vf->vb,&op);  /* set up a vb with
                                                    only tracking, no
                                                    pcm_decode */
-      vorbis_synthesis_blockin(&vf->vd,&vf->vb); 
-      
+      vorbis_synthesis_blockin(&vf->vd,&vf->vb);
+
       /* end of logical stream case is hard, especially with exact
 	 length positioning. */
-      
+
       if(op.granulepos>-1){
 	int i;
 	/* always believe the stream markers */
@@ -42829,27 +42840,27 @@ int ov_pcm_seek(OggVorbis_File *vf,ogg_int64_t pos){
 	for(i=0;i<vf->current_link;i++)
 	  vf->pcm_offset+=vf->pcmlengths[i*2+1];
       }
-	
+
       lastblock=thisblock;
-      
+
     }else{
       if(ret<0 && ret!=OV_HOLE)break;
-      
+
       /* suck in a new page */
       if(_get_next_page(vf,&og,-1)<0)break;
       if(vf->current_serialno!=ogg_page_serialno(&og))_decode_clear(vf);
-      
+
       if(vf->ready_state<STREAMSET){
 	int link;
-	
+
 	vf->current_serialno=ogg_page_serialno(&og);
 	for(link=0;link<vf->links;link++)
 	  if(vf->serialnos[link]==vf->current_serialno)break;
 	if(link==vf->links)return(OV_EBADLINK);
 	vf->current_link=link;
-	
-	ogg_stream_reset_serialno(&vf->os,vf->current_serialno); 
-	vf->ready_state=STREAMSET;      
+
+	ogg_stream_reset_serialno(&vf->os,vf->current_serialno);
+	vf->ready_state=STREAMSET;
 	ret=_make_decode_ready(vf);
 	if(ret)return ret;
 	lastblock=0;
@@ -42870,7 +42881,7 @@ int ov_pcm_seek(OggVorbis_File *vf,ogg_int64_t pos){
     if(samples>target)samples=target;
     vorbis_synthesis_read(&vf->vd,samples);
     vf->pcm_offset+=samples;
-    
+
     if(samples<target)
       if(_fetch_and_process_packet(vf,NULL,1,1)<=0)
 	vf->pcm_offset=ov_pcm_total(vf,-1); /* eof */
@@ -42878,7 +42889,7 @@ int ov_pcm_seek(OggVorbis_File *vf,ogg_int64_t pos){
   return 0;
 }
 
-/* seek to a playback time relative to the decompressed pcm stream 
+/* seek to a playback time relative to the decompressed pcm stream
    returns zero on success, nonzero on failure */
 int ov_time_seek(OggVorbis_File *vf,double seconds){
   /* translate time to PCM position and call ov_pcm_seek */
@@ -42890,7 +42901,7 @@ int ov_time_seek(OggVorbis_File *vf,double seconds){
   if(vf->ready_state<OPENED)return(OV_EINVAL);
   if(!vf->seekable)return(OV_ENOSEEK);
   if(seconds<0 || seconds>time_total)return(OV_EINVAL);
-  
+
   /* which bitstream section does this time offset occur in? */
   for(link=vf->links-1;link>=0;link--){
     pcm_total-=vf->pcmlengths[link*2+1];
@@ -42905,7 +42916,7 @@ int ov_time_seek(OggVorbis_File *vf,double seconds){
   }
 }
 
-/* page-granularity version of ov_time_seek 
+/* page-granularity version of ov_time_seek
    returns zero on success, nonzero on failure */
 int ov_time_seek_page(OggVorbis_File *vf,double seconds){
   /* translate time to PCM position and call ov_pcm_seek */
@@ -42917,7 +42928,7 @@ int ov_time_seek_page(OggVorbis_File *vf,double seconds){
   if(vf->ready_state<OPENED)return(OV_EINVAL);
   if(!vf->seekable)return(OV_ENOSEEK);
   if(seconds<0 || seconds>time_total)return(OV_EINVAL);
-  
+
   /* which bitstream section does this time offset occur in? */
   for(link=vf->links-1;link>=0;link--){
     pcm_total-=vf->pcmlengths[link*2+1];
@@ -42950,12 +42961,12 @@ double ov_time_tell(OggVorbis_File *vf){
   int link=0;
   ogg_int64_t pcm_total=0;
   double time_total=0.f;
-  
+
   if(vf->ready_state<OPENED)return(OV_EINVAL);
   if(vf->seekable){
     pcm_total=ov_pcm_total(vf,-1);
     time_total=ov_time_total(vf,-1);
-  
+
     /* which bitstream section does this time offset occur in? */
     for(link=vf->links-1;link>=0;link--){
       pcm_total-=vf->pcmlengths[link*2+1];
@@ -42970,7 +42981,7 @@ double ov_time_tell(OggVorbis_File *vf){
 /*  link:   -1) return the vorbis_info struct for the bitstream section
                 currently being decoded
            0-n) to request information for a specific bitstream section
-    
+
     In the case of a non-seekable bitstream, any call returns the
     current bitstream.  NULL in the case that the machine is not
     initialized */
@@ -43036,7 +43047,7 @@ static int host_is_big_endian() {
 		 length) the byte length requested to be placed into buffer
 		 bigendianp) should the data be packed LSB first (0) or
 		             MSB first (1)
-		 word) word size for output.  currently 1 (byte) or 
+		 word) word size for output.  currently 1 (byte) or
 		       2 (16 bit short)
 
    return values: <0) error/hole in data (OV_HOLE), partial open (OV_EINVAL)
@@ -43076,9 +43087,9 @@ long ov_read(OggVorbis_File *vf,char *buffer,int length,
   }
 
   if(samples>0){
-  
+
     /* yay! proceed to pack data into the byte buffer */
-    
+
     long channels=ov_info(vf,-1)->channels;
     long bytespersample=word * channels;
     vorbis_fpu_control fpu;
@@ -43086,7 +43097,7 @@ long ov_read(OggVorbis_File *vf,char *buffer,int length,
 
     if(samples <= 0)
       return OV_EINVAL;
-    
+
     /* a tight loop to pack each size */
     {
       int val;
@@ -43103,10 +43114,10 @@ long ov_read(OggVorbis_File *vf,char *buffer,int length,
 	vorbis_fpu_restore(fpu);
       }else{
 	int off=(sgned?0:32768);
-	
+
 	if(host_endian==bigendianp){
 	  if(sgned){
-	    
+
 	    vorbis_fpu_setround(&fpu);
 	    for(i=0;i<channels;i++) { /* It's faster in this order */
 	      float *src=pcm[i];
@@ -43120,9 +43131,9 @@ long ov_read(OggVorbis_File *vf,char *buffer,int length,
 	      }
 	    }
 	    vorbis_fpu_restore(fpu);
-	    
+
 	  }else{
-	    
+
 	    vorbis_fpu_setround(&fpu);
 	    for(i=0;i<channels;i++) {
 	      float *src=pcm[i];
@@ -43136,10 +43147,10 @@ long ov_read(OggVorbis_File *vf,char *buffer,int length,
 	      }
 	    }
 	    vorbis_fpu_restore(fpu);
-	    
+
 	  }
 	}else if(bigendianp){
-	  
+
 	  vorbis_fpu_setround(&fpu);
 	  for(j=0;j<samples;j++)
 	    for(i=0;i<channels;i++){
@@ -43151,7 +43162,7 @@ long ov_read(OggVorbis_File *vf,char *buffer,int length,
 	      *buffer++=(val&0xff);
 	    }
 	  vorbis_fpu_restore(fpu);
-	  
+
 	}else{
 	  int val;
 	  vorbis_fpu_setround(&fpu);
@@ -43164,12 +43175,12 @@ long ov_read(OggVorbis_File *vf,char *buffer,int length,
 	      *buffer++=(val&0xff);
 	      *buffer++=(val>>8);
 	  	}
-	  vorbis_fpu_restore(fpu);  
-	  
+	  vorbis_fpu_restore(fpu);
+
 	}
       }
     }
-    
+
     vorbis_synthesis_read(&vf->vd,samples);
     vf->pcm_offset+=samples;
     if(bitstream)*bitstream=vf->current_link;
@@ -43261,7 +43272,7 @@ static void _ov_splice(float **pcm,float **lappcm,
   }
 
 }
-		
+
 /* make sure vf is INITSET */
 static int _ov_initset(OggVorbis_File *vf){
   while(1){
@@ -43283,13 +43294,13 @@ static int _ov_initprime(OggVorbis_File *vf){
   while(1){
     if(vf->ready_state==INITSET)
       if(vorbis_synthesis_pcmout(vd,NULL))break;
-    
+
     /* suck in another packet */
     {
       int ret=_fetch_and_process_packet(vf,NULL,1,0);
       if(ret<0 && ret!=OV_HOLE)return(ret);
     }
-  }  
+  }
   return 0;
 }
 
@@ -43381,7 +43392,7 @@ int ov_crosslap(OggVorbis_File *vf1, OggVorbis_File *vf2){
 
   /* splice */
   _ov_splice(pcm,lappcm,n1,n2,vi1->channels,vi2->channels,w1,w2);
-  
+
   /* done */
   return(0);
 }
@@ -43400,7 +43411,7 @@ static int _ov_64_seek_lap(OggVorbis_File *vf,ogg_int64_t pos,
   if(ret)return(ret);
   vi=ov_info(vf,-1);
   hs=ov_halfrate_p(vf);
-  
+
   ch1=vi->channels;
   n1=vorbis_info_blocksize(vi,0)>>(1+hs);
   w1=vorbis_window(&vf->vd,0);  /* window arrays from libvorbis are
@@ -43646,7 +43657,7 @@ char *vorbis_comment_query(vorbis_comment *vc, char *tag, int count){
 
   strcpy(fulltag, tag);
   strcat(fulltag, "=");
-  
+
   for(i=0;i<vc->comments;i++){
     if(!tagcompare(vc->user_comments[i], fulltag, taglen)){
       if(count == found)
@@ -43713,7 +43724,7 @@ void vorbis_info_clear(vorbis_info *vi){
 
     for(i=0;i<ci->floors;i++) /* unpack does the range checking */
       _floor_P[ci->floor_type[i]]->free_info(ci->floor_param[i]);
-    
+
     for(i=0;i<ci->residues;i++) /* unpack does the range checking */
       _residue_P[ci->residue_type[i]]->free_info(ci->residue_param[i]);
 
@@ -43727,7 +43738,7 @@ void vorbis_info_clear(vorbis_info *vi){
     }
     if(ci->fullbooks)
 	_ogg_free(ci->fullbooks);
-    
+
     for(i=0;i<ci->psys;i++)
       _vi_psy_free(ci->psy_param[i]);
 
@@ -43755,12 +43766,12 @@ static int _vorbis_unpack_info(vorbis_info *vi,oggpack_buffer *opb){
 
   ci->blocksizes[0]=1<<oggpack_read(opb,4);
   ci->blocksizes[1]=1<<oggpack_read(opb,4);
-  
+
   if(vi->rate<1)goto err_out;
   if(vi->channels<1)goto err_out;
-  if(ci->blocksizes[0]<8)goto err_out; 
+  if(ci->blocksizes[0]<8)goto err_out;
   if(ci->blocksizes[1]<ci->blocksizes[0])goto err_out;
-  
+
   if(oggpack_read(opb,1)!=1)goto err_out; /* EOP check */
 
   return(0);
@@ -43779,14 +43790,14 @@ static int _vorbis_unpack_comment(vorbis_comment *vc,oggpack_buffer *opb){
   if(vc->comments<0)goto err_out;
   vc->user_comments=_ogg_calloc(vc->comments+1,sizeof(*vc->user_comments));
   vc->comment_lengths=_ogg_calloc(vc->comments+1, sizeof(*vc->comment_lengths));
-	    
+
   for(i=0;i<vc->comments;i++){
     int len=oggpack_read(opb,32);
     if(len<0)goto err_out;
 	vc->comment_lengths[i]=len;
     vc->user_comments[i]=_ogg_calloc(len+1,1);
     _v_readstring(opb,vc->user_comments[i],len);
-  }	  
+  }
   if(oggpack_read(opb,1)!=1)goto err_out; /* EOP check */
 
   return(0);
@@ -43851,7 +43862,7 @@ static int _vorbis_unpack_books(vorbis_info *vi,oggpack_buffer *opb){
     ci->map_param[i]=_mapping_P[ci->map_type[i]]->unpack(vi,opb);
     if(!ci->map_param[i])goto err_out;
   }
-  
+
   /* mode settings */
   ci->modes=oggpack_read(opb,6)+1;
   /*vi->mode_param=_ogg_calloc(vi->modes,sizeof(void *));*/
@@ -43866,7 +43877,7 @@ static int _vorbis_unpack_books(vorbis_info *vi,oggpack_buffer *opb){
     if(ci->mode_param[i]->transformtype>=VI_WINDOWB)goto err_out;
     if(ci->mode_param[i]->mapping>=ci->maps)goto err_out;
   }
-  
+
   if(oggpack_read(opb,1)!=1)goto err_out; /* top level EOP check */
 
   return(0);
@@ -43882,7 +43893,7 @@ static int _vorbis_unpack_books(vorbis_info *vi,oggpack_buffer *opb){
 
 int vorbis_synthesis_headerin(vorbis_info *vi,vorbis_comment *vc,ogg_packet *op){
   oggpack_buffer opb;
-  
+
   if(op){
     oggpack_readinit(&opb,op->packet,op->bytes);
 
@@ -43942,7 +43953,7 @@ static int _vorbis_pack_info(oggpack_buffer *opb,vorbis_info *vi){
   codec_setup_info     *ci=vi->codec_setup;
   if(!ci)return(OV_EFAULT);
 
-  /* preamble */  
+  /* preamble */
   oggpack_write(opb,0x01,8);
   _v_writestring(opb,"vorbis", 6);
 
@@ -43966,14 +43977,14 @@ static int _vorbis_pack_comment(oggpack_buffer *opb,vorbis_comment *vc){
   char temp[]="Xiph.Org libVorbis I 20030909";
   int bytes = strlen(temp);
 
-  /* preamble */  
+  /* preamble */
   oggpack_write(opb,0x03,8);
   _v_writestring(opb,"vorbis", 6);
 
   /* vendor */
   oggpack_write(opb,bytes,32);
   _v_writestring(opb,temp, bytes);
-  
+
   /* comments */
 
   oggpack_write(opb,vc->comments,32);
@@ -43992,7 +44003,7 @@ static int _vorbis_pack_comment(oggpack_buffer *opb,vorbis_comment *vc){
 
   return(0);
 }
- 
+
 static int _vorbis_pack_books(oggpack_buffer *opb,vorbis_info *vi){
   codec_setup_info     *ci=vi->codec_setup;
   int i;
@@ -44047,7 +44058,7 @@ static int _vorbis_pack_books(oggpack_buffer *opb,vorbis_info *vi){
   return(0);
 err_out:
   return(-1);
-} 
+}
 
 int vorbis_commentheader_out(vorbis_comment *vc,
     				      ogg_packet *op){
@@ -44166,7 +44177,7 @@ double vorbis_granule_time(vorbis_dsp_state *v,ogg_int64_t granulepos){
 
  Handle windowing, overlap-add, etc of the PCM vectors.  This is made
  more amusing by Vorbis' current two allowed block sizes.
- 
+
  ********************************************************************/
 
 /********************************************************************
@@ -44204,28 +44215,28 @@ extern void vorbis_lpc_predict(float *coeff,float *prime,int m,
 :.....'''         |_____--- '''......|       | \_______|
 :.................|__________________|_______|__|______|
                   |<------ Sl ------>|      > Sr <     |endW
-                  |beginSl           |endSl  |  |endSr   
+                  |beginSl           |endSl  |  |endSr
                   |beginW            |endlW  |beginSr
 
 
-                      |< lW >|       
+                      |< lW >|
                    <--------------- W ---------------->
                   |   |  ..  ______________            |
                   |   | '  `/        |     ---_        |
-                  |___.'___/`.       |         ---_____| 
+                  |___.'___/`.       |         ---_____|
                   |_______|__|_______|_________________|
                   |      >|Sl|<      |<------ Sr ----->|endW
                   |       |  |endSl  |beginSr          |endSr
-                  |beginW |  |endlW                     
+                  |beginW |  |endlW
                   mult[0] |beginSl                     mult[n]
 
  <-------------- lW ----------------->
-                          |<--W-->|                               
-:            ..............  ___  |   |                    
-:        .'''             |`/   \ |   |                       
-:.....'''                 |/`....\|...|                    
-:.........................|___|___|___|                  
-                          |Sl |Sr |endW    
+                          |<--W-->|
+:            ..............  ___  |   |
+:        .'''             |`/   \ |   |
+:.....'''                 |/`....\|...|
+:.........................|___|___|___|
+                          |Sl |Sr |endW
                           |   |   |endSr
                           |   |beginSr
                           |   |endSl
@@ -44250,7 +44261,7 @@ int vorbis_block_init(vorbis_dsp_state *v, vorbis_block *vb){
     oggpack_writeinit(&vb->opb);
     vbi->ampmax=-9999;
   }
-  
+
   return(0);
 }
 
@@ -44325,7 +44336,7 @@ static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
   int hs;
 
   if(ci==NULL) return 1;
-  hs=ci->halfrate_flag; 
+  hs=ci->halfrate_flag;
 
   memset(v,0,sizeof(*v));
   b=v->backend_state=_ogg_calloc(1,sizeof(*b));
@@ -44414,7 +44425,7 @@ static int _vds_shared_init(vorbis_dsp_state *v,vorbis_info *vi,int encp){
 
   for(i=0;i<ci->residues;i++)
     b->residue[i]=_residue_P[ci->residue_type[i]]->
-      look(v,ci->residue_param[i]);    
+      look(v,ci->residue_param[i]);
 
   return 0;
 }
@@ -44444,7 +44455,7 @@ void vorbis_dsp_clear(vorbis_dsp_state *v){
     private_state *b=v->backend_state;
 
     if(b){
-	
+
       if(b->ve){
 	_ve_envelope_clear(b->ve);
 	_ogg_free(b->ve);
@@ -44486,7 +44497,7 @@ void vorbis_dsp_clear(vorbis_dsp_state *v){
       drft_clear(&b->fft_look[1]);
 
     }
-    
+
     if(v->pcm){
       for(i=0;i<vi->channels;i++)
 	if(v->pcm[i])_ogg_free(v->pcm[i]);
@@ -44501,7 +44512,7 @@ void vorbis_dsp_clear(vorbis_dsp_state *v){
       if(b->header2)_ogg_free(b->header2);
       _ogg_free(b);
     }
-    
+
     memset(v,0,sizeof(*v));
   }
 }
@@ -44518,10 +44529,10 @@ float **vorbis_analysis_buffer(vorbis_dsp_state *v, int vals){
 
   /* Do we have enough storage space for the requested buffer? If not,
      expand the PCM (and envelope) storage */
-    
+
   if(v->pcm_current+vals>=v->pcm_storage){
     v->pcm_storage=v->pcm_current+vals*2;
-   
+
     for(i=0;i<vi->channels;i++){
       v->pcm[i]=_ogg_realloc(v->pcm[i],v->pcm_storage*sizeof(*v->pcm[i]));
     }
@@ -44529,7 +44540,7 @@ float **vorbis_analysis_buffer(vorbis_dsp_state *v, int vals){
 
   for(i=0;i<vi->channels;i++)
     v->pcmret[i]=v->pcm[i]+v->pcm_current;
-    
+
   return(v->pcmret);
 }
 
@@ -44546,10 +44557,10 @@ static void _preextrapolate_helper(vorbis_dsp_state *v){
       /* need to run the extrapolation in reverse! */
       for(j=0;j<v->pcm_current;j++)
 	work[j]=v->pcm[i][v->pcm_current-j-1];
-      
+
       /* prime as above */
       vorbis_lpc_from_data(work,lpc,v->pcm_current-v->centerW,order);
-      
+
       /* run the predictor filter */
       vorbis_lpc_predict(lpc,work+v->pcm_current-v->centerW-order,
 			 order,
@@ -44585,7 +44596,7 @@ int vorbis_analysis_wrote(vorbis_dsp_state *v, int vals){
        amplitude off a cliff, creating spread spectrum noise that will
        suck to encode.  Extrapolate for the sake of cleanliness. */
 
-    vorbis_analysis_buffer(v,ci->blocksizes[1]*3); 
+    vorbis_analysis_buffer(v,ci->blocksizes[1]*3);
     v->eofflag=v->pcm_current;
     v->pcm_current+=ci->blocksizes[1]*3;
 
@@ -44652,7 +44663,7 @@ int vorbis_analysis_blockout(vorbis_dsp_state *v,vorbis_block *vb){
   /* we do an envelope search even on a single blocksize; we may still
      be throwing more bits at impulses, and envelope search handles
      marking impulses too. */
-  {  
+  {
     long bp=_ve_envelope_search(v);
     if(bp==-1){
 
@@ -44684,7 +44695,7 @@ int vorbis_analysis_blockout(vorbis_dsp_state *v,vorbis_block *vb){
 
 
   }
-  
+
   /* fill in the block.  Note that for a short window, lW and nW are *short*
      regardless of actual settings in the stream */
 
@@ -44712,12 +44723,12 @@ int vorbis_analysis_blockout(vorbis_dsp_state *v,vorbis_block *vb){
 
     }
   }
- 
+
   vb->vd=v;
   vb->sequence=v->sequence++;
   vb->granulepos=v->granulepos;
   vb->pcmend=ci->blocksizes[v->W];
-  
+
   /* copy the vectors; this uses the local storage in vb */
 
   /* this tracks 'strongest peak' for later psychoacoustics */
@@ -44725,7 +44736,7 @@ int vorbis_analysis_blockout(vorbis_dsp_state *v,vorbis_block *vb){
   if(vbi->ampmax>g->ampmax)g->ampmax=vbi->ampmax;
   g->ampmax=_vp_ampmax_decay(g->ampmax,v);
   vbi->ampmax=g->ampmax;
-  
+
   vb->pcm=_vorbis_block_alloc(vb,sizeof(*vb->pcm)*vi->channels);
   vbi->pcmdelay=_vorbis_block_alloc(vb,sizeof(*vbi->pcmdelay)*vi->channels);
   for(i=0;i<vi->channels;i++){
@@ -44733,14 +44744,14 @@ int vorbis_analysis_blockout(vorbis_dsp_state *v,vorbis_block *vb){
       _vorbis_block_alloc(vb,(vb->pcmend+beginW)*sizeof(*vbi->pcmdelay[i]));
     memcpy(vbi->pcmdelay[i],v->pcm[i],(vb->pcmend+beginW)*sizeof(*vbi->pcmdelay[i]));
     vb->pcm[i]=vbi->pcmdelay[i]+beginW;
-    
-    /* before we added the delay 
+
+    /* before we added the delay
        vb->pcm[i]=_vorbis_block_alloc(vb,vb->pcmend*sizeof(*vb->pcm[i]));
        memcpy(vb->pcm[i],v->pcm[i]+beginW,ci->blocksizes[v->W]*sizeof(*vb->pcm[i]));
     */
-    
+
   }
-  
+
   /* handle eof detection: eof==0 means that we've not yet received EOF
                            eof>0  marks the last 'real' sample in pcm[]
                            eof<0  'no more to do'; doesn't get here */
@@ -44762,16 +44773,16 @@ int vorbis_analysis_blockout(vorbis_dsp_state *v,vorbis_block *vb){
 
       _ve_envelope_shift(b->ve,movementW);
       v->pcm_current-=movementW;
-      
+
       for(i=0;i<vi->channels;i++)
 	memmove(v->pcm[i],v->pcm[i]+movementW,
 		v->pcm_current*sizeof(*v->pcm[i]));
-      
-      
+
+
       v->lW=v->W;
       v->W=v->nW;
       v->centerW=new_centerNext;
-      
+
       if(v->eofflag){
 	v->eofflag-=movementW;
 	if(v->eofflag<=0)v->eofflag=-1;
@@ -44800,11 +44811,11 @@ int vorbis_synthesis_restart(vorbis_dsp_state *v){
   if(!vi)return -1;
   ci=vi->codec_setup;
   if(!ci)return -1;
-  hs=ci->halfrate_flag; 
+  hs=ci->halfrate_flag;
 
   v->centerW=ci->blocksizes[1]>>(hs+1);
   v->pcm_current=v->centerW>>hs;
-  
+
   v->pcm_returned=-1;
   v->granulepos=-1;
   v->sequence=-1;
@@ -44829,16 +44840,16 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
   vorbis_info *vi=v->vi;
   codec_setup_info *ci=vi->codec_setup;
   private_state *b=v->backend_state;
-  int hs=ci->halfrate_flag; 
+  int hs=ci->halfrate_flag;
   int i,j;
 
   if(!vb)return(OV_EINVAL);
   if(v->pcm_current>v->pcm_returned  && v->pcm_returned!=-1)return(OV_EINVAL);
-    
+
   v->lW=v->W;
   v->W=vb->W;
   v->nW=-1;
-  
+
   if((v->sequence==-1)||
      (v->sequence+1 != vb->sequence)){
     v->granulepos=-1; /* out of sequence; lose count */
@@ -44846,8 +44857,8 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
   }
 
   v->sequence=vb->sequence;
-  
-  if(vb->pcm){  /* no pcm to process if vorbis_synthesis_trackonly 
+
+  if(vb->pcm){  /* no pcm to process if vorbis_synthesis_trackonly
 		   was called on block */
     int n=ci->blocksizes[v->W]>>(hs+1);
     int n0=ci->blocksizes[0]>>(hs+1);
@@ -44855,12 +44866,12 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
 
     int thisCenter;
     int prevCenter;
-    
+
     v->glue_bits+=vb->glue_bits;
     v->time_bits+=vb->time_bits;
     v->floor_bits+=vb->floor_bits;
     v->res_bits+=vb->res_bits;
-    
+
     if(v->centerW){
       thisCenter=n1;
       prevCenter=0;
@@ -44868,11 +44879,11 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
       thisCenter=0;
       prevCenter=n1;
     }
-    
+
     /* v->pcm is now used like a two-stage double buffer.  We don't want
        to have to constantly shift *or* adjust memory usage.  Don't
        accept a new block until the old is shifted out */
-    
+
     for(j=0;j<vi->channels;j++){
       /* the overlap/add section */
       if(v->lW){
@@ -44910,7 +44921,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
 	    pcm[i]=pcm[i]*w[n0-i-1] +p[i]*w[i];
 	}
       }
-      
+
       /* the copy section */
       {
 	float *pcm=v->pcm[j]+thisCenter;
@@ -44919,16 +44930,16 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
 	  pcm[i]=p[i];
       }
     }
-    
+
     if(v->centerW)
       v->centerW=0;
     else
       v->centerW=n1;
-    
+
     /* deal with initial packet state; we do this using the explicit
        pcm_returned==-1 flag otherwise we're sensitive to first block
        being short or long */
-    
+
     if(v->pcm_returned==-1){
       v->pcm_returned=thisCenter;
       v->pcm_current=thisCenter;
@@ -44938,14 +44949,14 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
 	((ci->blocksizes[v->lW]/4+
 	ci->blocksizes[v->W]/4)>>hs);
     }
-    
+
   }
 
   /* track the frame number... This is for convenience, but also
      making sure our last packet doesn't end with added padding.  If
      the last packet is partial, the number of samples we'll have to
      return will be past the vb->granulepos.
-     
+
      This is not foolproof!  It will be confused if we begin
      decoding at the last page after a seek or hole.  In that case,
      we don't have a starting point to judge where the last frame
@@ -44957,7 +44968,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
   }else{
     b->sample_count+=ci->blocksizes[v->lW]/4+ci->blocksizes[v->W]/4;
   }
-  
+
   if(v->granulepos==-1){
     if(vb->granulepos!=-1){ /* only set if we have a position to set to */
 
@@ -44973,7 +44984,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
 	     have to in a short single-page stream) */
 	  /* granulepos could be -1 due to a seek, but that would result
 	     in a long count, not short count */
-	  
+
 	  v->pcm_current-=(b->sample_count-v->granulepos)>>hs;
 	}else{
 	  /* trim the beginning */
@@ -44988,7 +44999,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
   }else{
     v->granulepos+=ci->blocksizes[v->lW]/4+ci->blocksizes[v->W]/4;
     if(vb->granulepos!=-1 && v->granulepos!=vb->granulepos){
-      
+
       if(v->granulepos>vb->granulepos){
 	long extra=v->granulepos-vb->granulepos;
 
@@ -45003,12 +45014,12 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
       v->granulepos=vb->granulepos;
     }
   }
-  
+
   /* Update, cleanup */
-  
+
   if(vb->eofflag)v->eofflag=1;
   return(0);
-  
+
 }
 
 /* pcm==NULL indicates we just want the pending samples, no more */
@@ -45041,8 +45052,8 @@ int vorbis_synthesis_read(vorbis_dsp_state *v,int n){
 int vorbis_synthesis_lapout(vorbis_dsp_state *v,float ***pcm){
   vorbis_info *vi=v->vi;
   codec_setup_info *ci=vi->codec_setup;
-  int hs=ci->halfrate_flag; 
-  
+  int hs=ci->halfrate_flag;
+
   int n=ci->blocksizes[v->W]>>(hs+1);
   int n0=ci->blocksizes[0]>>(hs+1);
   int n1=ci->blocksizes[1]>>(hs+1);
@@ -45076,7 +45087,7 @@ int vorbis_synthesis_lapout(vorbis_dsp_state *v,float ***pcm){
     v->pcm_returned-=n1;
     v->centerW=0;
   }
-  
+
   /* solidify buffer into contiguous space */
   if((v->lW^v->W)==1){
     /* long/short or short/long */
@@ -45101,7 +45112,7 @@ int vorbis_synthesis_lapout(vorbis_dsp_state *v,float ***pcm){
       v->pcm_current+=n1-n0;
     }
   }
-    
+
   if(pcm){
     int i;
     for(i=0;i<vi->channels;i++)
@@ -45116,13 +45127,13 @@ int vorbis_synthesis_lapout(vorbis_dsp_state *v,float ***pcm){
 float *vorbis_window(vorbis_dsp_state *v,int W){
   vorbis_info *vi=v->vi;
   codec_setup_info *ci=vi->codec_setup;
-  int hs=ci->halfrate_flag; 
+  int hs=ci->halfrate_flag;
   private_state *b=v->backend_state;
 
   if(b->window[W]-1<0)return NULL;
   return _vorbis_window_get(b->window[W]-hs);
 }
-	
+
 /********************************************************************
  *                                                                  *
  * THIS FILE IS PART OF THE OggVorbis SOFTWARE CODEC SOURCE CODE.   *
@@ -45198,9 +45209,9 @@ static float unitnorm(float x){
 #define todB(x)   (*(x)==0?-400.f:log(*(x)**(x))*4.34294480f)
 #define todB_nn(x)   (*(x)==0.f?-400.f:log(*(x))*8.6858896f)
 
-#endif 
+#endif
 
-#define fromdB(x) (exp((x)*.11512925f))  
+#define fromdB(x) (exp((x)*.11512925f))
 
 /* The bark scale equations are approximations, since the original
    table was somewhat hand rolled.  The below are chosen to have the
@@ -45235,7 +45246,7 @@ int vorbis_analysis(vorbis_block *vb, ogg_packet *op){
 
   /* first things first.  Make sure encode is ready */
   oggpack_reset(&vb->opb);
-  
+
   /* we only have one mapping type (0), and we let the mapping code
      itself figure out what soft mode to use.  This allows easier
      bitrate management */
@@ -45248,7 +45259,7 @@ int vorbis_analysis(vorbis_block *vb, ogg_packet *op){
       /* The app is using a bitmanaged mode... but not using the
          bitrate management interface. */
       return(OV_EINVAL);
-    
+
     op->packet=oggpack_get_buffer(&vb->opb);
     op->bytes=oggpack_bytes(&vb->opb);
     op->b_o_s=0;
@@ -45268,9 +45279,9 @@ void _analysis_output_always(char *base,int i,float *v,int n,int bark,int dB,ogg
   /*  if(i==5870){*/
     sprintf(buffer,"%s_%d.m",base,i);
     of=fopen(buffer,"w");
-    
+
     if(!of)perror("failed to open data dump file");
-    
+
     for(j=0;j<n;j++){
       if(bark){
 	float b=toBARK((4000.f*j/n)+.25);
@@ -45280,7 +45291,7 @@ void _analysis_output_always(char *base,int i,float *v,int n,int bark,int dB,ogg
 	  fprintf(of,"%f ",(double)(j+off)/8000.);
 	else
 	  fprintf(of,"%f ",(double)j);
-      
+
       if(dB){
 	float val;
 	if(v[j]==0.)
@@ -45354,7 +45365,7 @@ static long limit_sum(bitrate_manager_state *bm,int limit){
   int i=bm->minmax_stackptr;
   long acc=bm->minmax_acctotal;
   long bins=bm->queue_bins;
-  
+
   acc-=LIMITBYTES(i,0);
   acc+=LIMITBYTES(i,limit);
 
@@ -45374,41 +45385,41 @@ void vorbis_bitrate_init(vorbis_info *vi,bitrate_manager_state *bm){
   long maxlatency;
 
   memset(bm,0,sizeof(*bm));
-  
+
   if(bi){
-    
+
     bm->avg_sampledesired=bi->queue_avg_time*vi->rate;
     bm->avg_centerdesired=bi->queue_avg_time*vi->rate*bi->queue_avg_center;
     bm->minmax_sampledesired=bi->queue_minmax_time*vi->rate;
-    
+
     /* first find the max possible needed queue size */
     maxlatency=max(bm->avg_sampledesired-bm->avg_centerdesired,
 		   bm->minmax_sampledesired)+bm->avg_centerdesired;
-    
+
     if(maxlatency>0 &&
        (bi->queue_avgmin>0 || bi->queue_avgmax>0 || bi->queue_hardmax>0 ||
 	bi->queue_hardmin>0)){
       long maxpackets=maxlatency/(ci->blocksizes[0]>>1)+3;
       long bins=PACKETBLOBS;
-      
+
       bm->queue_size=maxpackets;
       bm->queue_bins=bins;
       bm->queue_binned=_ogg_calloc(maxpackets,bins*sizeof(*bm->queue_binned));
       bm->queue_actual=_ogg_calloc(maxpackets,sizeof(*bm->queue_actual));
-      
+
       if((bi->queue_avgmin>0 || bi->queue_avgmax>0) &&
 	 bi->queue_avg_time>0){
-	
+
 	bm->avg_binacc=_ogg_calloc(bins,sizeof(*bm->avg_binacc));
 	bm->avgfloat=PACKETBLOBS/2;
-	
+
       }else{
 	bm->avg_tail= -1;
       }
-      
+
       if((bi->queue_hardmin>0 || bi->queue_hardmax>0) &&
 	 bi->queue_minmax_time>0){
-	
+
 	bm->minmax_binstack=_ogg_calloc((bins*2+1)*bins*2,
 					sizeof(*bm->minmax_binstack));
 	bm->minmax_posstack=_ogg_calloc((bins*2+1),
@@ -45418,19 +45429,19 @@ void vorbis_bitrate_init(vorbis_info *vi,bitrate_manager_state *bm){
       }else{
 	bm->minmax_tail= -1;
       }
-      
+
       /* space for the packet queueing */
       bm->packetbuffers=_ogg_calloc(maxpackets,sizeof(*bm->packetbuffers));
       bm->packets=_ogg_calloc(maxpackets,sizeof(*bm->packets));
       for(i=0;i<maxpackets;i++)
 	oggpack_writeinit(bm->packetbuffers+i);
-      
+
     }else{
       bm->packetbuffers=_ogg_calloc(1,sizeof(*bm->packetbuffers));
       bm->packets=_ogg_calloc(1,sizeof(*bm->packets));
       oggpack_writeinit(bm->packetbuffers);
 
-    }      
+    }
   }
 }
 
@@ -45449,19 +45460,19 @@ void vorbis_bitrate_clear(bitrate_manager_state *bm){
 	oggpack_writeclear(bm->packetbuffers);
       }else{
 	for(i=0;i<bm->queue_size;i++)
-	  oggpack_writeclear(bm->packetbuffers+i);	
+	  oggpack_writeclear(bm->packetbuffers+i);
       }
       _ogg_free(bm->packetbuffers);
     }
     if(bm->packets)_ogg_free(bm->packets);
-    
+
     memset(bm,0,sizeof(*bm));
   }
 }
 
 int vorbis_bitrate_managed(vorbis_block *vb){
   vorbis_dsp_state      *vd=vb->vd;
-  private_state         *b=vd->backend_state; 
+  private_state         *b=vd->backend_state;
   bitrate_manager_state *bm=&b->bms;
 
   if(bm->queue_binned)return(1);
@@ -45470,10 +45481,10 @@ int vorbis_bitrate_managed(vorbis_block *vb){
 
 /* finish taking in the block we just processed */
 int vorbis_bitrate_addblock(vorbis_block *vb){
-  int i; 
+  int i;
   vorbis_block_internal *vbi=vb->internal;
   vorbis_dsp_state      *vd=vb->vd;
-  private_state         *b=vd->backend_state; 
+  private_state         *b=vd->backend_state;
   bitrate_manager_state *bm=&b->bms;
   vorbis_info           *vi=vd->vi;
   codec_setup_info      *ci=vi->codec_setup;
@@ -45483,7 +45494,7 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
   int                    next_head=head+1;
   int                    bins=bm->queue_bins;
   int                    minmax_head,new_minmax_head;
-  
+
   ogg_uint32_t           *head_ptr;
   oggpack_buffer          temp;
 
@@ -45491,7 +45502,7 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
     oggpack_buffer temp;
     /* not a bitrate managed stream, but for API simplicity, we'll
        buffer one packet to keep the code path clean */
-    
+
     if(bm->queue_head)return(-1); /* one has been submitted without
                                      being claimed */
     bm->queue_head++;
@@ -45569,37 +45580,37 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 	double lower=floater_interpolate(bm,vi,bi->queue_avgmin);
 	double new=PACKETBLOBS/2.,slew;
 	int bin;
-	
+
 	if(upper<new)new=upper;
 	if(lower>new)new=lower;
-	
+
 	slew=(new-bm->avgfloat)/samples*vi->rate;
-	
+
 	if(slew<bi->avgfloat_downslew_max)
 	  new=bm->avgfloat+bi->avgfloat_downslew_max/vi->rate*samples;
 	if(slew>bi->avgfloat_upslew_max)
 	  new=bm->avgfloat+bi->avgfloat_upslew_max/vi->rate*samples;
-	
+
 	bm->avgfloat=new;
 	/* apply the average floater to new blocks */
 	bin=rint(bm->avgfloat);
 
 	/*fprintf(stderr,"%d ",bin);*/
-	
+
 	while(bm->avg_centeracc>desired_center){
 	  samples=ci->blocksizes[bm->queue_actual[bm->avg_center]&
 				0x80000000UL?1:0]>>1;
-	  
+
 	  bm->queue_actual[bm->avg_center]|=bin;
-	  
+
 	  bm->avg_centeracc-=samples;
 	  bm->avg_center++;
 	  if(bm->avg_center>=bm->queue_size)bm->avg_center=0;
 	}
 	new_minmax_head=bm->avg_center;
-	
+
       }
-      
+
       /* update the avg tail if needed */
       while(bm->avg_sampleacc>bm->avg_sampledesired){
 	int samples=
@@ -45610,8 +45621,8 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 	bm->avg_tail++;
 	if(bm->avg_tail>=bm->queue_size)bm->avg_tail=0;
       }
-      
-      
+
+
     }
   }else{
     /* if we're not using an average tracker, the 'float' is nailed to
@@ -45620,12 +45631,12 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
     long bin=PACKETBLOBS/2;
     bm->queue_actual[head]|=bin;
     new_minmax_head=next_head;
-  }	
-  
+  }
+
   /* update the min/max queues and enforce limits */
   if(bm->minmax_binstack){
     unsigned long sampledesired=eofflag?0:bm->minmax_sampledesired;
-    
+
     /* add to stack recent */
     while(minmax_head!=new_minmax_head){
       unsigned int i;
@@ -45637,12 +45648,12 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 	bm->minmax_binstack[bm->minmax_stackptr*bins*2+bins+i]+=
 	  LACING_ADJUST(BINBYTES(bm,minmax_head,
 				actual>i?actual:i));
-	
+
 	bm->minmax_binstack[bm->minmax_stackptr*bins*2+i]+=
 	  LACING_ADJUST(BINBYTES(bm,minmax_head,
 				actual<i?actual:i));
       }
-      
+
       bm->minmax_posstack[bm->minmax_stackptr]=minmax_head; /* not one
 							       past
 							       like
@@ -45651,20 +45662,20 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
       bm->minmax_sampleacc+=samples;
       bm->minmax_acctotal+=
 	LACING_ADJUST(BINBYTES(bm,minmax_head,actual));
-      
+
       minmax_head++;
       if(minmax_head>=bm->queue_size)minmax_head=0;
 
 
     }
-    
+
     /* check limits, enforce changes */
     if(bm->minmax_sampleacc>sampledesired){
       double bitrate=(double)(bm->minmax_acctotal*8)/
 	bm->minmax_sampleacc*vi->rate;
       int limit=0;
-      
-      if((bi->queue_hardmax>0 && bitrate>bi->queue_hardmax) || 
+
+      if((bi->queue_hardmax>0 && bitrate>bi->queue_hardmax) ||
 	 (bi->queue_hardmin>0 && bitrate<bi->queue_hardmin)){
 	int newstack;
 	int stackctr;
@@ -45696,7 +45707,7 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 	  if(bm->minmax_limitstack[newstack]<limit)break;
 	  newstack--;
 	}
-	
+
 	/* update bit counter with new limit and replace any stack
            limits that have been replaced by our new lower limit */
 	stackctr=bm->minmax_stackptr;
@@ -45704,7 +45715,7 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 	  bm->minmax_acctotal-=
 	    LIMITBYTES(stackctr,bm->minmax_limitstack[stackctr]);
 	  bm->minmax_acctotal+=LIMITBYTES(stackctr,limit);
-	  
+
 	  if(stackctr<bm->minmax_stackptr)
 	    for(i=0;i<bins*2;i++)
 	      bm->minmax_binstack[stackctr*bins*2+i]+=
@@ -45724,10 +45735,10 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 	       sizeof(*bm->minmax_binstack)*bins*2);
 	bm->minmax_limitstack[stackctr]=0;
 	bm->minmax_posstack[stackctr]=-1;
-	
+
       }
     }
-    
+
     /* remove from tail */
     while(bm->minmax_sampleacc>sampledesired){
       int samples=
@@ -45739,7 +45750,7 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 	  LACING_ADJUST(BINBYTES(bm,bm->minmax_tail,
 				actual>i?
 				actual:i));
-	bm->minmax_binstack[i]-= 
+	bm->minmax_binstack[i]-=
 	  LACING_ADJUST(BINBYTES(bm,bm->minmax_tail,
 				actual<i?
 				actual:i));
@@ -45749,14 +45760,14 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 	actual=bm->minmax_limitstack[0];
       if(bins+bm->minmax_limitstack[0]<actual)
 	actual=bins+bm->minmax_limitstack[0];
-      
+
       bm->minmax_acctotal-=LACING_ADJUST(BINBYTES(bm,bm->minmax_tail,actual));
       bm->minmax_sampleacc-=samples;
 
       /* revise queue_actual to reflect the limit */
       bm->queue_actual[bm->minmax_tail]&=0x80000000UL;
       bm->queue_actual[bm->minmax_tail]|=actual;
-      
+
       if(bm->minmax_tail==bm->minmax_posstack[0]){
 	/* the stack becomes a FIFO; the first data has fallen off */
 	memmove(bm->minmax_binstack,bm->minmax_binstack+bins*2,
@@ -45767,13 +45778,13 @@ int vorbis_bitrate_addblock(vorbis_block *vb){
 		sizeof(*bm->minmax_limitstack)*bm->minmax_stackptr);
 	bm->minmax_stackptr--;
       }
-      
+
       bm->minmax_tail++;
       if(bm->minmax_tail>=bm->queue_size)bm->minmax_tail=0;
 
     }
-    
-    
+
+
     bm->last_to_flush=bm->minmax_tail;
   }else{
     bm->last_to_flush=bm->avg_center;
@@ -45810,7 +45821,7 @@ int vorbis_bitrate_flushpacket(vorbis_dsp_state *vd,ogg_packet *op){
       for(i=0;i<bin;i++)
 	op->packet+=markers[i];
       op->bytes=bytes;
-	
+
     }
 
     bm->next_to_flush++;
@@ -45845,7 +45856,7 @@ int vorbis_synthesis(vorbis_block *vb,ogg_packet *op){
   codec_setup_info     *ci=vi->codec_setup;
   oggpack_buffer       *opb=&vb->opb;
   int                   type,mode,i;
- 
+
   /* first things first.  Make sure decode is ready */
   _vorbis_block_ripcord(vb);
   oggpack_readinit(opb,op->packet,op->bytes);
@@ -45859,7 +45870,7 @@ int vorbis_synthesis(vorbis_block *vb,ogg_packet *op){
   /* read our mode and pre/post windowsize */
   mode=oggpack_read(opb,b->modebits);
   if(mode==-1)return(OV_EBADPACKET);
-  
+
   vb->mode=mode;
   vb->W=ci->mode_param[mode]->blockflag;
   if(vb->W){
@@ -45873,7 +45884,7 @@ int vorbis_synthesis(vorbis_block *vb,ogg_packet *op){
     vb->lW=0;
     vb->nW=0;
   }
-  
+
   /* more setup */
   vb->granulepos=op->granulepos;
   vb->sequence=op->packetno;
@@ -45901,7 +45912,7 @@ int vorbis_synthesis_trackonly(vorbis_block *vb,ogg_packet *op){
   codec_setup_info     *ci=vi->codec_setup;
   oggpack_buffer       *opb=&vb->opb;
   int                   mode;
- 
+
   /* first things first.  Make sure decode is ready */
   _vorbis_block_ripcord(vb);
   oggpack_readinit(opb,op->packet,op->bytes);
@@ -45915,7 +45926,7 @@ int vorbis_synthesis_trackonly(vorbis_block *vb,ogg_packet *op){
   /* read our mode and pre/post windowsize */
   mode=oggpack_read(opb,b->modebits);
   if(mode==-1)return(OV_EBADPACKET);
-  
+
   vb->mode=mode;
   vb->W=ci->mode_param[mode]->blockflag;
   if(vb->W){
@@ -45926,7 +45937,7 @@ int vorbis_synthesis_trackonly(vorbis_block *vb,ogg_packet *op){
     vb->lW=0;
     vb->nW=0;
   }
-  
+
   /* more setup */
   vb->granulepos=op->granulepos;
   vb->sequence=op->packetno;
@@ -45943,7 +45954,7 @@ long vorbis_packet_blocksize(vorbis_info *vi,ogg_packet *op){
   codec_setup_info     *ci=vi->codec_setup;
   oggpack_buffer       opb;
   int                  mode;
- 
+
   oggpack_readinit(&opb,op->packet,op->bytes);
 
   /* Check the packet type */
@@ -45970,7 +45981,7 @@ long vorbis_packet_blocksize(vorbis_info *vi,ogg_packet *op){
 int vorbis_synthesis_halfrate(vorbis_info *vi,int flag){
   /* set / clear half-sample-rate mode */
   codec_setup_info     *ci=vi->codec_setup;
-  
+
   /* right now, our MDCT can't handle < 64 sample windows. */
   if(ci->blocksizes[0]<=64 && flag)return -1;
   ci->halfrate_flag=(flag?1:0);
@@ -46012,7 +46023,7 @@ int _ilog(unsigned int v){
 }
 
 /* 32 bit float (not IEEE; nonnormalized mantissa +
-   biased exponent) : neeeeeee eeemmmmm mmmmmmmm mmmmmmmm 
+   biased exponent) : neeeeeee eeemmmmm mmmmmmmm mmmmmmmm
    Why not IEEE?  It's just not that important here. */
 
 #define VQ_FEXP 10
@@ -46056,12 +46067,12 @@ ogg_uint32_t *_make_words(long *l,long n,long sparsecount){
     long length=l[i];
     if(length>0){
       ogg_uint32_t entry=marker[length];
-      
+
       /* when we claim a node for an entry, we also claim the nodes
 	 below it (pruning off the imagined tree that may have dangled
 	 from it) as well as blocking the use of any nodes directly
 	 above for leaves */
-      
+
       /* update ourself */
       if(length<32 && (entry>>length)){
 	/* error condition; the lengths must specify an overpopulated tree */
@@ -46069,12 +46080,12 @@ ogg_uint32_t *_make_words(long *l,long n,long sparsecount){
 	return(NULL);
       }
       r[count++]=entry;
-    
+
       /* Look to see if the next shorter marker points to the node
 	 above. if so, update it and repeat.  */
       {
 	for(j=length;j>0;j--){
-	  
+
 	  if(marker[j]&1){
 	    /* have to jump branches */
 	    if(j==1)
@@ -46087,7 +46098,7 @@ ogg_uint32_t *_make_words(long *l,long n,long sparsecount){
 	  marker[j]++;
 	}
       }
-      
+
       /* prune the tree; the implicit invariant says all the longer
 	 markers were dangling from our just-taken node.  Dangle them
 	 from our *new* node. */
@@ -46100,7 +46111,7 @@ ogg_uint32_t *_make_words(long *l,long n,long sparsecount){
     }else
       if(sparsecount==0)count++;
   }
-    
+
   /* bitreverse the words because our bitwise packer/unpacker is LSb
      endian */
   for(i=0,count=0;i<n;i++){
@@ -46184,7 +46195,7 @@ float *_book_unquantize(const static_codebook *b,int n,int *sparsemap){
 	    int index= (j/indexdiv)%quantvals;
 	    float val=b->quantlist[index];
 	    val=fabs(val)*delta+mindel+last;
-	    if(b->q_sequencep)last=val;	  
+	    if(b->q_sequencep)last=val;
 	    if(sparsemap)
 	      r[sparsemap[count]*b->dim+k]=val;
 	    else
@@ -46200,11 +46211,11 @@ float *_book_unquantize(const static_codebook *b,int n,int *sparsemap){
       for(j=0;j<b->entries;j++){
 	if((sparsemap && b->lengthlist[j]) || !sparsemap){
 	  float last=0.f;
-	  
+
 	  for(k=0;k<b->dim;k++){
 	    float val=b->quantlist[j*b->dim+k];
 	    val=fabs(val)*delta+mindel+last;
-	    if(b->q_sequencep)last=val;	  
+	    if(b->q_sequencep)last=val;
 	    if(sparsemap)
 	      r[sparsemap[count]*b->dim+k]=val;
 	    else
@@ -46286,7 +46297,7 @@ static ogg_uint32_t bitreverse(ogg_uint32_t x){
 }
 
 static int sort32a(const void *a,const void *b){
-  return ( **(ogg_uint32_t **)a>**(ogg_uint32_t **)b)- 
+  return ( **(ogg_uint32_t **)a>**(ogg_uint32_t **)b)-
     ( **(ogg_uint32_t **)a<**(ogg_uint32_t **)b);
 }
 
@@ -46295,7 +46306,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
   int i,j,n=0,tabn;
   int *sortindex;
   memset(c,0,sizeof(*c));
-  
+
   /* count actually used entries */
   for(i=0;i<s->entries;i++)
     if(s->lengthlist[i]>0)
@@ -46305,7 +46316,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
   c->used_entries=n;
   c->dim=s->dim;
 
-  /* two different remappings go on here.  
+  /* two different remappings go on here.
 
      First, we collapse the likely sparse codebook down only to
      actually represented values/words.  This collapsing needs to be
@@ -46319,7 +46330,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
     /* perform sort */
     ogg_uint32_t *codes=_make_words(s->lengthlist,s->entries,c->used_entries);
     ogg_uint32_t **codep=alloca(sizeof(*codep)*n);
-    
+
     if(codes==NULL)goto err_out;
 
     for(i=0;i<n;i++){
@@ -46348,7 +46359,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
   for(n=0,i=0;i<s->entries;i++)
     if(s->lengthlist[i]>0)
       c->dec_index[sortindex[n++]]=i;
-  
+
   c->dec_codelengths=_ogg_malloc(n*sizeof(*c->dec_codelengths));
   for(n=0,i=0;i<s->entries;i++)
     if(s->lengthlist[i]>0)
@@ -46383,7 +46394,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
       if(c->dec_firsttable[bitreverse(word)]==0){
 	while((lo+1)<n && c->codelist[lo+1]<=word)lo++;
 	while(    hi<n && word>=(c->codelist[hi]&mask))hi++;
-	
+
 	/* we only actually have 15 bits per hint to play with here.
            In order to overflow gracefully (nothing breaks, efficiency
            just drops), encode as the difference from the extremes. */
@@ -46399,7 +46410,7 @@ int vorbis_book_init_decode(codebook *c,const static_codebook *s){
       }
     }
   }
-  
+
 
   return(0);
  err_out:
@@ -46441,7 +46452,7 @@ int _best(codebook *book, float *a, int step){
 	for(;i>0;i--)
 	  if(a[o]>=tt->quantthresh[i-1])
 	    break;
-	
+
       }else{
 
 	for(i++;i<tt->threshvals-1;i++)
@@ -46499,7 +46510,7 @@ int _best(codebook *book, float *a, int step){
 	}
       }
 
-      return(besti); 
+      return(besti);
     }
   }
 
@@ -46509,10 +46520,10 @@ int _best(codebook *book, float *a, int step){
       float c=0.f;
       float *p=book->valuelist+nt->p[ptr];
       float *q=book->valuelist+nt->q[ptr];
-      
+
       for(k=0,o=0;k<dim;k++,o+=step)
 	c+=(p[k]-q[k])*(a[o]-(p[k]+q[k])*.5);
-      
+
       if(c>0.f) /* in A */
 	ptr= -nt->ptr0[ptr];
       else     /* in B */
@@ -46521,7 +46532,7 @@ int _best(codebook *book, float *a, int step){
     }
     return(-ptr);
   }
-#endif 
+#endif
 
   /* brute force it! */
   {
@@ -46602,11 +46613,11 @@ int vorbis_staticbook_pack(const static_codebook *c,oggpack_buffer *opb){
 
   /* pack the codewords.  There are two packings; length ordered and
      length random.  Decide between the two now. */
-  
+
   for(i=1;i<c->entries;i++)
     if(c->lengthlist[i-1]==0 || c->lengthlist[i]<c->lengthlist[i-1])break;
   if(i==c->entries)ordered=1;
-  
+
   if(ordered){
     /* length ordered.  We only need to say how many codewords of
        each length.  The actual codewords are generated
@@ -46627,12 +46638,12 @@ int vorbis_staticbook_pack(const static_codebook *c,oggpack_buffer *opb){
       }
     }
     oggpack_write(opb,i-count,_ilog(c->entries-count));
-    
+
   }else{
     /* length random.  Again, we don't code the codeword itself, just
        the length.  This time, though, we have to encode each length */
     oggpack_write(opb,0,1);   /* unordered */
-    
+
     /* algortihmic mapping has use for 'unused entries', which we tag
        here.  The algorithmic mapping happens as usual, but the unused
        entry has no codeword. */
@@ -46666,18 +46677,18 @@ int vorbis_staticbook_pack(const static_codebook *c,oggpack_buffer *opb){
   case 1:case 2:
     /* implicitly populated value mapping */
     /* explicitly populated value mapping */
-    
+
     if(!c->quantlist){
       /* no quantlist?  error */
       return(-1);
     }
-    
+
     /* values that define the dequantization */
     oggpack_write(opb,c->q_min,32);
     oggpack_write(opb,c->q_delta,32);
     oggpack_write(opb,c->q_quant-1,4);
     oggpack_write(opb,c->q_sequencep,1);
-    
+
     {
       int quantvals;
       switch(c->maptype){
@@ -46749,7 +46760,7 @@ int vorbis_staticbook_unpack(oggpack_buffer *opb,static_codebook *s){
 	s->lengthlist[i]=num+1;
       }
     }
-    
+
     break;
   case 1:
     /* ordered */
@@ -46770,7 +46781,7 @@ int vorbis_staticbook_unpack(oggpack_buffer *opb,static_codebook *s){
     /* EOF */
     return(-1);
   }
-  
+
   /* Do we have a mapping to unpack? */
   switch((s->maptype=oggpack_read(opb,4))){
   case 0:
@@ -46795,12 +46806,12 @@ int vorbis_staticbook_unpack(oggpack_buffer *opb,static_codebook *s){
 	quantvals=s->entries*s->dim;
 	break;
       }
-      
+
       /* quantized values */
       s->quantlist=_ogg_malloc(sizeof(*s->quantlist)*quantvals);
       for(i=0;i<quantvals;i++)
 	s->quantlist[i]=oggpack_read(opb,s->q_quant);
-      
+
       if(quantvals&&s->quantlist[quantvals-1]==-1)goto _eofout;
     }
     break;
@@ -46810,11 +46821,11 @@ int vorbis_staticbook_unpack(oggpack_buffer *opb,static_codebook *s){
 
   /* all set */
   return(0);
-  
+
  _errout:
  _eofout:
   vorbis_staticbook_clear(s);
-  return(-1); 
+  return(-1);
 }
 
 /* returns the number of bits ************************************************/
@@ -46866,7 +46877,7 @@ STIN long decode_packed_entry_number(codebook *book, oggpack_buffer *b){
   int  read=book->dec_maxlength;
   long lo,hi;
   long lok = oggpack_look(b,book->dec_firsttablen);
- 
+
   if (lok >= 0) {
     long entry = book->dec_firsttable[lok];
     if(entry&0x80000000UL){
@@ -46893,7 +46904,7 @@ STIN long decode_packed_entry_number(codebook *book, oggpack_buffer *b){
 
     while(hi-lo>1){
       long p=(hi-lo)>>1;
-      long test=book->codelist[lo+p]>testword;    
+      long test=book->codelist[lo+p]>testword;
       lo+=p&(test-1);
       hi-=p&(-test);
     }
@@ -46903,7 +46914,7 @@ STIN long decode_packed_entry_number(codebook *book, oggpack_buffer *b){
       return(lo);
     }
   }
-  
+
   oggpack_adv(b, read);
   return(-1);
 }
@@ -46911,13 +46922,13 @@ STIN long decode_packed_entry_number(codebook *book, oggpack_buffer *b){
 /* Decode side is specced and easier, because we don't need to find
    matches using different criteria; we simply read and map.  There are
    two things we need to do 'depending':
-   
+
    We may need to support interleave.  We don't really, but it's
    convenient to do it here rather than rebuild the vector later.
 
    Cascades may be additive or multiplicitive; this is not inherent in
    the codebook, but set in the code using the codebook.  Like
-   interleaving, it's easiest to do it here.  
+   interleaving, it's easiest to do it here.
    addmul==0 -> declarative (set the value)
    addmul==1 -> additive
    addmul==2 -> multiplicitive */
@@ -46927,7 +46938,7 @@ long vorbis_book_decode(codebook *book, oggpack_buffer *b){
   long packed_entry=decode_packed_entry_number(book,b);
   if(packed_entry>=0)
     return(book->dec_index[packed_entry]);
-  
+
   /* if there's no dec_index, the codebook unpacking isn't collapsed */
   return(packed_entry);
 }
@@ -46989,7 +47000,7 @@ long vorbis_book_decodev_add(codebook *book,float *a,oggpack_buffer *b,int n){
 	break;
       }
     }
-  }    
+  }
   return(0);
 }
 
@@ -47117,7 +47128,7 @@ vorbis_func_mapping   *_mapping_P[]={
 void mdct_init(mdct_lookup *lookup,int n){
   int   *bitrev=_ogg_malloc(sizeof(*bitrev)*(n/4));
   DATA_TYPE *T=_ogg_malloc(sizeof(*T)*(n+n/4));
-  
+
   int i;
   int n2=n>>1;
   int log2n=lookup->log2n=rint(log((float)n)/log(2.f));
@@ -47164,19 +47175,19 @@ STIN void mdct_butterfly_8(DATA_TYPE *x){
 
 	   x[6] = r0   + r2;
 	   x[4] = r0   - r2;
-	   
+
 	   r0   = x[5] - x[1];
 	   r2   = x[7] - x[3];
 	   x[0] = r1   + r0;
 	   x[2] = r1   - r0;
-	   
+
 	   r0   = x[5] + x[1];
 	   r1   = x[7] + x[3];
 	   x[3] = r2   + r3;
 	   x[1] = r2   - r3;
 	   x[7] = r1   + r0;
 	   x[5] = r1   - r0;
-	   
+
 }
 
 /* 16 point butterfly (in place, 4 register) */
@@ -47219,14 +47230,14 @@ STIN void mdct_butterfly_32(DATA_TYPE *x){
   REG_TYPE r0     = x[30] - x[14];
   REG_TYPE r1     = x[31] - x[15];
 
-           x[30] +=         x[14];           
+           x[30] +=         x[14];
 	   x[31] +=         x[15];
-           x[14]  =         r0;              
+           x[14]  =         r0;
 	   x[15]  =         r1;
 
-           r0     = x[28] - x[12];   
+           r0     = x[28] - x[12];
 	   r1     = x[29] - x[13];
-           x[28] +=         x[12];           
+           x[28] +=         x[12];
 	   x[29] +=         x[13];
            x[12]  = MULT_NORM( r0 * cPI1_8  -  r1 * cPI3_8 );
 	   x[13]  = MULT_NORM( r0 * cPI3_8  +  r1 * cPI1_8 );
@@ -47282,42 +47293,42 @@ STIN void mdct_butterfly_32(DATA_TYPE *x){
 STIN void mdct_butterfly_first(DATA_TYPE *T,
 					DATA_TYPE *x,
 					int points){
-  
+
   DATA_TYPE *x1        = x          + points      - 8;
   DATA_TYPE *x2        = x          + (points>>1) - 8;
   REG_TYPE   r0;
   REG_TYPE   r1;
 
   do{
-    
+
                r0      = x1[6]      -  x2[6];
 	       r1      = x1[7]      -  x2[7];
 	       x1[6]  += x2[6];
 	       x1[7]  += x2[7];
 	       x2[6]   = MULT_NORM(r1 * T[1]  +  r0 * T[0]);
 	       x2[7]   = MULT_NORM(r1 * T[0]  -  r0 * T[1]);
-	       
+
 	       r0      = x1[4]      -  x2[4];
 	       r1      = x1[5]      -  x2[5];
 	       x1[4]  += x2[4];
 	       x1[5]  += x2[5];
 	       x2[4]   = MULT_NORM(r1 * T[5]  +  r0 * T[4]);
 	       x2[5]   = MULT_NORM(r1 * T[4]  -  r0 * T[5]);
-	       
+
 	       r0      = x1[2]      -  x2[2];
 	       r1      = x1[3]      -  x2[3];
 	       x1[2]  += x2[2];
 	       x1[3]  += x2[3];
 	       x2[2]   = MULT_NORM(r1 * T[9]  +  r0 * T[8]);
 	       x2[3]   = MULT_NORM(r1 * T[8]  -  r0 * T[9]);
-	       
+
 	       r0      = x1[0]      -  x2[0];
 	       r1      = x1[1]      -  x2[1];
 	       x1[0]  += x2[0];
 	       x1[1]  += x2[1];
 	       x2[0]   = MULT_NORM(r1 * T[13] +  r0 * T[12]);
 	       x2[1]   = MULT_NORM(r1 * T[12] -  r0 * T[13]);
-	       
+
     x1-=8;
     x2-=8;
     T+=16;
@@ -47330,41 +47341,41 @@ STIN void mdct_butterfly_generic(DATA_TYPE *T,
 					  DATA_TYPE *x,
 					  int points,
 					  int trigint){
-  
+
   DATA_TYPE *x1        = x          + points      - 8;
   DATA_TYPE *x2        = x          + (points>>1) - 8;
   REG_TYPE   r0;
   REG_TYPE   r1;
 
   do{
-    
+
                r0      = x1[6]      -  x2[6];
 	       r1      = x1[7]      -  x2[7];
 	       x1[6]  += x2[6];
 	       x1[7]  += x2[7];
 	       x2[6]   = MULT_NORM(r1 * T[1]  +  r0 * T[0]);
 	       x2[7]   = MULT_NORM(r1 * T[0]  -  r0 * T[1]);
-	       
+
 	       T+=trigint;
-	       
+
 	       r0      = x1[4]      -  x2[4];
 	       r1      = x1[5]      -  x2[5];
 	       x1[4]  += x2[4];
 	       x1[5]  += x2[5];
 	       x2[4]   = MULT_NORM(r1 * T[1]  +  r0 * T[0]);
 	       x2[5]   = MULT_NORM(r1 * T[0]  -  r0 * T[1]);
-	       
+
 	       T+=trigint;
-	       
+
 	       r0      = x1[2]      -  x2[2];
 	       r1      = x1[3]      -  x2[3];
 	       x1[2]  += x2[2];
 	       x1[3]  += x2[3];
 	       x2[2]   = MULT_NORM(r1 * T[1]  +  r0 * T[0]);
 	       x2[3]   = MULT_NORM(r1 * T[0]  -  r0 * T[1]);
-	       
+
 	       T+=trigint;
-	       
+
 	       r0      = x1[0]      -  x2[0];
 	       r1      = x1[1]      -  x2[1];
 	       x1[0]  += x2[0];
@@ -47382,11 +47393,11 @@ STIN void mdct_butterfly_generic(DATA_TYPE *T,
 STIN void mdct_butterflies(mdct_lookup *init,
 			     DATA_TYPE *x,
 			     int points){
-  
+
   DATA_TYPE *T=init->trig;
   int stages=init->log2n-5;
   int i,j;
-  
+
   if(--stages>0){
     mdct_butterfly_first(T,x,points);
   }
@@ -47409,7 +47420,7 @@ void mdct_clear(mdct_lookup *l){
   }
 }
 
-STIN void mdct_bitreverse(mdct_lookup *init, 
+STIN void mdct_bitreverse(mdct_lookup *init,
 			    DATA_TYPE *x){
   int        n       = init->n;
   int       *bit     = init->bitrev;
@@ -47430,7 +47441,7 @@ STIN void mdct_bitreverse(mdct_lookup *init,
 
               r0     = HALVE(x0[1] + x1[1]);
               r1     = HALVE(x0[0] - x1[0]);
-      
+
 	      w0[0]  = r0     + r2;
 	      w1[2]  = r0     - r2;
 	      w0[1]  = r1     + r3;
@@ -47446,7 +47457,7 @@ STIN void mdct_bitreverse(mdct_lookup *init,
 
               r0     = HALVE(x0[1] + x1[1]);
               r1     = HALVE(x0[0] - x1[0]);
-      
+
 	      w0[2]  = r0     + r2;
 	      w1[0]  = r0     - r2;
 	      w0[3]  = r1     + r3;
@@ -47504,7 +47515,7 @@ void mdct_backward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out){
     DATA_TYPE *oX2=out+n2+n4;
     DATA_TYPE *iX =out;
     T             =init->trig+n2;
-    
+
     do{
       oX1-=4;
 
@@ -47566,44 +47577,44 @@ void mdct_forward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out){
   /* rotate */
 
   /* window + rotate + step 1 */
-  
+
   REG_TYPE r0;
   REG_TYPE r1;
   DATA_TYPE *x0=in+n2+n4;
   DATA_TYPE *x1=x0+1;
   DATA_TYPE *T=init->trig+n2;
-  
+
   int i=0;
-  
+
   for(i=0;i<n8;i+=2){
     x0 -=4;
     T-=2;
     r0= x0[2] + x1[0];
-    r1= x0[0] + x1[2];       
+    r1= x0[0] + x1[2];
     w2[i]=   MULT_NORM(r1*T[1] + r0*T[0]);
     w2[i+1]= MULT_NORM(r1*T[0] - r0*T[1]);
     x1 +=4;
   }
 
   x1=in+1;
-  
+
   for(;i<n2-n8;i+=2){
     T-=2;
     x0 -=4;
     r0= x0[2] - x1[0];
-    r1= x0[0] - x1[2];       
+    r1= x0[0] - x1[2];
     w2[i]=   MULT_NORM(r1*T[1] + r0*T[0]);
     w2[i+1]= MULT_NORM(r1*T[0] - r0*T[1]);
     x1 +=4;
   }
-    
+
   x0=in+n;
 
   for(;i<n2;i+=2){
     T-=2;
     x0 -=4;
     r0= -x0[2] - x1[0];
-    r1= -x0[0] - x1[2];       
+    r1= -x0[0] - x1[2];
     w2[i]=   MULT_NORM(r1*T[1] + r0*T[0]);
     w2[i+1]= MULT_NORM(r1*T[0] - r0*T[1]);
     x1 +=4;
@@ -47668,11 +47679,11 @@ void mdct_forward(mdct_lookup *init, DATA_TYPE *in, DATA_TYPE *out){
 
 #define MAX_ATH 88
 static float ATH[]={
-  /*15*/  -51, -52, -53, -54, -55, -56, -57, -58,  
+  /*15*/  -51, -52, -53, -54, -55, -56, -57, -58,
   /*31*/  -59, -60, -61, -62, -63, -64, -65, -66,
-  /*63*/  -67, -68, -69, -70, -71, -72, -73, -74, 
+  /*63*/  -67, -68, -69, -70, -71, -72, -73, -74,
   /*125*/ -75, -76, -77, -78, -80, -81, -82, -83,
-  /*250*/ -84, -85, -86, -87, -88, -88, -89, -89, 
+  /*250*/ -84, -85, -86, -87, -88, -88, -89, -89,
   /*500*/ -90, -91, -91, -92, -93, -94, -95, -96,
   /*1k*/  -96, -97, -98, -98, -99, -99,-100,-100,
   /*2k*/ -101,-102,-103,-104,-106,-107,-107,-107,
@@ -47695,737 +47706,737 @@ static float ATH[]={
 
 static float tonemasks[P_BANDS][6][EHMER_MAX]={
   /* 62.5 Hz */
-  {{ -60,  -60,  -60,  -60,  -60,  -60,  -60,  -60, 
-     -60,  -60,  -60,  -60,  -62,  -62,  -65,  -73, 
-     -69,  -68,  -68,  -67,  -70,  -70,  -72,  -74, 
-     -75,  -79,  -79,  -80,  -83,  -88,  -93, -100, 
-     -110, -999, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
+  {{ -60,  -60,  -60,  -60,  -60,  -60,  -60,  -60,
+     -60,  -60,  -60,  -60,  -62,  -62,  -65,  -73,
+     -69,  -68,  -68,  -67,  -70,  -70,  -72,  -74,
+     -75,  -79,  -79,  -80,  -83,  -88,  -93, -100,
+     -110, -999, -999, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   { -48,  -48,  -48,  -48,  -48,  -48,  -48,  -48, 
-     -48,  -48,  -48,  -48,  -48,  -53,  -61,  -66, 
-     -66,  -68,  -67,  -70,  -76,  -76,  -72,  -73, 
-     -75,  -76,  -78,  -79,  -83,  -88,  -93, -100, 
-     -110, -999, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
+   { -48,  -48,  -48,  -48,  -48,  -48,  -48,  -48,
+     -48,  -48,  -48,  -48,  -48,  -53,  -61,  -66,
+     -66,  -68,  -67,  -70,  -76,  -76,  -72,  -73,
+     -75,  -76,  -78,  -79,  -83,  -88,  -93, -100,
+     -110, -999, -999, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   { -37,  -37,  -37,  -37,  -37,  -37,  -37,  -37, 
-     -38,  -40,  -42,  -46,  -48,  -53,  -55,  -62, 
-     -65,  -58,  -56,  -56,  -61,  -60,  -65,  -67, 
-     -69,  -71,  -77,  -77,  -78,  -80,  -82,  -84, 
-     -88,  -93,  -98, -106, -112, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
+   { -37,  -37,  -37,  -37,  -37,  -37,  -37,  -37,
+     -38,  -40,  -42,  -46,  -48,  -53,  -55,  -62,
+     -65,  -58,  -56,  -56,  -61,  -60,  -65,  -67,
+     -69,  -71,  -77,  -77,  -78,  -80,  -82,  -84,
+     -88,  -93,  -98, -106, -112, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   { -25,  -25,  -25,  -25,  -25,  -25,  -25,  -25, 
-     -25,  -26,  -27,  -29,  -32,  -38,  -48,  -52, 
-     -52,  -50,  -48,  -48,  -51,  -52,  -54,  -60, 
-     -67,  -67,  -66,  -68,  -69,  -73,  -73,  -76, 
-     -80,  -81,  -81,  -85,  -85,  -86,  -88,  -93, 
-     -100, -110, -999, -999, -999, -999, -999, -999, 
+   { -25,  -25,  -25,  -25,  -25,  -25,  -25,  -25,
+     -25,  -26,  -27,  -29,  -32,  -38,  -48,  -52,
+     -52,  -50,  -48,  -48,  -51,  -52,  -54,  -60,
+     -67,  -67,  -66,  -68,  -69,  -73,  -73,  -76,
+     -80,  -81,  -81,  -85,  -85,  -86,  -88,  -93,
+     -100, -110, -999, -999, -999, -999, -999, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   { -16,  -16,  -16,  -16,  -16,  -16,  -16,  -16, 
-     -17,  -19,  -20,  -22,  -26,  -28,  -31,  -40, 
-     -47,  -39,  -39,  -40,  -42,  -43,  -47,  -51, 
-     -57,  -52,  -55,  -55,  -60,  -58,  -62,  -63, 
-     -70,  -67,  -69,  -72,  -73,  -77,  -80,  -82, 
-     -83,  -87,  -90,  -94,  -98, -104, -115, -999, 
+   { -16,  -16,  -16,  -16,  -16,  -16,  -16,  -16,
+     -17,  -19,  -20,  -22,  -26,  -28,  -31,  -40,
+     -47,  -39,  -39,  -40,  -42,  -43,  -47,  -51,
+     -57,  -52,  -55,  -55,  -60,  -58,  -62,  -63,
+     -70,  -67,  -69,  -72,  -73,  -77,  -80,  -82,
+     -83,  -87,  -90,  -94,  -98, -104, -115, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   {  -8,   -8,   -8,   -8,   -8,   -8,   -8,   -8, 
-      -8,   -8,  -10,  -11,  -15,  -19,  -25,  -30, 
-      -34,  -31,  -30,  -31,  -29,  -32,  -35,  -42, 
-      -48,  -42,  -44,  -46,  -50,  -50,  -51,  -52, 
-      -59,  -54,  -55,  -55,  -58,  -62,  -63,  -66, 
-      -72,  -73,  -76,  -75,  -78,  -80,  -80,  -81, 
-      -84,  -88,  -90,  -94,  -98, -101, -106, -110}}, 
+   {  -8,   -8,   -8,   -8,   -8,   -8,   -8,   -8,
+      -8,   -8,  -10,  -11,  -15,  -19,  -25,  -30,
+      -34,  -31,  -30,  -31,  -29,  -32,  -35,  -42,
+      -48,  -42,  -44,  -46,  -50,  -50,  -51,  -52,
+      -59,  -54,  -55,  -55,  -58,  -62,  -63,  -66,
+      -72,  -73,  -76,  -75,  -78,  -80,  -80,  -81,
+      -84,  -88,  -90,  -94,  -98, -101, -106, -110}},
   /* 88Hz */
-  {{ -66,  -66,  -66,  -66,  -66,  -66,  -66,  -66, 
-     -66,  -66,  -66,  -66,  -66,  -67,  -67,  -67, 
-     -76,  -72,  -71,  -74,  -76,  -76,  -75,  -78, 
-     -79,  -79,  -81,  -83,  -86,  -89,  -93,  -97, 
-     -100, -105, -110, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
+  {{ -66,  -66,  -66,  -66,  -66,  -66,  -66,  -66,
+     -66,  -66,  -66,  -66,  -66,  -67,  -67,  -67,
+     -76,  -72,  -71,  -74,  -76,  -76,  -75,  -78,
+     -79,  -79,  -81,  -83,  -86,  -89,  -93,  -97,
+     -100, -105, -110, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   { -47,  -47,  -47,  -47,  -47,  -47,  -47,  -47, 
-     -47,  -47,  -47,  -48,  -51,  -55,  -59,  -66, 
-     -66,  -66,  -67,  -66,  -68,  -69,  -70,  -74, 
-     -79,  -77,  -77,  -78,  -80,  -81,  -82,  -84, 
-     -86,  -88,  -91,  -95, -100, -108, -116, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999}, 
-   { -36,  -36,  -36,  -36,  -36,  -36,  -36,  -36, 
-     -36,  -37,  -37,  -41,  -44,  -48,  -51,  -58, 
-     -62,  -60,  -57,  -59,  -59,  -60,  -63,  -65, 
-     -72,  -71,  -70,  -72,  -74,  -77,  -76,  -78, 
-     -81,  -81,  -80,  -83,  -86,  -91,  -96, -100, 
-     -105, -110, -999, -999, -999, -999, -999, -999, 
+   { -47,  -47,  -47,  -47,  -47,  -47,  -47,  -47,
+     -47,  -47,  -47,  -48,  -51,  -55,  -59,  -66,
+     -66,  -66,  -67,  -66,  -68,  -69,  -70,  -74,
+     -79,  -77,  -77,  -78,  -80,  -81,  -82,  -84,
+     -86,  -88,  -91,  -95, -100, -108, -116, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   { -28,  -28,  -28,  -28,  -28,  -28,  -28,  -28, 
-     -28,  -30,  -32,  -32,  -33,  -35,  -41,  -49, 
-     -50,  -49,  -47,  -48,  -48,  -52,  -51,  -57, 
-     -65,  -61,  -59,  -61,  -64,  -69,  -70,  -74, 
-     -77,  -77,  -78,  -81,  -84,  -85,  -87,  -90, 
-     -92,  -96, -100, -107, -112, -999, -999, -999, 
+   { -36,  -36,  -36,  -36,  -36,  -36,  -36,  -36,
+     -36,  -37,  -37,  -41,  -44,  -48,  -51,  -58,
+     -62,  -60,  -57,  -59,  -59,  -60,  -63,  -65,
+     -72,  -71,  -70,  -72,  -74,  -77,  -76,  -78,
+     -81,  -81,  -80,  -83,  -86,  -91,  -96, -100,
+     -105, -110, -999, -999, -999, -999, -999, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   { -19,  -19,  -19,  -19,  -19,  -19,  -19,  -19, 
-     -20,  -21,  -23,  -27,  -30,  -35,  -36,  -41, 
-     -46,  -44,  -42,  -40,  -41,  -41,  -43,  -48, 
-     -55,  -53,  -52,  -53,  -56,  -59,  -58,  -60, 
-     -67,  -66,  -69,  -71,  -72,  -75,  -79,  -81, 
-     -84,  -87,  -90,  -93,  -97, -101, -107, -114, 
+   { -28,  -28,  -28,  -28,  -28,  -28,  -28,  -28,
+     -28,  -30,  -32,  -32,  -33,  -35,  -41,  -49,
+     -50,  -49,  -47,  -48,  -48,  -52,  -51,  -57,
+     -65,  -61,  -59,  -61,  -64,  -69,  -70,  -74,
+     -77,  -77,  -78,  -81,  -84,  -85,  -87,  -90,
+     -92,  -96, -100, -107, -112, -999, -999, -999,
      -999, -999, -999, -999, -999, -999, -999, -999},
-   {  -9,   -9,   -9,   -9,   -9,   -9,   -9,   -9, 
-      -11,  -12,  -12,  -15,  -16,  -20,  -23,  -30, 
-      -37,  -34,  -33,  -34,  -31,  -32,  -32,  -38, 
-      -47,  -44,  -41,  -40,  -47,  -49,  -46,  -46, 
-      -58,  -50,  -50,  -54,  -58,  -62,  -64,  -67, 
-      -67,  -70,  -72,  -76,  -79,  -83,  -87,  -91, 
-      -96, -100, -104, -110, -999, -999, -999, -999}}, 
+   { -19,  -19,  -19,  -19,  -19,  -19,  -19,  -19,
+     -20,  -21,  -23,  -27,  -30,  -35,  -36,  -41,
+     -46,  -44,  -42,  -40,  -41,  -41,  -43,  -48,
+     -55,  -53,  -52,  -53,  -56,  -59,  -58,  -60,
+     -67,  -66,  -69,  -71,  -72,  -75,  -79,  -81,
+     -84,  -87,  -90,  -93,  -97, -101, -107, -114,
+     -999, -999, -999, -999, -999, -999, -999, -999},
+   {  -9,   -9,   -9,   -9,   -9,   -9,   -9,   -9,
+      -11,  -12,  -12,  -15,  -16,  -20,  -23,  -30,
+      -37,  -34,  -33,  -34,  -31,  -32,  -32,  -38,
+      -47,  -44,  -41,  -40,  -47,  -49,  -46,  -46,
+      -58,  -50,  -50,  -54,  -58,  -62,  -64,  -67,
+      -67,  -70,  -72,  -76,  -79,  -83,  -87,  -91,
+      -96, -100, -104, -110, -999, -999, -999, -999}},
   /* 125 Hz */
-  {{ -62,  -62,  -62,  -62,  -62,  -62,  -62,  -62, 
-     -62,  -62,  -63,  -64,  -66,  -67,  -66,  -68, 
-     -75,  -72,  -76,  -75,  -76,  -78,  -79,  -82, 
-     -84,  -85,  -90,  -94, -101, -110, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999}, 
-   { -59,  -59,  -59,  -59,  -59,  -59,  -59,  -59, 
-     -59,  -59,  -59,  -60,  -60,  -61,  -63,  -66, 
-     -71,  -68,  -70,  -70,  -71,  -72,  -72,  -75, 
-     -81,  -78,  -79,  -82,  -83,  -86,  -90,  -97, 
-     -103, -113, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999}, 
-   { -53,  -53,  -53,  -53,  -53,  -53,  -53,  -53, 
-     -53,  -54,  -55,  -57,  -56,  -57,  -55,  -61, 
-     -65,  -60,  -60,  -62,  -63,  -63,  -66,  -68, 
-     -74,  -73,  -75,  -75,  -78,  -80,  -80,  -82, 
-     -85,  -90,  -96, -101, -108, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999}, 
-   { -46,  -46,  -46,  -46,  -46,  -46,  -46,  -46, 
-     -46,  -46,  -47,  -47,  -47,  -47,  -48,  -51, 
-     -57,  -51,  -49,  -50,  -51,  -53,  -54,  -59, 
-     -66,  -60,  -62,  -67,  -67,  -70,  -72,  -75, 
-     -76,  -78,  -81,  -85,  -88,  -94,  -97, -104, 
-     -112, -999, -999, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999}, 
-   { -36,  -36,  -36,  -36,  -36,  -36,  -36,  -36, 
-     -39,  -41,  -42,  -42,  -39,  -38,  -41,  -43, 
-     -52,  -44,  -40,  -39,  -37,  -37,  -40,  -47, 
-     -54,  -50,  -48,  -50,  -55,  -61,  -59,  -62, 
-     -66,  -66,  -66,  -69,  -69,  -73,  -74,  -74, 
-     -75,  -77,  -79,  -82,  -87,  -91,  -95, -100, 
-     -108, -115, -999, -999, -999, -999, -999, -999}, 
-   { -28,  -26,  -24,  -22,  -20,  -20,  -23,  -29, 
-     -30,  -31,  -28,  -27,  -28,  -28,  -28,  -35, 
-     -40,  -33,  -32,  -29,  -30,  -30,  -30,  -37, 
-     -45,  -41,  -37,  -38,  -45,  -47,  -47,  -48, 
-     -53,  -49,  -48,  -50,  -49,  -49,  -51,  -52, 
-     -58,  -56,  -57,  -56,  -60,  -61,  -62,  -70, 
-     -72,  -74,  -78,  -83,  -88,  -93, -100, -106}}, 
+  {{ -62,  -62,  -62,  -62,  -62,  -62,  -62,  -62,
+     -62,  -62,  -63,  -64,  -66,  -67,  -66,  -68,
+     -75,  -72,  -76,  -75,  -76,  -78,  -79,  -82,
+     -84,  -85,  -90,  -94, -101, -110, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999},
+   { -59,  -59,  -59,  -59,  -59,  -59,  -59,  -59,
+     -59,  -59,  -59,  -60,  -60,  -61,  -63,  -66,
+     -71,  -68,  -70,  -70,  -71,  -72,  -72,  -75,
+     -81,  -78,  -79,  -82,  -83,  -86,  -90,  -97,
+     -103, -113, -999, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999},
+   { -53,  -53,  -53,  -53,  -53,  -53,  -53,  -53,
+     -53,  -54,  -55,  -57,  -56,  -57,  -55,  -61,
+     -65,  -60,  -60,  -62,  -63,  -63,  -66,  -68,
+     -74,  -73,  -75,  -75,  -78,  -80,  -80,  -82,
+     -85,  -90,  -96, -101, -108, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999},
+   { -46,  -46,  -46,  -46,  -46,  -46,  -46,  -46,
+     -46,  -46,  -47,  -47,  -47,  -47,  -48,  -51,
+     -57,  -51,  -49,  -50,  -51,  -53,  -54,  -59,
+     -66,  -60,  -62,  -67,  -67,  -70,  -72,  -75,
+     -76,  -78,  -81,  -85,  -88,  -94,  -97, -104,
+     -112, -999, -999, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999},
+   { -36,  -36,  -36,  -36,  -36,  -36,  -36,  -36,
+     -39,  -41,  -42,  -42,  -39,  -38,  -41,  -43,
+     -52,  -44,  -40,  -39,  -37,  -37,  -40,  -47,
+     -54,  -50,  -48,  -50,  -55,  -61,  -59,  -62,
+     -66,  -66,  -66,  -69,  -69,  -73,  -74,  -74,
+     -75,  -77,  -79,  -82,  -87,  -91,  -95, -100,
+     -108, -115, -999, -999, -999, -999, -999, -999},
+   { -28,  -26,  -24,  -22,  -20,  -20,  -23,  -29,
+     -30,  -31,  -28,  -27,  -28,  -28,  -28,  -35,
+     -40,  -33,  -32,  -29,  -30,  -30,  -30,  -37,
+     -45,  -41,  -37,  -38,  -45,  -47,  -47,  -48,
+     -53,  -49,  -48,  -50,  -49,  -49,  -51,  -52,
+     -58,  -56,  -57,  -56,  -60,  -61,  -62,  -70,
+     -72,  -74,  -78,  -83,  -88,  -93, -100, -106}},
   /* 177 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -110, -105, -100,  -95,  -91,  -87,  -83, 
-    -80,  -78,  -76,  -78,  -78,  -81,  -83,  -85, 
-    -86,  -85,  -86,  -87,  -90,  -97, -107, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -110, -105, -100,  -95,  -90, 
-    -85,  -81,  -77,  -73,  -70,  -67,  -67,  -68, 
-    -75,  -73,  -70,  -69,  -70,  -72,  -75,  -79, 
-    -84,  -83,  -84,  -86,  -88,  -89,  -89,  -93, 
-    -98, -105, -112, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-105, -100,  -95,  -90,  -85,  -80,  -76,  -71, 
-    -68,  -68,  -65,  -63,  -63,  -62,  -62,  -64, 
-    -65,  -64,  -61,  -62,  -63,  -64,  -66,  -68, 
-    -73,  -73,  -74,  -75,  -76,  -81,  -83,  -85, 
-    -88,  -89,  -92,  -95, -100, -108, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   { -80,  -75,  -71,  -68,  -65,  -63,  -62,  -61, 
-     -61,  -61,  -61,  -59,  -56,  -57,  -53,  -50, 
-     -58,  -52,  -50,  -50,  -52,  -53,  -54,  -58, 
-     -67,  -63,  -67,  -68,  -72,  -75,  -78,  -80, 
-     -81,  -81,  -82,  -85,  -89,  -90,  -93,  -97, 
-     -101, -107, -114, -999, -999, -999, -999, -999, 
-     -999, -999, -999, -999, -999, -999, -999, -999}, 
-   { -65,  -61,  -59,  -57,  -56,  -55,  -55,  -56, 
-     -56,  -57,  -55,  -53,  -52,  -47,  -44,  -44, 
-     -50,  -44,  -41,  -39,  -39,  -42,  -40,  -46, 
-     -51,  -49,  -50,  -53,  -54,  -63,  -60,  -61, 
-     -62,  -66,  -66,  -66,  -70,  -73,  -74,  -75, 
-     -76,  -75,  -79,  -85,  -89,  -91,  -96, -102, 
-     -110, -999, -999, -999, -999, -999, -999, -999}, 
-   { -52,  -50,  -49,  -49,  -48,  -48,  -48,  -49, 
-     -50,  -50,  -49,  -46,  -43,  -39,  -35,  -33, 
-     -38,  -36,  -32,  -29,  -32,  -32,  -32,  -35, 
-     -44,  -39,  -38,  -38,  -46,  -50,  -45,  -46, 
-     -53,  -50,  -50,  -50,  -54,  -54,  -53,  -53, 
-     -56,  -57,  -59,  -66,  -70,  -72,  -74,  -79, 
-     -83,  -85,  -90, -97, -114, -999, -999, -999}}, 
-  /* 250 Hz */
-  {{-999, -999, -999, -999, -999, -999, -110, -105, 
-    -100,  -95,  -90,  -86,  -80,  -75,  -75,  -79, 
-    -80,  -79,  -80,  -81,  -82,  -88,  -95, -103, 
-    -110, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -108, -103,  -98,  -93, 
-    -88,  -83,  -79,  -78,  -75,  -71,  -67,  -68, 
-    -73,  -73,  -72,  -73,  -75,  -77,  -80,  -82, 
-    -88,  -93, -100, -107, -114, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -110, -105, -101,  -96,  -90, 
-    -86,  -81,  -77,  -73,  -69,  -66,  -61,  -62, 
-    -66,  -64,  -62,  -65,  -66,  -70,  -72,  -76, 
-    -81,  -80,  -84,  -90,  -95, -102, -110, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -107, -103,  -97,  -92,  -88, 
-    -83,  -79,  -74,  -70,  -66,  -59,  -53,  -58, 
-    -62,  -55,  -54,  -54,  -54,  -58,  -61,  -62, 
-    -72,  -70,  -72,  -75,  -78,  -80,  -81,  -80, 
-    -83,  -83,  -88,  -93, -100, -107, -115, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -105, -100,  -95,  -90,  -85, 
-    -80,  -75,  -70,  -66,  -62,  -56,  -48,  -44, 
-    -48,  -46,  -46,  -43,  -46,  -48,  -48,  -51, 
-    -58,  -58,  -59,  -60,  -62,  -62,  -61,  -61, 
-    -65,  -64,  -65,  -68,  -70,  -74,  -75,  -78, 
-    -81,  -86,  -95, -110, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999,  -999, -105, -100,  -95,  -90,  -85,  -80, 
-    -75,  -70,  -65,  -61,  -55,  -49,  -39,  -33, 
-    -40,  -35,  -32,  -38,  -40,  -33,  -35,  -37, 
-    -46,  -41,  -45,  -44,  -46,  -42,  -45,  -46, 
-    -52,  -50,  -50,  -50,  -54,  -54,  -55,  -57, 
-    -62,  -64,  -66,  -68,  -70,  -76,  -81,  -90, 
-    -100, -110, -999, -999, -999, -999, -999, -999}}, 
-  /* 354 hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -105,  -98,  -90,  -85,  -82,  -83,  -80,  -78, 
-    -84,  -79,  -80,  -83,  -87,  -89,  -91,  -93, 
-    -99, -106, -117, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -105,  -98,  -90,  -85,  -80,  -75,  -70,  -68, 
-    -74,  -72,  -74,  -77,  -80,  -82,  -85,  -87, 
-    -92,  -89,  -91,  -95, -100, -106, -112, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -105,  -98,  -90,  -83,  -75,  -71,  -63,  -64, 
-    -67,  -62,  -64,  -67,  -70,  -73,  -77,  -81, 
-    -84,  -83,  -85,  -89,  -90,  -93,  -98, -104, 
-    -109, -114, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -103,  -96,  -88,  -81,  -75,  -68,  -58,  -54, 
-    -56,  -54,  -56,  -56,  -58,  -60,  -63,  -66, 
-    -74,  -69,  -72,  -72,  -75,  -74,  -77,  -81, 
-    -81,  -82,  -84,  -87,  -93,  -96,  -99, -104, 
-    -110, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -108, -102,  -96, 
-    -91,  -85,  -80,  -74,  -68,  -60,  -51,  -46, 
-    -48,  -46,  -43,  -45,  -47,  -47,  -49,  -48, 
-    -56,  -53,  -55,  -58,  -57,  -63,  -58,  -60, 
-    -66,  -64,  -67,  -70,  -70,  -74,  -77,  -84, 
-    -86,  -89,  -91,  -93,  -94, -101, -109, -118, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -108, -103,  -98,  -93,  -88, 
-    -83,  -78,  -73,  -68,  -60,  -53,  -44,  -35, 
-    -38,  -38,  -34,  -34,  -36,  -40,  -41,  -44, 
-    -51,  -45,  -46,  -47,  -46,  -54,  -50,  -49, 
-    -50,  -50,  -50,  -51,  -54,  -57,  -58,  -60, 
-    -66,  -66,  -66,  -64,  -65,  -68,  -77,  -82, 
-    -87,  -95, -110, -999, -999, -999, -999, -999}}, 
-  /* 500 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -107, -102,  -97,  -92,  -87,  -83,  -78,  -75, 
-    -82,  -79,  -83,  -85,  -89,  -92,  -95,  -98, 
-    -101, -105, -109, -113, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -106, 
-    -100,  -95,  -90,  -86,  -81,  -78,  -74,  -69, 
-    -74,  -74,  -76,  -79,  -83,  -84,  -86,  -89, 
-    -92,  -97,  -93, -100, -103, -107, -110, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -106, -100, 
-    -95, -90, -87, -83, -80, -75, -69, -60, 
-    -66, -66, -68, -70, -74, -78, -79, -81, 
-    -81, -83, -84, -87, -93, -96, -99, -103, 
-    -107, -110, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -108, -103, -98, 
-    -93, -89, -85, -82, -78, -71, -62, -55, 
-    -58, -58, -54, -54, -55, -59, -61, -62, 
-    -70, -66, -66, -67, -70, -72, -75, -78, 
-    -84, -84, -84, -88, -91, -90, -95, -98, 
-    -102, -103, -106, -110, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -108, -103,  -98,  -94, 
-    -90,  -87,  -82,  -79,  -73,  -67,  -58,  -47, 
-    -50,  -45,  -41,  -45,  -48,  -44,  -44,  -49, 
-    -54,  -51,  -48,  -47,  -49,  -50,  -51,  -57, 
-    -58,  -60,  -63,  -69,  -70,  -69,  -71,  -74, 
-    -78,  -82,  -90,  -95, -101, -105, -110, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -105, -101, -97, -93, -90, 
-    -85, -80, -77, -72, -65, -56, -48, -37, 
-    -40, -36, -34, -40, -50, -47, -38, -41, 
-    -47, -38, -35, -39, -38, -43, -40, -45, 
-    -50, -45, -44, -47, -50, -55, -48, -48, 
-    -52, -66, -70, -76, -82, -90, -97, -105, 
-    -110, -999, -999, -999, -999, -999, -999, -999}}, 
-  /* 707 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -108, -103,  -98,  -93,  -86,  -79,  -76, 
-    -83,  -81,  -85,  -87,  -89,  -93,  -98, -102, 
-    -107, -112, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -108, -103,  -98,  -93,  -86,  -79,  -71, 
-    -77,  -74,  -77,  -79,  -81,  -84,  -85,  -90, 
-    -92,  -93,  -92,  -98, -101, -108, -112, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -108, -103,  -98,  -93,  -87,  -78,  -68,  -65, 
-    -66,  -62,  -65,  -67,  -70,  -73,  -75,  -78, 
-    -82,  -82,  -83,  -84,  -91,  -93,  -98, -102, 
-    -106, -110, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -105, -100, -95, -90, -82, -74, -62, -57, 
-    -58, -56, -51, -52, -52, -54, -54, -58, 
-    -66, -59, -60, -63, -66, -69, -73, -79, 
-    -83, -84, -80, -81, -81, -82, -88, -92, 
-    -98, -105, -113, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -107, 
-    -102,  -97,  -92,  -84,  -79,  -69,  -57,  -47, 
-    -52,  -47,  -44,  -45,  -50,  -52,  -42,  -42, 
-    -53,  -43,  -43,  -48,  -51,  -56,  -55,  -52, 
-    -57,  -59,  -61,  -62,  -67,  -71,  -78,  -83, 
-    -86,  -94,  -98, -103, -110, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -105, -100, 
-    -95,  -90,  -84,  -78,  -70,  -61,  -51,  -41, 
-    -40,  -38,  -40,  -46,  -52,  -51,  -41,  -40, 
-    -46,  -40,  -38,  -38,  -41,  -46,  -41,  -46, 
-    -47,  -43,  -43,  -45,  -41,  -45,  -56,  -67, 
-    -68,  -83,  -87,  -90,  -95, -102, -107, -113, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
-  /* 1000 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -109, -105, -101,  -96,  -91,  -84,  -77, 
-    -82,  -82,  -85,  -89,  -94, -100, -106, -110, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -106, -103,  -98,  -92,  -85,  -80,  -71, 
-    -75,  -72,  -76,  -80,  -84,  -86,  -89,  -93, 
-    -100, -107, -113, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -107, 
-    -104, -101,  -97,  -92,  -88,  -84,  -80,  -64, 
-    -66,  -63,  -64,  -66,  -69,  -73,  -77,  -83, 
-    -83,  -86,  -91,  -98, -104, -111, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -107, 
-    -104, -101,  -97,  -92,  -90,  -84,  -74,  -57, 
-    -58,  -52,  -55,  -54,  -50,  -52,  -50,  -52, 
-    -63,  -62,  -69,  -76,  -77,  -78,  -78,  -79, 
-    -82,  -88,  -94, -100, -106, -111, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -106, -102, 
-    -98,  -95,  -90,  -85,  -83,  -78,  -70,  -50, 
-    -50,  -41,  -44,  -49,  -47,  -50,  -50,  -44, 
-    -55,  -46,  -47,  -48,  -48,  -54,  -49,  -49, 
-    -58,  -62,  -71,  -81,  -87,  -92,  -97, -102, 
-    -108, -114, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -106, -102, 
-    -98,  -95,  -90,  -85,  -83,  -78,  -70,  -45, 
-    -43,  -41,  -47,  -50,  -51,  -50,  -49,  -45, 
-    -47,  -41,  -44,  -41,  -39,  -43,  -38,  -37, 
-    -40,  -41,  -44,  -50,  -58,  -65,  -73,  -79, 
-    -85,  -92,  -97, -101, -105, -109, -113, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
-  /* 1414 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -107, -100,  -95,  -87,  -81, 
-    -85,  -83,  -88,  -93, -100, -107, -114, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -107, -101,  -95,  -88,  -83,  -76, 
-    -73,  -72,  -79,  -84,  -90,  -95, -100, -105, 
-    -110, -115, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -104,  -98,  -92,  -87,  -81,  -70, 
-    -65,  -62,  -67,  -71,  -74,  -80,  -85,  -91, 
-    -95,  -99, -103, -108, -111, -114, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -103,  -97,  -90,  -85,  -76,  -60, 
-    -56,  -54,  -60,  -62,  -61,  -56,  -63,  -65, 
-    -73,  -74,  -77,  -75,  -78,  -81,  -86,  -87, 
-    -88,  -91,  -94,  -98, -103, -110, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -105, 
-    -100,  -97,  -92,  -86,  -81,  -79,  -70,  -57, 
-    -51,  -47,  -51,  -58,  -60,  -56,  -53,  -50, 
-    -58,  -52,  -50,  -50,  -53,  -55,  -64,  -69, 
-    -71,  -85,  -82,  -78,  -81,  -85,  -95, -102, 
-    -112, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -105, 
-    -100,  -97,  -92,  -85,  -83,  -79,  -72,  -49, 
-    -40,  -43,  -43,  -54,  -56,  -51,  -50,  -40, 
-    -43,  -38,  -36,  -35,  -37,  -38,  -37,  -44, 
-    -54,  -60,  -57,  -60,  -70,  -75,  -84,  -92, 
-    -103, -112, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
-  /* 2000 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -110, -102,  -95,  -89,  -82, 
-    -83,  -84,  -90,  -92,  -99, -107, -113, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -107, -101,  -95,  -89,  -83,  -72, 
-    -74,  -78,  -85,  -88,  -88,  -90,  -92,  -98, 
-    -105, -111, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -109, -103, -97, -93, -87, -81, -70, 
-    -70, -67, -75, -73, -76, -79, -81, -83, 
-    -88, -89, -97, -103, -110, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -107, -100,  -94,  -88,  -83,  -75,  -63, 
-    -59,  -59,  -63,  -66,  -60,  -62,  -67,  -67, 
-    -77,  -76,  -81,  -88,  -86,  -92,  -96, -102, 
-    -109, -116, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -105,  -98,  -92,  -86,  -81,  -73,  -56, 
-    -52,  -47,  -55,  -60,  -58,  -52,  -51,  -45, 
-    -49,  -50,  -53,  -54,  -61,  -71,  -70,  -69, 
-    -78,  -79,  -87,  -90,  -96, -104, -112, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -103,  -96,  -90,  -86,  -78,  -70,  -51, 
-    -42,  -47,  -48,  -55,  -54,  -54,  -53,  -42, 
-    -35,  -28,  -33,  -38,  -37,  -44,  -47,  -49, 
-    -54,  -63,  -68,  -78,  -82,  -89,  -94,  -99, 
-    -104, -109, -114, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
-  /* 2828 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -110, -100,  -90,  -79, 
-    -85,  -81,  -82,  -82,  -89,  -94,  -99, -103, 
-    -109, -115, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -105,  -97,  -85,  -72, 
-    -74,  -70,  -70,  -70,  -76,  -85,  -91,  -93, 
-    -97, -103, -109, -115, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -112,  -93,  -81,  -68, 
-    -62,  -60,  -60,  -57,  -63,  -70,  -77,  -82, 
-    -90,  -93,  -98, -104, -109, -113, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -113, -100,  -93,  -84,  -63, 
-    -58,  -48,  -53,  -54,  -52,  -52,  -57,  -64, 
-    -66,  -76,  -83,  -81,  -85,  -85,  -90,  -95, 
-    -98, -101, -103, -106, -108, -111, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -105,  -95,  -86,  -74,  -53, 
-    -50,  -38,  -43,  -49,  -43,  -42,  -39,  -39, 
-    -46,  -52,  -57,  -56,  -72,  -69,  -74,  -81, 
-    -87,  -92,  -94,  -97,  -99, -102, -105, -108, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -108,  -99,  -90,  -76,  -66,  -45, 
-    -43,  -41,  -44,  -47,  -43,  -47,  -40,  -30, 
-    -31,  -31,  -39,  -33,  -40,  -41,  -43,  -53, 
-    -59,  -70,  -73,  -77,  -79,  -82,  -84,  -87, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
-  /* 4000 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -110,  -91,  -76, 
-    -75,  -85,  -93,  -98, -104, -110, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -110, -105, -100,  -95,  -91,  -87,  -83,
+    -80,  -78,  -76,  -78,  -78,  -81,  -83,  -85,
+    -86,  -85,  -86,  -87,  -90,  -97, -107, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
     -999, -999, -999, -999, -999, -999, -999, -999},
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -110,  -91,  -70, 
-    -70,  -75,  -86,  -89,  -94,  -98, -101, -106, 
-    -110, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -110,  -95,  -80,  -60, 
-    -65,  -64,  -74,  -83,  -88,  -91,  -95,  -99, 
-    -103, -107, -110, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -110,  -95,  -80,  -58, 
-    -55,  -49,  -66,  -68,  -71,  -78,  -78,  -80, 
-    -88,  -85,  -89,  -97, -100, -105, -110, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -110,  -95,  -80,  -53, 
-    -52,  -41,  -59,  -59,  -49,  -58,  -56,  -63, 
-    -86,  -79,  -90,  -93,  -98, -103, -107, -112, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -110,  -97,  -91,  -73,  -45, 
-    -40,  -33,  -53,  -61,  -49,  -54,  -50,  -50, 
-    -60,  -52,  -67,  -74,  -81,  -92,  -96, -100, 
-    -105, -110, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
+   {-999, -999, -999, -110, -105, -100,  -95,  -90,
+    -85,  -81,  -77,  -73,  -70,  -67,  -67,  -68,
+    -75,  -73,  -70,  -69,  -70,  -72,  -75,  -79,
+    -84,  -83,  -84,  -86,  -88,  -89,  -89,  -93,
+    -98, -105, -112, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-105, -100,  -95,  -90,  -85,  -80,  -76,  -71,
+    -68,  -68,  -65,  -63,  -63,  -62,  -62,  -64,
+    -65,  -64,  -61,  -62,  -63,  -64,  -66,  -68,
+    -73,  -73,  -74,  -75,  -76,  -81,  -83,  -85,
+    -88,  -89,  -92,  -95, -100, -108, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   { -80,  -75,  -71,  -68,  -65,  -63,  -62,  -61,
+     -61,  -61,  -61,  -59,  -56,  -57,  -53,  -50,
+     -58,  -52,  -50,  -50,  -52,  -53,  -54,  -58,
+     -67,  -63,  -67,  -68,  -72,  -75,  -78,  -80,
+     -81,  -81,  -82,  -85,  -89,  -90,  -93,  -97,
+     -101, -107, -114, -999, -999, -999, -999, -999,
+     -999, -999, -999, -999, -999, -999, -999, -999},
+   { -65,  -61,  -59,  -57,  -56,  -55,  -55,  -56,
+     -56,  -57,  -55,  -53,  -52,  -47,  -44,  -44,
+     -50,  -44,  -41,  -39,  -39,  -42,  -40,  -46,
+     -51,  -49,  -50,  -53,  -54,  -63,  -60,  -61,
+     -62,  -66,  -66,  -66,  -70,  -73,  -74,  -75,
+     -76,  -75,  -79,  -85,  -89,  -91,  -96, -102,
+     -110, -999, -999, -999, -999, -999, -999, -999},
+   { -52,  -50,  -49,  -49,  -48,  -48,  -48,  -49,
+     -50,  -50,  -49,  -46,  -43,  -39,  -35,  -33,
+     -38,  -36,  -32,  -29,  -32,  -32,  -32,  -35,
+     -44,  -39,  -38,  -38,  -46,  -50,  -45,  -46,
+     -53,  -50,  -50,  -50,  -54,  -54,  -53,  -53,
+     -56,  -57,  -59,  -66,  -70,  -72,  -74,  -79,
+     -83,  -85,  -90, -97, -114, -999, -999, -999}},
+  /* 250 Hz */
+  {{-999, -999, -999, -999, -999, -999, -110, -105,
+    -100,  -95,  -90,  -86,  -80,  -75,  -75,  -79,
+    -80,  -79,  -80,  -81,  -82,  -88,  -95, -103,
+    -110, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -108, -103,  -98,  -93,
+    -88,  -83,  -79,  -78,  -75,  -71,  -67,  -68,
+    -73,  -73,  -72,  -73,  -75,  -77,  -80,  -82,
+    -88,  -93, -100, -107, -114, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -110, -105, -101,  -96,  -90,
+    -86,  -81,  -77,  -73,  -69,  -66,  -61,  -62,
+    -66,  -64,  -62,  -65,  -66,  -70,  -72,  -76,
+    -81,  -80,  -84,  -90,  -95, -102, -110, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -107, -103,  -97,  -92,  -88,
+    -83,  -79,  -74,  -70,  -66,  -59,  -53,  -58,
+    -62,  -55,  -54,  -54,  -54,  -58,  -61,  -62,
+    -72,  -70,  -72,  -75,  -78,  -80,  -81,  -80,
+    -83,  -83,  -88,  -93, -100, -107, -115, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -105, -100,  -95,  -90,  -85,
+    -80,  -75,  -70,  -66,  -62,  -56,  -48,  -44,
+    -48,  -46,  -46,  -43,  -46,  -48,  -48,  -51,
+    -58,  -58,  -59,  -60,  -62,  -62,  -61,  -61,
+    -65,  -64,  -65,  -68,  -70,  -74,  -75,  -78,
+    -81,  -86,  -95, -110, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999,  -999, -105, -100,  -95,  -90,  -85,  -80,
+    -75,  -70,  -65,  -61,  -55,  -49,  -39,  -33,
+    -40,  -35,  -32,  -38,  -40,  -33,  -35,  -37,
+    -46,  -41,  -45,  -44,  -46,  -42,  -45,  -46,
+    -52,  -50,  -50,  -50,  -54,  -54,  -55,  -57,
+    -62,  -64,  -66,  -68,  -70,  -76,  -81,  -90,
+    -100, -110, -999, -999, -999, -999, -999, -999}},
+  /* 354 hz */
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -105,  -98,  -90,  -85,  -82,  -83,  -80,  -78,
+    -84,  -79,  -80,  -83,  -87,  -89,  -91,  -93,
+    -99, -106, -117, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -105,  -98,  -90,  -85,  -80,  -75,  -70,  -68,
+    -74,  -72,  -74,  -77,  -80,  -82,  -85,  -87,
+    -92,  -89,  -91,  -95, -100, -106, -112, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -105,  -98,  -90,  -83,  -75,  -71,  -63,  -64,
+    -67,  -62,  -64,  -67,  -70,  -73,  -77,  -81,
+    -84,  -83,  -85,  -89,  -90,  -93,  -98, -104,
+    -109, -114, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -103,  -96,  -88,  -81,  -75,  -68,  -58,  -54,
+    -56,  -54,  -56,  -56,  -58,  -60,  -63,  -66,
+    -74,  -69,  -72,  -72,  -75,  -74,  -77,  -81,
+    -81,  -82,  -84,  -87,  -93,  -96,  -99, -104,
+    -110, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -108, -102,  -96,
+    -91,  -85,  -80,  -74,  -68,  -60,  -51,  -46,
+    -48,  -46,  -43,  -45,  -47,  -47,  -49,  -48,
+    -56,  -53,  -55,  -58,  -57,  -63,  -58,  -60,
+    -66,  -64,  -67,  -70,  -70,  -74,  -77,  -84,
+    -86,  -89,  -91,  -93,  -94, -101, -109, -118,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -108, -103,  -98,  -93,  -88,
+    -83,  -78,  -73,  -68,  -60,  -53,  -44,  -35,
+    -38,  -38,  -34,  -34,  -36,  -40,  -41,  -44,
+    -51,  -45,  -46,  -47,  -46,  -54,  -50,  -49,
+    -50,  -50,  -50,  -51,  -54,  -57,  -58,  -60,
+    -66,  -66,  -66,  -64,  -65,  -68,  -77,  -82,
+    -87,  -95, -110, -999, -999, -999, -999, -999}},
+  /* 500 Hz */
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -107, -102,  -97,  -92,  -87,  -83,  -78,  -75,
+    -82,  -79,  -83,  -85,  -89,  -92,  -95,  -98,
+    -101, -105, -109, -113, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -106,
+    -100,  -95,  -90,  -86,  -81,  -78,  -74,  -69,
+    -74,  -74,  -76,  -79,  -83,  -84,  -86,  -89,
+    -92,  -97,  -93, -100, -103, -107, -110, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -106, -100,
+    -95, -90, -87, -83, -80, -75, -69, -60,
+    -66, -66, -68, -70, -74, -78, -79, -81,
+    -81, -83, -84, -87, -93, -96, -99, -103,
+    -107, -110, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -108, -103, -98,
+    -93, -89, -85, -82, -78, -71, -62, -55,
+    -58, -58, -54, -54, -55, -59, -61, -62,
+    -70, -66, -66, -67, -70, -72, -75, -78,
+    -84, -84, -84, -88, -91, -90, -95, -98,
+    -102, -103, -106, -110, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -108, -103,  -98,  -94,
+    -90,  -87,  -82,  -79,  -73,  -67,  -58,  -47,
+    -50,  -45,  -41,  -45,  -48,  -44,  -44,  -49,
+    -54,  -51,  -48,  -47,  -49,  -50,  -51,  -57,
+    -58,  -60,  -63,  -69,  -70,  -69,  -71,  -74,
+    -78,  -82,  -90,  -95, -101, -105, -110, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -105, -101, -97, -93, -90,
+    -85, -80, -77, -72, -65, -56, -48, -37,
+    -40, -36, -34, -40, -50, -47, -38, -41,
+    -47, -38, -35, -39, -38, -43, -40, -45,
+    -50, -45, -44, -47, -50, -55, -48, -48,
+    -52, -66, -70, -76, -82, -90, -97, -105,
+    -110, -999, -999, -999, -999, -999, -999, -999}},
+  /* 707 Hz */
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -108, -103,  -98,  -93,  -86,  -79,  -76,
+    -83,  -81,  -85,  -87,  -89,  -93,  -98, -102,
+    -107, -112, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -108, -103,  -98,  -93,  -86,  -79,  -71,
+    -77,  -74,  -77,  -79,  -81,  -84,  -85,  -90,
+    -92,  -93,  -92,  -98, -101, -108, -112, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -108, -103,  -98,  -93,  -87,  -78,  -68,  -65,
+    -66,  -62,  -65,  -67,  -70,  -73,  -75,  -78,
+    -82,  -82,  -83,  -84,  -91,  -93,  -98, -102,
+    -106, -110, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -105, -100, -95, -90, -82, -74, -62, -57,
+    -58, -56, -51, -52, -52, -54, -54, -58,
+    -66, -59, -60, -63, -66, -69, -73, -79,
+    -83, -84, -80, -81, -81, -82, -88, -92,
+    -98, -105, -113, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -107,
+    -102,  -97,  -92,  -84,  -79,  -69,  -57,  -47,
+    -52,  -47,  -44,  -45,  -50,  -52,  -42,  -42,
+    -53,  -43,  -43,  -48,  -51,  -56,  -55,  -52,
+    -57,  -59,  -61,  -62,  -67,  -71,  -78,  -83,
+    -86,  -94,  -98, -103, -110, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -105, -100,
+    -95,  -90,  -84,  -78,  -70,  -61,  -51,  -41,
+    -40,  -38,  -40,  -46,  -52,  -51,  -41,  -40,
+    -46,  -40,  -38,  -38,  -41,  -46,  -41,  -46,
+    -47,  -43,  -43,  -45,  -41,  -45,  -56,  -67,
+    -68,  -83,  -87,  -90,  -95, -102, -107, -113,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
+  /* 1000 Hz */
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -109, -105, -101,  -96,  -91,  -84,  -77,
+    -82,  -82,  -85,  -89,  -94, -100, -106, -110,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -106, -103,  -98,  -92,  -85,  -80,  -71,
+    -75,  -72,  -76,  -80,  -84,  -86,  -89,  -93,
+    -100, -107, -113, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -107,
+    -104, -101,  -97,  -92,  -88,  -84,  -80,  -64,
+    -66,  -63,  -64,  -66,  -69,  -73,  -77,  -83,
+    -83,  -86,  -91,  -98, -104, -111, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -107,
+    -104, -101,  -97,  -92,  -90,  -84,  -74,  -57,
+    -58,  -52,  -55,  -54,  -50,  -52,  -50,  -52,
+    -63,  -62,  -69,  -76,  -77,  -78,  -78,  -79,
+    -82,  -88,  -94, -100, -106, -111, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -106, -102,
+    -98,  -95,  -90,  -85,  -83,  -78,  -70,  -50,
+    -50,  -41,  -44,  -49,  -47,  -50,  -50,  -44,
+    -55,  -46,  -47,  -48,  -48,  -54,  -49,  -49,
+    -58,  -62,  -71,  -81,  -87,  -92,  -97, -102,
+    -108, -114, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -106, -102,
+    -98,  -95,  -90,  -85,  -83,  -78,  -70,  -45,
+    -43,  -41,  -47,  -50,  -51,  -50,  -49,  -45,
+    -47,  -41,  -44,  -41,  -39,  -43,  -38,  -37,
+    -40,  -41,  -44,  -50,  -58,  -65,  -73,  -79,
+    -85,  -92,  -97, -101, -105, -109, -113, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
+  /* 1414 Hz */
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -107, -100,  -95,  -87,  -81,
+    -85,  -83,  -88,  -93, -100, -107, -114, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -107, -101,  -95,  -88,  -83,  -76,
+    -73,  -72,  -79,  -84,  -90,  -95, -100, -105,
+    -110, -115, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -104,  -98,  -92,  -87,  -81,  -70,
+    -65,  -62,  -67,  -71,  -74,  -80,  -85,  -91,
+    -95,  -99, -103, -108, -111, -114, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -103,  -97,  -90,  -85,  -76,  -60,
+    -56,  -54,  -60,  -62,  -61,  -56,  -63,  -65,
+    -73,  -74,  -77,  -75,  -78,  -81,  -86,  -87,
+    -88,  -91,  -94,  -98, -103, -110, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -105,
+    -100,  -97,  -92,  -86,  -81,  -79,  -70,  -57,
+    -51,  -47,  -51,  -58,  -60,  -56,  -53,  -50,
+    -58,  -52,  -50,  -50,  -53,  -55,  -64,  -69,
+    -71,  -85,  -82,  -78,  -81,  -85,  -95, -102,
+    -112, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -105,
+    -100,  -97,  -92,  -85,  -83,  -79,  -72,  -49,
+    -40,  -43,  -43,  -54,  -56,  -51,  -50,  -40,
+    -43,  -38,  -36,  -35,  -37,  -38,  -37,  -44,
+    -54,  -60,  -57,  -60,  -70,  -75,  -84,  -92,
+    -103, -112, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
+  /* 2000 Hz */
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -110, -102,  -95,  -89,  -82,
+    -83,  -84,  -90,  -92,  -99, -107, -113, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -107, -101,  -95,  -89,  -83,  -72,
+    -74,  -78,  -85,  -88,  -88,  -90,  -92,  -98,
+    -105, -111, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -109, -103, -97, -93, -87, -81, -70,
+    -70, -67, -75, -73, -76, -79, -81, -83,
+    -88, -89, -97, -103, -110, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -107, -100,  -94,  -88,  -83,  -75,  -63,
+    -59,  -59,  -63,  -66,  -60,  -62,  -67,  -67,
+    -77,  -76,  -81,  -88,  -86,  -92,  -96, -102,
+    -109, -116, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -105,  -98,  -92,  -86,  -81,  -73,  -56,
+    -52,  -47,  -55,  -60,  -58,  -52,  -51,  -45,
+    -49,  -50,  -53,  -54,  -61,  -71,  -70,  -69,
+    -78,  -79,  -87,  -90,  -96, -104, -112, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -103,  -96,  -90,  -86,  -78,  -70,  -51,
+    -42,  -47,  -48,  -55,  -54,  -54,  -53,  -42,
+    -35,  -28,  -33,  -38,  -37,  -44,  -47,  -49,
+    -54,  -63,  -68,  -78,  -82,  -89,  -94,  -99,
+    -104, -109, -114, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
+  /* 2828 Hz */
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -110, -100,  -90,  -79,
+    -85,  -81,  -82,  -82,  -89,  -94,  -99, -103,
+    -109, -115, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -105,  -97,  -85,  -72,
+    -74,  -70,  -70,  -70,  -76,  -85,  -91,  -93,
+    -97, -103, -109, -115, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -112,  -93,  -81,  -68,
+    -62,  -60,  -60,  -57,  -63,  -70,  -77,  -82,
+    -90,  -93,  -98, -104, -109, -113, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -113, -100,  -93,  -84,  -63,
+    -58,  -48,  -53,  -54,  -52,  -52,  -57,  -64,
+    -66,  -76,  -83,  -81,  -85,  -85,  -90,  -95,
+    -98, -101, -103, -106, -108, -111, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -105,  -95,  -86,  -74,  -53,
+    -50,  -38,  -43,  -49,  -43,  -42,  -39,  -39,
+    -46,  -52,  -57,  -56,  -72,  -69,  -74,  -81,
+    -87,  -92,  -94,  -97,  -99, -102, -105, -108,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -108,  -99,  -90,  -76,  -66,  -45,
+    -43,  -41,  -44,  -47,  -43,  -47,  -40,  -30,
+    -31,  -31,  -39,  -33,  -40,  -41,  -43,  -53,
+    -59,  -70,  -73,  -77,  -79,  -82,  -84,  -87,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
+  /* 4000 Hz */
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -110,  -91,  -76,
+    -75,  -85,  -93,  -98, -104, -110, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -110,  -91,  -70,
+    -70,  -75,  -86,  -89,  -94,  -98, -101, -106,
+    -110, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -110,  -95,  -80,  -60,
+    -65,  -64,  -74,  -83,  -88,  -91,  -95,  -99,
+    -103, -107, -110, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -110,  -95,  -80,  -58,
+    -55,  -49,  -66,  -68,  -71,  -78,  -78,  -80,
+    -88,  -85,  -89,  -97, -100, -105, -110, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -110,  -95,  -80,  -53,
+    -52,  -41,  -59,  -59,  -49,  -58,  -56,  -63,
+    -86,  -79,  -90,  -93,  -98, -103, -107, -112,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -110,  -97,  -91,  -73,  -45,
+    -40,  -33,  -53,  -61,  -49,  -54,  -50,  -50,
+    -60,  -52,  -67,  -74,  -81,  -92,  -96, -100,
+    -105, -110, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
   /* 5657 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -113, -106,  -99,  -92,  -77, 
-    -80,  -88,  -97, -106, -115, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -116, -109, -102,  -95,  -89,  -74, 
-    -72,  -88,  -87,  -95, -102, -109, -116, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -116, -109, -102,  -95,  -89,  -75, 
-    -66,  -74,  -77,  -78,  -86,  -87,  -90,  -96, 
-    -105, -115, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -115, -108, -101,  -94,  -88,  -66, 
-    -56,  -61,  -70,  -65,  -78,  -72,  -83,  -84, 
-    -93,  -98, -105, -110, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -110, -105,  -95,  -89,  -82,  -57, 
-    -52,  -52,  -59,  -56,  -59,  -58,  -69,  -67, 
-    -88,  -82,  -82,  -89,  -94, -100, -108, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -110, -101,  -96,  -90,  -83,  -77,  -54, 
-    -43,  -38,  -50,  -48,  -52,  -48,  -42,  -42, 
-    -51,  -52,  -53,  -59,  -65,  -71,  -78,  -85, 
-    -95, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -113, -106,  -99,  -92,  -77,
+    -80,  -88,  -97, -106, -115, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -116, -109, -102,  -95,  -89,  -74,
+    -72,  -88,  -87,  -95, -102, -109, -116, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -116, -109, -102,  -95,  -89,  -75,
+    -66,  -74,  -77,  -78,  -86,  -87,  -90,  -96,
+    -105, -115, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -115, -108, -101,  -94,  -88,  -66,
+    -56,  -61,  -70,  -65,  -78,  -72,  -83,  -84,
+    -93,  -98, -105, -110, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -110, -105,  -95,  -89,  -82,  -57,
+    -52,  -52,  -59,  -56,  -59,  -58,  -69,  -67,
+    -88,  -82,  -82,  -89,  -94, -100, -108, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -110, -101,  -96,  -90,  -83,  -77,  -54,
+    -43,  -38,  -50,  -48,  -52,  -48,  -42,  -42,
+    -51,  -52,  -53,  -59,  -65,  -71,  -78,  -85,
+    -95, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
   /* 8000 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -120, -105,  -86,  -68, 
-    -78,  -79,  -90, -100, -110, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -120, -105,  -86,  -66, 
-    -73,  -77,  -88,  -96, -105, -115, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -120, -105,  -92,  -80,  -61, 
-    -64,  -68,  -80,  -87,  -92, -100, -110, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -120, -104,  -91,  -79,  -52, 
-    -60,  -54,  -64,  -69,  -77,  -80,  -82,  -84, 
-    -85,  -87,  -88,  -90, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -118, -100,  -87,  -77,  -49, 
-    -50,  -44,  -58,  -61,  -61,  -67,  -65,  -62, 
-    -62,  -62,  -65,  -68, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -115,  -98,  -84,  -62,  -49, 
-    -44,  -38,  -46,  -49,  -49,  -46,  -39,  -37, 
-    -39,  -40,  -42,  -43, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -120, -105,  -86,  -68,
+    -78,  -79,  -90, -100, -110, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -120, -105,  -86,  -66,
+    -73,  -77,  -88,  -96, -105, -115, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -120, -105,  -92,  -80,  -61,
+    -64,  -68,  -80,  -87,  -92, -100, -110, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -120, -104,  -91,  -79,  -52,
+    -60,  -54,  -64,  -69,  -77,  -80,  -82,  -84,
+    -85,  -87,  -88,  -90, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -118, -100,  -87,  -77,  -49,
+    -50,  -44,  -58,  -61,  -61,  -67,  -65,  -62,
+    -62,  -62,  -65,  -68, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -115,  -98,  -84,  -62,  -49,
+    -44,  -38,  -46,  -49,  -49,  -46,  -39,  -37,
+    -39,  -40,  -42,  -43, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
   /* 11314 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -110,  -88,  -74, 
-    -77,  -82,  -82,  -85,  -90,  -94,  -99, -104, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -110,  -88,  -66, 
-    -70,  -81,  -80,  -81,  -84,  -88,  -91,  -93, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -110,  -88,  -61, 
-    -63,  -70,  -71,  -74,  -77,  -80,  -83,  -85, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -110, -86, -62, 
-    -63,  -62,  -62,  -58,  -52,  -50,  -50,  -52, 
-    -54, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -118, -108,  -84,  -53, 
-    -50,  -50,  -50,  -55,  -47,  -45,  -40,  -40, 
-    -40, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -118, -100,  -73,  -43, 
-    -37,  -42,  -43,  -53,  -38,  -37,  -35,  -35, 
-    -38, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}}, 
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -110,  -88,  -74,
+    -77,  -82,  -82,  -85,  -90,  -94,  -99, -104,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -110,  -88,  -66,
+    -70,  -81,  -80,  -81,  -84,  -88,  -91,  -93,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -110,  -88,  -61,
+    -63,  -70,  -71,  -74,  -77,  -80,  -83,  -85,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -110, -86, -62,
+    -63,  -62,  -62,  -58,  -52,  -50,  -50,  -52,
+    -54, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -118, -108,  -84,  -53,
+    -50,  -50,  -50,  -55,  -47,  -45,  -40,  -40,
+    -40, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -118, -100,  -73,  -43,
+    -37,  -42,  -43,  -53,  -38,  -37,  -35,  -35,
+    -38, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999}},
   /* 16000 Hz */
-  {{-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -110, -100,  -91,  -84,  -74, 
-    -80,  -80,  -80,  -80,  -80, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -110, -100,  -91,  -84,  -74, 
-    -68,  -68,  -68,  -68,  -68, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -110, -100,  -86,  -78,  -70, 
-    -60,  -45,  -30,  -21, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -110, -100,  -87,  -78,  -67, 
-    -48,  -38,  -29,  -21, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -110, -100,  -86,  -69,  -56, 
-    -45,  -35,  -33,  -29, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999}, 
-   {-999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -110, -100,  -83,  -71,  -48, 
-    -27,  -38,  -37,  -34, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
-    -999, -999, -999, -999, -999, -999, -999, -999, 
+  {{-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -110, -100,  -91,  -84,  -74,
+    -80,  -80,  -80,  -80,  -80, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -110, -100,  -91,  -84,  -74,
+    -68,  -68,  -68,  -68,  -68, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -110, -100,  -86,  -78,  -70,
+    -60,  -45,  -30,  -21, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -110, -100,  -87,  -78,  -67,
+    -48,  -38,  -29,  -21, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -110, -100,  -86,  -69,  -56,
+    -45,  -35,  -33,  -29, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999},
+   {-999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -110, -100,  -83,  -71,  -48,
+    -27,  -38,  -37,  -34, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
+    -999, -999, -999, -999, -999, -999, -999, -999,
     -999, -999, -999, -999, -999, -999, -999, -999}}
-}; 
+};
 
 #define NEGINF -9999.f
 static double stereo_threshholds[]={0.0, .5, 1.0, 1.5, 2.5, 4.5, 8.5, 16.5, 9e10};
@@ -48465,12 +48476,12 @@ void _vi_psy_free(vorbis_info_psy *i){
 
 static void min_curve(float *c,
 		       float *c2){
-  int i;  
+  int i;
   for(i=0;i<EHMER_MAX;i++)if(c2[i]<c[i])c[i]=c2[i];
 }
 static void max_curve(float *c,
 		       float *c2){
-  int i;  
+  int i;
   for(i=0;i<EHMER_MAX;i++)if(c2[i]>c[i])c[i]=c2[i];
 }
 
@@ -48498,7 +48509,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
        curve limiting (last step). */
 
     /* A half-band's settings must be valid over the whole band, and
-       it's better to mask too little than too much */  
+       it's better to mask too little than too much */
     int ath_offset=i*4;
     for(j=0;j<EHMER_MAX;j++){
       float min=999.;
@@ -48517,7 +48528,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
       memcpy(workc[i][j+2],tonemasks[i][j],EHMER_MAX*sizeof(*tonemasks[i][j]));
     memcpy(workc[i][0],tonemasks[i][0],EHMER_MAX*sizeof(*tonemasks[i][0]));
     memcpy(workc[i][1],tonemasks[i][0],EHMER_MAX*sizeof(*tonemasks[i][0]));
-    
+
     /* apply centered curve boost/decay */
     for(j=0;j<P_LEVELS;j++){
       for(k=0;k<EHMER_MAX;k++){
@@ -48538,7 +48549,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
     }
 
     /* Now limit the louder curves.
-       
+
        the idea is this: We don't know what the playback attenuation
        will be; 0dB SL moves every time the user twiddles the volume
        knob. So that means we have to use a single 'most pessimal' curve
@@ -48546,7 +48557,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
        can be in (we assume) a range of ...+100dB] SL.  However, sounds
        20dB down will be in a range ...+80], 40dB down is from ...+60],
        etc... */
-    
+
     for(j=1;j<P_LEVELS;j++){
       min_curve(athc[j],athc[j-1]);
       min_curve(workc[i][j],athc[j]);
@@ -48565,7 +48576,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
        composite of multiple octaves.  It also may mean that a single
        bin may span > an eighth of an octave and that the eighth
        octave values may also be composited. */
-    
+
     /* which octave curves will we be compositing? */
     bin=floor(fromOC(i*.5)/binHz);
     lo_curve=  ceil(toOC(bin*binHz+1)*2);
@@ -48576,9 +48587,9 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
 
     for(m=0;m<P_LEVELS;m++){
       ret[i][m]=_ogg_malloc(sizeof(***ret)*(EHMER_MAX+2));
-      
+
       for(j=0;j<n;j++)brute_buffer[j]=999.;
-      
+
       /* render the curve into bins, then pull values back into curve.
 	 The point is that any inherent subsampling aliasing results in
 	 a safe minimum */
@@ -48588,7 +48599,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
 	for(j=0;j<EHMER_MAX;j++){
 	  int lo_bin= fromOC(j*.125+k*.5-2.0625)/binHz;
 	  int hi_bin= fromOC(j*.125+k*.5-1.9375)/binHz+1;
-	  
+
 	  if(lo_bin<0)lo_bin=0;
 	  if(lo_bin>n)lo_bin=n;
 	  if(lo_bin<l)l=lo_bin;
@@ -48613,7 +48624,7 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
 	for(j=0;j<EHMER_MAX;j++){
 	  int lo_bin= fromOC(j*.125+i*.5-2.0625)/binHz;
 	  int hi_bin= fromOC(j*.125+i*.5-1.9375)/binHz+1;
-	  
+
 	  if(lo_bin<0)lo_bin=0;
 	  if(lo_bin>n)lo_bin=n;
 	  if(lo_bin<l)l=lo_bin;
@@ -48647,9 +48658,9 @@ static float ***setup_tone_curves(float curveatt_dB[P_BANDS],float binHz,int n,
 
       /* add fenceposts */
       for(j=0;j<EHMER_OFFSET;j++)
-	if(ret[i][m][j+2]>-200.f)break;  
+	if(ret[i][m][j+2]>-200.f)break;
       ret[i][m][0]=j;
-      
+
       for(j=EHMER_MAX-1;j>EHMER_OFFSET+1;j--)
 	if(ret[i][m][j+2]>-200.f)
 	  break;
@@ -48696,14 +48707,14 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
   }
 
   for(i=0;i<n;i++){
-    float bark=toBARK(rate/(2*n)*i); 
+    float bark=toBARK(rate/(2*n)*i);
 
-    for(;lo+vi->noisewindowlomin<i && 
+    for(;lo+vi->noisewindowlomin<i &&
 	  toBARK(rate/(2*n)*lo)<(bark-vi->noisewindowlo);lo++);
-    
+
     for(;hi<=n && (hi<i+vi->noisewindowhimin ||
 	  toBARK(rate/(2*n)*hi)<(bark+vi->noisewindowhi));hi++);
-    
+
     p->bark[i]=((lo-1)<<16)+(hi-1);
 
   }
@@ -48713,27 +48724,27 @@ void _vp_psy_init(vorbis_look_psy *p,vorbis_info_psy *vi,
 
   p->tonecurves=setup_tone_curves(vi->toneatt,rate*.5/n,n,
 				  vi->tone_centerboost,vi->tone_decay);
-  
+
   /* set up rolling noise median */
   p->noiseoffset=_ogg_malloc(P_NOISECURVES*sizeof(*p->noiseoffset));
   for(i=0;i<P_NOISECURVES;i++)
     p->noiseoffset[i]=_ogg_malloc(n*sizeof(**p->noiseoffset));
-  
+
   for(i=0;i<n;i++){
     float halfoc=toOC((i+.5)*rate/(2.*n))*2.;
     int inthalfoc;
     float del;
-    
+
     if(halfoc<0)halfoc=0;
     if(halfoc>=P_BANDS-1)halfoc=P_BANDS-1;
     inthalfoc=(int)halfoc;
     del=halfoc-inthalfoc;
-    
+
     for(j=0;j<P_NOISECURVES;j++)
       p->noiseoffset[j][i]=
-	p->vi->noiseoff[j][inthalfoc]*(1.-del) + 
+	p->vi->noiseoff[j][inthalfoc]*(1.-del) +
 	p->vi->noiseoff[j][inthalfoc+1]*del;
-    
+
   }
 #if 0
   {
@@ -48800,7 +48811,7 @@ static void seed_curve(float *seed,
 
 static void seed_loop(vorbis_look_psy *p,
 		      const float ***curves,
-		      const float *f, 
+		      const float *f,
 		      const float *flr,
 		      float *seed,
 		      float specmax){
@@ -48817,7 +48828,7 @@ static void seed_loop(vorbis_look_psy *p,
       i++;
       if(f[i]>max)max=f[i];
     }
-    
+
     if(max+6.f>flr[i]){
       oc=oc>>p->shiftoc;
 
@@ -48885,7 +48896,7 @@ static void seed_chase(float *seeds, int linesper, long n){
     for(;pos<endpos;pos++)
       seeds[pos]=ampstack[i];
   }
-  
+
   /* there.  Linear time.  I now remember this was on a problem set I
      had in Grad Skool... I didn't solve it at the time ;-) */
 
@@ -48901,7 +48912,7 @@ static void max_seeds(vorbis_look_psy *p,
   long   pos;
 
   seed_chase(seed,linesper,n); /* for masking */
- 
+
   pos=p->octave[0]-p->firstoc-(linesper>>1);
 
   while(linpos+1<p->n){
@@ -48913,18 +48924,18 @@ static void max_seeds(vorbis_look_psy *p,
       if((seed[pos]>NEGINF && seed[pos]<minV) || minV==NEGINF)
 	minV=seed[pos];
     }
-    
+
     end=pos+p->firstoc;
     for(;linpos<p->n && p->octave[linpos]<=end;linpos++)
       if(flr[linpos]<minV)flr[linpos]=minV;
   }
-  
+
   {
     float minV=seed[p->total_octave_lines-1];
     for(;linpos<p->n;linpos++)
       if(flr[linpos]<minV)flr[linpos]=minV;
   }
-  
+
 }
 
 static void bark_noise_hybridmp(int n,const long *b,
@@ -48932,7 +48943,7 @@ static void bark_noise_hybridmp(int n,const long *b,
                                 float *noise,
                                 const float offset,
                                 const int fixed){
-  
+
   float *N=alloca(n*sizeof(*N));
   float *X=alloca(n*sizeof(*N));
   float *XX=alloca(n*sizeof(*N));
@@ -48952,7 +48963,7 @@ static void bark_noise_hybridmp(int n,const long *b,
   if (y < 1.f) y = 1.f;
 
   w = y * y * .5;
-    
+
   tN += w;
   tX += w;
   tY += w * y;
@@ -48964,12 +48975,12 @@ static void bark_noise_hybridmp(int n,const long *b,
   XY[0] = tXY;
 
   for (i = 1, x = 1.f; i < n; i++, x += 1.f) {
-    
+
     y = f[i] + offset;
     if (y < 1.f) y = 1.f;
 
     w = y * y;
-    
+
     tN += w;
     tX += w * x;
     tXX += w * x * x;
@@ -48982,59 +48993,59 @@ static void bark_noise_hybridmp(int n,const long *b,
     Y[i] = tY;
     XY[i] = tXY;
   }
-  
+
   for (i = 0, x = 0.f;; i++, x += 1.f) {
-    
+
     lo = b[i] >> 16;
     if( lo>=0 ) break;
     hi = b[i] & 0xffff;
-    
+
     tN = N[hi] + N[-lo];
     tX = X[hi] - X[-lo];
     tXX = XX[hi] + XX[-lo];
-    tY = Y[hi] + Y[-lo];    
+    tY = Y[hi] + Y[-lo];
     tXY = XY[hi] - XY[-lo];
-    
+
     A = tY * tXX - tX * tXY;
     B = tN * tXY - tX * tY;
     D = tN * tXX - tX * tX;
     R = (A + x * B) / D;
     if (R < 0.f)
       R = 0.f;
-    
+
     noise[i] = R - offset;
   }
-  
+
   for ( ;; i++, x += 1.f) {
-    
+
     lo = b[i] >> 16;
     hi = b[i] & 0xffff;
     if(hi>=n)break;
-    
+
     tN = N[hi] - N[lo];
     tX = X[hi] - X[lo];
     tXX = XX[hi] - XX[lo];
     tY = Y[hi] - Y[lo];
     tXY = XY[hi] - XY[lo];
-    
+
     A = tY * tXX - tX * tXY;
     B = tN * tXY - tX * tY;
     D = tN * tXX - tX * tX;
     R = (A + x * B) / D;
     if (R < 0.f) R = 0.f;
-    
+
     noise[i] = R - offset;
   }
   for ( ; i < n; i++, x += 1.f) {
-    
+
     R = (A + x * B) / D;
     if (R < 0.f) R = 0.f;
-    
+
     noise[i] = R - offset;
   }
-  
+
   if (fixed <= 0) return;
-  
+
   for (i = 0, x = 0.f;; i++, x += 1.f) {
     hi = i + fixed / 2;
     lo = hi - fixed;
@@ -49045,8 +49056,8 @@ static void bark_noise_hybridmp(int n,const long *b,
     tXX = XX[hi] + XX[-lo];
     tY = Y[hi] + Y[-lo];
     tXY = XY[hi] - XY[-lo];
-    
-    
+
+
     A = tY * tXX - tX * tXY;
     B = tN * tXY - tX * tY;
     D = tN * tXX - tX * tX;
@@ -49055,22 +49066,22 @@ static void bark_noise_hybridmp(int n,const long *b,
     if (R - offset < noise[i]) noise[i] = R - offset;
   }
   for ( ;; i++, x += 1.f) {
-    
+
     hi = i + fixed / 2;
     lo = hi - fixed;
     if(hi>=n)break;
-    
+
     tN = N[hi] - N[lo];
     tX = X[hi] - X[lo];
     tXX = XX[hi] - XX[lo];
     tY = Y[hi] - Y[lo];
     tXY = XY[hi] - XY[lo];
-    
+
     A = tY * tXX - tX * tXY;
     B = tN * tXY - tX * tY;
     D = tN * tXX - tX * tX;
     R = (A + x * B) / D;
-    
+
     if (R - offset < noise[i]) noise[i] = R - offset;
   }
   for ( ; i < n; i++, x += 1.f) {
@@ -49080,69 +49091,69 @@ static void bark_noise_hybridmp(int n,const long *b,
 }
 
 static float FLOOR1_fromdB_INV_LOOKUP[256]={
-  0.F, 8.81683e+06F, 8.27882e+06F, 7.77365e+06F, 
-  7.29930e+06F, 6.85389e+06F, 6.43567e+06F, 6.04296e+06F, 
-  5.67422e+06F, 5.32798e+06F, 5.00286e+06F, 4.69759e+06F, 
-  4.41094e+06F, 4.14178e+06F, 3.88905e+06F, 3.65174e+06F, 
-  3.42891e+06F, 3.21968e+06F, 3.02321e+06F, 2.83873e+06F, 
-  2.66551e+06F, 2.50286e+06F, 2.35014e+06F, 2.20673e+06F, 
-  2.07208e+06F, 1.94564e+06F, 1.82692e+06F, 1.71544e+06F, 
-  1.61076e+06F, 1.51247e+06F, 1.42018e+06F, 1.33352e+06F, 
-  1.25215e+06F, 1.17574e+06F, 1.10400e+06F, 1.03663e+06F, 
-  973377.F, 913981.F, 858210.F, 805842.F, 
-  756669.F, 710497.F, 667142.F, 626433.F, 
-  588208.F, 552316.F, 518613.F, 486967.F, 
-  457252.F, 429351.F, 403152.F, 378551.F, 
-  355452.F, 333762.F, 313396.F, 294273.F, 
-  276316.F, 259455.F, 243623.F, 228757.F, 
-  214798.F, 201691.F, 189384.F, 177828.F, 
-  166977.F, 156788.F, 147221.F, 138237.F, 
-  129802.F, 121881.F, 114444.F, 107461.F, 
-  100903.F, 94746.3F, 88964.9F, 83536.2F, 
-  78438.8F, 73652.5F, 69158.2F, 64938.1F, 
-  60975.6F, 57254.9F, 53761.2F, 50480.6F, 
-  47400.3F, 44507.9F, 41792.0F, 39241.9F, 
-  36847.3F, 34598.9F, 32487.7F, 30505.3F, 
-  28643.8F, 26896.0F, 25254.8F, 23713.7F, 
-  22266.7F, 20908.0F, 19632.2F, 18434.2F, 
-  17309.4F, 16253.1F, 15261.4F, 14330.1F, 
-  13455.7F, 12634.6F, 11863.7F, 11139.7F, 
-  10460.0F, 9821.72F, 9222.39F, 8659.64F, 
-  8131.23F, 7635.06F, 7169.17F, 6731.70F, 
-  6320.93F, 5935.23F, 5573.06F, 5232.99F, 
-  4913.67F, 4613.84F, 4332.30F, 4067.94F, 
-  3819.72F, 3586.64F, 3367.78F, 3162.28F, 
-  2969.31F, 2788.13F, 2617.99F, 2458.24F, 
-  2308.24F, 2167.39F, 2035.14F, 1910.95F, 
-  1794.35F, 1684.85F, 1582.04F, 1485.51F, 
-  1394.86F, 1309.75F, 1229.83F, 1154.78F, 
-  1084.32F, 1018.15F, 956.024F, 897.687F, 
-  842.910F, 791.475F, 743.179F, 697.830F, 
-  655.249F, 615.265F, 577.722F, 542.469F, 
-  509.367F, 478.286F, 449.101F, 421.696F, 
-  395.964F, 371.803F, 349.115F, 327.812F, 
-  307.809F, 289.026F, 271.390F, 254.830F, 
-  239.280F, 224.679F, 210.969F, 198.096F, 
-  186.008F, 174.658F, 164.000F, 153.993F, 
-  144.596F, 135.773F, 127.488F, 119.708F, 
-  112.404F, 105.545F, 99.1046F, 93.0572F, 
-  87.3788F, 82.0469F, 77.0404F, 72.3394F, 
-  67.9252F, 63.7804F, 59.8885F, 56.2341F, 
-  52.8027F, 49.5807F, 46.5553F, 43.7144F, 
-  41.0470F, 38.5423F, 36.1904F, 33.9821F, 
-  31.9085F, 29.9614F, 28.1332F, 26.4165F, 
-  24.8045F, 23.2910F, 21.8697F, 20.5352F, 
-  19.2822F, 18.1056F, 17.0008F, 15.9634F, 
-  14.9893F, 14.0746F, 13.2158F, 12.4094F, 
-  11.6522F, 10.9411F, 10.2735F, 9.64662F, 
-  9.05798F, 8.50526F, 7.98626F, 7.49894F, 
-  7.04135F, 6.61169F, 6.20824F, 5.82941F, 
-  5.47370F, 5.13970F, 4.82607F, 4.53158F, 
-  4.25507F, 3.99542F, 3.75162F, 3.52269F, 
-  3.30774F, 3.10590F, 2.91638F, 2.73842F, 
-  2.57132F, 2.41442F, 2.26709F, 2.12875F, 
-  1.99885F, 1.87688F, 1.76236F, 1.65482F, 
-  1.55384F, 1.45902F, 1.36999F, 1.28640F, 
+  0.F, 8.81683e+06F, 8.27882e+06F, 7.77365e+06F,
+  7.29930e+06F, 6.85389e+06F, 6.43567e+06F, 6.04296e+06F,
+  5.67422e+06F, 5.32798e+06F, 5.00286e+06F, 4.69759e+06F,
+  4.41094e+06F, 4.14178e+06F, 3.88905e+06F, 3.65174e+06F,
+  3.42891e+06F, 3.21968e+06F, 3.02321e+06F, 2.83873e+06F,
+  2.66551e+06F, 2.50286e+06F, 2.35014e+06F, 2.20673e+06F,
+  2.07208e+06F, 1.94564e+06F, 1.82692e+06F, 1.71544e+06F,
+  1.61076e+06F, 1.51247e+06F, 1.42018e+06F, 1.33352e+06F,
+  1.25215e+06F, 1.17574e+06F, 1.10400e+06F, 1.03663e+06F,
+  973377.F, 913981.F, 858210.F, 805842.F,
+  756669.F, 710497.F, 667142.F, 626433.F,
+  588208.F, 552316.F, 518613.F, 486967.F,
+  457252.F, 429351.F, 403152.F, 378551.F,
+  355452.F, 333762.F, 313396.F, 294273.F,
+  276316.F, 259455.F, 243623.F, 228757.F,
+  214798.F, 201691.F, 189384.F, 177828.F,
+  166977.F, 156788.F, 147221.F, 138237.F,
+  129802.F, 121881.F, 114444.F, 107461.F,
+  100903.F, 94746.3F, 88964.9F, 83536.2F,
+  78438.8F, 73652.5F, 69158.2F, 64938.1F,
+  60975.6F, 57254.9F, 53761.2F, 50480.6F,
+  47400.3F, 44507.9F, 41792.0F, 39241.9F,
+  36847.3F, 34598.9F, 32487.7F, 30505.3F,
+  28643.8F, 26896.0F, 25254.8F, 23713.7F,
+  22266.7F, 20908.0F, 19632.2F, 18434.2F,
+  17309.4F, 16253.1F, 15261.4F, 14330.1F,
+  13455.7F, 12634.6F, 11863.7F, 11139.7F,
+  10460.0F, 9821.72F, 9222.39F, 8659.64F,
+  8131.23F, 7635.06F, 7169.17F, 6731.70F,
+  6320.93F, 5935.23F, 5573.06F, 5232.99F,
+  4913.67F, 4613.84F, 4332.30F, 4067.94F,
+  3819.72F, 3586.64F, 3367.78F, 3162.28F,
+  2969.31F, 2788.13F, 2617.99F, 2458.24F,
+  2308.24F, 2167.39F, 2035.14F, 1910.95F,
+  1794.35F, 1684.85F, 1582.04F, 1485.51F,
+  1394.86F, 1309.75F, 1229.83F, 1154.78F,
+  1084.32F, 1018.15F, 956.024F, 897.687F,
+  842.910F, 791.475F, 743.179F, 697.830F,
+  655.249F, 615.265F, 577.722F, 542.469F,
+  509.367F, 478.286F, 449.101F, 421.696F,
+  395.964F, 371.803F, 349.115F, 327.812F,
+  307.809F, 289.026F, 271.390F, 254.830F,
+  239.280F, 224.679F, 210.969F, 198.096F,
+  186.008F, 174.658F, 164.000F, 153.993F,
+  144.596F, 135.773F, 127.488F, 119.708F,
+  112.404F, 105.545F, 99.1046F, 93.0572F,
+  87.3788F, 82.0469F, 77.0404F, 72.3394F,
+  67.9252F, 63.7804F, 59.8885F, 56.2341F,
+  52.8027F, 49.5807F, 46.5553F, 43.7144F,
+  41.0470F, 38.5423F, 36.1904F, 33.9821F,
+  31.9085F, 29.9614F, 28.1332F, 26.4165F,
+  24.8045F, 23.2910F, 21.8697F, 20.5352F,
+  19.2822F, 18.1056F, 17.0008F, 15.9634F,
+  14.9893F, 14.0746F, 13.2158F, 12.4094F,
+  11.6522F, 10.9411F, 10.2735F, 9.64662F,
+  9.05798F, 8.50526F, 7.98626F, 7.49894F,
+  7.04135F, 6.61169F, 6.20824F, 5.82941F,
+  5.47370F, 5.13970F, 4.82607F, 4.53158F,
+  4.25507F, 3.99542F, 3.75162F, 3.52269F,
+  3.30774F, 3.10590F, 2.91638F, 2.73842F,
+  2.57132F, 2.41442F, 2.26709F, 2.12875F,
+  1.99885F, 1.87688F, 1.76236F, 1.65482F,
+  1.55384F, 1.45902F, 1.36999F, 1.28640F,
   1.20790F, 1.13419F, 1.06499F, 1.F
 };
 
@@ -49150,12 +49161,12 @@ void _vp_remove_floor(vorbis_look_psy *p,
 		      float *mdct,
 		      int *codedflr,
 		      float *residue,
-		      int sliding_lowpass){ 
+		      int sliding_lowpass){
 
   int i,n=p->n;
- 
+
   if(sliding_lowpass>n)sliding_lowpass=n;
-  
+
   for(i=0;i<sliding_lowpass;i++){
     residue[i]=
       mdct[i]*FLOOR1_fromdB_INV_LOOKUP[codedflr[i]];
@@ -49166,7 +49177,7 @@ void _vp_remove_floor(vorbis_look_psy *p,
 }
 
 void _vp_noisemask(vorbis_look_psy *p,
-		   float *logmdct, 
+		   float *logmdct,
 		   float *logmask){
 
   int i,n=p->n;
@@ -49181,7 +49192,7 @@ void _vp_noisemask(vorbis_look_psy *p,
 		      p->vi->noisewindowfixed);
 
   for(i=0;i<n;i++)work[i]=logmdct[i]-work[i];
-  
+
 #if 0
   {
     static int seq=0;
@@ -49190,12 +49201,12 @@ void _vp_noisemask(vorbis_look_psy *p,
     for(i=0;i<n;i++){
       work2[i]=logmask[i]+work[i];
     }
-    
+
     if(seq&1)
       _analysis_output("median2R",seq/2,work,n,1,0,0);
     else
       _analysis_output("median2L",seq/2,work,n,1,0,0);
-    
+
     if(seq&1)
       _analysis_output("envelope2R",seq/2,work2,n,1,0,0);
     else
@@ -49224,11 +49235,11 @@ void _vp_tonemask(vorbis_look_psy *p,
   float *seed=alloca(sizeof(*seed)*p->total_octave_lines);
   float att=local_specmax+p->vi->ath_adjatt;
   for(i=0;i<p->total_octave_lines;i++)seed[i]=NEGINF;
-  
+
   /* set the ATH (floating below localmax, not global max by a
      specified att) */
   if(att<p->vi->ath_maxatt)att=p->vi->ath_maxatt;
-  
+
   for(i=0;i<n;i++)
     logmask[i]=p->ath[i]+att;
 
@@ -49245,7 +49256,7 @@ void _vp_offset_and_mix(vorbis_look_psy *p,
 			float *logmask){
   int i,n=p->n;
   float toneatt=p->vi->tone_masteratt[offset_select];
-  
+
   for(i=0;i<n;i++){
     float val= noise[i]+p->noiseoffset[offset_select][i];
     if(val>p->vi->noisemaxsupp)val=p->vi->noisemaxsupp;
@@ -49266,16 +49277,16 @@ float _vp_ampmax_decay(float amp,vorbis_dsp_state *vd){
   return(amp);
 }
 
-static void couple_lossless(float A, float B, 
+static void couple_lossless(float A, float B,
 			    float *qA, float *qB){
   int test1=fabs(*qA)>fabs(*qB);
   test1-= fabs(*qA)<fabs(*qB);
-  
+
   if(!test1)test1=((fabs(A)>fabs(B))<<1)-1;
   if(test1==1){
     *qB=(*qA>0.f?*qA-*qB:*qB-*qA);
   }else{
-    float temp=*qB;  
+    float temp=*qB;
     *qB=(*qB>0.f?*qA-*qB:*qB-*qA);
     *qA=temp;
   }
@@ -49287,19 +49298,19 @@ static void couple_lossless(float A, float B,
 }
 
 static float hypot_lookup[32]={
-  -0.009935, -0.011245, -0.012726, -0.014397, 
-  -0.016282, -0.018407, -0.020800, -0.023494, 
-  -0.026522, -0.029923, -0.033737, -0.038010, 
-  -0.042787, -0.048121, -0.054064, -0.060671, 
-  -0.068000, -0.076109, -0.085054, -0.094892, 
-  -0.105675, -0.117451, -0.130260, -0.144134, 
-  -0.159093, -0.175146, -0.192286, -0.210490, 
+  -0.009935, -0.011245, -0.012726, -0.014397,
+  -0.016282, -0.018407, -0.020800, -0.023494,
+  -0.026522, -0.029923, -0.033737, -0.038010,
+  -0.042787, -0.048121, -0.054064, -0.060671,
+  -0.068000, -0.076109, -0.085054, -0.094892,
+  -0.105675, -0.117451, -0.130260, -0.144134,
+  -0.159093, -0.175146, -0.192286, -0.210490,
   -0.229718, -0.249913, -0.271001, -0.292893};
 
 static void precomputed_couple_point(float premag,
 				     int floorA,int floorB,
 				     float *mag, float *ang){
-  
+
   int test=(floorA>floorB)-1;
   int offset=31-abs(floorA-floorB);
   float floormag=hypot_lookup[((offset<0)-1)&offset]+1.f;
@@ -49343,11 +49354,11 @@ float **_vp_quantize_couple_memo(vorbis_block *vb,
 				 vorbis_look_psy *p,
 				 vorbis_info_mapping0 *vi,
 				 float **mdct){
-  
+
   int i,j,n=p->n;
   float **ret=_vorbis_block_alloc(vb,vi->coupling_steps*sizeof(*ret));
   int limit=g->coupling_pointlimit[p->vi->blockflag][PACKETBLOBS/2];
-  
+
   for(i=0;i<vi->coupling_steps;i++){
     float *mdctM=mdct[vi->coupling_mag[i]];
     float *mdctA=mdct[vi->coupling_ang[i]];
@@ -49379,10 +49390,10 @@ int **_vp_quantize_couple_sort(vorbis_block *vb,
     int **ret=_vorbis_block_alloc(vb,vi->coupling_steps*sizeof(*ret));
     int partition=p->vi->normal_partition;
     float **work=alloca(sizeof(*work)*partition);
-    
+
     for(i=0;i<vi->coupling_steps;i++){
       ret[i]=_vorbis_block_alloc(vb,n*sizeof(**ret));
-      
+
       for(j=0;j<n;j+=partition){
 	for(k=0;k<partition;k++)work[k]=mags[i]+k+j;
 	qsort(work,partition,sizeof(*work),apsort);
@@ -49424,17 +49435,17 @@ void _vp_noise_normalize(vorbis_look_psy *p,
   if(vi->normal_channel_p){
     for(;j<start;j++)
       out[j]=rint(in[j]);
-    
+
     for(;j+partition<=n;j+=partition){
       float acc=0.;
       int k;
-      
+
       for(i=j;i<j+partition;i++)
 	acc+=in[i]*in[i];
-      
+
       for(i=0;i<partition;i++){
 	k=sortedindex[i+j-start];
-	
+
 	if(in[k]*in[k]>=.25f){
 	  out[k]=rint(in[k]);
 	  acc-=in[k]*in[k];
@@ -49445,17 +49456,17 @@ void _vp_noise_normalize(vorbis_look_psy *p,
 	  acc-=1.;
 	}
       }
-      
+
       for(;i<partition;i++){
 	k=sortedindex[i+j-start];
 	out[k]=0.;
       }
     }
   }
-  
+
   for(;j<n;j++)
     out[j]=rint(in[j]);
-  
+
 }
 
 void _vp_couple(int blobno,
@@ -49487,7 +49498,7 @@ void _vp_couple(int blobno,
        nonzero channels. */
     if(nonzero[vi->coupling_mag[i]] ||
        nonzero[vi->coupling_ang[i]]){
-     
+
 
       float *rM=res[vi->coupling_mag[i]];
       float *rA=res[vi->coupling_ang[i]];
@@ -49501,8 +49512,8 @@ void _vp_couple(int blobno,
       int limit=g->coupling_pointlimit[p->vi->blockflag][blobno];
       int pointlimit=limit;
 
-      nonzero[vi->coupling_mag[i]]=1; 
-      nonzero[vi->coupling_ang[i]]=1; 
+      nonzero[vi->coupling_mag[i]]=1;
+      nonzero[vi->coupling_ang[i]]=1;
 
       for(j=0;j<p->n;j+=partition){
 	float acc=0.f;
@@ -49528,7 +49539,7 @@ void _vp_couple(int blobno,
 	    qA[l]=0.;
 	  }
 	}
-	
+
 	if(p->vi->normal_point_p){
 	  for(k=0;k<partition && acc>=p->vi->normal_thresh;k++){
 	    int l=mag_sort[i][j+k];
@@ -49536,7 +49547,7 @@ void _vp_couple(int blobno,
 	      qM[l]=unitnorm(qM[l]);
 	      acc-=1.f;
 	    }
-	  } 
+	  }
 	}
       }
     }
@@ -49664,7 +49675,7 @@ static void dradf2(int ido,int l1,float *cc,float *ch,float *wa1){
     t1+=ido;
     t2+=ido;
   }
-    
+
   if(ido<2)return;
   if(ido==2)goto L105;
 
@@ -49711,7 +49722,7 @@ static void dradf4(int ido,int l1,float *cc,float *ch,float *wa1,
   int i,k,t0,t1,t2,t3,t4,t5,t6;
   float ci2,ci3,ci4,cr2,cr3,cr4,ti1,ti2,ti3,ti4,tr1,tr2,tr3,tr4;
   t0=l1*ido;
-  
+
   t1=t0;
   t4=t1<<1;
   t2=t1+(t1<<1);
@@ -49783,7 +49794,7 @@ static void dradf4(int ido,int l1,float *cc,float *ch,float *wa1,
   if(ido&1)return;
 
  L105:
-  
+
   t2=(t1=t0+ido-1)+(t0<<1);
   t3=ido<<2;
   t4=ido;
@@ -49817,7 +49828,7 @@ static void dradfg(int ido,int ip,int l1,int idl1,float *cc,float *c1,
   int nbd;
   float dcp,arg,dsp,ar1h,ar2h;
   int idp2,ipp2;
-  
+
   arg=tpi/(float)ip;
   dcp=cos(arg);
   dsp=sin(arg);
@@ -50175,7 +50186,7 @@ static void dradb2(int ido,int l1,float *cc,float *ch,float *wa1){
   float ti2,tr2;
 
   t0=l1*ido;
-  
+
   t1=0;
   t2=0;
   t3=(ido<<1)-1;
@@ -50291,7 +50302,7 @@ static void dradb4(int ido,int l1,float *cc,float *ch,float *wa1,
   int i,k,t0,t1,t2,t3,t4,t5,t6,t7,t8;
   float ci2,ci3,ci4,cr2,cr3,cr4,ti1,ti2,ti3,ti4,tr1,tr2,tr3,tr4;
   t0=l1*ido;
-  
+
   t1=0;
   t2=ido<<2;
   t3=0;
@@ -50300,7 +50311,7 @@ static void dradb4(int ido,int l1,float *cc,float *ch,float *wa1,
     t4=t3+t6;
     t5=t1;
     tr3=cc[t4-1]+cc[t4-1];
-    tr4=cc[t4]+cc[t4]; 
+    tr4=cc[t4]+cc[t4];
     tr1=cc[t3]-cc[(t4+=t6)-1];
     tr2=cc[t3]+cc[t4-1];
     ch[t5]=tr2+tr3;
@@ -50395,7 +50406,7 @@ static void dradbg(int ido,int ip,int l1,int idl1,float *cc,float *c1,
   ipp2=ip;
   ipph=(ip+1)>>1;
   if(ido<l1)goto L103;
-  
+
   t1=0;
   t2=0;
   for(k=0;k<l1;k++){
@@ -50805,7 +50816,7 @@ void drft_clear(drft_lookup *l){
  *                                                                  *
  ********************************************************************
 
- function: PCM data envelope analysis 
+ function: PCM data envelope analysis
  last mod: $Id: envelope.c,v 1.54 2003/09/05 23:17:49 giles Exp $
 
  ********************************************************************/
@@ -50848,7 +50859,7 @@ void _ve_envelope_init(envelope_lookup *e,vorbis_info *vi){
     }
     e->band[j].total=1./e->band[j].total;
   }
-  
+
   e->filter=_ogg_calloc(VE_BANDS*ch,sizeof(*e->filter));
   e->mark=_ogg_calloc(e->storage,sizeof(*e->mark));
 
@@ -50892,15 +50903,15 @@ static int _ve_amp(envelope_lookup *ve,
   float penalty=gi->stretch_penalty-(ve->stretch/2-VE_MINSTRETCH);
   if(penalty<0.f)penalty=0.f;
   if(penalty>gi->stretch_penalty)penalty=gi->stretch_penalty;
-  
+
   /*_analysis_output_always("lpcm",seq2,data,n,0,0,
     totalshift+pos*ve->searchstep);*/
-  
+
  /* window and transform */
   for(i=0;i<n;i++)
     vec[i]=data[i]*ve->mdct_win[i];
   mdct_forward(&ve->mdct,vec,vec);
-  
+
   /*_analysis_output_always("mdct",seq2,vec,n/2,0,1,0); */
 
   /* near-DC spreading function; this has nothing to do with
@@ -50926,7 +50937,7 @@ static int _ve_amp(envelope_lookup *ve,
     if(filters->nearptr>=VE_NEARDC)filters->nearptr=0;
     decay=todB(&decay)*.5-15.f;
   }
-  
+
   /* perform spreading and limiting, also smooth the spectrum.  yes,
      the MDCT results in all real coefficients, but it still *behaves*
      like real/imaginary pairs */
@@ -50940,7 +50951,7 @@ static int _ve_amp(envelope_lookup *ve,
   }
 
   /*_analysis_output_always("spread",seq2++,vec,n/4,0,0,0);*/
-  
+
   /* perform preecho/postecho triggering by band */
   for(j=0;j<VE_BANDS;j++){
     float acc=0.;
@@ -50949,27 +50960,27 @@ static int _ve_amp(envelope_lookup *ve,
     /* accumulate amplitude */
     for(i=0;i<bands[j].end;i++)
       acc+=vec[i+bands[j].begin]*bands[j].window[i];
-   
+
     acc*=bands[j].total;
 
     /* convert amplitude to delta */
     {
       int p,this=filters[j].ampptr;
       float postmax,postmin,premax=-99999.f,premin=99999.f;
-      
+
       p=this;
       p--;
       if(p<0)p+=VE_AMP;
       postmax=max(acc,filters[j].ampbuf[p]);
       postmin=min(acc,filters[j].ampbuf[p]);
-      
+
       for(i=0;i<stretch;i++){
 	p--;
 	if(p<0)p+=VE_AMP;
 	premax=max(premax,filters[j].ampbuf[p]);
 	premin=min(premin,filters[j].ampbuf[p]);
       }
-      
+
       valmin=postmin-premin;
       valmax=postmax-premax;
 
@@ -50986,7 +50997,7 @@ static int _ve_amp(envelope_lookup *ve,
     }
     if(valmin<gi->postecho_thresh[j]-penalty)ret|=2;
   }
- 
+
   return(ret);
 }
 
@@ -51018,7 +51029,7 @@ long _ve_envelope_search(vorbis_dsp_state *v){
     ve->stretch++;
     if(ve->stretch>VE_MAXSTRETCH*2)
       ve->stretch=VE_MAXSTRETCH*2;
-    
+
     for(i=0;i<ve->ch;i++){
       float *pcm=v->pcm[i]+ve->searchstep*(j);
       ret|=_ve_amp(ve,gi,pcm,ve->band,ve->filter+i*VE_BANDS,j);
@@ -51047,13 +51058,13 @@ long _ve_envelope_search(vorbis_dsp_state *v){
       ci->blocksizes[v->W]/4+
       ci->blocksizes[1]/2+
       ci->blocksizes[0]/4;
-    
+
     j=ve->cursor;
-    
+
     while(j<ve->current-(ve->searchstep)){/* account for postecho
                                              working back one window */
       if(j>=testW)return(1);
- 
+
       ve->cursor=j;
 
       if(ve->mark[j/ve->searchstep]){
@@ -51073,7 +51084,7 @@ long _ve_envelope_search(vorbis_dsp_state *v){
 
 	    _analysis_output_always("markL",seq,v->pcm[0],j,0,0,totalshift);
 	    _analysis_output_always("markR",seq,v->pcm[1],j,0,0,totalshift);
-	    
+
 	    for(m=0;m<VE_BANDS;m++){
 	      char buf[80];
 	      sprintf(buf,"delL%d",m);
@@ -51090,10 +51101,10 @@ long _ve_envelope_search(vorbis_dsp_state *v){
 
 	    for(l=0;l<last;l++)marker[l*ve->searchstep]=ve->mark[l]*.4;
 	    _analysis_output_always("mark",seq,marker,v->pcm_current,0,0,totalshift);
-	   
-	    
+
+
 	    seq++;
-	    
+
 	  }
 #endif
 
@@ -51105,7 +51116,7 @@ long _ve_envelope_search(vorbis_dsp_state *v){
       j+=ve->searchstep;
     }
   }
-  
+
   return(-1);
 }
 
@@ -51141,14 +51152,14 @@ void _ve_envelope_shift(envelope_lookup *e,long shift){
   int smallshift=shift/e->searchstep;
 
   memmove(e->mark,e->mark+smallshift,(smallsize-smallshift)*sizeof(*e->mark));
-  
+
   #if 0
   for(i=0;i<VE_BANDS*e->ch;i++)
     memmove(e->filter[i].markers,
 	    e->filter[i].markers+smallshift,
 	    (1024-smallshift)*sizeof(*(*e->filter).markers));
   totalshift+=shift;
-  #endif 
+  #endif
 
   e->current-=shift;
   if(e->curmark>=0)
@@ -51220,11 +51231,11 @@ float vorbis_lpc_from_data(float *data,float *lpci,int n,int m){
     for(i=j;i<n;i++)d+=(double)data[i]*data[i-j];
     aut[j]=d;
   }
-  
+
   /* Generate lpc coefficients from autocorr values */
 
   error=aut[0];
-  
+
   for(i=0;i<m;i++){
     double r= -aut[i+1];
 
@@ -51239,10 +51250,10 @@ float vorbis_lpc_from_data(float *data,float *lpci,int n,int m){
        each iteration. */
 
     for(j=0;j<i;j++)r-=lpc[j]*aut[i-j];
-    r/=error; 
+    r/=error;
 
     /* Update LPC coefficients and total error */
-    
+
     lpc[i]=r;
     for(j=0;j<i/2;j++){
       double tmp=lpc[j];
@@ -51259,14 +51270,14 @@ float vorbis_lpc_from_data(float *data,float *lpci,int n,int m){
 
   /* we need the error value to know how big an impulse to hit the
      filter with later */
-  
+
   return error;
 }
 
 void vorbis_lpc_predict(float *coeff,float *prime,int m,
                      float *data,long n){
 
-  /* in: coeff[0...m-1] LPC coefficients 
+  /* in: coeff[0...m-1] LPC coefficients
          prime[0...m-1] initial values (allocated size of n+m-1)
     out: data[0...n-1] data samples */
 
@@ -51287,7 +51298,7 @@ void vorbis_lpc_predict(float *coeff,float *prime,int m,
     p=m;
     for(j=0;j<m;j++)
       y-=work[o++]*coeff[--p];
-    
+
     data[i]=work[o]=y;
   }
 }
@@ -51311,2067 +51322,2067 @@ void vorbis_lpc_predict(float *coeff,float *prime,int m,
 
 
 static float vwin64[32] = {
-  0.0009460463F, 0.0085006468F, 0.0235352254F, 0.0458950567F, 
-  0.0753351908F, 0.1115073077F, 0.1539457973F, 0.2020557475F, 
-  0.2551056759F, 0.3122276645F, 0.3724270287F, 0.4346027792F, 
-  0.4975789974F, 0.5601459521F, 0.6211085051F, 0.6793382689F, 
-  0.7338252629F, 0.7837245849F, 0.8283939355F, 0.8674186656F, 
-  0.9006222429F, 0.9280614787F, 0.9500073081F, 0.9669131782F, 
-  0.9793740220F, 0.9880792941F, 0.9937636139F, 0.9971582668F, 
-  0.9989462667F, 0.9997230082F, 0.9999638688F, 0.9999995525F, 
+  0.0009460463F, 0.0085006468F, 0.0235352254F, 0.0458950567F,
+  0.0753351908F, 0.1115073077F, 0.1539457973F, 0.2020557475F,
+  0.2551056759F, 0.3122276645F, 0.3724270287F, 0.4346027792F,
+  0.4975789974F, 0.5601459521F, 0.6211085051F, 0.6793382689F,
+  0.7338252629F, 0.7837245849F, 0.8283939355F, 0.8674186656F,
+  0.9006222429F, 0.9280614787F, 0.9500073081F, 0.9669131782F,
+  0.9793740220F, 0.9880792941F, 0.9937636139F, 0.9971582668F,
+  0.9989462667F, 0.9997230082F, 0.9999638688F, 0.9999995525F,
 };
 
 static float vwin128[64] = {
-  0.0002365472F, 0.0021280687F, 0.0059065254F, 0.0115626550F, 
-  0.0190823442F, 0.0284463735F, 0.0396300935F, 0.0526030430F, 
-  0.0673285281F, 0.0837631763F, 0.1018564887F, 0.1215504095F, 
-  0.1427789367F, 0.1654677960F, 0.1895342001F, 0.2148867160F, 
-  0.2414252576F, 0.2690412240F, 0.2976177952F, 0.3270303960F, 
-  0.3571473350F, 0.3878306189F, 0.4189369387F, 0.4503188188F, 
-  0.4818259135F, 0.5133064334F, 0.5446086751F, 0.5755826278F, 
-  0.6060816248F, 0.6359640047F, 0.6650947483F, 0.6933470543F, 
-  0.7206038179F, 0.7467589810F, 0.7717187213F, 0.7954024542F, 
-  0.8177436264F, 0.8386902831F, 0.8582053981F, 0.8762669622F, 
-  0.8928678298F, 0.9080153310F, 0.9217306608F, 0.9340480615F, 
-  0.9450138200F, 0.9546851041F, 0.9631286621F, 0.9704194171F, 
-  0.9766389810F, 0.9818741197F, 0.9862151938F, 0.9897546035F, 
-  0.9925852598F, 0.9947991032F, 0.9964856900F, 0.9977308602F, 
-  0.9986155015F, 0.9992144193F, 0.9995953200F, 0.9998179155F, 
-  0.9999331503F, 0.9999825563F, 0.9999977357F, 0.9999999720F, 
+  0.0002365472F, 0.0021280687F, 0.0059065254F, 0.0115626550F,
+  0.0190823442F, 0.0284463735F, 0.0396300935F, 0.0526030430F,
+  0.0673285281F, 0.0837631763F, 0.1018564887F, 0.1215504095F,
+  0.1427789367F, 0.1654677960F, 0.1895342001F, 0.2148867160F,
+  0.2414252576F, 0.2690412240F, 0.2976177952F, 0.3270303960F,
+  0.3571473350F, 0.3878306189F, 0.4189369387F, 0.4503188188F,
+  0.4818259135F, 0.5133064334F, 0.5446086751F, 0.5755826278F,
+  0.6060816248F, 0.6359640047F, 0.6650947483F, 0.6933470543F,
+  0.7206038179F, 0.7467589810F, 0.7717187213F, 0.7954024542F,
+  0.8177436264F, 0.8386902831F, 0.8582053981F, 0.8762669622F,
+  0.8928678298F, 0.9080153310F, 0.9217306608F, 0.9340480615F,
+  0.9450138200F, 0.9546851041F, 0.9631286621F, 0.9704194171F,
+  0.9766389810F, 0.9818741197F, 0.9862151938F, 0.9897546035F,
+  0.9925852598F, 0.9947991032F, 0.9964856900F, 0.9977308602F,
+  0.9986155015F, 0.9992144193F, 0.9995953200F, 0.9998179155F,
+  0.9999331503F, 0.9999825563F, 0.9999977357F, 0.9999999720F,
 };
 
 static float vwin256[128] = {
-  0.0000591390F, 0.0005321979F, 0.0014780301F, 0.0028960636F, 
-  0.0047854363F, 0.0071449926F, 0.0099732775F, 0.0132685298F, 
-  0.0170286741F, 0.0212513119F, 0.0259337111F, 0.0310727950F, 
-  0.0366651302F, 0.0427069140F, 0.0491939614F, 0.0561216907F, 
-  0.0634851102F, 0.0712788035F, 0.0794969160F, 0.0881331402F, 
-  0.0971807028F, 0.1066323515F, 0.1164803426F, 0.1267164297F, 
-  0.1373318534F, 0.1483173323F, 0.1596630553F, 0.1713586755F, 
-  0.1833933062F, 0.1957555184F, 0.2084333404F, 0.2214142599F, 
-  0.2346852280F, 0.2482326664F, 0.2620424757F, 0.2761000481F, 
-  0.2903902813F, 0.3048975959F, 0.3196059553F, 0.3344988887F, 
-  0.3495595160F, 0.3647705766F, 0.3801144597F, 0.3955732382F, 
-  0.4111287047F, 0.4267624093F, 0.4424557009F, 0.4581897696F, 
-  0.4739456913F, 0.4897044744F, 0.5054471075F, 0.5211546088F, 
-  0.5368080763F, 0.5523887395F, 0.5678780103F, 0.5832575361F, 
-  0.5985092508F, 0.6136154277F, 0.6285587300F, 0.6433222619F, 
-  0.6578896175F, 0.6722449294F, 0.6863729144F, 0.7002589187F, 
-  0.7138889597F, 0.7272497662F, 0.7403288154F, 0.7531143679F, 
-  0.7655954985F, 0.7777621249F, 0.7896050322F, 0.8011158947F, 
-  0.8122872932F, 0.8231127294F, 0.8335866365F, 0.8437043850F, 
-  0.8534622861F, 0.8628575905F, 0.8718884835F, 0.8805540765F, 
-  0.8888543947F, 0.8967903616F, 0.9043637797F, 0.9115773078F, 
-  0.9184344360F, 0.9249394562F, 0.9310974312F, 0.9369141608F, 
-  0.9423961446F, 0.9475505439F, 0.9523851406F, 0.9569082947F, 
-  0.9611289005F, 0.9650563408F, 0.9687004405F, 0.9720714191F, 
-  0.9751798427F, 0.9780365753F, 0.9806527301F, 0.9830396204F, 
-  0.9852087111F, 0.9871715701F, 0.9889398207F, 0.9905250941F, 
-  0.9919389832F, 0.9931929973F, 0.9942985174F, 0.9952667537F, 
-  0.9961087037F, 0.9968351119F, 0.9974564312F, 0.9979827858F, 
-  0.9984239359F, 0.9987892441F, 0.9990876435F, 0.9993276081F, 
-  0.9995171241F, 0.9996636648F, 0.9997741654F, 0.9998550016F, 
-  0.9999119692F, 0.9999502656F, 0.9999744742F, 0.9999885497F, 
-  0.9999958064F, 0.9999989077F, 0.9999998584F, 0.9999999983F, 
+  0.0000591390F, 0.0005321979F, 0.0014780301F, 0.0028960636F,
+  0.0047854363F, 0.0071449926F, 0.0099732775F, 0.0132685298F,
+  0.0170286741F, 0.0212513119F, 0.0259337111F, 0.0310727950F,
+  0.0366651302F, 0.0427069140F, 0.0491939614F, 0.0561216907F,
+  0.0634851102F, 0.0712788035F, 0.0794969160F, 0.0881331402F,
+  0.0971807028F, 0.1066323515F, 0.1164803426F, 0.1267164297F,
+  0.1373318534F, 0.1483173323F, 0.1596630553F, 0.1713586755F,
+  0.1833933062F, 0.1957555184F, 0.2084333404F, 0.2214142599F,
+  0.2346852280F, 0.2482326664F, 0.2620424757F, 0.2761000481F,
+  0.2903902813F, 0.3048975959F, 0.3196059553F, 0.3344988887F,
+  0.3495595160F, 0.3647705766F, 0.3801144597F, 0.3955732382F,
+  0.4111287047F, 0.4267624093F, 0.4424557009F, 0.4581897696F,
+  0.4739456913F, 0.4897044744F, 0.5054471075F, 0.5211546088F,
+  0.5368080763F, 0.5523887395F, 0.5678780103F, 0.5832575361F,
+  0.5985092508F, 0.6136154277F, 0.6285587300F, 0.6433222619F,
+  0.6578896175F, 0.6722449294F, 0.6863729144F, 0.7002589187F,
+  0.7138889597F, 0.7272497662F, 0.7403288154F, 0.7531143679F,
+  0.7655954985F, 0.7777621249F, 0.7896050322F, 0.8011158947F,
+  0.8122872932F, 0.8231127294F, 0.8335866365F, 0.8437043850F,
+  0.8534622861F, 0.8628575905F, 0.8718884835F, 0.8805540765F,
+  0.8888543947F, 0.8967903616F, 0.9043637797F, 0.9115773078F,
+  0.9184344360F, 0.9249394562F, 0.9310974312F, 0.9369141608F,
+  0.9423961446F, 0.9475505439F, 0.9523851406F, 0.9569082947F,
+  0.9611289005F, 0.9650563408F, 0.9687004405F, 0.9720714191F,
+  0.9751798427F, 0.9780365753F, 0.9806527301F, 0.9830396204F,
+  0.9852087111F, 0.9871715701F, 0.9889398207F, 0.9905250941F,
+  0.9919389832F, 0.9931929973F, 0.9942985174F, 0.9952667537F,
+  0.9961087037F, 0.9968351119F, 0.9974564312F, 0.9979827858F,
+  0.9984239359F, 0.9987892441F, 0.9990876435F, 0.9993276081F,
+  0.9995171241F, 0.9996636648F, 0.9997741654F, 0.9998550016F,
+  0.9999119692F, 0.9999502656F, 0.9999744742F, 0.9999885497F,
+  0.9999958064F, 0.9999989077F, 0.9999998584F, 0.9999999983F,
 };
 
 static float vwin512[256] = {
-  0.0000147849F, 0.0001330607F, 0.0003695946F, 0.0007243509F, 
-  0.0011972759F, 0.0017882983F, 0.0024973285F, 0.0033242588F, 
-  0.0042689632F, 0.0053312973F, 0.0065110982F, 0.0078081841F, 
-  0.0092223540F, 0.0107533880F, 0.0124010466F, 0.0141650703F, 
-  0.0160451800F, 0.0180410758F, 0.0201524373F, 0.0223789233F, 
-  0.0247201710F, 0.0271757958F, 0.0297453914F, 0.0324285286F, 
-  0.0352247556F, 0.0381335972F, 0.0411545545F, 0.0442871045F, 
-  0.0475306997F, 0.0508847676F, 0.0543487103F, 0.0579219038F, 
-  0.0616036982F, 0.0653934164F, 0.0692903546F, 0.0732937809F, 
-  0.0774029356F, 0.0816170305F, 0.0859352485F, 0.0903567428F, 
-  0.0948806375F, 0.0995060259F, 0.1042319712F, 0.1090575056F, 
-  0.1139816300F, 0.1190033137F, 0.1241214941F, 0.1293350764F, 
-  0.1346429333F, 0.1400439046F, 0.1455367974F, 0.1511203852F, 
-  0.1567934083F, 0.1625545735F, 0.1684025537F, 0.1743359881F, 
-  0.1803534820F, 0.1864536069F, 0.1926349000F, 0.1988958650F, 
-  0.2052349715F, 0.2116506555F, 0.2181413191F, 0.2247053313F, 
-  0.2313410275F, 0.2380467105F, 0.2448206500F, 0.2516610835F, 
-  0.2585662164F, 0.2655342226F, 0.2725632448F, 0.2796513950F, 
-  0.2867967551F, 0.2939973773F, 0.3012512852F, 0.3085564739F, 
-  0.3159109111F, 0.3233125375F, 0.3307592680F, 0.3382489922F, 
-  0.3457795756F, 0.3533488602F, 0.3609546657F, 0.3685947904F, 
-  0.3762670121F, 0.3839690896F, 0.3916987634F, 0.3994537572F, 
-  0.4072317788F, 0.4150305215F, 0.4228476653F, 0.4306808783F, 
-  0.4385278181F, 0.4463861329F, 0.4542534630F, 0.4621274424F, 
-  0.4700057001F, 0.4778858615F, 0.4857655502F, 0.4936423891F, 
-  0.5015140023F, 0.5093780165F, 0.5172320626F, 0.5250737772F, 
-  0.5329008043F, 0.5407107971F, 0.5485014192F, 0.5562703465F, 
-  0.5640152688F, 0.5717338914F, 0.5794239366F, 0.5870831457F, 
-  0.5947092801F, 0.6023001235F, 0.6098534829F, 0.6173671907F, 
-  0.6248391059F, 0.6322671161F, 0.6396491384F, 0.6469831217F, 
-  0.6542670475F, 0.6614989319F, 0.6686768267F, 0.6757988210F, 
-  0.6828630426F, 0.6898676592F, 0.6968108799F, 0.7036909564F, 
-  0.7105061843F, 0.7172549043F, 0.7239355032F, 0.7305464154F, 
-  0.7370861235F, 0.7435531598F, 0.7499461068F, 0.7562635986F, 
-  0.7625043214F, 0.7686670148F, 0.7747504721F, 0.7807535410F, 
-  0.7866751247F, 0.7925141825F, 0.7982697296F, 0.8039408387F, 
-  0.8095266395F, 0.8150263196F, 0.8204391248F, 0.8257643590F, 
-  0.8310013848F, 0.8361496236F, 0.8412085555F, 0.8461777194F, 
-  0.8510567129F, 0.8558451924F, 0.8605428730F, 0.8651495278F, 
-  0.8696649882F, 0.8740891432F, 0.8784219392F, 0.8826633797F, 
-  0.8868135244F, 0.8908724888F, 0.8948404441F, 0.8987176157F, 
-  0.9025042831F, 0.9062007791F, 0.9098074886F, 0.9133248482F, 
-  0.9167533451F, 0.9200935163F, 0.9233459472F, 0.9265112712F, 
-  0.9295901680F, 0.9325833632F, 0.9354916263F, 0.9383157705F, 
-  0.9410566504F, 0.9437151618F, 0.9462922398F, 0.9487888576F, 
-  0.9512060252F, 0.9535447882F, 0.9558062262F, 0.9579914516F, 
-  0.9601016078F, 0.9621378683F, 0.9641014348F, 0.9659935361F, 
-  0.9678154261F, 0.9695683830F, 0.9712537071F, 0.9728727198F, 
-  0.9744267618F, 0.9759171916F, 0.9773453842F, 0.9787127293F, 
-  0.9800206298F, 0.9812705006F, 0.9824637665F, 0.9836018613F, 
-  0.9846862258F, 0.9857183066F, 0.9866995544F, 0.9876314227F, 
-  0.9885153662F, 0.9893528393F, 0.9901452948F, 0.9908941823F, 
-  0.9916009470F, 0.9922670279F, 0.9928938570F, 0.9934828574F, 
-  0.9940354423F, 0.9945530133F, 0.9950369595F, 0.9954886562F, 
-  0.9959094633F, 0.9963007242F, 0.9966637649F, 0.9969998925F, 
-  0.9973103939F, 0.9975965351F, 0.9978595598F, 0.9981006885F, 
-  0.9983211172F, 0.9985220166F, 0.9987045311F, 0.9988697776F, 
-  0.9990188449F, 0.9991527924F, 0.9992726499F, 0.9993794157F, 
-  0.9994740570F, 0.9995575079F, 0.9996306699F, 0.9996944099F, 
-  0.9997495605F, 0.9997969190F, 0.9998372465F, 0.9998712678F, 
-  0.9998996704F, 0.9999231041F, 0.9999421807F, 0.9999574732F, 
-  0.9999695157F, 0.9999788026F, 0.9999857885F, 0.9999908879F, 
-  0.9999944746F, 0.9999968817F, 0.9999984010F, 0.9999992833F, 
-  0.9999997377F, 0.9999999317F, 0.9999999911F, 0.9999999999F, 
+  0.0000147849F, 0.0001330607F, 0.0003695946F, 0.0007243509F,
+  0.0011972759F, 0.0017882983F, 0.0024973285F, 0.0033242588F,
+  0.0042689632F, 0.0053312973F, 0.0065110982F, 0.0078081841F,
+  0.0092223540F, 0.0107533880F, 0.0124010466F, 0.0141650703F,
+  0.0160451800F, 0.0180410758F, 0.0201524373F, 0.0223789233F,
+  0.0247201710F, 0.0271757958F, 0.0297453914F, 0.0324285286F,
+  0.0352247556F, 0.0381335972F, 0.0411545545F, 0.0442871045F,
+  0.0475306997F, 0.0508847676F, 0.0543487103F, 0.0579219038F,
+  0.0616036982F, 0.0653934164F, 0.0692903546F, 0.0732937809F,
+  0.0774029356F, 0.0816170305F, 0.0859352485F, 0.0903567428F,
+  0.0948806375F, 0.0995060259F, 0.1042319712F, 0.1090575056F,
+  0.1139816300F, 0.1190033137F, 0.1241214941F, 0.1293350764F,
+  0.1346429333F, 0.1400439046F, 0.1455367974F, 0.1511203852F,
+  0.1567934083F, 0.1625545735F, 0.1684025537F, 0.1743359881F,
+  0.1803534820F, 0.1864536069F, 0.1926349000F, 0.1988958650F,
+  0.2052349715F, 0.2116506555F, 0.2181413191F, 0.2247053313F,
+  0.2313410275F, 0.2380467105F, 0.2448206500F, 0.2516610835F,
+  0.2585662164F, 0.2655342226F, 0.2725632448F, 0.2796513950F,
+  0.2867967551F, 0.2939973773F, 0.3012512852F, 0.3085564739F,
+  0.3159109111F, 0.3233125375F, 0.3307592680F, 0.3382489922F,
+  0.3457795756F, 0.3533488602F, 0.3609546657F, 0.3685947904F,
+  0.3762670121F, 0.3839690896F, 0.3916987634F, 0.3994537572F,
+  0.4072317788F, 0.4150305215F, 0.4228476653F, 0.4306808783F,
+  0.4385278181F, 0.4463861329F, 0.4542534630F, 0.4621274424F,
+  0.4700057001F, 0.4778858615F, 0.4857655502F, 0.4936423891F,
+  0.5015140023F, 0.5093780165F, 0.5172320626F, 0.5250737772F,
+  0.5329008043F, 0.5407107971F, 0.5485014192F, 0.5562703465F,
+  0.5640152688F, 0.5717338914F, 0.5794239366F, 0.5870831457F,
+  0.5947092801F, 0.6023001235F, 0.6098534829F, 0.6173671907F,
+  0.6248391059F, 0.6322671161F, 0.6396491384F, 0.6469831217F,
+  0.6542670475F, 0.6614989319F, 0.6686768267F, 0.6757988210F,
+  0.6828630426F, 0.6898676592F, 0.6968108799F, 0.7036909564F,
+  0.7105061843F, 0.7172549043F, 0.7239355032F, 0.7305464154F,
+  0.7370861235F, 0.7435531598F, 0.7499461068F, 0.7562635986F,
+  0.7625043214F, 0.7686670148F, 0.7747504721F, 0.7807535410F,
+  0.7866751247F, 0.7925141825F, 0.7982697296F, 0.8039408387F,
+  0.8095266395F, 0.8150263196F, 0.8204391248F, 0.8257643590F,
+  0.8310013848F, 0.8361496236F, 0.8412085555F, 0.8461777194F,
+  0.8510567129F, 0.8558451924F, 0.8605428730F, 0.8651495278F,
+  0.8696649882F, 0.8740891432F, 0.8784219392F, 0.8826633797F,
+  0.8868135244F, 0.8908724888F, 0.8948404441F, 0.8987176157F,
+  0.9025042831F, 0.9062007791F, 0.9098074886F, 0.9133248482F,
+  0.9167533451F, 0.9200935163F, 0.9233459472F, 0.9265112712F,
+  0.9295901680F, 0.9325833632F, 0.9354916263F, 0.9383157705F,
+  0.9410566504F, 0.9437151618F, 0.9462922398F, 0.9487888576F,
+  0.9512060252F, 0.9535447882F, 0.9558062262F, 0.9579914516F,
+  0.9601016078F, 0.9621378683F, 0.9641014348F, 0.9659935361F,
+  0.9678154261F, 0.9695683830F, 0.9712537071F, 0.9728727198F,
+  0.9744267618F, 0.9759171916F, 0.9773453842F, 0.9787127293F,
+  0.9800206298F, 0.9812705006F, 0.9824637665F, 0.9836018613F,
+  0.9846862258F, 0.9857183066F, 0.9866995544F, 0.9876314227F,
+  0.9885153662F, 0.9893528393F, 0.9901452948F, 0.9908941823F,
+  0.9916009470F, 0.9922670279F, 0.9928938570F, 0.9934828574F,
+  0.9940354423F, 0.9945530133F, 0.9950369595F, 0.9954886562F,
+  0.9959094633F, 0.9963007242F, 0.9966637649F, 0.9969998925F,
+  0.9973103939F, 0.9975965351F, 0.9978595598F, 0.9981006885F,
+  0.9983211172F, 0.9985220166F, 0.9987045311F, 0.9988697776F,
+  0.9990188449F, 0.9991527924F, 0.9992726499F, 0.9993794157F,
+  0.9994740570F, 0.9995575079F, 0.9996306699F, 0.9996944099F,
+  0.9997495605F, 0.9997969190F, 0.9998372465F, 0.9998712678F,
+  0.9998996704F, 0.9999231041F, 0.9999421807F, 0.9999574732F,
+  0.9999695157F, 0.9999788026F, 0.9999857885F, 0.9999908879F,
+  0.9999944746F, 0.9999968817F, 0.9999984010F, 0.9999992833F,
+  0.9999997377F, 0.9999999317F, 0.9999999911F, 0.9999999999F,
 };
 
 static float vwin1024[512] = {
-  0.0000036962F, 0.0000332659F, 0.0000924041F, 0.0001811086F, 
-  0.0002993761F, 0.0004472021F, 0.0006245811F, 0.0008315063F, 
-  0.0010679699F, 0.0013339631F, 0.0016294757F, 0.0019544965F, 
-  0.0023090133F, 0.0026930125F, 0.0031064797F, 0.0035493989F, 
-  0.0040217533F, 0.0045235250F, 0.0050546946F, 0.0056152418F, 
-  0.0062051451F, 0.0068243817F, 0.0074729278F, 0.0081507582F, 
-  0.0088578466F, 0.0095941655F, 0.0103596863F, 0.0111543789F, 
-  0.0119782122F, 0.0128311538F, 0.0137131701F, 0.0146242260F, 
-  0.0155642855F, 0.0165333111F, 0.0175312640F, 0.0185581042F, 
-  0.0196137903F, 0.0206982797F, 0.0218115284F, 0.0229534910F, 
-  0.0241241208F, 0.0253233698F, 0.0265511886F, 0.0278075263F, 
-  0.0290923308F, 0.0304055484F, 0.0317471241F, 0.0331170013F, 
-  0.0345151222F, 0.0359414274F, 0.0373958560F, 0.0388783456F, 
-  0.0403888325F, 0.0419272511F, 0.0434935347F, 0.0450876148F, 
-  0.0467094213F, 0.0483588828F, 0.0500359261F, 0.0517404765F, 
-  0.0534724575F, 0.0552317913F, 0.0570183983F, 0.0588321971F, 
-  0.0606731048F, 0.0625410369F, 0.0644359070F, 0.0663576272F, 
-  0.0683061077F, 0.0702812571F, 0.0722829821F, 0.0743111878F, 
-  0.0763657775F, 0.0784466526F, 0.0805537129F, 0.0826868561F, 
-  0.0848459782F, 0.0870309736F, 0.0892417345F, 0.0914781514F, 
-  0.0937401128F, 0.0960275056F, 0.0983402145F, 0.1006781223F, 
-  0.1030411101F, 0.1054290568F, 0.1078418397F, 0.1102793336F, 
-  0.1127414119F, 0.1152279457F, 0.1177388042F, 0.1202738544F, 
-  0.1228329618F, 0.1254159892F, 0.1280227980F, 0.1306532471F, 
-  0.1333071937F, 0.1359844927F, 0.1386849970F, 0.1414085575F, 
-  0.1441550230F, 0.1469242403F, 0.1497160539F, 0.1525303063F, 
-  0.1553668381F, 0.1582254875F, 0.1611060909F, 0.1640084822F, 
-  0.1669324936F, 0.1698779549F, 0.1728446939F, 0.1758325362F, 
-  0.1788413055F, 0.1818708232F, 0.1849209084F, 0.1879913785F, 
-  0.1910820485F, 0.1941927312F, 0.1973232376F, 0.2004733764F, 
-  0.2036429541F, 0.2068317752F, 0.2100396421F, 0.2132663552F, 
-  0.2165117125F, 0.2197755102F, 0.2230575422F, 0.2263576007F, 
-  0.2296754753F, 0.2330109540F, 0.2363638225F, 0.2397338646F, 
-  0.2431208619F, 0.2465245941F, 0.2499448389F, 0.2533813719F, 
-  0.2568339669F, 0.2603023956F, 0.2637864277F, 0.2672858312F, 
-  0.2708003718F, 0.2743298135F, 0.2778739186F, 0.2814324472F, 
-  0.2850051576F, 0.2885918065F, 0.2921921485F, 0.2958059366F, 
-  0.2994329219F, 0.3030728538F, 0.3067254799F, 0.3103905462F, 
-  0.3140677969F, 0.3177569747F, 0.3214578205F, 0.3251700736F, 
-  0.3288934718F, 0.3326277513F, 0.3363726468F, 0.3401278914F, 
-  0.3438932168F, 0.3476683533F, 0.3514530297F, 0.3552469734F, 
-  0.3590499106F, 0.3628615659F, 0.3666816630F, 0.3705099239F, 
-  0.3743460698F, 0.3781898204F, 0.3820408945F, 0.3858990095F, 
-  0.3897638820F, 0.3936352274F, 0.3975127601F, 0.4013961936F, 
-  0.4052852405F, 0.4091796123F, 0.4130790198F, 0.4169831732F, 
-  0.4208917815F, 0.4248045534F, 0.4287211965F, 0.4326414181F, 
-  0.4365649248F, 0.4404914225F, 0.4444206167F, 0.4483522125F, 
-  0.4522859146F, 0.4562214270F, 0.4601584538F, 0.4640966984F, 
-  0.4680358644F, 0.4719756548F, 0.4759157726F, 0.4798559209F, 
-  0.4837958024F, 0.4877351199F, 0.4916735765F, 0.4956108751F, 
-  0.4995467188F, 0.5034808109F, 0.5074128550F, 0.5113425550F, 
-  0.5152696149F, 0.5191937395F, 0.5231146336F, 0.5270320028F, 
-  0.5309455530F, 0.5348549910F, 0.5387600239F, 0.5426603597F, 
-  0.5465557070F, 0.5504457754F, 0.5543302752F, 0.5582089175F, 
-  0.5620814145F, 0.5659474793F, 0.5698068262F, 0.5736591704F, 
-  0.5775042283F, 0.5813417176F, 0.5851713571F, 0.5889928670F, 
-  0.5928059689F, 0.5966103856F, 0.6004058415F, 0.6041920626F, 
-  0.6079687761F, 0.6117357113F, 0.6154925986F, 0.6192391705F, 
-  0.6229751612F, 0.6267003064F, 0.6304143441F, 0.6341170137F, 
-  0.6378080569F, 0.6414872173F, 0.6451542405F, 0.6488088741F, 
-  0.6524508681F, 0.6560799742F, 0.6596959469F, 0.6632985424F, 
-  0.6668875197F, 0.6704626398F, 0.6740236662F, 0.6775703649F, 
-  0.6811025043F, 0.6846198554F, 0.6881221916F, 0.6916092892F, 
-  0.6950809269F, 0.6985368861F, 0.7019769510F, 0.7054009085F, 
-  0.7088085484F, 0.7121996632F, 0.7155740484F, 0.7189315023F, 
-  0.7222718263F, 0.7255948245F, 0.7289003043F, 0.7321880760F, 
-  0.7354579530F, 0.7387097518F, 0.7419432921F, 0.7451583966F, 
-  0.7483548915F, 0.7515326059F, 0.7546913723F, 0.7578310265F, 
-  0.7609514077F, 0.7640523581F, 0.7671337237F, 0.7701953535F, 
-  0.7732371001F, 0.7762588195F, 0.7792603711F, 0.7822416178F, 
-  0.7852024259F, 0.7881426654F, 0.7910622097F, 0.7939609356F, 
-  0.7968387237F, 0.7996954579F, 0.8025310261F, 0.8053453193F, 
-  0.8081382324F, 0.8109096638F, 0.8136595156F, 0.8163876936F, 
-  0.8190941071F, 0.8217786690F, 0.8244412960F, 0.8270819086F, 
-  0.8297004305F, 0.8322967896F, 0.8348709171F, 0.8374227481F, 
-  0.8399522213F, 0.8424592789F, 0.8449438672F, 0.8474059356F, 
-  0.8498454378F, 0.8522623306F, 0.8546565748F, 0.8570281348F, 
-  0.8593769787F, 0.8617030779F, 0.8640064080F, 0.8662869477F, 
-  0.8685446796F, 0.8707795899F, 0.8729916682F, 0.8751809079F, 
-  0.8773473059F, 0.8794908626F, 0.8816115819F, 0.8837094713F, 
-  0.8857845418F, 0.8878368079F, 0.8898662874F, 0.8918730019F, 
-  0.8938569760F, 0.8958182380F, 0.8977568194F, 0.8996727552F, 
-  0.9015660837F, 0.9034368465F, 0.9052850885F, 0.9071108577F, 
-  0.9089142057F, 0.9106951869F, 0.9124538591F, 0.9141902832F, 
-  0.9159045233F, 0.9175966464F, 0.9192667228F, 0.9209148257F, 
-  0.9225410313F, 0.9241454187F, 0.9257280701F, 0.9272890704F, 
-  0.9288285075F, 0.9303464720F, 0.9318430576F, 0.9333183603F, 
-  0.9347724792F, 0.9362055158F, 0.9376175745F, 0.9390087622F, 
-  0.9403791881F, 0.9417289644F, 0.9430582055F, 0.9443670283F, 
-  0.9456555521F, 0.9469238986F, 0.9481721917F, 0.9494005577F, 
-  0.9506091252F, 0.9517980248F, 0.9529673894F, 0.9541173540F, 
-  0.9552480557F, 0.9563596334F, 0.9574522282F, 0.9585259830F, 
-  0.9595810428F, 0.9606175542F, 0.9616356656F, 0.9626355274F, 
-  0.9636172915F, 0.9645811114F, 0.9655271425F, 0.9664555414F, 
-  0.9673664664F, 0.9682600774F, 0.9691365355F, 0.9699960034F, 
-  0.9708386448F, 0.9716646250F, 0.9724741103F, 0.9732672685F, 
-  0.9740442683F, 0.9748052795F, 0.9755504729F, 0.9762800205F, 
-  0.9769940950F, 0.9776928703F, 0.9783765210F, 0.9790452223F, 
-  0.9796991504F, 0.9803384823F, 0.9809633954F, 0.9815740679F, 
-  0.9821706784F, 0.9827534063F, 0.9833224312F, 0.9838779332F, 
-  0.9844200928F, 0.9849490910F, 0.9854651087F, 0.9859683274F, 
-  0.9864589286F, 0.9869370940F, 0.9874030054F, 0.9878568447F, 
-  0.9882987937F, 0.9887290343F, 0.9891477481F, 0.9895551169F, 
-  0.9899513220F, 0.9903365446F, 0.9907109658F, 0.9910747662F, 
-  0.9914281260F, 0.9917712252F, 0.9921042433F, 0.9924273593F, 
-  0.9927407516F, 0.9930445982F, 0.9933390763F, 0.9936243626F, 
-  0.9939006331F, 0.9941680631F, 0.9944268269F, 0.9946770982F, 
-  0.9949190498F, 0.9951528537F, 0.9953786808F, 0.9955967011F, 
-  0.9958070836F, 0.9960099963F, 0.9962056061F, 0.9963940787F, 
-  0.9965755786F, 0.9967502693F, 0.9969183129F, 0.9970798704F, 
-  0.9972351013F, 0.9973841640F, 0.9975272151F, 0.9976644103F, 
-  0.9977959036F, 0.9979218476F, 0.9980423932F, 0.9981576901F, 
-  0.9982678862F, 0.9983731278F, 0.9984735596F, 0.9985693247F, 
-  0.9986605645F, 0.9987474186F, 0.9988300248F, 0.9989085193F, 
-  0.9989830364F, 0.9990537085F, 0.9991206662F, 0.9991840382F, 
-  0.9992439513F, 0.9993005303F, 0.9993538982F, 0.9994041757F, 
-  0.9994514817F, 0.9994959330F, 0.9995376444F, 0.9995767286F, 
-  0.9996132960F, 0.9996474550F, 0.9996793121F, 0.9997089710F, 
-  0.9997365339F, 0.9997621003F, 0.9997857677F, 0.9998076311F, 
-  0.9998277836F, 0.9998463156F, 0.9998633155F, 0.9998788692F, 
-  0.9998930603F, 0.9999059701F, 0.9999176774F, 0.9999282586F, 
-  0.9999377880F, 0.9999463370F, 0.9999539749F, 0.9999607685F, 
-  0.9999667820F, 0.9999720773F, 0.9999767136F, 0.9999807479F, 
-  0.9999842344F, 0.9999872249F, 0.9999897688F, 0.9999919127F, 
-  0.9999937009F, 0.9999951749F, 0.9999963738F, 0.9999973342F, 
-  0.9999980900F, 0.9999986724F, 0.9999991103F, 0.9999994297F, 
-  0.9999996543F, 0.9999998049F, 0.9999999000F, 0.9999999552F, 
-  0.9999999836F, 0.9999999957F, 0.9999999994F, 1.0000000000F, 
+  0.0000036962F, 0.0000332659F, 0.0000924041F, 0.0001811086F,
+  0.0002993761F, 0.0004472021F, 0.0006245811F, 0.0008315063F,
+  0.0010679699F, 0.0013339631F, 0.0016294757F, 0.0019544965F,
+  0.0023090133F, 0.0026930125F, 0.0031064797F, 0.0035493989F,
+  0.0040217533F, 0.0045235250F, 0.0050546946F, 0.0056152418F,
+  0.0062051451F, 0.0068243817F, 0.0074729278F, 0.0081507582F,
+  0.0088578466F, 0.0095941655F, 0.0103596863F, 0.0111543789F,
+  0.0119782122F, 0.0128311538F, 0.0137131701F, 0.0146242260F,
+  0.0155642855F, 0.0165333111F, 0.0175312640F, 0.0185581042F,
+  0.0196137903F, 0.0206982797F, 0.0218115284F, 0.0229534910F,
+  0.0241241208F, 0.0253233698F, 0.0265511886F, 0.0278075263F,
+  0.0290923308F, 0.0304055484F, 0.0317471241F, 0.0331170013F,
+  0.0345151222F, 0.0359414274F, 0.0373958560F, 0.0388783456F,
+  0.0403888325F, 0.0419272511F, 0.0434935347F, 0.0450876148F,
+  0.0467094213F, 0.0483588828F, 0.0500359261F, 0.0517404765F,
+  0.0534724575F, 0.0552317913F, 0.0570183983F, 0.0588321971F,
+  0.0606731048F, 0.0625410369F, 0.0644359070F, 0.0663576272F,
+  0.0683061077F, 0.0702812571F, 0.0722829821F, 0.0743111878F,
+  0.0763657775F, 0.0784466526F, 0.0805537129F, 0.0826868561F,
+  0.0848459782F, 0.0870309736F, 0.0892417345F, 0.0914781514F,
+  0.0937401128F, 0.0960275056F, 0.0983402145F, 0.1006781223F,
+  0.1030411101F, 0.1054290568F, 0.1078418397F, 0.1102793336F,
+  0.1127414119F, 0.1152279457F, 0.1177388042F, 0.1202738544F,
+  0.1228329618F, 0.1254159892F, 0.1280227980F, 0.1306532471F,
+  0.1333071937F, 0.1359844927F, 0.1386849970F, 0.1414085575F,
+  0.1441550230F, 0.1469242403F, 0.1497160539F, 0.1525303063F,
+  0.1553668381F, 0.1582254875F, 0.1611060909F, 0.1640084822F,
+  0.1669324936F, 0.1698779549F, 0.1728446939F, 0.1758325362F,
+  0.1788413055F, 0.1818708232F, 0.1849209084F, 0.1879913785F,
+  0.1910820485F, 0.1941927312F, 0.1973232376F, 0.2004733764F,
+  0.2036429541F, 0.2068317752F, 0.2100396421F, 0.2132663552F,
+  0.2165117125F, 0.2197755102F, 0.2230575422F, 0.2263576007F,
+  0.2296754753F, 0.2330109540F, 0.2363638225F, 0.2397338646F,
+  0.2431208619F, 0.2465245941F, 0.2499448389F, 0.2533813719F,
+  0.2568339669F, 0.2603023956F, 0.2637864277F, 0.2672858312F,
+  0.2708003718F, 0.2743298135F, 0.2778739186F, 0.2814324472F,
+  0.2850051576F, 0.2885918065F, 0.2921921485F, 0.2958059366F,
+  0.2994329219F, 0.3030728538F, 0.3067254799F, 0.3103905462F,
+  0.3140677969F, 0.3177569747F, 0.3214578205F, 0.3251700736F,
+  0.3288934718F, 0.3326277513F, 0.3363726468F, 0.3401278914F,
+  0.3438932168F, 0.3476683533F, 0.3514530297F, 0.3552469734F,
+  0.3590499106F, 0.3628615659F, 0.3666816630F, 0.3705099239F,
+  0.3743460698F, 0.3781898204F, 0.3820408945F, 0.3858990095F,
+  0.3897638820F, 0.3936352274F, 0.3975127601F, 0.4013961936F,
+  0.4052852405F, 0.4091796123F, 0.4130790198F, 0.4169831732F,
+  0.4208917815F, 0.4248045534F, 0.4287211965F, 0.4326414181F,
+  0.4365649248F, 0.4404914225F, 0.4444206167F, 0.4483522125F,
+  0.4522859146F, 0.4562214270F, 0.4601584538F, 0.4640966984F,
+  0.4680358644F, 0.4719756548F, 0.4759157726F, 0.4798559209F,
+  0.4837958024F, 0.4877351199F, 0.4916735765F, 0.4956108751F,
+  0.4995467188F, 0.5034808109F, 0.5074128550F, 0.5113425550F,
+  0.5152696149F, 0.5191937395F, 0.5231146336F, 0.5270320028F,
+  0.5309455530F, 0.5348549910F, 0.5387600239F, 0.5426603597F,
+  0.5465557070F, 0.5504457754F, 0.5543302752F, 0.5582089175F,
+  0.5620814145F, 0.5659474793F, 0.5698068262F, 0.5736591704F,
+  0.5775042283F, 0.5813417176F, 0.5851713571F, 0.5889928670F,
+  0.5928059689F, 0.5966103856F, 0.6004058415F, 0.6041920626F,
+  0.6079687761F, 0.6117357113F, 0.6154925986F, 0.6192391705F,
+  0.6229751612F, 0.6267003064F, 0.6304143441F, 0.6341170137F,
+  0.6378080569F, 0.6414872173F, 0.6451542405F, 0.6488088741F,
+  0.6524508681F, 0.6560799742F, 0.6596959469F, 0.6632985424F,
+  0.6668875197F, 0.6704626398F, 0.6740236662F, 0.6775703649F,
+  0.6811025043F, 0.6846198554F, 0.6881221916F, 0.6916092892F,
+  0.6950809269F, 0.6985368861F, 0.7019769510F, 0.7054009085F,
+  0.7088085484F, 0.7121996632F, 0.7155740484F, 0.7189315023F,
+  0.7222718263F, 0.7255948245F, 0.7289003043F, 0.7321880760F,
+  0.7354579530F, 0.7387097518F, 0.7419432921F, 0.7451583966F,
+  0.7483548915F, 0.7515326059F, 0.7546913723F, 0.7578310265F,
+  0.7609514077F, 0.7640523581F, 0.7671337237F, 0.7701953535F,
+  0.7732371001F, 0.7762588195F, 0.7792603711F, 0.7822416178F,
+  0.7852024259F, 0.7881426654F, 0.7910622097F, 0.7939609356F,
+  0.7968387237F, 0.7996954579F, 0.8025310261F, 0.8053453193F,
+  0.8081382324F, 0.8109096638F, 0.8136595156F, 0.8163876936F,
+  0.8190941071F, 0.8217786690F, 0.8244412960F, 0.8270819086F,
+  0.8297004305F, 0.8322967896F, 0.8348709171F, 0.8374227481F,
+  0.8399522213F, 0.8424592789F, 0.8449438672F, 0.8474059356F,
+  0.8498454378F, 0.8522623306F, 0.8546565748F, 0.8570281348F,
+  0.8593769787F, 0.8617030779F, 0.8640064080F, 0.8662869477F,
+  0.8685446796F, 0.8707795899F, 0.8729916682F, 0.8751809079F,
+  0.8773473059F, 0.8794908626F, 0.8816115819F, 0.8837094713F,
+  0.8857845418F, 0.8878368079F, 0.8898662874F, 0.8918730019F,
+  0.8938569760F, 0.8958182380F, 0.8977568194F, 0.8996727552F,
+  0.9015660837F, 0.9034368465F, 0.9052850885F, 0.9071108577F,
+  0.9089142057F, 0.9106951869F, 0.9124538591F, 0.9141902832F,
+  0.9159045233F, 0.9175966464F, 0.9192667228F, 0.9209148257F,
+  0.9225410313F, 0.9241454187F, 0.9257280701F, 0.9272890704F,
+  0.9288285075F, 0.9303464720F, 0.9318430576F, 0.9333183603F,
+  0.9347724792F, 0.9362055158F, 0.9376175745F, 0.9390087622F,
+  0.9403791881F, 0.9417289644F, 0.9430582055F, 0.9443670283F,
+  0.9456555521F, 0.9469238986F, 0.9481721917F, 0.9494005577F,
+  0.9506091252F, 0.9517980248F, 0.9529673894F, 0.9541173540F,
+  0.9552480557F, 0.9563596334F, 0.9574522282F, 0.9585259830F,
+  0.9595810428F, 0.9606175542F, 0.9616356656F, 0.9626355274F,
+  0.9636172915F, 0.9645811114F, 0.9655271425F, 0.9664555414F,
+  0.9673664664F, 0.9682600774F, 0.9691365355F, 0.9699960034F,
+  0.9708386448F, 0.9716646250F, 0.9724741103F, 0.9732672685F,
+  0.9740442683F, 0.9748052795F, 0.9755504729F, 0.9762800205F,
+  0.9769940950F, 0.9776928703F, 0.9783765210F, 0.9790452223F,
+  0.9796991504F, 0.9803384823F, 0.9809633954F, 0.9815740679F,
+  0.9821706784F, 0.9827534063F, 0.9833224312F, 0.9838779332F,
+  0.9844200928F, 0.9849490910F, 0.9854651087F, 0.9859683274F,
+  0.9864589286F, 0.9869370940F, 0.9874030054F, 0.9878568447F,
+  0.9882987937F, 0.9887290343F, 0.9891477481F, 0.9895551169F,
+  0.9899513220F, 0.9903365446F, 0.9907109658F, 0.9910747662F,
+  0.9914281260F, 0.9917712252F, 0.9921042433F, 0.9924273593F,
+  0.9927407516F, 0.9930445982F, 0.9933390763F, 0.9936243626F,
+  0.9939006331F, 0.9941680631F, 0.9944268269F, 0.9946770982F,
+  0.9949190498F, 0.9951528537F, 0.9953786808F, 0.9955967011F,
+  0.9958070836F, 0.9960099963F, 0.9962056061F, 0.9963940787F,
+  0.9965755786F, 0.9967502693F, 0.9969183129F, 0.9970798704F,
+  0.9972351013F, 0.9973841640F, 0.9975272151F, 0.9976644103F,
+  0.9977959036F, 0.9979218476F, 0.9980423932F, 0.9981576901F,
+  0.9982678862F, 0.9983731278F, 0.9984735596F, 0.9985693247F,
+  0.9986605645F, 0.9987474186F, 0.9988300248F, 0.9989085193F,
+  0.9989830364F, 0.9990537085F, 0.9991206662F, 0.9991840382F,
+  0.9992439513F, 0.9993005303F, 0.9993538982F, 0.9994041757F,
+  0.9994514817F, 0.9994959330F, 0.9995376444F, 0.9995767286F,
+  0.9996132960F, 0.9996474550F, 0.9996793121F, 0.9997089710F,
+  0.9997365339F, 0.9997621003F, 0.9997857677F, 0.9998076311F,
+  0.9998277836F, 0.9998463156F, 0.9998633155F, 0.9998788692F,
+  0.9998930603F, 0.9999059701F, 0.9999176774F, 0.9999282586F,
+  0.9999377880F, 0.9999463370F, 0.9999539749F, 0.9999607685F,
+  0.9999667820F, 0.9999720773F, 0.9999767136F, 0.9999807479F,
+  0.9999842344F, 0.9999872249F, 0.9999897688F, 0.9999919127F,
+  0.9999937009F, 0.9999951749F, 0.9999963738F, 0.9999973342F,
+  0.9999980900F, 0.9999986724F, 0.9999991103F, 0.9999994297F,
+  0.9999996543F, 0.9999998049F, 0.9999999000F, 0.9999999552F,
+  0.9999999836F, 0.9999999957F, 0.9999999994F, 1.0000000000F,
 };
 
 static float vwin2048[1024] = {
-  0.0000009241F, 0.0000083165F, 0.0000231014F, 0.0000452785F, 
-  0.0000748476F, 0.0001118085F, 0.0001561608F, 0.0002079041F, 
-  0.0002670379F, 0.0003335617F, 0.0004074748F, 0.0004887765F, 
-  0.0005774661F, 0.0006735427F, 0.0007770054F, 0.0008878533F, 
-  0.0010060853F, 0.0011317002F, 0.0012646969F, 0.0014050742F, 
-  0.0015528307F, 0.0017079650F, 0.0018704756F, 0.0020403610F, 
-  0.0022176196F, 0.0024022497F, 0.0025942495F, 0.0027936173F, 
-  0.0030003511F, 0.0032144490F, 0.0034359088F, 0.0036647286F, 
-  0.0039009061F, 0.0041444391F, 0.0043953253F, 0.0046535621F, 
-  0.0049191472F, 0.0051920781F, 0.0054723520F, 0.0057599664F, 
-  0.0060549184F, 0.0063572052F, 0.0066668239F, 0.0069837715F, 
-  0.0073080449F, 0.0076396410F, 0.0079785566F, 0.0083247884F, 
-  0.0086783330F, 0.0090391871F, 0.0094073470F, 0.0097828092F, 
-  0.0101655700F, 0.0105556258F, 0.0109529726F, 0.0113576065F, 
-  0.0117695237F, 0.0121887200F, 0.0126151913F, 0.0130489335F, 
-  0.0134899422F, 0.0139382130F, 0.0143937415F, 0.0148565233F, 
-  0.0153265536F, 0.0158038279F, 0.0162883413F, 0.0167800889F, 
-  0.0172790660F, 0.0177852675F, 0.0182986882F, 0.0188193231F, 
-  0.0193471668F, 0.0198822141F, 0.0204244594F, 0.0209738974F, 
-  0.0215305225F, 0.0220943289F, 0.0226653109F, 0.0232434627F, 
-  0.0238287784F, 0.0244212519F, 0.0250208772F, 0.0256276481F, 
-  0.0262415582F, 0.0268626014F, 0.0274907711F, 0.0281260608F, 
-  0.0287684638F, 0.0294179736F, 0.0300745833F, 0.0307382859F, 
-  0.0314090747F, 0.0320869424F, 0.0327718819F, 0.0334638860F, 
-  0.0341629474F, 0.0348690586F, 0.0355822122F, 0.0363024004F, 
-  0.0370296157F, 0.0377638502F, 0.0385050960F, 0.0392533451F, 
-  0.0400085896F, 0.0407708211F, 0.0415400315F, 0.0423162123F, 
-  0.0430993552F, 0.0438894515F, 0.0446864926F, 0.0454904698F, 
-  0.0463013742F, 0.0471191969F, 0.0479439288F, 0.0487755607F, 
-  0.0496140836F, 0.0504594879F, 0.0513117642F, 0.0521709031F, 
-  0.0530368949F, 0.0539097297F, 0.0547893979F, 0.0556758894F, 
-  0.0565691941F, 0.0574693019F, 0.0583762026F, 0.0592898858F, 
-  0.0602103410F, 0.0611375576F, 0.0620715250F, 0.0630122324F, 
-  0.0639596688F, 0.0649138234F, 0.0658746848F, 0.0668422421F, 
-  0.0678164838F, 0.0687973985F, 0.0697849746F, 0.0707792005F, 
-  0.0717800645F, 0.0727875547F, 0.0738016591F, 0.0748223656F, 
-  0.0758496620F, 0.0768835359F, 0.0779239751F, 0.0789709668F, 
-  0.0800244985F, 0.0810845574F, 0.0821511306F, 0.0832242052F, 
-  0.0843037679F, 0.0853898056F, 0.0864823050F, 0.0875812525F, 
-  0.0886866347F, 0.0897984378F, 0.0909166480F, 0.0920412513F, 
-  0.0931722338F, 0.0943095813F, 0.0954532795F, 0.0966033140F, 
-  0.0977596702F, 0.0989223336F, 0.1000912894F, 0.1012665227F, 
-  0.1024480185F, 0.1036357616F, 0.1048297369F, 0.1060299290F, 
-  0.1072363224F, 0.1084489014F, 0.1096676504F, 0.1108925534F, 
-  0.1121235946F, 0.1133607577F, 0.1146040267F, 0.1158533850F, 
-  0.1171088163F, 0.1183703040F, 0.1196378312F, 0.1209113812F, 
-  0.1221909370F, 0.1234764815F, 0.1247679974F, 0.1260654674F, 
-  0.1273688740F, 0.1286781995F, 0.1299934263F, 0.1313145365F, 
-  0.1326415121F, 0.1339743349F, 0.1353129866F, 0.1366574490F, 
-  0.1380077035F, 0.1393637315F, 0.1407255141F, 0.1420930325F, 
-  0.1434662677F, 0.1448452004F, 0.1462298115F, 0.1476200814F, 
-  0.1490159906F, 0.1504175195F, 0.1518246482F, 0.1532373569F, 
-  0.1546556253F, 0.1560794333F, 0.1575087606F, 0.1589435866F, 
-  0.1603838909F, 0.1618296526F, 0.1632808509F, 0.1647374648F, 
-  0.1661994731F, 0.1676668546F, 0.1691395880F, 0.1706176516F, 
-  0.1721010238F, 0.1735896829F, 0.1750836068F, 0.1765827736F, 
-  0.1780871610F, 0.1795967468F, 0.1811115084F, 0.1826314234F, 
-  0.1841564689F, 0.1856866221F, 0.1872218600F, 0.1887621595F, 
-  0.1903074974F, 0.1918578503F, 0.1934131947F, 0.1949735068F, 
-  0.1965387630F, 0.1981089393F, 0.1996840117F, 0.2012639560F, 
-  0.2028487479F, 0.2044383630F, 0.2060327766F, 0.2076319642F, 
-  0.2092359007F, 0.2108445614F, 0.2124579211F, 0.2140759545F, 
-  0.2156986364F, 0.2173259411F, 0.2189578432F, 0.2205943168F, 
-  0.2222353361F, 0.2238808751F, 0.2255309076F, 0.2271854073F, 
-  0.2288443480F, 0.2305077030F, 0.2321754457F, 0.2338475493F, 
-  0.2355239869F, 0.2372047315F, 0.2388897560F, 0.2405790329F, 
-  0.2422725350F, 0.2439702347F, 0.2456721043F, 0.2473781159F, 
-  0.2490882418F, 0.2508024539F, 0.2525207240F, 0.2542430237F, 
-  0.2559693248F, 0.2576995986F, 0.2594338166F, 0.2611719498F, 
-  0.2629139695F, 0.2646598466F, 0.2664095520F, 0.2681630564F, 
-  0.2699203304F, 0.2716813445F, 0.2734460691F, 0.2752144744F, 
-  0.2769865307F, 0.2787622079F, 0.2805414760F, 0.2823243047F, 
-  0.2841106637F, 0.2859005227F, 0.2876938509F, 0.2894906179F, 
-  0.2912907928F, 0.2930943447F, 0.2949012426F, 0.2967114554F, 
-  0.2985249520F, 0.3003417009F, 0.3021616708F, 0.3039848301F, 
-  0.3058111471F, 0.3076405901F, 0.3094731273F, 0.3113087266F, 
-  0.3131473560F, 0.3149889833F, 0.3168335762F, 0.3186811024F, 
-  0.3205315294F, 0.3223848245F, 0.3242409552F, 0.3260998886F, 
-  0.3279615918F, 0.3298260319F, 0.3316931758F, 0.3335629903F, 
-  0.3354354423F, 0.3373104982F, 0.3391881247F, 0.3410682882F, 
-  0.3429509551F, 0.3448360917F, 0.3467236642F, 0.3486136387F, 
-  0.3505059811F, 0.3524006575F, 0.3542976336F, 0.3561968753F, 
-  0.3580983482F, 0.3600020179F, 0.3619078499F, 0.3638158096F, 
-  0.3657258625F, 0.3676379737F, 0.3695521086F, 0.3714682321F, 
-  0.3733863094F, 0.3753063055F, 0.3772281852F, 0.3791519134F, 
-  0.3810774548F, 0.3830047742F, 0.3849338362F, 0.3868646053F, 
-  0.3887970459F, 0.3907311227F, 0.3926667998F, 0.3946040417F, 
-  0.3965428125F, 0.3984830765F, 0.4004247978F, 0.4023679403F, 
-  0.4043124683F, 0.4062583455F, 0.4082055359F, 0.4101540034F, 
-  0.4121037117F, 0.4140546246F, 0.4160067058F, 0.4179599190F, 
-  0.4199142277F, 0.4218695956F, 0.4238259861F, 0.4257833627F, 
-  0.4277416888F, 0.4297009279F, 0.4316610433F, 0.4336219983F, 
-  0.4355837562F, 0.4375462803F, 0.4395095337F, 0.4414734797F, 
-  0.4434380815F, 0.4454033021F, 0.4473691046F, 0.4493354521F, 
-  0.4513023078F, 0.4532696345F, 0.4552373954F, 0.4572055533F, 
-  0.4591740713F, 0.4611429123F, 0.4631120393F, 0.4650814151F, 
-  0.4670510028F, 0.4690207650F, 0.4709906649F, 0.4729606651F, 
-  0.4749307287F, 0.4769008185F, 0.4788708972F, 0.4808409279F, 
-  0.4828108732F, 0.4847806962F, 0.4867503597F, 0.4887198264F, 
-  0.4906890593F, 0.4926580213F, 0.4946266753F, 0.4965949840F, 
-  0.4985629105F, 0.5005304176F, 0.5024974683F, 0.5044640255F, 
-  0.5064300522F, 0.5083955114F, 0.5103603659F, 0.5123245790F, 
-  0.5142881136F, 0.5162509328F, 0.5182129997F, 0.5201742774F, 
-  0.5221347290F, 0.5240943178F, 0.5260530070F, 0.5280107598F, 
-  0.5299675395F, 0.5319233095F, 0.5338780330F, 0.5358316736F, 
-  0.5377841946F, 0.5397355596F, 0.5416857320F, 0.5436346755F, 
-  0.5455823538F, 0.5475287304F, 0.5494737691F, 0.5514174337F, 
-  0.5533596881F, 0.5553004962F, 0.5572398218F, 0.5591776291F, 
-  0.5611138821F, 0.5630485449F, 0.5649815818F, 0.5669129570F, 
-  0.5688426349F, 0.5707705799F, 0.5726967564F, 0.5746211290F, 
-  0.5765436624F, 0.5784643212F, 0.5803830702F, 0.5822998743F, 
-  0.5842146984F, 0.5861275076F, 0.5880382669F, 0.5899469416F, 
-  0.5918534968F, 0.5937578981F, 0.5956601107F, 0.5975601004F, 
-  0.5994578326F, 0.6013532732F, 0.6032463880F, 0.6051371429F, 
-  0.6070255039F, 0.6089114372F, 0.6107949090F, 0.6126758856F, 
-  0.6145543334F, 0.6164302191F, 0.6183035092F, 0.6201741706F, 
-  0.6220421700F, 0.6239074745F, 0.6257700513F, 0.6276298674F, 
-  0.6294868903F, 0.6313410873F, 0.6331924262F, 0.6350408745F, 
-  0.6368864001F, 0.6387289710F, 0.6405685552F, 0.6424051209F, 
-  0.6442386364F, 0.6460690702F, 0.6478963910F, 0.6497205673F, 
-  0.6515415682F, 0.6533593625F, 0.6551739194F, 0.6569852082F, 
-  0.6587931984F, 0.6605978593F, 0.6623991609F, 0.6641970728F, 
-  0.6659915652F, 0.6677826081F, 0.6695701718F, 0.6713542268F, 
-  0.6731347437F, 0.6749116932F, 0.6766850461F, 0.6784547736F, 
-  0.6802208469F, 0.6819832374F, 0.6837419164F, 0.6854968559F, 
-  0.6872480275F, 0.6889954034F, 0.6907389556F, 0.6924786566F, 
-  0.6942144788F, 0.6959463950F, 0.6976743780F, 0.6993984008F, 
-  0.7011184365F, 0.7028344587F, 0.7045464407F, 0.7062543564F, 
-  0.7079581796F, 0.7096578844F, 0.7113534450F, 0.7130448359F, 
-  0.7147320316F, 0.7164150070F, 0.7180937371F, 0.7197681970F, 
-  0.7214383620F, 0.7231042077F, 0.7247657098F, 0.7264228443F, 
-  0.7280755871F, 0.7297239147F, 0.7313678035F, 0.7330072301F, 
-  0.7346421715F, 0.7362726046F, 0.7378985069F, 0.7395198556F, 
-  0.7411366285F, 0.7427488034F, 0.7443563584F, 0.7459592717F, 
-  0.7475575218F, 0.7491510873F, 0.7507399471F, 0.7523240803F, 
-  0.7539034661F, 0.7554780839F, 0.7570479136F, 0.7586129349F, 
-  0.7601731279F, 0.7617284730F, 0.7632789506F, 0.7648245416F, 
-  0.7663652267F, 0.7679009872F, 0.7694318044F, 0.7709576599F, 
-  0.7724785354F, 0.7739944130F, 0.7755052749F, 0.7770111035F, 
-  0.7785118815F, 0.7800075916F, 0.7814982170F, 0.7829837410F, 
-  0.7844641472F, 0.7859394191F, 0.7874095408F, 0.7888744965F, 
-  0.7903342706F, 0.7917888476F, 0.7932382124F, 0.7946823501F, 
-  0.7961212460F, 0.7975548855F, 0.7989832544F, 0.8004063386F, 
-  0.8018241244F, 0.8032365981F, 0.8046437463F, 0.8060455560F, 
-  0.8074420141F, 0.8088331080F, 0.8102188253F, 0.8115991536F, 
-  0.8129740810F, 0.8143435957F, 0.8157076861F, 0.8170663409F, 
-  0.8184195489F, 0.8197672994F, 0.8211095817F, 0.8224463853F, 
-  0.8237777001F, 0.8251035161F, 0.8264238235F, 0.8277386129F, 
-  0.8290478750F, 0.8303516008F, 0.8316497814F, 0.8329424083F, 
-  0.8342294731F, 0.8355109677F, 0.8367868841F, 0.8380572148F, 
-  0.8393219523F, 0.8405810893F, 0.8418346190F, 0.8430825345F, 
-  0.8443248294F, 0.8455614974F, 0.8467925323F, 0.8480179285F, 
-  0.8492376802F, 0.8504517822F, 0.8516602292F, 0.8528630164F, 
-  0.8540601391F, 0.8552515928F, 0.8564373733F, 0.8576174766F, 
-  0.8587918990F, 0.8599606368F, 0.8611236868F, 0.8622810460F, 
-  0.8634327113F, 0.8645786802F, 0.8657189504F, 0.8668535195F, 
-  0.8679823857F, 0.8691055472F, 0.8702230025F, 0.8713347503F, 
-  0.8724407896F, 0.8735411194F, 0.8746357394F, 0.8757246489F, 
-  0.8768078479F, 0.8778853364F, 0.8789571146F, 0.8800231832F, 
-  0.8810835427F, 0.8821381942F, 0.8831871387F, 0.8842303777F, 
-  0.8852679127F, 0.8862997456F, 0.8873258784F, 0.8883463132F, 
-  0.8893610527F, 0.8903700994F, 0.8913734562F, 0.8923711263F, 
-  0.8933631129F, 0.8943494196F, 0.8953300500F, 0.8963050083F, 
-  0.8972742985F, 0.8982379249F, 0.8991958922F, 0.9001482052F, 
-  0.9010948688F, 0.9020358883F, 0.9029712690F, 0.9039010165F, 
-  0.9048251367F, 0.9057436357F, 0.9066565195F, 0.9075637946F, 
-  0.9084654678F, 0.9093615456F, 0.9102520353F, 0.9111369440F, 
-  0.9120162792F, 0.9128900484F, 0.9137582595F, 0.9146209204F, 
-  0.9154780394F, 0.9163296248F, 0.9171756853F, 0.9180162296F, 
-  0.9188512667F, 0.9196808057F, 0.9205048559F, 0.9213234270F, 
-  0.9221365285F, 0.9229441704F, 0.9237463629F, 0.9245431160F, 
-  0.9253344404F, 0.9261203465F, 0.9269008453F, 0.9276759477F, 
-  0.9284456648F, 0.9292100080F, 0.9299689889F, 0.9307226190F, 
-  0.9314709103F, 0.9322138747F, 0.9329515245F, 0.9336838721F, 
-  0.9344109300F, 0.9351327108F, 0.9358492275F, 0.9365604931F, 
-  0.9372665208F, 0.9379673239F, 0.9386629160F, 0.9393533107F, 
-  0.9400385220F, 0.9407185637F, 0.9413934501F, 0.9420631954F, 
-  0.9427278141F, 0.9433873208F, 0.9440417304F, 0.9446910576F, 
-  0.9453353176F, 0.9459745255F, 0.9466086968F, 0.9472378469F, 
-  0.9478619915F, 0.9484811463F, 0.9490953274F, 0.9497045506F, 
-  0.9503088323F, 0.9509081888F, 0.9515026365F, 0.9520921921F, 
-  0.9526768723F, 0.9532566940F, 0.9538316742F, 0.9544018300F, 
-  0.9549671786F, 0.9555277375F, 0.9560835241F, 0.9566345562F, 
-  0.9571808513F, 0.9577224275F, 0.9582593027F, 0.9587914949F, 
-  0.9593190225F, 0.9598419038F, 0.9603601571F, 0.9608738012F, 
-  0.9613828546F, 0.9618873361F, 0.9623872646F, 0.9628826591F, 
-  0.9633735388F, 0.9638599227F, 0.9643418303F, 0.9648192808F, 
-  0.9652922939F, 0.9657608890F, 0.9662250860F, 0.9666849046F, 
-  0.9671403646F, 0.9675914861F, 0.9680382891F, 0.9684807937F, 
-  0.9689190202F, 0.9693529890F, 0.9697827203F, 0.9702082347F, 
-  0.9706295529F, 0.9710466953F, 0.9714596828F, 0.9718685362F, 
-  0.9722732762F, 0.9726739240F, 0.9730705005F, 0.9734630267F, 
-  0.9738515239F, 0.9742360134F, 0.9746165163F, 0.9749930540F, 
-  0.9753656481F, 0.9757343198F, 0.9760990909F, 0.9764599829F, 
-  0.9768170175F, 0.9771702164F, 0.9775196013F, 0.9778651941F, 
-  0.9782070167F, 0.9785450909F, 0.9788794388F, 0.9792100824F, 
-  0.9795370437F, 0.9798603449F, 0.9801800080F, 0.9804960554F, 
-  0.9808085092F, 0.9811173916F, 0.9814227251F, 0.9817245318F, 
-  0.9820228343F, 0.9823176549F, 0.9826090160F, 0.9828969402F, 
-  0.9831814498F, 0.9834625674F, 0.9837403156F, 0.9840147169F, 
-  0.9842857939F, 0.9845535692F, 0.9848180654F, 0.9850793052F, 
-  0.9853373113F, 0.9855921062F, 0.9858437127F, 0.9860921535F, 
-  0.9863374512F, 0.9865796287F, 0.9868187085F, 0.9870547136F, 
-  0.9872876664F, 0.9875175899F, 0.9877445067F, 0.9879684396F, 
-  0.9881894112F, 0.9884074444F, 0.9886225619F, 0.9888347863F, 
-  0.9890441404F, 0.9892506468F, 0.9894543284F, 0.9896552077F, 
-  0.9898533074F, 0.9900486502F, 0.9902412587F, 0.9904311555F, 
-  0.9906183633F, 0.9908029045F, 0.9909848019F, 0.9911640779F, 
-  0.9913407550F, 0.9915148557F, 0.9916864025F, 0.9918554179F, 
-  0.9920219241F, 0.9921859437F, 0.9923474989F, 0.9925066120F, 
-  0.9926633054F, 0.9928176012F, 0.9929695218F, 0.9931190891F, 
-  0.9932663254F, 0.9934112527F, 0.9935538932F, 0.9936942686F, 
-  0.9938324012F, 0.9939683126F, 0.9941020248F, 0.9942335597F, 
-  0.9943629388F, 0.9944901841F, 0.9946153170F, 0.9947383593F, 
-  0.9948593325F, 0.9949782579F, 0.9950951572F, 0.9952100516F, 
-  0.9953229625F, 0.9954339111F, 0.9955429186F, 0.9956500062F, 
-  0.9957551948F, 0.9958585056F, 0.9959599593F, 0.9960595769F, 
-  0.9961573792F, 0.9962533869F, 0.9963476206F, 0.9964401009F, 
-  0.9965308483F, 0.9966198833F, 0.9967072261F, 0.9967928971F, 
-  0.9968769164F, 0.9969593041F, 0.9970400804F, 0.9971192651F, 
-  0.9971968781F, 0.9972729391F, 0.9973474680F, 0.9974204842F, 
-  0.9974920074F, 0.9975620569F, 0.9976306521F, 0.9976978122F, 
-  0.9977635565F, 0.9978279039F, 0.9978908736F, 0.9979524842F, 
-  0.9980127547F, 0.9980717037F, 0.9981293499F, 0.9981857116F, 
-  0.9982408073F, 0.9982946554F, 0.9983472739F, 0.9983986810F, 
-  0.9984488947F, 0.9984979328F, 0.9985458132F, 0.9985925534F, 
-  0.9986381711F, 0.9986826838F, 0.9987261086F, 0.9987684630F, 
-  0.9988097640F, 0.9988500286F, 0.9988892738F, 0.9989275163F, 
-  0.9989647727F, 0.9990010597F, 0.9990363938F, 0.9990707911F, 
-  0.9991042679F, 0.9991368404F, 0.9991685244F, 0.9991993358F, 
-  0.9992292905F, 0.9992584038F, 0.9992866914F, 0.9993141686F, 
-  0.9993408506F, 0.9993667526F, 0.9993918895F, 0.9994162761F, 
-  0.9994399273F, 0.9994628576F, 0.9994850815F, 0.9995066133F, 
-  0.9995274672F, 0.9995476574F, 0.9995671978F, 0.9995861021F, 
-  0.9996043841F, 0.9996220573F, 0.9996391352F, 0.9996556310F, 
-  0.9996715579F, 0.9996869288F, 0.9997017568F, 0.9997160543F, 
-  0.9997298342F, 0.9997431088F, 0.9997558905F, 0.9997681914F, 
-  0.9997800236F, 0.9997913990F, 0.9998023292F, 0.9998128261F, 
-  0.9998229009F, 0.9998325650F, 0.9998418296F, 0.9998507058F, 
-  0.9998592044F, 0.9998673362F, 0.9998751117F, 0.9998825415F, 
-  0.9998896358F, 0.9998964047F, 0.9999028584F, 0.9999090066F, 
-  0.9999148590F, 0.9999204253F, 0.9999257148F, 0.9999307368F, 
-  0.9999355003F, 0.9999400144F, 0.9999442878F, 0.9999483293F, 
-  0.9999521472F, 0.9999557499F, 0.9999591457F, 0.9999623426F, 
-  0.9999653483F, 0.9999681708F, 0.9999708175F, 0.9999732959F, 
-  0.9999756132F, 0.9999777765F, 0.9999797928F, 0.9999816688F, 
-  0.9999834113F, 0.9999850266F, 0.9999865211F, 0.9999879009F, 
-  0.9999891721F, 0.9999903405F, 0.9999914118F, 0.9999923914F, 
-  0.9999932849F, 0.9999940972F, 0.9999948336F, 0.9999954989F, 
-  0.9999960978F, 0.9999966349F, 0.9999971146F, 0.9999975411F, 
-  0.9999979185F, 0.9999982507F, 0.9999985414F, 0.9999987944F, 
-  0.9999990129F, 0.9999992003F, 0.9999993596F, 0.9999994939F, 
-  0.9999996059F, 0.9999996981F, 0.9999997732F, 0.9999998333F, 
-  0.9999998805F, 0.9999999170F, 0.9999999444F, 0.9999999643F, 
-  0.9999999784F, 0.9999999878F, 0.9999999937F, 0.9999999972F, 
-  0.9999999990F, 0.9999999997F, 1.0000000000F, 1.0000000000F, 
+  0.0000009241F, 0.0000083165F, 0.0000231014F, 0.0000452785F,
+  0.0000748476F, 0.0001118085F, 0.0001561608F, 0.0002079041F,
+  0.0002670379F, 0.0003335617F, 0.0004074748F, 0.0004887765F,
+  0.0005774661F, 0.0006735427F, 0.0007770054F, 0.0008878533F,
+  0.0010060853F, 0.0011317002F, 0.0012646969F, 0.0014050742F,
+  0.0015528307F, 0.0017079650F, 0.0018704756F, 0.0020403610F,
+  0.0022176196F, 0.0024022497F, 0.0025942495F, 0.0027936173F,
+  0.0030003511F, 0.0032144490F, 0.0034359088F, 0.0036647286F,
+  0.0039009061F, 0.0041444391F, 0.0043953253F, 0.0046535621F,
+  0.0049191472F, 0.0051920781F, 0.0054723520F, 0.0057599664F,
+  0.0060549184F, 0.0063572052F, 0.0066668239F, 0.0069837715F,
+  0.0073080449F, 0.0076396410F, 0.0079785566F, 0.0083247884F,
+  0.0086783330F, 0.0090391871F, 0.0094073470F, 0.0097828092F,
+  0.0101655700F, 0.0105556258F, 0.0109529726F, 0.0113576065F,
+  0.0117695237F, 0.0121887200F, 0.0126151913F, 0.0130489335F,
+  0.0134899422F, 0.0139382130F, 0.0143937415F, 0.0148565233F,
+  0.0153265536F, 0.0158038279F, 0.0162883413F, 0.0167800889F,
+  0.0172790660F, 0.0177852675F, 0.0182986882F, 0.0188193231F,
+  0.0193471668F, 0.0198822141F, 0.0204244594F, 0.0209738974F,
+  0.0215305225F, 0.0220943289F, 0.0226653109F, 0.0232434627F,
+  0.0238287784F, 0.0244212519F, 0.0250208772F, 0.0256276481F,
+  0.0262415582F, 0.0268626014F, 0.0274907711F, 0.0281260608F,
+  0.0287684638F, 0.0294179736F, 0.0300745833F, 0.0307382859F,
+  0.0314090747F, 0.0320869424F, 0.0327718819F, 0.0334638860F,
+  0.0341629474F, 0.0348690586F, 0.0355822122F, 0.0363024004F,
+  0.0370296157F, 0.0377638502F, 0.0385050960F, 0.0392533451F,
+  0.0400085896F, 0.0407708211F, 0.0415400315F, 0.0423162123F,
+  0.0430993552F, 0.0438894515F, 0.0446864926F, 0.0454904698F,
+  0.0463013742F, 0.0471191969F, 0.0479439288F, 0.0487755607F,
+  0.0496140836F, 0.0504594879F, 0.0513117642F, 0.0521709031F,
+  0.0530368949F, 0.0539097297F, 0.0547893979F, 0.0556758894F,
+  0.0565691941F, 0.0574693019F, 0.0583762026F, 0.0592898858F,
+  0.0602103410F, 0.0611375576F, 0.0620715250F, 0.0630122324F,
+  0.0639596688F, 0.0649138234F, 0.0658746848F, 0.0668422421F,
+  0.0678164838F, 0.0687973985F, 0.0697849746F, 0.0707792005F,
+  0.0717800645F, 0.0727875547F, 0.0738016591F, 0.0748223656F,
+  0.0758496620F, 0.0768835359F, 0.0779239751F, 0.0789709668F,
+  0.0800244985F, 0.0810845574F, 0.0821511306F, 0.0832242052F,
+  0.0843037679F, 0.0853898056F, 0.0864823050F, 0.0875812525F,
+  0.0886866347F, 0.0897984378F, 0.0909166480F, 0.0920412513F,
+  0.0931722338F, 0.0943095813F, 0.0954532795F, 0.0966033140F,
+  0.0977596702F, 0.0989223336F, 0.1000912894F, 0.1012665227F,
+  0.1024480185F, 0.1036357616F, 0.1048297369F, 0.1060299290F,
+  0.1072363224F, 0.1084489014F, 0.1096676504F, 0.1108925534F,
+  0.1121235946F, 0.1133607577F, 0.1146040267F, 0.1158533850F,
+  0.1171088163F, 0.1183703040F, 0.1196378312F, 0.1209113812F,
+  0.1221909370F, 0.1234764815F, 0.1247679974F, 0.1260654674F,
+  0.1273688740F, 0.1286781995F, 0.1299934263F, 0.1313145365F,
+  0.1326415121F, 0.1339743349F, 0.1353129866F, 0.1366574490F,
+  0.1380077035F, 0.1393637315F, 0.1407255141F, 0.1420930325F,
+  0.1434662677F, 0.1448452004F, 0.1462298115F, 0.1476200814F,
+  0.1490159906F, 0.1504175195F, 0.1518246482F, 0.1532373569F,
+  0.1546556253F, 0.1560794333F, 0.1575087606F, 0.1589435866F,
+  0.1603838909F, 0.1618296526F, 0.1632808509F, 0.1647374648F,
+  0.1661994731F, 0.1676668546F, 0.1691395880F, 0.1706176516F,
+  0.1721010238F, 0.1735896829F, 0.1750836068F, 0.1765827736F,
+  0.1780871610F, 0.1795967468F, 0.1811115084F, 0.1826314234F,
+  0.1841564689F, 0.1856866221F, 0.1872218600F, 0.1887621595F,
+  0.1903074974F, 0.1918578503F, 0.1934131947F, 0.1949735068F,
+  0.1965387630F, 0.1981089393F, 0.1996840117F, 0.2012639560F,
+  0.2028487479F, 0.2044383630F, 0.2060327766F, 0.2076319642F,
+  0.2092359007F, 0.2108445614F, 0.2124579211F, 0.2140759545F,
+  0.2156986364F, 0.2173259411F, 0.2189578432F, 0.2205943168F,
+  0.2222353361F, 0.2238808751F, 0.2255309076F, 0.2271854073F,
+  0.2288443480F, 0.2305077030F, 0.2321754457F, 0.2338475493F,
+  0.2355239869F, 0.2372047315F, 0.2388897560F, 0.2405790329F,
+  0.2422725350F, 0.2439702347F, 0.2456721043F, 0.2473781159F,
+  0.2490882418F, 0.2508024539F, 0.2525207240F, 0.2542430237F,
+  0.2559693248F, 0.2576995986F, 0.2594338166F, 0.2611719498F,
+  0.2629139695F, 0.2646598466F, 0.2664095520F, 0.2681630564F,
+  0.2699203304F, 0.2716813445F, 0.2734460691F, 0.2752144744F,
+  0.2769865307F, 0.2787622079F, 0.2805414760F, 0.2823243047F,
+  0.2841106637F, 0.2859005227F, 0.2876938509F, 0.2894906179F,
+  0.2912907928F, 0.2930943447F, 0.2949012426F, 0.2967114554F,
+  0.2985249520F, 0.3003417009F, 0.3021616708F, 0.3039848301F,
+  0.3058111471F, 0.3076405901F, 0.3094731273F, 0.3113087266F,
+  0.3131473560F, 0.3149889833F, 0.3168335762F, 0.3186811024F,
+  0.3205315294F, 0.3223848245F, 0.3242409552F, 0.3260998886F,
+  0.3279615918F, 0.3298260319F, 0.3316931758F, 0.3335629903F,
+  0.3354354423F, 0.3373104982F, 0.3391881247F, 0.3410682882F,
+  0.3429509551F, 0.3448360917F, 0.3467236642F, 0.3486136387F,
+  0.3505059811F, 0.3524006575F, 0.3542976336F, 0.3561968753F,
+  0.3580983482F, 0.3600020179F, 0.3619078499F, 0.3638158096F,
+  0.3657258625F, 0.3676379737F, 0.3695521086F, 0.3714682321F,
+  0.3733863094F, 0.3753063055F, 0.3772281852F, 0.3791519134F,
+  0.3810774548F, 0.3830047742F, 0.3849338362F, 0.3868646053F,
+  0.3887970459F, 0.3907311227F, 0.3926667998F, 0.3946040417F,
+  0.3965428125F, 0.3984830765F, 0.4004247978F, 0.4023679403F,
+  0.4043124683F, 0.4062583455F, 0.4082055359F, 0.4101540034F,
+  0.4121037117F, 0.4140546246F, 0.4160067058F, 0.4179599190F,
+  0.4199142277F, 0.4218695956F, 0.4238259861F, 0.4257833627F,
+  0.4277416888F, 0.4297009279F, 0.4316610433F, 0.4336219983F,
+  0.4355837562F, 0.4375462803F, 0.4395095337F, 0.4414734797F,
+  0.4434380815F, 0.4454033021F, 0.4473691046F, 0.4493354521F,
+  0.4513023078F, 0.4532696345F, 0.4552373954F, 0.4572055533F,
+  0.4591740713F, 0.4611429123F, 0.4631120393F, 0.4650814151F,
+  0.4670510028F, 0.4690207650F, 0.4709906649F, 0.4729606651F,
+  0.4749307287F, 0.4769008185F, 0.4788708972F, 0.4808409279F,
+  0.4828108732F, 0.4847806962F, 0.4867503597F, 0.4887198264F,
+  0.4906890593F, 0.4926580213F, 0.4946266753F, 0.4965949840F,
+  0.4985629105F, 0.5005304176F, 0.5024974683F, 0.5044640255F,
+  0.5064300522F, 0.5083955114F, 0.5103603659F, 0.5123245790F,
+  0.5142881136F, 0.5162509328F, 0.5182129997F, 0.5201742774F,
+  0.5221347290F, 0.5240943178F, 0.5260530070F, 0.5280107598F,
+  0.5299675395F, 0.5319233095F, 0.5338780330F, 0.5358316736F,
+  0.5377841946F, 0.5397355596F, 0.5416857320F, 0.5436346755F,
+  0.5455823538F, 0.5475287304F, 0.5494737691F, 0.5514174337F,
+  0.5533596881F, 0.5553004962F, 0.5572398218F, 0.5591776291F,
+  0.5611138821F, 0.5630485449F, 0.5649815818F, 0.5669129570F,
+  0.5688426349F, 0.5707705799F, 0.5726967564F, 0.5746211290F,
+  0.5765436624F, 0.5784643212F, 0.5803830702F, 0.5822998743F,
+  0.5842146984F, 0.5861275076F, 0.5880382669F, 0.5899469416F,
+  0.5918534968F, 0.5937578981F, 0.5956601107F, 0.5975601004F,
+  0.5994578326F, 0.6013532732F, 0.6032463880F, 0.6051371429F,
+  0.6070255039F, 0.6089114372F, 0.6107949090F, 0.6126758856F,
+  0.6145543334F, 0.6164302191F, 0.6183035092F, 0.6201741706F,
+  0.6220421700F, 0.6239074745F, 0.6257700513F, 0.6276298674F,
+  0.6294868903F, 0.6313410873F, 0.6331924262F, 0.6350408745F,
+  0.6368864001F, 0.6387289710F, 0.6405685552F, 0.6424051209F,
+  0.6442386364F, 0.6460690702F, 0.6478963910F, 0.6497205673F,
+  0.6515415682F, 0.6533593625F, 0.6551739194F, 0.6569852082F,
+  0.6587931984F, 0.6605978593F, 0.6623991609F, 0.6641970728F,
+  0.6659915652F, 0.6677826081F, 0.6695701718F, 0.6713542268F,
+  0.6731347437F, 0.6749116932F, 0.6766850461F, 0.6784547736F,
+  0.6802208469F, 0.6819832374F, 0.6837419164F, 0.6854968559F,
+  0.6872480275F, 0.6889954034F, 0.6907389556F, 0.6924786566F,
+  0.6942144788F, 0.6959463950F, 0.6976743780F, 0.6993984008F,
+  0.7011184365F, 0.7028344587F, 0.7045464407F, 0.7062543564F,
+  0.7079581796F, 0.7096578844F, 0.7113534450F, 0.7130448359F,
+  0.7147320316F, 0.7164150070F, 0.7180937371F, 0.7197681970F,
+  0.7214383620F, 0.7231042077F, 0.7247657098F, 0.7264228443F,
+  0.7280755871F, 0.7297239147F, 0.7313678035F, 0.7330072301F,
+  0.7346421715F, 0.7362726046F, 0.7378985069F, 0.7395198556F,
+  0.7411366285F, 0.7427488034F, 0.7443563584F, 0.7459592717F,
+  0.7475575218F, 0.7491510873F, 0.7507399471F, 0.7523240803F,
+  0.7539034661F, 0.7554780839F, 0.7570479136F, 0.7586129349F,
+  0.7601731279F, 0.7617284730F, 0.7632789506F, 0.7648245416F,
+  0.7663652267F, 0.7679009872F, 0.7694318044F, 0.7709576599F,
+  0.7724785354F, 0.7739944130F, 0.7755052749F, 0.7770111035F,
+  0.7785118815F, 0.7800075916F, 0.7814982170F, 0.7829837410F,
+  0.7844641472F, 0.7859394191F, 0.7874095408F, 0.7888744965F,
+  0.7903342706F, 0.7917888476F, 0.7932382124F, 0.7946823501F,
+  0.7961212460F, 0.7975548855F, 0.7989832544F, 0.8004063386F,
+  0.8018241244F, 0.8032365981F, 0.8046437463F, 0.8060455560F,
+  0.8074420141F, 0.8088331080F, 0.8102188253F, 0.8115991536F,
+  0.8129740810F, 0.8143435957F, 0.8157076861F, 0.8170663409F,
+  0.8184195489F, 0.8197672994F, 0.8211095817F, 0.8224463853F,
+  0.8237777001F, 0.8251035161F, 0.8264238235F, 0.8277386129F,
+  0.8290478750F, 0.8303516008F, 0.8316497814F, 0.8329424083F,
+  0.8342294731F, 0.8355109677F, 0.8367868841F, 0.8380572148F,
+  0.8393219523F, 0.8405810893F, 0.8418346190F, 0.8430825345F,
+  0.8443248294F, 0.8455614974F, 0.8467925323F, 0.8480179285F,
+  0.8492376802F, 0.8504517822F, 0.8516602292F, 0.8528630164F,
+  0.8540601391F, 0.8552515928F, 0.8564373733F, 0.8576174766F,
+  0.8587918990F, 0.8599606368F, 0.8611236868F, 0.8622810460F,
+  0.8634327113F, 0.8645786802F, 0.8657189504F, 0.8668535195F,
+  0.8679823857F, 0.8691055472F, 0.8702230025F, 0.8713347503F,
+  0.8724407896F, 0.8735411194F, 0.8746357394F, 0.8757246489F,
+  0.8768078479F, 0.8778853364F, 0.8789571146F, 0.8800231832F,
+  0.8810835427F, 0.8821381942F, 0.8831871387F, 0.8842303777F,
+  0.8852679127F, 0.8862997456F, 0.8873258784F, 0.8883463132F,
+  0.8893610527F, 0.8903700994F, 0.8913734562F, 0.8923711263F,
+  0.8933631129F, 0.8943494196F, 0.8953300500F, 0.8963050083F,
+  0.8972742985F, 0.8982379249F, 0.8991958922F, 0.9001482052F,
+  0.9010948688F, 0.9020358883F, 0.9029712690F, 0.9039010165F,
+  0.9048251367F, 0.9057436357F, 0.9066565195F, 0.9075637946F,
+  0.9084654678F, 0.9093615456F, 0.9102520353F, 0.9111369440F,
+  0.9120162792F, 0.9128900484F, 0.9137582595F, 0.9146209204F,
+  0.9154780394F, 0.9163296248F, 0.9171756853F, 0.9180162296F,
+  0.9188512667F, 0.9196808057F, 0.9205048559F, 0.9213234270F,
+  0.9221365285F, 0.9229441704F, 0.9237463629F, 0.9245431160F,
+  0.9253344404F, 0.9261203465F, 0.9269008453F, 0.9276759477F,
+  0.9284456648F, 0.9292100080F, 0.9299689889F, 0.9307226190F,
+  0.9314709103F, 0.9322138747F, 0.9329515245F, 0.9336838721F,
+  0.9344109300F, 0.9351327108F, 0.9358492275F, 0.9365604931F,
+  0.9372665208F, 0.9379673239F, 0.9386629160F, 0.9393533107F,
+  0.9400385220F, 0.9407185637F, 0.9413934501F, 0.9420631954F,
+  0.9427278141F, 0.9433873208F, 0.9440417304F, 0.9446910576F,
+  0.9453353176F, 0.9459745255F, 0.9466086968F, 0.9472378469F,
+  0.9478619915F, 0.9484811463F, 0.9490953274F, 0.9497045506F,
+  0.9503088323F, 0.9509081888F, 0.9515026365F, 0.9520921921F,
+  0.9526768723F, 0.9532566940F, 0.9538316742F, 0.9544018300F,
+  0.9549671786F, 0.9555277375F, 0.9560835241F, 0.9566345562F,
+  0.9571808513F, 0.9577224275F, 0.9582593027F, 0.9587914949F,
+  0.9593190225F, 0.9598419038F, 0.9603601571F, 0.9608738012F,
+  0.9613828546F, 0.9618873361F, 0.9623872646F, 0.9628826591F,
+  0.9633735388F, 0.9638599227F, 0.9643418303F, 0.9648192808F,
+  0.9652922939F, 0.9657608890F, 0.9662250860F, 0.9666849046F,
+  0.9671403646F, 0.9675914861F, 0.9680382891F, 0.9684807937F,
+  0.9689190202F, 0.9693529890F, 0.9697827203F, 0.9702082347F,
+  0.9706295529F, 0.9710466953F, 0.9714596828F, 0.9718685362F,
+  0.9722732762F, 0.9726739240F, 0.9730705005F, 0.9734630267F,
+  0.9738515239F, 0.9742360134F, 0.9746165163F, 0.9749930540F,
+  0.9753656481F, 0.9757343198F, 0.9760990909F, 0.9764599829F,
+  0.9768170175F, 0.9771702164F, 0.9775196013F, 0.9778651941F,
+  0.9782070167F, 0.9785450909F, 0.9788794388F, 0.9792100824F,
+  0.9795370437F, 0.9798603449F, 0.9801800080F, 0.9804960554F,
+  0.9808085092F, 0.9811173916F, 0.9814227251F, 0.9817245318F,
+  0.9820228343F, 0.9823176549F, 0.9826090160F, 0.9828969402F,
+  0.9831814498F, 0.9834625674F, 0.9837403156F, 0.9840147169F,
+  0.9842857939F, 0.9845535692F, 0.9848180654F, 0.9850793052F,
+  0.9853373113F, 0.9855921062F, 0.9858437127F, 0.9860921535F,
+  0.9863374512F, 0.9865796287F, 0.9868187085F, 0.9870547136F,
+  0.9872876664F, 0.9875175899F, 0.9877445067F, 0.9879684396F,
+  0.9881894112F, 0.9884074444F, 0.9886225619F, 0.9888347863F,
+  0.9890441404F, 0.9892506468F, 0.9894543284F, 0.9896552077F,
+  0.9898533074F, 0.9900486502F, 0.9902412587F, 0.9904311555F,
+  0.9906183633F, 0.9908029045F, 0.9909848019F, 0.9911640779F,
+  0.9913407550F, 0.9915148557F, 0.9916864025F, 0.9918554179F,
+  0.9920219241F, 0.9921859437F, 0.9923474989F, 0.9925066120F,
+  0.9926633054F, 0.9928176012F, 0.9929695218F, 0.9931190891F,
+  0.9932663254F, 0.9934112527F, 0.9935538932F, 0.9936942686F,
+  0.9938324012F, 0.9939683126F, 0.9941020248F, 0.9942335597F,
+  0.9943629388F, 0.9944901841F, 0.9946153170F, 0.9947383593F,
+  0.9948593325F, 0.9949782579F, 0.9950951572F, 0.9952100516F,
+  0.9953229625F, 0.9954339111F, 0.9955429186F, 0.9956500062F,
+  0.9957551948F, 0.9958585056F, 0.9959599593F, 0.9960595769F,
+  0.9961573792F, 0.9962533869F, 0.9963476206F, 0.9964401009F,
+  0.9965308483F, 0.9966198833F, 0.9967072261F, 0.9967928971F,
+  0.9968769164F, 0.9969593041F, 0.9970400804F, 0.9971192651F,
+  0.9971968781F, 0.9972729391F, 0.9973474680F, 0.9974204842F,
+  0.9974920074F, 0.9975620569F, 0.9976306521F, 0.9976978122F,
+  0.9977635565F, 0.9978279039F, 0.9978908736F, 0.9979524842F,
+  0.9980127547F, 0.9980717037F, 0.9981293499F, 0.9981857116F,
+  0.9982408073F, 0.9982946554F, 0.9983472739F, 0.9983986810F,
+  0.9984488947F, 0.9984979328F, 0.9985458132F, 0.9985925534F,
+  0.9986381711F, 0.9986826838F, 0.9987261086F, 0.9987684630F,
+  0.9988097640F, 0.9988500286F, 0.9988892738F, 0.9989275163F,
+  0.9989647727F, 0.9990010597F, 0.9990363938F, 0.9990707911F,
+  0.9991042679F, 0.9991368404F, 0.9991685244F, 0.9991993358F,
+  0.9992292905F, 0.9992584038F, 0.9992866914F, 0.9993141686F,
+  0.9993408506F, 0.9993667526F, 0.9993918895F, 0.9994162761F,
+  0.9994399273F, 0.9994628576F, 0.9994850815F, 0.9995066133F,
+  0.9995274672F, 0.9995476574F, 0.9995671978F, 0.9995861021F,
+  0.9996043841F, 0.9996220573F, 0.9996391352F, 0.9996556310F,
+  0.9996715579F, 0.9996869288F, 0.9997017568F, 0.9997160543F,
+  0.9997298342F, 0.9997431088F, 0.9997558905F, 0.9997681914F,
+  0.9997800236F, 0.9997913990F, 0.9998023292F, 0.9998128261F,
+  0.9998229009F, 0.9998325650F, 0.9998418296F, 0.9998507058F,
+  0.9998592044F, 0.9998673362F, 0.9998751117F, 0.9998825415F,
+  0.9998896358F, 0.9998964047F, 0.9999028584F, 0.9999090066F,
+  0.9999148590F, 0.9999204253F, 0.9999257148F, 0.9999307368F,
+  0.9999355003F, 0.9999400144F, 0.9999442878F, 0.9999483293F,
+  0.9999521472F, 0.9999557499F, 0.9999591457F, 0.9999623426F,
+  0.9999653483F, 0.9999681708F, 0.9999708175F, 0.9999732959F,
+  0.9999756132F, 0.9999777765F, 0.9999797928F, 0.9999816688F,
+  0.9999834113F, 0.9999850266F, 0.9999865211F, 0.9999879009F,
+  0.9999891721F, 0.9999903405F, 0.9999914118F, 0.9999923914F,
+  0.9999932849F, 0.9999940972F, 0.9999948336F, 0.9999954989F,
+  0.9999960978F, 0.9999966349F, 0.9999971146F, 0.9999975411F,
+  0.9999979185F, 0.9999982507F, 0.9999985414F, 0.9999987944F,
+  0.9999990129F, 0.9999992003F, 0.9999993596F, 0.9999994939F,
+  0.9999996059F, 0.9999996981F, 0.9999997732F, 0.9999998333F,
+  0.9999998805F, 0.9999999170F, 0.9999999444F, 0.9999999643F,
+  0.9999999784F, 0.9999999878F, 0.9999999937F, 0.9999999972F,
+  0.9999999990F, 0.9999999997F, 1.0000000000F, 1.0000000000F,
 };
 
 static float vwin4096[2048] = {
-  0.0000002310F, 0.0000020791F, 0.0000057754F, 0.0000113197F, 
-  0.0000187121F, 0.0000279526F, 0.0000390412F, 0.0000519777F, 
-  0.0000667623F, 0.0000833949F, 0.0001018753F, 0.0001222036F, 
-  0.0001443798F, 0.0001684037F, 0.0001942754F, 0.0002219947F, 
-  0.0002515616F, 0.0002829761F, 0.0003162380F, 0.0003513472F, 
-  0.0003883038F, 0.0004271076F, 0.0004677584F, 0.0005102563F, 
-  0.0005546011F, 0.0006007928F, 0.0006488311F, 0.0006987160F, 
-  0.0007504474F, 0.0008040251F, 0.0008594490F, 0.0009167191F, 
-  0.0009758351F, 0.0010367969F, 0.0010996044F, 0.0011642574F, 
-  0.0012307558F, 0.0012990994F, 0.0013692880F, 0.0014413216F, 
-  0.0015151998F, 0.0015909226F, 0.0016684898F, 0.0017479011F, 
-  0.0018291565F, 0.0019122556F, 0.0019971983F, 0.0020839845F, 
-  0.0021726138F, 0.0022630861F, 0.0023554012F, 0.0024495588F, 
-  0.0025455588F, 0.0026434008F, 0.0027430847F, 0.0028446103F, 
-  0.0029479772F, 0.0030531853F, 0.0031602342F, 0.0032691238F, 
-  0.0033798538F, 0.0034924239F, 0.0036068338F, 0.0037230833F, 
-  0.0038411721F, 0.0039610999F, 0.0040828664F, 0.0042064714F, 
-  0.0043319145F, 0.0044591954F, 0.0045883139F, 0.0047192696F, 
-  0.0048520622F, 0.0049866914F, 0.0051231569F, 0.0052614583F, 
-  0.0054015953F, 0.0055435676F, 0.0056873748F, 0.0058330166F, 
-  0.0059804926F, 0.0061298026F, 0.0062809460F, 0.0064339226F, 
-  0.0065887320F, 0.0067453738F, 0.0069038476F, 0.0070641531F, 
-  0.0072262899F, 0.0073902575F, 0.0075560556F, 0.0077236838F, 
-  0.0078931417F, 0.0080644288F, 0.0082375447F, 0.0084124891F, 
-  0.0085892615F, 0.0087678614F, 0.0089482885F, 0.0091305422F, 
-  0.0093146223F, 0.0095005281F, 0.0096882592F, 0.0098778153F, 
-  0.0100691958F, 0.0102624002F, 0.0104574281F, 0.0106542791F, 
-  0.0108529525F, 0.0110534480F, 0.0112557651F, 0.0114599032F, 
-  0.0116658618F, 0.0118736405F, 0.0120832387F, 0.0122946560F, 
-  0.0125078917F, 0.0127229454F, 0.0129398166F, 0.0131585046F, 
-  0.0133790090F, 0.0136013292F, 0.0138254647F, 0.0140514149F, 
-  0.0142791792F, 0.0145087572F, 0.0147401481F, 0.0149733515F, 
-  0.0152083667F, 0.0154451932F, 0.0156838304F, 0.0159242777F, 
-  0.0161665345F, 0.0164106001F, 0.0166564741F, 0.0169041557F, 
-  0.0171536443F, 0.0174049393F, 0.0176580401F, 0.0179129461F, 
-  0.0181696565F, 0.0184281708F, 0.0186884883F, 0.0189506084F, 
-  0.0192145303F, 0.0194802535F, 0.0197477772F, 0.0200171008F, 
-  0.0202882236F, 0.0205611449F, 0.0208358639F, 0.0211123801F, 
-  0.0213906927F, 0.0216708011F, 0.0219527043F, 0.0222364019F, 
-  0.0225218930F, 0.0228091769F, 0.0230982529F, 0.0233891203F, 
-  0.0236817782F, 0.0239762259F, 0.0242724628F, 0.0245704880F, 
-  0.0248703007F, 0.0251719002F, 0.0254752858F, 0.0257804565F, 
-  0.0260874117F, 0.0263961506F, 0.0267066722F, 0.0270189760F, 
-  0.0273330609F, 0.0276489263F, 0.0279665712F, 0.0282859949F, 
-  0.0286071966F, 0.0289301753F, 0.0292549303F, 0.0295814607F, 
-  0.0299097656F, 0.0302398442F, 0.0305716957F, 0.0309053191F, 
-  0.0312407135F, 0.0315778782F, 0.0319168122F, 0.0322575145F, 
-  0.0325999844F, 0.0329442209F, 0.0332902231F, 0.0336379900F, 
-  0.0339875208F, 0.0343388146F, 0.0346918703F, 0.0350466871F, 
-  0.0354032640F, 0.0357616000F, 0.0361216943F, 0.0364835458F, 
-  0.0368471535F, 0.0372125166F, 0.0375796339F, 0.0379485046F, 
-  0.0383191276F, 0.0386915020F, 0.0390656267F, 0.0394415008F, 
-  0.0398191231F, 0.0401984927F, 0.0405796086F, 0.0409624698F, 
-  0.0413470751F, 0.0417334235F, 0.0421215141F, 0.0425113457F, 
-  0.0429029172F, 0.0432962277F, 0.0436912760F, 0.0440880610F, 
-  0.0444865817F, 0.0448868370F, 0.0452888257F, 0.0456925468F, 
-  0.0460979992F, 0.0465051816F, 0.0469140931F, 0.0473247325F, 
-  0.0477370986F, 0.0481511902F, 0.0485670064F, 0.0489845458F, 
-  0.0494038074F, 0.0498247899F, 0.0502474922F, 0.0506719131F, 
-  0.0510980514F, 0.0515259060F, 0.0519554756F, 0.0523867590F, 
-  0.0528197550F, 0.0532544624F, 0.0536908800F, 0.0541290066F, 
-  0.0545688408F, 0.0550103815F, 0.0554536274F, 0.0558985772F, 
-  0.0563452297F, 0.0567935837F, 0.0572436377F, 0.0576953907F, 
-  0.0581488412F, 0.0586039880F, 0.0590608297F, 0.0595193651F, 
-  0.0599795929F, 0.0604415117F, 0.0609051202F, 0.0613704170F, 
-  0.0618374009F, 0.0623060704F, 0.0627764243F, 0.0632484611F, 
-  0.0637221795F, 0.0641975781F, 0.0646746555F, 0.0651534104F, 
-  0.0656338413F, 0.0661159469F, 0.0665997257F, 0.0670851763F, 
-  0.0675722973F, 0.0680610873F, 0.0685515448F, 0.0690436684F, 
-  0.0695374567F, 0.0700329081F, 0.0705300213F, 0.0710287947F, 
-  0.0715292269F, 0.0720313163F, 0.0725350616F, 0.0730404612F, 
-  0.0735475136F, 0.0740562172F, 0.0745665707F, 0.0750785723F, 
-  0.0755922207F, 0.0761075143F, 0.0766244515F, 0.0771430307F, 
-  0.0776632505F, 0.0781851092F, 0.0787086052F, 0.0792337371F, 
-  0.0797605032F, 0.0802889018F, 0.0808189315F, 0.0813505905F, 
-  0.0818838773F, 0.0824187903F, 0.0829553277F, 0.0834934881F, 
-  0.0840332697F, 0.0845746708F, 0.0851176899F, 0.0856623252F, 
-  0.0862085751F, 0.0867564379F, 0.0873059119F, 0.0878569954F, 
-  0.0884096867F, 0.0889639840F, 0.0895198858F, 0.0900773902F, 
-  0.0906364955F, 0.0911972000F, 0.0917595019F, 0.0923233995F, 
-  0.0928888909F, 0.0934559745F, 0.0940246485F, 0.0945949110F, 
-  0.0951667604F, 0.0957401946F, 0.0963152121F, 0.0968918109F, 
-  0.0974699893F, 0.0980497454F, 0.0986310773F, 0.0992139832F, 
-  0.0997984614F, 0.1003845098F, 0.1009721267F, 0.1015613101F, 
-  0.1021520582F, 0.1027443692F, 0.1033382410F, 0.1039336718F, 
-  0.1045306597F, 0.1051292027F, 0.1057292990F, 0.1063309466F, 
-  0.1069341435F, 0.1075388878F, 0.1081451776F, 0.1087530108F, 
-  0.1093623856F, 0.1099732998F, 0.1105857516F, 0.1111997389F, 
-  0.1118152597F, 0.1124323121F, 0.1130508939F, 0.1136710032F, 
-  0.1142926379F, 0.1149157960F, 0.1155404755F, 0.1161666742F, 
-  0.1167943901F, 0.1174236211F, 0.1180543652F, 0.1186866202F, 
-  0.1193203841F, 0.1199556548F, 0.1205924300F, 0.1212307078F, 
-  0.1218704860F, 0.1225117624F, 0.1231545349F, 0.1237988013F, 
-  0.1244445596F, 0.1250918074F, 0.1257405427F, 0.1263907632F, 
-  0.1270424667F, 0.1276956512F, 0.1283503142F, 0.1290064537F, 
-  0.1296640674F, 0.1303231530F, 0.1309837084F, 0.1316457312F, 
-  0.1323092193F, 0.1329741703F, 0.1336405820F, 0.1343084520F, 
-  0.1349777782F, 0.1356485582F, 0.1363207897F, 0.1369944704F, 
-  0.1376695979F, 0.1383461700F, 0.1390241842F, 0.1397036384F, 
-  0.1403845300F, 0.1410668567F, 0.1417506162F, 0.1424358061F, 
-  0.1431224240F, 0.1438104674F, 0.1444999341F, 0.1451908216F, 
-  0.1458831274F, 0.1465768492F, 0.1472719844F, 0.1479685308F, 
-  0.1486664857F, 0.1493658468F, 0.1500666115F, 0.1507687775F, 
-  0.1514723422F, 0.1521773031F, 0.1528836577F, 0.1535914035F, 
-  0.1543005380F, 0.1550110587F, 0.1557229631F, 0.1564362485F, 
-  0.1571509124F, 0.1578669524F, 0.1585843657F, 0.1593031499F, 
-  0.1600233024F, 0.1607448205F, 0.1614677017F, 0.1621919433F, 
-  0.1629175428F, 0.1636444975F, 0.1643728047F, 0.1651024619F, 
-  0.1658334665F, 0.1665658156F, 0.1672995067F, 0.1680345371F, 
-  0.1687709041F, 0.1695086050F, 0.1702476372F, 0.1709879978F, 
-  0.1717296843F, 0.1724726938F, 0.1732170237F, 0.1739626711F, 
-  0.1747096335F, 0.1754579079F, 0.1762074916F, 0.1769583819F, 
-  0.1777105760F, 0.1784640710F, 0.1792188642F, 0.1799749529F, 
-  0.1807323340F, 0.1814910049F, 0.1822509628F, 0.1830122046F, 
-  0.1837747277F, 0.1845385292F, 0.1853036062F, 0.1860699558F, 
-  0.1868375751F, 0.1876064613F, 0.1883766114F, 0.1891480226F, 
-  0.1899206919F, 0.1906946164F, 0.1914697932F, 0.1922462194F, 
-  0.1930238919F, 0.1938028079F, 0.1945829643F, 0.1953643583F, 
-  0.1961469868F, 0.1969308468F, 0.1977159353F, 0.1985022494F, 
-  0.1992897859F, 0.2000785420F, 0.2008685145F, 0.2016597005F, 
-  0.2024520968F, 0.2032457005F, 0.2040405084F, 0.2048365175F, 
-  0.2056337247F, 0.2064321269F, 0.2072317211F, 0.2080325041F, 
-  0.2088344727F, 0.2096376240F, 0.2104419547F, 0.2112474618F, 
-  0.2120541420F, 0.2128619923F, 0.2136710094F, 0.2144811902F, 
-  0.2152925315F, 0.2161050301F, 0.2169186829F, 0.2177334866F, 
-  0.2185494381F, 0.2193665340F, 0.2201847712F, 0.2210041465F, 
-  0.2218246565F, 0.2226462981F, 0.2234690680F, 0.2242929629F, 
-  0.2251179796F, 0.2259441147F, 0.2267713650F, 0.2275997272F, 
-  0.2284291979F, 0.2292597739F, 0.2300914518F, 0.2309242283F, 
-  0.2317581001F, 0.2325930638F, 0.2334291160F, 0.2342662534F, 
-  0.2351044727F, 0.2359437703F, 0.2367841431F, 0.2376255875F, 
-  0.2384681001F, 0.2393116776F, 0.2401563165F, 0.2410020134F, 
-  0.2418487649F, 0.2426965675F, 0.2435454178F, 0.2443953122F, 
-  0.2452462474F, 0.2460982199F, 0.2469512262F, 0.2478052628F, 
-  0.2486603262F, 0.2495164129F, 0.2503735194F, 0.2512316421F, 
-  0.2520907776F, 0.2529509222F, 0.2538120726F, 0.2546742250F, 
-  0.2555373760F, 0.2564015219F, 0.2572666593F, 0.2581327845F, 
-  0.2589998939F, 0.2598679840F, 0.2607370510F, 0.2616070916F, 
-  0.2624781019F, 0.2633500783F, 0.2642230173F, 0.2650969152F, 
-  0.2659717684F, 0.2668475731F, 0.2677243257F, 0.2686020226F, 
-  0.2694806601F, 0.2703602344F, 0.2712407419F, 0.2721221789F, 
-  0.2730045417F, 0.2738878265F, 0.2747720297F, 0.2756571474F, 
-  0.2765431760F, 0.2774301117F, 0.2783179508F, 0.2792066895F, 
-  0.2800963240F, 0.2809868505F, 0.2818782654F, 0.2827705647F, 
-  0.2836637447F, 0.2845578016F, 0.2854527315F, 0.2863485307F, 
-  0.2872451953F, 0.2881427215F, 0.2890411055F, 0.2899403433F, 
-  0.2908404312F, 0.2917413654F, 0.2926431418F, 0.2935457567F, 
-  0.2944492061F, 0.2953534863F, 0.2962585932F, 0.2971645230F, 
-  0.2980712717F, 0.2989788356F, 0.2998872105F, 0.3007963927F, 
-  0.3017063781F, 0.3026171629F, 0.3035287430F, 0.3044411145F, 
-  0.3053542736F, 0.3062682161F, 0.3071829381F, 0.3080984356F, 
-  0.3090147047F, 0.3099317413F, 0.3108495414F, 0.3117681011F, 
-  0.3126874163F, 0.3136074830F, 0.3145282972F, 0.3154498548F, 
-  0.3163721517F, 0.3172951841F, 0.3182189477F, 0.3191434385F, 
-  0.3200686525F, 0.3209945856F, 0.3219212336F, 0.3228485927F, 
-  0.3237766585F, 0.3247054271F, 0.3256348943F, 0.3265650560F, 
-  0.3274959081F, 0.3284274465F, 0.3293596671F, 0.3302925657F, 
-  0.3312261382F, 0.3321603804F, 0.3330952882F, 0.3340308574F, 
-  0.3349670838F, 0.3359039634F, 0.3368414919F, 0.3377796651F, 
-  0.3387184789F, 0.3396579290F, 0.3405980113F, 0.3415387216F, 
-  0.3424800556F, 0.3434220091F, 0.3443645779F, 0.3453077578F, 
-  0.3462515446F, 0.3471959340F, 0.3481409217F, 0.3490865036F, 
-  0.3500326754F, 0.3509794328F, 0.3519267715F, 0.3528746873F, 
-  0.3538231759F, 0.3547722330F, 0.3557218544F, 0.3566720357F, 
-  0.3576227727F, 0.3585740610F, 0.3595258964F, 0.3604782745F, 
-  0.3614311910F, 0.3623846417F, 0.3633386221F, 0.3642931280F, 
-  0.3652481549F, 0.3662036987F, 0.3671597548F, 0.3681163191F, 
-  0.3690733870F, 0.3700309544F, 0.3709890167F, 0.3719475696F, 
-  0.3729066089F, 0.3738661299F, 0.3748261285F, 0.3757866002F, 
-  0.3767475406F, 0.3777089453F, 0.3786708100F, 0.3796331302F, 
-  0.3805959014F, 0.3815591194F, 0.3825227796F, 0.3834868777F, 
-  0.3844514093F, 0.3854163698F, 0.3863817549F, 0.3873475601F, 
-  0.3883137810F, 0.3892804131F, 0.3902474521F, 0.3912148933F, 
-  0.3921827325F, 0.3931509650F, 0.3941195865F, 0.3950885925F, 
-  0.3960579785F, 0.3970277400F, 0.3979978725F, 0.3989683716F, 
-  0.3999392328F, 0.4009104516F, 0.4018820234F, 0.4028539438F, 
-  0.4038262084F, 0.4047988125F, 0.4057717516F, 0.4067450214F, 
-  0.4077186172F, 0.4086925345F, 0.4096667688F, 0.4106413155F, 
-  0.4116161703F, 0.4125913284F, 0.4135667854F, 0.4145425368F, 
-  0.4155185780F, 0.4164949044F, 0.4174715116F, 0.4184483949F, 
-  0.4194255498F, 0.4204029718F, 0.4213806563F, 0.4223585987F, 
-  0.4233367946F, 0.4243152392F, 0.4252939281F, 0.4262728566F, 
-  0.4272520202F, 0.4282314144F, 0.4292110345F, 0.4301908760F, 
-  0.4311709343F, 0.4321512047F, 0.4331316828F, 0.4341123639F, 
-  0.4350932435F, 0.4360743168F, 0.4370555794F, 0.4380370267F, 
-  0.4390186540F, 0.4400004567F, 0.4409824303F, 0.4419645701F, 
-  0.4429468716F, 0.4439293300F, 0.4449119409F, 0.4458946996F, 
-  0.4468776014F, 0.4478606418F, 0.4488438162F, 0.4498271199F, 
-  0.4508105483F, 0.4517940967F, 0.4527777607F, 0.4537615355F, 
-  0.4547454165F, 0.4557293991F, 0.4567134786F, 0.4576976505F, 
-  0.4586819101F, 0.4596662527F, 0.4606506738F, 0.4616351687F, 
-  0.4626197328F, 0.4636043614F, 0.4645890499F, 0.4655737936F, 
-  0.4665585880F, 0.4675434284F, 0.4685283101F, 0.4695132286F, 
-  0.4704981791F, 0.4714831570F, 0.4724681577F, 0.4734531766F, 
-  0.4744382089F, 0.4754232501F, 0.4764082956F, 0.4773933406F, 
-  0.4783783806F, 0.4793634108F, 0.4803484267F, 0.4813334237F, 
-  0.4823183969F, 0.4833033419F, 0.4842882540F, 0.4852731285F, 
-  0.4862579608F, 0.4872427462F, 0.4882274802F, 0.4892121580F, 
-  0.4901967751F, 0.4911813267F, 0.4921658083F, 0.4931502151F, 
-  0.4941345427F, 0.4951187863F, 0.4961029412F, 0.4970870029F, 
-  0.4980709667F, 0.4990548280F, 0.5000385822F, 0.5010222245F, 
-  0.5020057505F, 0.5029891553F, 0.5039724345F, 0.5049555834F, 
-  0.5059385973F, 0.5069214716F, 0.5079042018F, 0.5088867831F, 
-  0.5098692110F, 0.5108514808F, 0.5118335879F, 0.5128155277F, 
-  0.5137972956F, 0.5147788869F, 0.5157602971F, 0.5167415215F, 
-  0.5177225555F, 0.5187033945F, 0.5196840339F, 0.5206644692F, 
-  0.5216446956F, 0.5226247086F, 0.5236045035F, 0.5245840759F, 
-  0.5255634211F, 0.5265425344F, 0.5275214114F, 0.5285000474F, 
-  0.5294784378F, 0.5304565781F, 0.5314344637F, 0.5324120899F, 
-  0.5333894522F, 0.5343665461F, 0.5353433670F, 0.5363199102F, 
-  0.5372961713F, 0.5382721457F, 0.5392478287F, 0.5402232159F, 
-  0.5411983027F, 0.5421730845F, 0.5431475569F, 0.5441217151F, 
-  0.5450955548F, 0.5460690714F, 0.5470422602F, 0.5480151169F, 
-  0.5489876368F, 0.5499598155F, 0.5509316484F, 0.5519031310F, 
-  0.5528742587F, 0.5538450271F, 0.5548154317F, 0.5557854680F, 
-  0.5567551314F, 0.5577244174F, 0.5586933216F, 0.5596618395F, 
-  0.5606299665F, 0.5615976983F, 0.5625650302F, 0.5635319580F, 
-  0.5644984770F, 0.5654645828F, 0.5664302709F, 0.5673955370F, 
-  0.5683603765F, 0.5693247850F, 0.5702887580F, 0.5712522912F, 
-  0.5722153800F, 0.5731780200F, 0.5741402069F, 0.5751019362F, 
-  0.5760632034F, 0.5770240042F, 0.5779843341F, 0.5789441889F, 
-  0.5799035639F, 0.5808624549F, 0.5818208575F, 0.5827787673F, 
-  0.5837361800F, 0.5846930910F, 0.5856494961F, 0.5866053910F, 
-  0.5875607712F, 0.5885156324F, 0.5894699703F, 0.5904237804F, 
-  0.5913770586F, 0.5923298004F, 0.5932820016F, 0.5942336578F, 
-  0.5951847646F, 0.5961353179F, 0.5970853132F, 0.5980347464F, 
-  0.5989836131F, 0.5999319090F, 0.6008796298F, 0.6018267713F, 
-  0.6027733292F, 0.6037192993F, 0.6046646773F, 0.6056094589F, 
-  0.6065536400F, 0.6074972162F, 0.6084401833F, 0.6093825372F, 
-  0.6103242736F, 0.6112653884F, 0.6122058772F, 0.6131457359F, 
-  0.6140849604F, 0.6150235464F, 0.6159614897F, 0.6168987862F, 
-  0.6178354318F, 0.6187714223F, 0.6197067535F, 0.6206414213F, 
-  0.6215754215F, 0.6225087501F, 0.6234414028F, 0.6243733757F, 
-  0.6253046646F, 0.6262352654F, 0.6271651739F, 0.6280943862F, 
-  0.6290228982F, 0.6299507057F, 0.6308778048F, 0.6318041913F, 
-  0.6327298612F, 0.6336548105F, 0.6345790352F, 0.6355025312F, 
-  0.6364252945F, 0.6373473211F, 0.6382686070F, 0.6391891483F, 
-  0.6401089409F, 0.6410279808F, 0.6419462642F, 0.6428637869F, 
-  0.6437805452F, 0.6446965350F, 0.6456117524F, 0.6465261935F, 
-  0.6474398544F, 0.6483527311F, 0.6492648197F, 0.6501761165F, 
-  0.6510866174F, 0.6519963186F, 0.6529052162F, 0.6538133064F, 
-  0.6547205854F, 0.6556270492F, 0.6565326941F, 0.6574375162F, 
-  0.6583415117F, 0.6592446769F, 0.6601470079F, 0.6610485009F, 
-  0.6619491521F, 0.6628489578F, 0.6637479143F, 0.6646460177F, 
-  0.6655432643F, 0.6664396505F, 0.6673351724F, 0.6682298264F, 
-  0.6691236087F, 0.6700165157F, 0.6709085436F, 0.6717996889F, 
-  0.6726899478F, 0.6735793167F, 0.6744677918F, 0.6753553697F, 
-  0.6762420466F, 0.6771278190F, 0.6780126832F, 0.6788966357F, 
-  0.6797796728F, 0.6806617909F, 0.6815429866F, 0.6824232562F, 
-  0.6833025961F, 0.6841810030F, 0.6850584731F, 0.6859350031F, 
-  0.6868105894F, 0.6876852284F, 0.6885589168F, 0.6894316510F, 
-  0.6903034275F, 0.6911742430F, 0.6920440939F, 0.6929129769F, 
-  0.6937808884F, 0.6946478251F, 0.6955137837F, 0.6963787606F, 
-  0.6972427525F, 0.6981057560F, 0.6989677678F, 0.6998287845F, 
-  0.7006888028F, 0.7015478194F, 0.7024058309F, 0.7032628340F, 
-  0.7041188254F, 0.7049738019F, 0.7058277601F, 0.7066806969F, 
-  0.7075326089F, 0.7083834929F, 0.7092333457F, 0.7100821640F, 
-  0.7109299447F, 0.7117766846F, 0.7126223804F, 0.7134670291F, 
-  0.7143106273F, 0.7151531721F, 0.7159946602F, 0.7168350885F, 
-  0.7176744539F, 0.7185127534F, 0.7193499837F, 0.7201861418F, 
-  0.7210212247F, 0.7218552293F, 0.7226881526F, 0.7235199914F, 
-  0.7243507428F, 0.7251804039F, 0.7260089715F, 0.7268364426F, 
-  0.7276628144F, 0.7284880839F, 0.7293122481F, 0.7301353040F, 
-  0.7309572487F, 0.7317780794F, 0.7325977930F, 0.7334163868F, 
-  0.7342338579F, 0.7350502033F, 0.7358654202F, 0.7366795059F, 
-  0.7374924573F, 0.7383042718F, 0.7391149465F, 0.7399244787F, 
-  0.7407328655F, 0.7415401041F, 0.7423461920F, 0.7431511261F, 
-  0.7439549040F, 0.7447575227F, 0.7455589797F, 0.7463592723F, 
-  0.7471583976F, 0.7479563532F, 0.7487531363F, 0.7495487443F, 
-  0.7503431745F, 0.7511364244F, 0.7519284913F, 0.7527193726F, 
-  0.7535090658F, 0.7542975683F, 0.7550848776F, 0.7558709910F, 
-  0.7566559062F, 0.7574396205F, 0.7582221314F, 0.7590034366F, 
-  0.7597835334F, 0.7605624194F, 0.7613400923F, 0.7621165495F, 
-  0.7628917886F, 0.7636658072F, 0.7644386030F, 0.7652101735F, 
-  0.7659805164F, 0.7667496292F, 0.7675175098F, 0.7682841556F, 
-  0.7690495645F, 0.7698137341F, 0.7705766622F, 0.7713383463F, 
-  0.7720987844F, 0.7728579741F, 0.7736159132F, 0.7743725994F, 
-  0.7751280306F, 0.7758822046F, 0.7766351192F, 0.7773867722F, 
-  0.7781371614F, 0.7788862848F, 0.7796341401F, 0.7803807253F, 
-  0.7811260383F, 0.7818700769F, 0.7826128392F, 0.7833543230F, 
-  0.7840945263F, 0.7848334471F, 0.7855710833F, 0.7863074330F, 
-  0.7870424941F, 0.7877762647F, 0.7885087428F, 0.7892399264F, 
-  0.7899698137F, 0.7906984026F, 0.7914256914F, 0.7921516780F, 
-  0.7928763607F, 0.7935997375F, 0.7943218065F, 0.7950425661F, 
-  0.7957620142F, 0.7964801492F, 0.7971969692F, 0.7979124724F, 
-  0.7986266570F, 0.7993395214F, 0.8000510638F, 0.8007612823F, 
-  0.8014701754F, 0.8021777413F, 0.8028839784F, 0.8035888849F, 
-  0.8042924592F, 0.8049946997F, 0.8056956048F, 0.8063951727F, 
-  0.8070934020F, 0.8077902910F, 0.8084858381F, 0.8091800419F, 
-  0.8098729007F, 0.8105644130F, 0.8112545774F, 0.8119433922F, 
-  0.8126308561F, 0.8133169676F, 0.8140017251F, 0.8146851272F, 
-  0.8153671726F, 0.8160478598F, 0.8167271874F, 0.8174051539F, 
-  0.8180817582F, 0.8187569986F, 0.8194308741F, 0.8201033831F, 
-  0.8207745244F, 0.8214442966F, 0.8221126986F, 0.8227797290F, 
-  0.8234453865F, 0.8241096700F, 0.8247725781F, 0.8254341097F, 
-  0.8260942636F, 0.8267530385F, 0.8274104334F, 0.8280664470F, 
-  0.8287210782F, 0.8293743259F, 0.8300261889F, 0.8306766662F, 
-  0.8313257566F, 0.8319734591F, 0.8326197727F, 0.8332646963F, 
-  0.8339082288F, 0.8345503692F, 0.8351911167F, 0.8358304700F, 
-  0.8364684284F, 0.8371049907F, 0.8377401562F, 0.8383739238F, 
-  0.8390062927F, 0.8396372618F, 0.8402668305F, 0.8408949977F, 
-  0.8415217626F, 0.8421471245F, 0.8427710823F, 0.8433936354F, 
-  0.8440147830F, 0.8446345242F, 0.8452528582F, 0.8458697844F, 
-  0.8464853020F, 0.8470994102F, 0.8477121084F, 0.8483233958F, 
-  0.8489332718F, 0.8495417356F, 0.8501487866F, 0.8507544243F, 
-  0.8513586479F, 0.8519614568F, 0.8525628505F, 0.8531628283F, 
-  0.8537613897F, 0.8543585341F, 0.8549542611F, 0.8555485699F, 
-  0.8561414603F, 0.8567329315F, 0.8573229832F, 0.8579116149F, 
-  0.8584988262F, 0.8590846165F, 0.8596689855F, 0.8602519327F, 
-  0.8608334577F, 0.8614135603F, 0.8619922399F, 0.8625694962F, 
-  0.8631453289F, 0.8637197377F, 0.8642927222F, 0.8648642821F, 
-  0.8654344172F, 0.8660031272F, 0.8665704118F, 0.8671362708F, 
-  0.8677007039F, 0.8682637109F, 0.8688252917F, 0.8693854460F, 
-  0.8699441737F, 0.8705014745F, 0.8710573485F, 0.8716117953F, 
-  0.8721648150F, 0.8727164073F, 0.8732665723F, 0.8738153098F, 
-  0.8743626197F, 0.8749085021F, 0.8754529569F, 0.8759959840F, 
-  0.8765375835F, 0.8770777553F, 0.8776164996F, 0.8781538162F, 
-  0.8786897054F, 0.8792241670F, 0.8797572013F, 0.8802888082F, 
-  0.8808189880F, 0.8813477407F, 0.8818750664F, 0.8824009653F, 
-  0.8829254375F, 0.8834484833F, 0.8839701028F, 0.8844902961F, 
-  0.8850090636F, 0.8855264054F, 0.8860423218F, 0.8865568131F, 
-  0.8870698794F, 0.8875815212F, 0.8880917386F, 0.8886005319F, 
-  0.8891079016F, 0.8896138479F, 0.8901183712F, 0.8906214719F, 
-  0.8911231503F, 0.8916234067F, 0.8921222417F, 0.8926196556F, 
-  0.8931156489F, 0.8936102219F, 0.8941033752F, 0.8945951092F, 
-  0.8950854244F, 0.8955743212F, 0.8960618003F, 0.8965478621F, 
-  0.8970325071F, 0.8975157359F, 0.8979975490F, 0.8984779471F, 
-  0.8989569307F, 0.8994345004F, 0.8999106568F, 0.9003854005F, 
-  0.9008587323F, 0.9013306526F, 0.9018011623F, 0.9022702619F, 
-  0.9027379521F, 0.9032042337F, 0.9036691074F, 0.9041325739F, 
-  0.9045946339F, 0.9050552882F, 0.9055145376F, 0.9059723828F, 
-  0.9064288246F, 0.9068838638F, 0.9073375013F, 0.9077897379F, 
-  0.9082405743F, 0.9086900115F, 0.9091380503F, 0.9095846917F, 
-  0.9100299364F, 0.9104737854F, 0.9109162397F, 0.9113573001F, 
-  0.9117969675F, 0.9122352430F, 0.9126721275F, 0.9131076219F, 
-  0.9135417273F, 0.9139744447F, 0.9144057750F, 0.9148357194F, 
-  0.9152642787F, 0.9156914542F, 0.9161172468F, 0.9165416576F, 
-  0.9169646877F, 0.9173863382F, 0.9178066102F, 0.9182255048F, 
-  0.9186430232F, 0.9190591665F, 0.9194739359F, 0.9198873324F, 
-  0.9202993574F, 0.9207100120F, 0.9211192973F, 0.9215272147F, 
-  0.9219337653F, 0.9223389504F, 0.9227427713F, 0.9231452290F, 
-  0.9235463251F, 0.9239460607F, 0.9243444371F, 0.9247414557F, 
-  0.9251371177F, 0.9255314245F, 0.9259243774F, 0.9263159778F, 
-  0.9267062270F, 0.9270951264F, 0.9274826774F, 0.9278688814F, 
-  0.9282537398F, 0.9286372540F, 0.9290194254F, 0.9294002555F, 
-  0.9297797458F, 0.9301578976F, 0.9305347125F, 0.9309101919F, 
-  0.9312843373F, 0.9316571503F, 0.9320286323F, 0.9323987849F, 
-  0.9327676097F, 0.9331351080F, 0.9335012816F, 0.9338661320F, 
-  0.9342296607F, 0.9345918694F, 0.9349527596F, 0.9353123330F, 
-  0.9356705911F, 0.9360275357F, 0.9363831683F, 0.9367374905F, 
-  0.9370905042F, 0.9374422108F, 0.9377926122F, 0.9381417099F, 
-  0.9384895057F, 0.9388360014F, 0.9391811985F, 0.9395250989F, 
-  0.9398677043F, 0.9402090165F, 0.9405490371F, 0.9408877680F, 
-  0.9412252110F, 0.9415613678F, 0.9418962402F, 0.9422298301F, 
-  0.9425621392F, 0.9428931695F, 0.9432229226F, 0.9435514005F, 
-  0.9438786050F, 0.9442045381F, 0.9445292014F, 0.9448525971F, 
-  0.9451747268F, 0.9454955926F, 0.9458151963F, 0.9461335399F, 
-  0.9464506253F, 0.9467664545F, 0.9470810293F, 0.9473943517F, 
-  0.9477064238F, 0.9480172474F, 0.9483268246F, 0.9486351573F, 
-  0.9489422475F, 0.9492480973F, 0.9495527087F, 0.9498560837F, 
-  0.9501582243F, 0.9504591325F, 0.9507588105F, 0.9510572603F, 
-  0.9513544839F, 0.9516504834F, 0.9519452609F, 0.9522388186F, 
-  0.9525311584F, 0.9528222826F, 0.9531121932F, 0.9534008923F, 
-  0.9536883821F, 0.9539746647F, 0.9542597424F, 0.9545436171F, 
-  0.9548262912F, 0.9551077667F, 0.9553880459F, 0.9556671309F, 
-  0.9559450239F, 0.9562217272F, 0.9564972429F, 0.9567715733F, 
-  0.9570447206F, 0.9573166871F, 0.9575874749F, 0.9578570863F, 
-  0.9581255236F, 0.9583927890F, 0.9586588849F, 0.9589238134F, 
-  0.9591875769F, 0.9594501777F, 0.9597116180F, 0.9599719003F, 
-  0.9602310267F, 0.9604889995F, 0.9607458213F, 0.9610014942F, 
-  0.9612560206F, 0.9615094028F, 0.9617616433F, 0.9620127443F, 
-  0.9622627083F, 0.9625115376F, 0.9627592345F, 0.9630058016F, 
-  0.9632512411F, 0.9634955555F, 0.9637387471F, 0.9639808185F, 
-  0.9642217720F, 0.9644616100F, 0.9647003349F, 0.9649379493F, 
-  0.9651744556F, 0.9654098561F, 0.9656441534F, 0.9658773499F, 
-  0.9661094480F, 0.9663404504F, 0.9665703593F, 0.9667991774F, 
-  0.9670269071F, 0.9672535509F, 0.9674791114F, 0.9677035909F, 
-  0.9679269921F, 0.9681493174F, 0.9683705694F, 0.9685907506F, 
-  0.9688098636F, 0.9690279108F, 0.9692448948F, 0.9694608182F, 
-  0.9696756836F, 0.9698894934F, 0.9701022503F, 0.9703139569F, 
-  0.9705246156F, 0.9707342291F, 0.9709428000F, 0.9711503309F, 
-  0.9713568243F, 0.9715622829F, 0.9717667093F, 0.9719701060F, 
-  0.9721724757F, 0.9723738210F, 0.9725741446F, 0.9727734490F, 
-  0.9729717369F, 0.9731690109F, 0.9733652737F, 0.9735605279F, 
-  0.9737547762F, 0.9739480212F, 0.9741402656F, 0.9743315120F, 
-  0.9745217631F, 0.9747110216F, 0.9748992901F, 0.9750865714F, 
-  0.9752728681F, 0.9754581829F, 0.9756425184F, 0.9758258775F, 
-  0.9760082627F, 0.9761896768F, 0.9763701224F, 0.9765496024F, 
-  0.9767281193F, 0.9769056760F, 0.9770822751F, 0.9772579193F, 
-  0.9774326114F, 0.9776063542F, 0.9777791502F, 0.9779510023F, 
-  0.9781219133F, 0.9782918858F, 0.9784609226F, 0.9786290264F, 
-  0.9787962000F, 0.9789624461F, 0.9791277676F, 0.9792921671F, 
-  0.9794556474F, 0.9796182113F, 0.9797798615F, 0.9799406009F, 
-  0.9801004321F, 0.9802593580F, 0.9804173813F, 0.9805745049F, 
-  0.9807307314F, 0.9808860637F, 0.9810405046F, 0.9811940568F, 
-  0.9813467232F, 0.9814985065F, 0.9816494095F, 0.9817994351F, 
-  0.9819485860F, 0.9820968650F, 0.9822442750F, 0.9823908186F, 
-  0.9825364988F, 0.9826813184F, 0.9828252801F, 0.9829683868F, 
-  0.9831106413F, 0.9832520463F, 0.9833926048F, 0.9835323195F, 
-  0.9836711932F, 0.9838092288F, 0.9839464291F, 0.9840827969F, 
-  0.9842183351F, 0.9843530464F, 0.9844869337F, 0.9846199998F, 
-  0.9847522475F, 0.9848836798F, 0.9850142993F, 0.9851441090F, 
-  0.9852731117F, 0.9854013101F, 0.9855287073F, 0.9856553058F, 
-  0.9857811087F, 0.9859061188F, 0.9860303388F, 0.9861537717F, 
-  0.9862764202F, 0.9863982872F, 0.9865193756F, 0.9866396882F, 
-  0.9867592277F, 0.9868779972F, 0.9869959993F, 0.9871132370F, 
-  0.9872297131F, 0.9873454304F, 0.9874603918F, 0.9875746001F, 
-  0.9876880581F, 0.9878007688F, 0.9879127348F, 0.9880239592F, 
-  0.9881344447F, 0.9882441941F, 0.9883532104F, 0.9884614962F, 
-  0.9885690546F, 0.9886758883F, 0.9887820001F, 0.9888873930F, 
-  0.9889920697F, 0.9890960331F, 0.9891992859F, 0.9893018312F, 
-  0.9894036716F, 0.9895048100F, 0.9896052493F, 0.9897049923F, 
-  0.9898040418F, 0.9899024006F, 0.9900000717F, 0.9900970577F, 
-  0.9901933616F, 0.9902889862F, 0.9903839343F, 0.9904782087F, 
-  0.9905718122F, 0.9906647477F, 0.9907570180F, 0.9908486259F, 
-  0.9909395742F, 0.9910298658F, 0.9911195034F, 0.9912084899F, 
-  0.9912968281F, 0.9913845208F, 0.9914715708F, 0.9915579810F, 
-  0.9916437540F, 0.9917288928F, 0.9918134001F, 0.9918972788F, 
-  0.9919805316F, 0.9920631613F, 0.9921451707F, 0.9922265626F, 
-  0.9923073399F, 0.9923875052F, 0.9924670615F, 0.9925460114F, 
-  0.9926243577F, 0.9927021033F, 0.9927792508F, 0.9928558032F, 
-  0.9929317631F, 0.9930071333F, 0.9930819167F, 0.9931561158F, 
-  0.9932297337F, 0.9933027728F, 0.9933752362F, 0.9934471264F, 
-  0.9935184462F, 0.9935891985F, 0.9936593859F, 0.9937290112F, 
-  0.9937980771F, 0.9938665864F, 0.9939345418F, 0.9940019460F, 
-  0.9940688018F, 0.9941351118F, 0.9942008789F, 0.9942661057F, 
-  0.9943307950F, 0.9943949494F, 0.9944585717F, 0.9945216645F, 
-  0.9945842307F, 0.9946462728F, 0.9947077936F, 0.9947687957F, 
-  0.9948292820F, 0.9948892550F, 0.9949487174F, 0.9950076719F, 
-  0.9950661212F, 0.9951240679F, 0.9951815148F, 0.9952384645F, 
-  0.9952949196F, 0.9953508828F, 0.9954063568F, 0.9954613442F, 
-  0.9955158476F, 0.9955698697F, 0.9956234132F, 0.9956764806F, 
-  0.9957290746F, 0.9957811978F, 0.9958328528F, 0.9958840423F, 
-  0.9959347688F, 0.9959850351F, 0.9960348435F, 0.9960841969F, 
-  0.9961330977F, 0.9961815486F, 0.9962295521F, 0.9962771108F, 
-  0.9963242274F, 0.9963709043F, 0.9964171441F, 0.9964629494F, 
-  0.9965083228F, 0.9965532668F, 0.9965977840F, 0.9966418768F, 
-  0.9966855479F, 0.9967287998F, 0.9967716350F, 0.9968140559F, 
-  0.9968560653F, 0.9968976655F, 0.9969388591F, 0.9969796485F, 
-  0.9970200363F, 0.9970600250F, 0.9970996170F, 0.9971388149F, 
-  0.9971776211F, 0.9972160380F, 0.9972540683F, 0.9972917142F, 
-  0.9973289783F, 0.9973658631F, 0.9974023709F, 0.9974385042F, 
-  0.9974742655F, 0.9975096571F, 0.9975446816F, 0.9975793413F, 
-  0.9976136386F, 0.9976475759F, 0.9976811557F, 0.9977143803F, 
-  0.9977472521F, 0.9977797736F, 0.9978119470F, 0.9978437748F, 
-  0.9978752593F, 0.9979064029F, 0.9979372079F, 0.9979676768F, 
-  0.9979978117F, 0.9980276151F, 0.9980570893F, 0.9980862367F, 
-  0.9981150595F, 0.9981435600F, 0.9981717406F, 0.9981996035F, 
-  0.9982271511F, 0.9982543856F, 0.9982813093F, 0.9983079246F, 
-  0.9983342336F, 0.9983602386F, 0.9983859418F, 0.9984113456F, 
-  0.9984364522F, 0.9984612638F, 0.9984857825F, 0.9985100108F, 
-  0.9985339507F, 0.9985576044F, 0.9985809743F, 0.9986040624F, 
-  0.9986268710F, 0.9986494022F, 0.9986716583F, 0.9986936413F, 
-  0.9987153535F, 0.9987367969F, 0.9987579738F, 0.9987788864F, 
-  0.9987995366F, 0.9988199267F, 0.9988400587F, 0.9988599348F, 
-  0.9988795572F, 0.9988989278F, 0.9989180487F, 0.9989369222F, 
-  0.9989555501F, 0.9989739347F, 0.9989920780F, 0.9990099820F, 
-  0.9990276487F, 0.9990450803F, 0.9990622787F, 0.9990792460F, 
-  0.9990959841F, 0.9991124952F, 0.9991287812F, 0.9991448440F, 
-  0.9991606858F, 0.9991763084F, 0.9991917139F, 0.9992069042F, 
-  0.9992218813F, 0.9992366471F, 0.9992512035F, 0.9992655525F, 
-  0.9992796961F, 0.9992936361F, 0.9993073744F, 0.9993209131F, 
-  0.9993342538F, 0.9993473987F, 0.9993603494F, 0.9993731080F, 
-  0.9993856762F, 0.9993980559F, 0.9994102490F, 0.9994222573F, 
-  0.9994340827F, 0.9994457269F, 0.9994571918F, 0.9994684793F, 
-  0.9994795910F, 0.9994905288F, 0.9995012945F, 0.9995118898F, 
-  0.9995223165F, 0.9995325765F, 0.9995426713F, 0.9995526029F, 
-  0.9995623728F, 0.9995719829F, 0.9995814349F, 0.9995907304F, 
-  0.9995998712F, 0.9996088590F, 0.9996176954F, 0.9996263821F, 
-  0.9996349208F, 0.9996433132F, 0.9996515609F, 0.9996596656F, 
-  0.9996676288F, 0.9996754522F, 0.9996831375F, 0.9996906862F, 
-  0.9996981000F, 0.9997053804F, 0.9997125290F, 0.9997195474F, 
-  0.9997264371F, 0.9997331998F, 0.9997398369F, 0.9997463500F, 
-  0.9997527406F, 0.9997590103F, 0.9997651606F, 0.9997711930F, 
-  0.9997771089F, 0.9997829098F, 0.9997885973F, 0.9997941728F, 
-  0.9997996378F, 0.9998049936F, 0.9998102419F, 0.9998153839F, 
-  0.9998204211F, 0.9998253550F, 0.9998301868F, 0.9998349182F, 
-  0.9998395503F, 0.9998440847F, 0.9998485226F, 0.9998528654F, 
-  0.9998571146F, 0.9998612713F, 0.9998653370F, 0.9998693130F, 
-  0.9998732007F, 0.9998770012F, 0.9998807159F, 0.9998843461F, 
-  0.9998878931F, 0.9998913581F, 0.9998947424F, 0.9998980473F, 
-  0.9999012740F, 0.9999044237F, 0.9999074976F, 0.9999104971F, 
-  0.9999134231F, 0.9999162771F, 0.9999190601F, 0.9999217733F, 
-  0.9999244179F, 0.9999269950F, 0.9999295058F, 0.9999319515F, 
-  0.9999343332F, 0.9999366519F, 0.9999389088F, 0.9999411050F, 
-  0.9999432416F, 0.9999453196F, 0.9999473402F, 0.9999493044F, 
-  0.9999512132F, 0.9999530677F, 0.9999548690F, 0.9999566180F, 
-  0.9999583157F, 0.9999599633F, 0.9999615616F, 0.9999631116F, 
-  0.9999646144F, 0.9999660709F, 0.9999674820F, 0.9999688487F, 
-  0.9999701719F, 0.9999714526F, 0.9999726917F, 0.9999738900F, 
-  0.9999750486F, 0.9999761682F, 0.9999772497F, 0.9999782941F, 
-  0.9999793021F, 0.9999802747F, 0.9999812126F, 0.9999821167F, 
-  0.9999829878F, 0.9999838268F, 0.9999846343F, 0.9999854113F, 
-  0.9999861584F, 0.9999868765F, 0.9999875664F, 0.9999882287F, 
-  0.9999888642F, 0.9999894736F, 0.9999900577F, 0.9999906172F, 
-  0.9999911528F, 0.9999916651F, 0.9999921548F, 0.9999926227F, 
-  0.9999930693F, 0.9999934954F, 0.9999939015F, 0.9999942883F, 
-  0.9999946564F, 0.9999950064F, 0.9999953390F, 0.9999956547F, 
-  0.9999959541F, 0.9999962377F, 0.9999965062F, 0.9999967601F, 
-  0.9999969998F, 0.9999972260F, 0.9999974392F, 0.9999976399F, 
-  0.9999978285F, 0.9999980056F, 0.9999981716F, 0.9999983271F, 
-  0.9999984724F, 0.9999986081F, 0.9999987345F, 0.9999988521F, 
-  0.9999989613F, 0.9999990625F, 0.9999991562F, 0.9999992426F, 
-  0.9999993223F, 0.9999993954F, 0.9999994625F, 0.9999995239F, 
-  0.9999995798F, 0.9999996307F, 0.9999996768F, 0.9999997184F, 
-  0.9999997559F, 0.9999997895F, 0.9999998195F, 0.9999998462F, 
-  0.9999998698F, 0.9999998906F, 0.9999999088F, 0.9999999246F, 
-  0.9999999383F, 0.9999999500F, 0.9999999600F, 0.9999999684F, 
-  0.9999999754F, 0.9999999811F, 0.9999999858F, 0.9999999896F, 
-  0.9999999925F, 0.9999999948F, 0.9999999965F, 0.9999999978F, 
-  0.9999999986F, 0.9999999992F, 0.9999999996F, 0.9999999998F, 
-  0.9999999999F, 1.0000000000F, 1.0000000000F, 1.0000000000F, 
+  0.0000002310F, 0.0000020791F, 0.0000057754F, 0.0000113197F,
+  0.0000187121F, 0.0000279526F, 0.0000390412F, 0.0000519777F,
+  0.0000667623F, 0.0000833949F, 0.0001018753F, 0.0001222036F,
+  0.0001443798F, 0.0001684037F, 0.0001942754F, 0.0002219947F,
+  0.0002515616F, 0.0002829761F, 0.0003162380F, 0.0003513472F,
+  0.0003883038F, 0.0004271076F, 0.0004677584F, 0.0005102563F,
+  0.0005546011F, 0.0006007928F, 0.0006488311F, 0.0006987160F,
+  0.0007504474F, 0.0008040251F, 0.0008594490F, 0.0009167191F,
+  0.0009758351F, 0.0010367969F, 0.0010996044F, 0.0011642574F,
+  0.0012307558F, 0.0012990994F, 0.0013692880F, 0.0014413216F,
+  0.0015151998F, 0.0015909226F, 0.0016684898F, 0.0017479011F,
+  0.0018291565F, 0.0019122556F, 0.0019971983F, 0.0020839845F,
+  0.0021726138F, 0.0022630861F, 0.0023554012F, 0.0024495588F,
+  0.0025455588F, 0.0026434008F, 0.0027430847F, 0.0028446103F,
+  0.0029479772F, 0.0030531853F, 0.0031602342F, 0.0032691238F,
+  0.0033798538F, 0.0034924239F, 0.0036068338F, 0.0037230833F,
+  0.0038411721F, 0.0039610999F, 0.0040828664F, 0.0042064714F,
+  0.0043319145F, 0.0044591954F, 0.0045883139F, 0.0047192696F,
+  0.0048520622F, 0.0049866914F, 0.0051231569F, 0.0052614583F,
+  0.0054015953F, 0.0055435676F, 0.0056873748F, 0.0058330166F,
+  0.0059804926F, 0.0061298026F, 0.0062809460F, 0.0064339226F,
+  0.0065887320F, 0.0067453738F, 0.0069038476F, 0.0070641531F,
+  0.0072262899F, 0.0073902575F, 0.0075560556F, 0.0077236838F,
+  0.0078931417F, 0.0080644288F, 0.0082375447F, 0.0084124891F,
+  0.0085892615F, 0.0087678614F, 0.0089482885F, 0.0091305422F,
+  0.0093146223F, 0.0095005281F, 0.0096882592F, 0.0098778153F,
+  0.0100691958F, 0.0102624002F, 0.0104574281F, 0.0106542791F,
+  0.0108529525F, 0.0110534480F, 0.0112557651F, 0.0114599032F,
+  0.0116658618F, 0.0118736405F, 0.0120832387F, 0.0122946560F,
+  0.0125078917F, 0.0127229454F, 0.0129398166F, 0.0131585046F,
+  0.0133790090F, 0.0136013292F, 0.0138254647F, 0.0140514149F,
+  0.0142791792F, 0.0145087572F, 0.0147401481F, 0.0149733515F,
+  0.0152083667F, 0.0154451932F, 0.0156838304F, 0.0159242777F,
+  0.0161665345F, 0.0164106001F, 0.0166564741F, 0.0169041557F,
+  0.0171536443F, 0.0174049393F, 0.0176580401F, 0.0179129461F,
+  0.0181696565F, 0.0184281708F, 0.0186884883F, 0.0189506084F,
+  0.0192145303F, 0.0194802535F, 0.0197477772F, 0.0200171008F,
+  0.0202882236F, 0.0205611449F, 0.0208358639F, 0.0211123801F,
+  0.0213906927F, 0.0216708011F, 0.0219527043F, 0.0222364019F,
+  0.0225218930F, 0.0228091769F, 0.0230982529F, 0.0233891203F,
+  0.0236817782F, 0.0239762259F, 0.0242724628F, 0.0245704880F,
+  0.0248703007F, 0.0251719002F, 0.0254752858F, 0.0257804565F,
+  0.0260874117F, 0.0263961506F, 0.0267066722F, 0.0270189760F,
+  0.0273330609F, 0.0276489263F, 0.0279665712F, 0.0282859949F,
+  0.0286071966F, 0.0289301753F, 0.0292549303F, 0.0295814607F,
+  0.0299097656F, 0.0302398442F, 0.0305716957F, 0.0309053191F,
+  0.0312407135F, 0.0315778782F, 0.0319168122F, 0.0322575145F,
+  0.0325999844F, 0.0329442209F, 0.0332902231F, 0.0336379900F,
+  0.0339875208F, 0.0343388146F, 0.0346918703F, 0.0350466871F,
+  0.0354032640F, 0.0357616000F, 0.0361216943F, 0.0364835458F,
+  0.0368471535F, 0.0372125166F, 0.0375796339F, 0.0379485046F,
+  0.0383191276F, 0.0386915020F, 0.0390656267F, 0.0394415008F,
+  0.0398191231F, 0.0401984927F, 0.0405796086F, 0.0409624698F,
+  0.0413470751F, 0.0417334235F, 0.0421215141F, 0.0425113457F,
+  0.0429029172F, 0.0432962277F, 0.0436912760F, 0.0440880610F,
+  0.0444865817F, 0.0448868370F, 0.0452888257F, 0.0456925468F,
+  0.0460979992F, 0.0465051816F, 0.0469140931F, 0.0473247325F,
+  0.0477370986F, 0.0481511902F, 0.0485670064F, 0.0489845458F,
+  0.0494038074F, 0.0498247899F, 0.0502474922F, 0.0506719131F,
+  0.0510980514F, 0.0515259060F, 0.0519554756F, 0.0523867590F,
+  0.0528197550F, 0.0532544624F, 0.0536908800F, 0.0541290066F,
+  0.0545688408F, 0.0550103815F, 0.0554536274F, 0.0558985772F,
+  0.0563452297F, 0.0567935837F, 0.0572436377F, 0.0576953907F,
+  0.0581488412F, 0.0586039880F, 0.0590608297F, 0.0595193651F,
+  0.0599795929F, 0.0604415117F, 0.0609051202F, 0.0613704170F,
+  0.0618374009F, 0.0623060704F, 0.0627764243F, 0.0632484611F,
+  0.0637221795F, 0.0641975781F, 0.0646746555F, 0.0651534104F,
+  0.0656338413F, 0.0661159469F, 0.0665997257F, 0.0670851763F,
+  0.0675722973F, 0.0680610873F, 0.0685515448F, 0.0690436684F,
+  0.0695374567F, 0.0700329081F, 0.0705300213F, 0.0710287947F,
+  0.0715292269F, 0.0720313163F, 0.0725350616F, 0.0730404612F,
+  0.0735475136F, 0.0740562172F, 0.0745665707F, 0.0750785723F,
+  0.0755922207F, 0.0761075143F, 0.0766244515F, 0.0771430307F,
+  0.0776632505F, 0.0781851092F, 0.0787086052F, 0.0792337371F,
+  0.0797605032F, 0.0802889018F, 0.0808189315F, 0.0813505905F,
+  0.0818838773F, 0.0824187903F, 0.0829553277F, 0.0834934881F,
+  0.0840332697F, 0.0845746708F, 0.0851176899F, 0.0856623252F,
+  0.0862085751F, 0.0867564379F, 0.0873059119F, 0.0878569954F,
+  0.0884096867F, 0.0889639840F, 0.0895198858F, 0.0900773902F,
+  0.0906364955F, 0.0911972000F, 0.0917595019F, 0.0923233995F,
+  0.0928888909F, 0.0934559745F, 0.0940246485F, 0.0945949110F,
+  0.0951667604F, 0.0957401946F, 0.0963152121F, 0.0968918109F,
+  0.0974699893F, 0.0980497454F, 0.0986310773F, 0.0992139832F,
+  0.0997984614F, 0.1003845098F, 0.1009721267F, 0.1015613101F,
+  0.1021520582F, 0.1027443692F, 0.1033382410F, 0.1039336718F,
+  0.1045306597F, 0.1051292027F, 0.1057292990F, 0.1063309466F,
+  0.1069341435F, 0.1075388878F, 0.1081451776F, 0.1087530108F,
+  0.1093623856F, 0.1099732998F, 0.1105857516F, 0.1111997389F,
+  0.1118152597F, 0.1124323121F, 0.1130508939F, 0.1136710032F,
+  0.1142926379F, 0.1149157960F, 0.1155404755F, 0.1161666742F,
+  0.1167943901F, 0.1174236211F, 0.1180543652F, 0.1186866202F,
+  0.1193203841F, 0.1199556548F, 0.1205924300F, 0.1212307078F,
+  0.1218704860F, 0.1225117624F, 0.1231545349F, 0.1237988013F,
+  0.1244445596F, 0.1250918074F, 0.1257405427F, 0.1263907632F,
+  0.1270424667F, 0.1276956512F, 0.1283503142F, 0.1290064537F,
+  0.1296640674F, 0.1303231530F, 0.1309837084F, 0.1316457312F,
+  0.1323092193F, 0.1329741703F, 0.1336405820F, 0.1343084520F,
+  0.1349777782F, 0.1356485582F, 0.1363207897F, 0.1369944704F,
+  0.1376695979F, 0.1383461700F, 0.1390241842F, 0.1397036384F,
+  0.1403845300F, 0.1410668567F, 0.1417506162F, 0.1424358061F,
+  0.1431224240F, 0.1438104674F, 0.1444999341F, 0.1451908216F,
+  0.1458831274F, 0.1465768492F, 0.1472719844F, 0.1479685308F,
+  0.1486664857F, 0.1493658468F, 0.1500666115F, 0.1507687775F,
+  0.1514723422F, 0.1521773031F, 0.1528836577F, 0.1535914035F,
+  0.1543005380F, 0.1550110587F, 0.1557229631F, 0.1564362485F,
+  0.1571509124F, 0.1578669524F, 0.1585843657F, 0.1593031499F,
+  0.1600233024F, 0.1607448205F, 0.1614677017F, 0.1621919433F,
+  0.1629175428F, 0.1636444975F, 0.1643728047F, 0.1651024619F,
+  0.1658334665F, 0.1665658156F, 0.1672995067F, 0.1680345371F,
+  0.1687709041F, 0.1695086050F, 0.1702476372F, 0.1709879978F,
+  0.1717296843F, 0.1724726938F, 0.1732170237F, 0.1739626711F,
+  0.1747096335F, 0.1754579079F, 0.1762074916F, 0.1769583819F,
+  0.1777105760F, 0.1784640710F, 0.1792188642F, 0.1799749529F,
+  0.1807323340F, 0.1814910049F, 0.1822509628F, 0.1830122046F,
+  0.1837747277F, 0.1845385292F, 0.1853036062F, 0.1860699558F,
+  0.1868375751F, 0.1876064613F, 0.1883766114F, 0.1891480226F,
+  0.1899206919F, 0.1906946164F, 0.1914697932F, 0.1922462194F,
+  0.1930238919F, 0.1938028079F, 0.1945829643F, 0.1953643583F,
+  0.1961469868F, 0.1969308468F, 0.1977159353F, 0.1985022494F,
+  0.1992897859F, 0.2000785420F, 0.2008685145F, 0.2016597005F,
+  0.2024520968F, 0.2032457005F, 0.2040405084F, 0.2048365175F,
+  0.2056337247F, 0.2064321269F, 0.2072317211F, 0.2080325041F,
+  0.2088344727F, 0.2096376240F, 0.2104419547F, 0.2112474618F,
+  0.2120541420F, 0.2128619923F, 0.2136710094F, 0.2144811902F,
+  0.2152925315F, 0.2161050301F, 0.2169186829F, 0.2177334866F,
+  0.2185494381F, 0.2193665340F, 0.2201847712F, 0.2210041465F,
+  0.2218246565F, 0.2226462981F, 0.2234690680F, 0.2242929629F,
+  0.2251179796F, 0.2259441147F, 0.2267713650F, 0.2275997272F,
+  0.2284291979F, 0.2292597739F, 0.2300914518F, 0.2309242283F,
+  0.2317581001F, 0.2325930638F, 0.2334291160F, 0.2342662534F,
+  0.2351044727F, 0.2359437703F, 0.2367841431F, 0.2376255875F,
+  0.2384681001F, 0.2393116776F, 0.2401563165F, 0.2410020134F,
+  0.2418487649F, 0.2426965675F, 0.2435454178F, 0.2443953122F,
+  0.2452462474F, 0.2460982199F, 0.2469512262F, 0.2478052628F,
+  0.2486603262F, 0.2495164129F, 0.2503735194F, 0.2512316421F,
+  0.2520907776F, 0.2529509222F, 0.2538120726F, 0.2546742250F,
+  0.2555373760F, 0.2564015219F, 0.2572666593F, 0.2581327845F,
+  0.2589998939F, 0.2598679840F, 0.2607370510F, 0.2616070916F,
+  0.2624781019F, 0.2633500783F, 0.2642230173F, 0.2650969152F,
+  0.2659717684F, 0.2668475731F, 0.2677243257F, 0.2686020226F,
+  0.2694806601F, 0.2703602344F, 0.2712407419F, 0.2721221789F,
+  0.2730045417F, 0.2738878265F, 0.2747720297F, 0.2756571474F,
+  0.2765431760F, 0.2774301117F, 0.2783179508F, 0.2792066895F,
+  0.2800963240F, 0.2809868505F, 0.2818782654F, 0.2827705647F,
+  0.2836637447F, 0.2845578016F, 0.2854527315F, 0.2863485307F,
+  0.2872451953F, 0.2881427215F, 0.2890411055F, 0.2899403433F,
+  0.2908404312F, 0.2917413654F, 0.2926431418F, 0.2935457567F,
+  0.2944492061F, 0.2953534863F, 0.2962585932F, 0.2971645230F,
+  0.2980712717F, 0.2989788356F, 0.2998872105F, 0.3007963927F,
+  0.3017063781F, 0.3026171629F, 0.3035287430F, 0.3044411145F,
+  0.3053542736F, 0.3062682161F, 0.3071829381F, 0.3080984356F,
+  0.3090147047F, 0.3099317413F, 0.3108495414F, 0.3117681011F,
+  0.3126874163F, 0.3136074830F, 0.3145282972F, 0.3154498548F,
+  0.3163721517F, 0.3172951841F, 0.3182189477F, 0.3191434385F,
+  0.3200686525F, 0.3209945856F, 0.3219212336F, 0.3228485927F,
+  0.3237766585F, 0.3247054271F, 0.3256348943F, 0.3265650560F,
+  0.3274959081F, 0.3284274465F, 0.3293596671F, 0.3302925657F,
+  0.3312261382F, 0.3321603804F, 0.3330952882F, 0.3340308574F,
+  0.3349670838F, 0.3359039634F, 0.3368414919F, 0.3377796651F,
+  0.3387184789F, 0.3396579290F, 0.3405980113F, 0.3415387216F,
+  0.3424800556F, 0.3434220091F, 0.3443645779F, 0.3453077578F,
+  0.3462515446F, 0.3471959340F, 0.3481409217F, 0.3490865036F,
+  0.3500326754F, 0.3509794328F, 0.3519267715F, 0.3528746873F,
+  0.3538231759F, 0.3547722330F, 0.3557218544F, 0.3566720357F,
+  0.3576227727F, 0.3585740610F, 0.3595258964F, 0.3604782745F,
+  0.3614311910F, 0.3623846417F, 0.3633386221F, 0.3642931280F,
+  0.3652481549F, 0.3662036987F, 0.3671597548F, 0.3681163191F,
+  0.3690733870F, 0.3700309544F, 0.3709890167F, 0.3719475696F,
+  0.3729066089F, 0.3738661299F, 0.3748261285F, 0.3757866002F,
+  0.3767475406F, 0.3777089453F, 0.3786708100F, 0.3796331302F,
+  0.3805959014F, 0.3815591194F, 0.3825227796F, 0.3834868777F,
+  0.3844514093F, 0.3854163698F, 0.3863817549F, 0.3873475601F,
+  0.3883137810F, 0.3892804131F, 0.3902474521F, 0.3912148933F,
+  0.3921827325F, 0.3931509650F, 0.3941195865F, 0.3950885925F,
+  0.3960579785F, 0.3970277400F, 0.3979978725F, 0.3989683716F,
+  0.3999392328F, 0.4009104516F, 0.4018820234F, 0.4028539438F,
+  0.4038262084F, 0.4047988125F, 0.4057717516F, 0.4067450214F,
+  0.4077186172F, 0.4086925345F, 0.4096667688F, 0.4106413155F,
+  0.4116161703F, 0.4125913284F, 0.4135667854F, 0.4145425368F,
+  0.4155185780F, 0.4164949044F, 0.4174715116F, 0.4184483949F,
+  0.4194255498F, 0.4204029718F, 0.4213806563F, 0.4223585987F,
+  0.4233367946F, 0.4243152392F, 0.4252939281F, 0.4262728566F,
+  0.4272520202F, 0.4282314144F, 0.4292110345F, 0.4301908760F,
+  0.4311709343F, 0.4321512047F, 0.4331316828F, 0.4341123639F,
+  0.4350932435F, 0.4360743168F, 0.4370555794F, 0.4380370267F,
+  0.4390186540F, 0.4400004567F, 0.4409824303F, 0.4419645701F,
+  0.4429468716F, 0.4439293300F, 0.4449119409F, 0.4458946996F,
+  0.4468776014F, 0.4478606418F, 0.4488438162F, 0.4498271199F,
+  0.4508105483F, 0.4517940967F, 0.4527777607F, 0.4537615355F,
+  0.4547454165F, 0.4557293991F, 0.4567134786F, 0.4576976505F,
+  0.4586819101F, 0.4596662527F, 0.4606506738F, 0.4616351687F,
+  0.4626197328F, 0.4636043614F, 0.4645890499F, 0.4655737936F,
+  0.4665585880F, 0.4675434284F, 0.4685283101F, 0.4695132286F,
+  0.4704981791F, 0.4714831570F, 0.4724681577F, 0.4734531766F,
+  0.4744382089F, 0.4754232501F, 0.4764082956F, 0.4773933406F,
+  0.4783783806F, 0.4793634108F, 0.4803484267F, 0.4813334237F,
+  0.4823183969F, 0.4833033419F, 0.4842882540F, 0.4852731285F,
+  0.4862579608F, 0.4872427462F, 0.4882274802F, 0.4892121580F,
+  0.4901967751F, 0.4911813267F, 0.4921658083F, 0.4931502151F,
+  0.4941345427F, 0.4951187863F, 0.4961029412F, 0.4970870029F,
+  0.4980709667F, 0.4990548280F, 0.5000385822F, 0.5010222245F,
+  0.5020057505F, 0.5029891553F, 0.5039724345F, 0.5049555834F,
+  0.5059385973F, 0.5069214716F, 0.5079042018F, 0.5088867831F,
+  0.5098692110F, 0.5108514808F, 0.5118335879F, 0.5128155277F,
+  0.5137972956F, 0.5147788869F, 0.5157602971F, 0.5167415215F,
+  0.5177225555F, 0.5187033945F, 0.5196840339F, 0.5206644692F,
+  0.5216446956F, 0.5226247086F, 0.5236045035F, 0.5245840759F,
+  0.5255634211F, 0.5265425344F, 0.5275214114F, 0.5285000474F,
+  0.5294784378F, 0.5304565781F, 0.5314344637F, 0.5324120899F,
+  0.5333894522F, 0.5343665461F, 0.5353433670F, 0.5363199102F,
+  0.5372961713F, 0.5382721457F, 0.5392478287F, 0.5402232159F,
+  0.5411983027F, 0.5421730845F, 0.5431475569F, 0.5441217151F,
+  0.5450955548F, 0.5460690714F, 0.5470422602F, 0.5480151169F,
+  0.5489876368F, 0.5499598155F, 0.5509316484F, 0.5519031310F,
+  0.5528742587F, 0.5538450271F, 0.5548154317F, 0.5557854680F,
+  0.5567551314F, 0.5577244174F, 0.5586933216F, 0.5596618395F,
+  0.5606299665F, 0.5615976983F, 0.5625650302F, 0.5635319580F,
+  0.5644984770F, 0.5654645828F, 0.5664302709F, 0.5673955370F,
+  0.5683603765F, 0.5693247850F, 0.5702887580F, 0.5712522912F,
+  0.5722153800F, 0.5731780200F, 0.5741402069F, 0.5751019362F,
+  0.5760632034F, 0.5770240042F, 0.5779843341F, 0.5789441889F,
+  0.5799035639F, 0.5808624549F, 0.5818208575F, 0.5827787673F,
+  0.5837361800F, 0.5846930910F, 0.5856494961F, 0.5866053910F,
+  0.5875607712F, 0.5885156324F, 0.5894699703F, 0.5904237804F,
+  0.5913770586F, 0.5923298004F, 0.5932820016F, 0.5942336578F,
+  0.5951847646F, 0.5961353179F, 0.5970853132F, 0.5980347464F,
+  0.5989836131F, 0.5999319090F, 0.6008796298F, 0.6018267713F,
+  0.6027733292F, 0.6037192993F, 0.6046646773F, 0.6056094589F,
+  0.6065536400F, 0.6074972162F, 0.6084401833F, 0.6093825372F,
+  0.6103242736F, 0.6112653884F, 0.6122058772F, 0.6131457359F,
+  0.6140849604F, 0.6150235464F, 0.6159614897F, 0.6168987862F,
+  0.6178354318F, 0.6187714223F, 0.6197067535F, 0.6206414213F,
+  0.6215754215F, 0.6225087501F, 0.6234414028F, 0.6243733757F,
+  0.6253046646F, 0.6262352654F, 0.6271651739F, 0.6280943862F,
+  0.6290228982F, 0.6299507057F, 0.6308778048F, 0.6318041913F,
+  0.6327298612F, 0.6336548105F, 0.6345790352F, 0.6355025312F,
+  0.6364252945F, 0.6373473211F, 0.6382686070F, 0.6391891483F,
+  0.6401089409F, 0.6410279808F, 0.6419462642F, 0.6428637869F,
+  0.6437805452F, 0.6446965350F, 0.6456117524F, 0.6465261935F,
+  0.6474398544F, 0.6483527311F, 0.6492648197F, 0.6501761165F,
+  0.6510866174F, 0.6519963186F, 0.6529052162F, 0.6538133064F,
+  0.6547205854F, 0.6556270492F, 0.6565326941F, 0.6574375162F,
+  0.6583415117F, 0.6592446769F, 0.6601470079F, 0.6610485009F,
+  0.6619491521F, 0.6628489578F, 0.6637479143F, 0.6646460177F,
+  0.6655432643F, 0.6664396505F, 0.6673351724F, 0.6682298264F,
+  0.6691236087F, 0.6700165157F, 0.6709085436F, 0.6717996889F,
+  0.6726899478F, 0.6735793167F, 0.6744677918F, 0.6753553697F,
+  0.6762420466F, 0.6771278190F, 0.6780126832F, 0.6788966357F,
+  0.6797796728F, 0.6806617909F, 0.6815429866F, 0.6824232562F,
+  0.6833025961F, 0.6841810030F, 0.6850584731F, 0.6859350031F,
+  0.6868105894F, 0.6876852284F, 0.6885589168F, 0.6894316510F,
+  0.6903034275F, 0.6911742430F, 0.6920440939F, 0.6929129769F,
+  0.6937808884F, 0.6946478251F, 0.6955137837F, 0.6963787606F,
+  0.6972427525F, 0.6981057560F, 0.6989677678F, 0.6998287845F,
+  0.7006888028F, 0.7015478194F, 0.7024058309F, 0.7032628340F,
+  0.7041188254F, 0.7049738019F, 0.7058277601F, 0.7066806969F,
+  0.7075326089F, 0.7083834929F, 0.7092333457F, 0.7100821640F,
+  0.7109299447F, 0.7117766846F, 0.7126223804F, 0.7134670291F,
+  0.7143106273F, 0.7151531721F, 0.7159946602F, 0.7168350885F,
+  0.7176744539F, 0.7185127534F, 0.7193499837F, 0.7201861418F,
+  0.7210212247F, 0.7218552293F, 0.7226881526F, 0.7235199914F,
+  0.7243507428F, 0.7251804039F, 0.7260089715F, 0.7268364426F,
+  0.7276628144F, 0.7284880839F, 0.7293122481F, 0.7301353040F,
+  0.7309572487F, 0.7317780794F, 0.7325977930F, 0.7334163868F,
+  0.7342338579F, 0.7350502033F, 0.7358654202F, 0.7366795059F,
+  0.7374924573F, 0.7383042718F, 0.7391149465F, 0.7399244787F,
+  0.7407328655F, 0.7415401041F, 0.7423461920F, 0.7431511261F,
+  0.7439549040F, 0.7447575227F, 0.7455589797F, 0.7463592723F,
+  0.7471583976F, 0.7479563532F, 0.7487531363F, 0.7495487443F,
+  0.7503431745F, 0.7511364244F, 0.7519284913F, 0.7527193726F,
+  0.7535090658F, 0.7542975683F, 0.7550848776F, 0.7558709910F,
+  0.7566559062F, 0.7574396205F, 0.7582221314F, 0.7590034366F,
+  0.7597835334F, 0.7605624194F, 0.7613400923F, 0.7621165495F,
+  0.7628917886F, 0.7636658072F, 0.7644386030F, 0.7652101735F,
+  0.7659805164F, 0.7667496292F, 0.7675175098F, 0.7682841556F,
+  0.7690495645F, 0.7698137341F, 0.7705766622F, 0.7713383463F,
+  0.7720987844F, 0.7728579741F, 0.7736159132F, 0.7743725994F,
+  0.7751280306F, 0.7758822046F, 0.7766351192F, 0.7773867722F,
+  0.7781371614F, 0.7788862848F, 0.7796341401F, 0.7803807253F,
+  0.7811260383F, 0.7818700769F, 0.7826128392F, 0.7833543230F,
+  0.7840945263F, 0.7848334471F, 0.7855710833F, 0.7863074330F,
+  0.7870424941F, 0.7877762647F, 0.7885087428F, 0.7892399264F,
+  0.7899698137F, 0.7906984026F, 0.7914256914F, 0.7921516780F,
+  0.7928763607F, 0.7935997375F, 0.7943218065F, 0.7950425661F,
+  0.7957620142F, 0.7964801492F, 0.7971969692F, 0.7979124724F,
+  0.7986266570F, 0.7993395214F, 0.8000510638F, 0.8007612823F,
+  0.8014701754F, 0.8021777413F, 0.8028839784F, 0.8035888849F,
+  0.8042924592F, 0.8049946997F, 0.8056956048F, 0.8063951727F,
+  0.8070934020F, 0.8077902910F, 0.8084858381F, 0.8091800419F,
+  0.8098729007F, 0.8105644130F, 0.8112545774F, 0.8119433922F,
+  0.8126308561F, 0.8133169676F, 0.8140017251F, 0.8146851272F,
+  0.8153671726F, 0.8160478598F, 0.8167271874F, 0.8174051539F,
+  0.8180817582F, 0.8187569986F, 0.8194308741F, 0.8201033831F,
+  0.8207745244F, 0.8214442966F, 0.8221126986F, 0.8227797290F,
+  0.8234453865F, 0.8241096700F, 0.8247725781F, 0.8254341097F,
+  0.8260942636F, 0.8267530385F, 0.8274104334F, 0.8280664470F,
+  0.8287210782F, 0.8293743259F, 0.8300261889F, 0.8306766662F,
+  0.8313257566F, 0.8319734591F, 0.8326197727F, 0.8332646963F,
+  0.8339082288F, 0.8345503692F, 0.8351911167F, 0.8358304700F,
+  0.8364684284F, 0.8371049907F, 0.8377401562F, 0.8383739238F,
+  0.8390062927F, 0.8396372618F, 0.8402668305F, 0.8408949977F,
+  0.8415217626F, 0.8421471245F, 0.8427710823F, 0.8433936354F,
+  0.8440147830F, 0.8446345242F, 0.8452528582F, 0.8458697844F,
+  0.8464853020F, 0.8470994102F, 0.8477121084F, 0.8483233958F,
+  0.8489332718F, 0.8495417356F, 0.8501487866F, 0.8507544243F,
+  0.8513586479F, 0.8519614568F, 0.8525628505F, 0.8531628283F,
+  0.8537613897F, 0.8543585341F, 0.8549542611F, 0.8555485699F,
+  0.8561414603F, 0.8567329315F, 0.8573229832F, 0.8579116149F,
+  0.8584988262F, 0.8590846165F, 0.8596689855F, 0.8602519327F,
+  0.8608334577F, 0.8614135603F, 0.8619922399F, 0.8625694962F,
+  0.8631453289F, 0.8637197377F, 0.8642927222F, 0.8648642821F,
+  0.8654344172F, 0.8660031272F, 0.8665704118F, 0.8671362708F,
+  0.8677007039F, 0.8682637109F, 0.8688252917F, 0.8693854460F,
+  0.8699441737F, 0.8705014745F, 0.8710573485F, 0.8716117953F,
+  0.8721648150F, 0.8727164073F, 0.8732665723F, 0.8738153098F,
+  0.8743626197F, 0.8749085021F, 0.8754529569F, 0.8759959840F,
+  0.8765375835F, 0.8770777553F, 0.8776164996F, 0.8781538162F,
+  0.8786897054F, 0.8792241670F, 0.8797572013F, 0.8802888082F,
+  0.8808189880F, 0.8813477407F, 0.8818750664F, 0.8824009653F,
+  0.8829254375F, 0.8834484833F, 0.8839701028F, 0.8844902961F,
+  0.8850090636F, 0.8855264054F, 0.8860423218F, 0.8865568131F,
+  0.8870698794F, 0.8875815212F, 0.8880917386F, 0.8886005319F,
+  0.8891079016F, 0.8896138479F, 0.8901183712F, 0.8906214719F,
+  0.8911231503F, 0.8916234067F, 0.8921222417F, 0.8926196556F,
+  0.8931156489F, 0.8936102219F, 0.8941033752F, 0.8945951092F,
+  0.8950854244F, 0.8955743212F, 0.8960618003F, 0.8965478621F,
+  0.8970325071F, 0.8975157359F, 0.8979975490F, 0.8984779471F,
+  0.8989569307F, 0.8994345004F, 0.8999106568F, 0.9003854005F,
+  0.9008587323F, 0.9013306526F, 0.9018011623F, 0.9022702619F,
+  0.9027379521F, 0.9032042337F, 0.9036691074F, 0.9041325739F,
+  0.9045946339F, 0.9050552882F, 0.9055145376F, 0.9059723828F,
+  0.9064288246F, 0.9068838638F, 0.9073375013F, 0.9077897379F,
+  0.9082405743F, 0.9086900115F, 0.9091380503F, 0.9095846917F,
+  0.9100299364F, 0.9104737854F, 0.9109162397F, 0.9113573001F,
+  0.9117969675F, 0.9122352430F, 0.9126721275F, 0.9131076219F,
+  0.9135417273F, 0.9139744447F, 0.9144057750F, 0.9148357194F,
+  0.9152642787F, 0.9156914542F, 0.9161172468F, 0.9165416576F,
+  0.9169646877F, 0.9173863382F, 0.9178066102F, 0.9182255048F,
+  0.9186430232F, 0.9190591665F, 0.9194739359F, 0.9198873324F,
+  0.9202993574F, 0.9207100120F, 0.9211192973F, 0.9215272147F,
+  0.9219337653F, 0.9223389504F, 0.9227427713F, 0.9231452290F,
+  0.9235463251F, 0.9239460607F, 0.9243444371F, 0.9247414557F,
+  0.9251371177F, 0.9255314245F, 0.9259243774F, 0.9263159778F,
+  0.9267062270F, 0.9270951264F, 0.9274826774F, 0.9278688814F,
+  0.9282537398F, 0.9286372540F, 0.9290194254F, 0.9294002555F,
+  0.9297797458F, 0.9301578976F, 0.9305347125F, 0.9309101919F,
+  0.9312843373F, 0.9316571503F, 0.9320286323F, 0.9323987849F,
+  0.9327676097F, 0.9331351080F, 0.9335012816F, 0.9338661320F,
+  0.9342296607F, 0.9345918694F, 0.9349527596F, 0.9353123330F,
+  0.9356705911F, 0.9360275357F, 0.9363831683F, 0.9367374905F,
+  0.9370905042F, 0.9374422108F, 0.9377926122F, 0.9381417099F,
+  0.9384895057F, 0.9388360014F, 0.9391811985F, 0.9395250989F,
+  0.9398677043F, 0.9402090165F, 0.9405490371F, 0.9408877680F,
+  0.9412252110F, 0.9415613678F, 0.9418962402F, 0.9422298301F,
+  0.9425621392F, 0.9428931695F, 0.9432229226F, 0.9435514005F,
+  0.9438786050F, 0.9442045381F, 0.9445292014F, 0.9448525971F,
+  0.9451747268F, 0.9454955926F, 0.9458151963F, 0.9461335399F,
+  0.9464506253F, 0.9467664545F, 0.9470810293F, 0.9473943517F,
+  0.9477064238F, 0.9480172474F, 0.9483268246F, 0.9486351573F,
+  0.9489422475F, 0.9492480973F, 0.9495527087F, 0.9498560837F,
+  0.9501582243F, 0.9504591325F, 0.9507588105F, 0.9510572603F,
+  0.9513544839F, 0.9516504834F, 0.9519452609F, 0.9522388186F,
+  0.9525311584F, 0.9528222826F, 0.9531121932F, 0.9534008923F,
+  0.9536883821F, 0.9539746647F, 0.9542597424F, 0.9545436171F,
+  0.9548262912F, 0.9551077667F, 0.9553880459F, 0.9556671309F,
+  0.9559450239F, 0.9562217272F, 0.9564972429F, 0.9567715733F,
+  0.9570447206F, 0.9573166871F, 0.9575874749F, 0.9578570863F,
+  0.9581255236F, 0.9583927890F, 0.9586588849F, 0.9589238134F,
+  0.9591875769F, 0.9594501777F, 0.9597116180F, 0.9599719003F,
+  0.9602310267F, 0.9604889995F, 0.9607458213F, 0.9610014942F,
+  0.9612560206F, 0.9615094028F, 0.9617616433F, 0.9620127443F,
+  0.9622627083F, 0.9625115376F, 0.9627592345F, 0.9630058016F,
+  0.9632512411F, 0.9634955555F, 0.9637387471F, 0.9639808185F,
+  0.9642217720F, 0.9644616100F, 0.9647003349F, 0.9649379493F,
+  0.9651744556F, 0.9654098561F, 0.9656441534F, 0.9658773499F,
+  0.9661094480F, 0.9663404504F, 0.9665703593F, 0.9667991774F,
+  0.9670269071F, 0.9672535509F, 0.9674791114F, 0.9677035909F,
+  0.9679269921F, 0.9681493174F, 0.9683705694F, 0.9685907506F,
+  0.9688098636F, 0.9690279108F, 0.9692448948F, 0.9694608182F,
+  0.9696756836F, 0.9698894934F, 0.9701022503F, 0.9703139569F,
+  0.9705246156F, 0.9707342291F, 0.9709428000F, 0.9711503309F,
+  0.9713568243F, 0.9715622829F, 0.9717667093F, 0.9719701060F,
+  0.9721724757F, 0.9723738210F, 0.9725741446F, 0.9727734490F,
+  0.9729717369F, 0.9731690109F, 0.9733652737F, 0.9735605279F,
+  0.9737547762F, 0.9739480212F, 0.9741402656F, 0.9743315120F,
+  0.9745217631F, 0.9747110216F, 0.9748992901F, 0.9750865714F,
+  0.9752728681F, 0.9754581829F, 0.9756425184F, 0.9758258775F,
+  0.9760082627F, 0.9761896768F, 0.9763701224F, 0.9765496024F,
+  0.9767281193F, 0.9769056760F, 0.9770822751F, 0.9772579193F,
+  0.9774326114F, 0.9776063542F, 0.9777791502F, 0.9779510023F,
+  0.9781219133F, 0.9782918858F, 0.9784609226F, 0.9786290264F,
+  0.9787962000F, 0.9789624461F, 0.9791277676F, 0.9792921671F,
+  0.9794556474F, 0.9796182113F, 0.9797798615F, 0.9799406009F,
+  0.9801004321F, 0.9802593580F, 0.9804173813F, 0.9805745049F,
+  0.9807307314F, 0.9808860637F, 0.9810405046F, 0.9811940568F,
+  0.9813467232F, 0.9814985065F, 0.9816494095F, 0.9817994351F,
+  0.9819485860F, 0.9820968650F, 0.9822442750F, 0.9823908186F,
+  0.9825364988F, 0.9826813184F, 0.9828252801F, 0.9829683868F,
+  0.9831106413F, 0.9832520463F, 0.9833926048F, 0.9835323195F,
+  0.9836711932F, 0.9838092288F, 0.9839464291F, 0.9840827969F,
+  0.9842183351F, 0.9843530464F, 0.9844869337F, 0.9846199998F,
+  0.9847522475F, 0.9848836798F, 0.9850142993F, 0.9851441090F,
+  0.9852731117F, 0.9854013101F, 0.9855287073F, 0.9856553058F,
+  0.9857811087F, 0.9859061188F, 0.9860303388F, 0.9861537717F,
+  0.9862764202F, 0.9863982872F, 0.9865193756F, 0.9866396882F,
+  0.9867592277F, 0.9868779972F, 0.9869959993F, 0.9871132370F,
+  0.9872297131F, 0.9873454304F, 0.9874603918F, 0.9875746001F,
+  0.9876880581F, 0.9878007688F, 0.9879127348F, 0.9880239592F,
+  0.9881344447F, 0.9882441941F, 0.9883532104F, 0.9884614962F,
+  0.9885690546F, 0.9886758883F, 0.9887820001F, 0.9888873930F,
+  0.9889920697F, 0.9890960331F, 0.9891992859F, 0.9893018312F,
+  0.9894036716F, 0.9895048100F, 0.9896052493F, 0.9897049923F,
+  0.9898040418F, 0.9899024006F, 0.9900000717F, 0.9900970577F,
+  0.9901933616F, 0.9902889862F, 0.9903839343F, 0.9904782087F,
+  0.9905718122F, 0.9906647477F, 0.9907570180F, 0.9908486259F,
+  0.9909395742F, 0.9910298658F, 0.9911195034F, 0.9912084899F,
+  0.9912968281F, 0.9913845208F, 0.9914715708F, 0.9915579810F,
+  0.9916437540F, 0.9917288928F, 0.9918134001F, 0.9918972788F,
+  0.9919805316F, 0.9920631613F, 0.9921451707F, 0.9922265626F,
+  0.9923073399F, 0.9923875052F, 0.9924670615F, 0.9925460114F,
+  0.9926243577F, 0.9927021033F, 0.9927792508F, 0.9928558032F,
+  0.9929317631F, 0.9930071333F, 0.9930819167F, 0.9931561158F,
+  0.9932297337F, 0.9933027728F, 0.9933752362F, 0.9934471264F,
+  0.9935184462F, 0.9935891985F, 0.9936593859F, 0.9937290112F,
+  0.9937980771F, 0.9938665864F, 0.9939345418F, 0.9940019460F,
+  0.9940688018F, 0.9941351118F, 0.9942008789F, 0.9942661057F,
+  0.9943307950F, 0.9943949494F, 0.9944585717F, 0.9945216645F,
+  0.9945842307F, 0.9946462728F, 0.9947077936F, 0.9947687957F,
+  0.9948292820F, 0.9948892550F, 0.9949487174F, 0.9950076719F,
+  0.9950661212F, 0.9951240679F, 0.9951815148F, 0.9952384645F,
+  0.9952949196F, 0.9953508828F, 0.9954063568F, 0.9954613442F,
+  0.9955158476F, 0.9955698697F, 0.9956234132F, 0.9956764806F,
+  0.9957290746F, 0.9957811978F, 0.9958328528F, 0.9958840423F,
+  0.9959347688F, 0.9959850351F, 0.9960348435F, 0.9960841969F,
+  0.9961330977F, 0.9961815486F, 0.9962295521F, 0.9962771108F,
+  0.9963242274F, 0.9963709043F, 0.9964171441F, 0.9964629494F,
+  0.9965083228F, 0.9965532668F, 0.9965977840F, 0.9966418768F,
+  0.9966855479F, 0.9967287998F, 0.9967716350F, 0.9968140559F,
+  0.9968560653F, 0.9968976655F, 0.9969388591F, 0.9969796485F,
+  0.9970200363F, 0.9970600250F, 0.9970996170F, 0.9971388149F,
+  0.9971776211F, 0.9972160380F, 0.9972540683F, 0.9972917142F,
+  0.9973289783F, 0.9973658631F, 0.9974023709F, 0.9974385042F,
+  0.9974742655F, 0.9975096571F, 0.9975446816F, 0.9975793413F,
+  0.9976136386F, 0.9976475759F, 0.9976811557F, 0.9977143803F,
+  0.9977472521F, 0.9977797736F, 0.9978119470F, 0.9978437748F,
+  0.9978752593F, 0.9979064029F, 0.9979372079F, 0.9979676768F,
+  0.9979978117F, 0.9980276151F, 0.9980570893F, 0.9980862367F,
+  0.9981150595F, 0.9981435600F, 0.9981717406F, 0.9981996035F,
+  0.9982271511F, 0.9982543856F, 0.9982813093F, 0.9983079246F,
+  0.9983342336F, 0.9983602386F, 0.9983859418F, 0.9984113456F,
+  0.9984364522F, 0.9984612638F, 0.9984857825F, 0.9985100108F,
+  0.9985339507F, 0.9985576044F, 0.9985809743F, 0.9986040624F,
+  0.9986268710F, 0.9986494022F, 0.9986716583F, 0.9986936413F,
+  0.9987153535F, 0.9987367969F, 0.9987579738F, 0.9987788864F,
+  0.9987995366F, 0.9988199267F, 0.9988400587F, 0.9988599348F,
+  0.9988795572F, 0.9988989278F, 0.9989180487F, 0.9989369222F,
+  0.9989555501F, 0.9989739347F, 0.9989920780F, 0.9990099820F,
+  0.9990276487F, 0.9990450803F, 0.9990622787F, 0.9990792460F,
+  0.9990959841F, 0.9991124952F, 0.9991287812F, 0.9991448440F,
+  0.9991606858F, 0.9991763084F, 0.9991917139F, 0.9992069042F,
+  0.9992218813F, 0.9992366471F, 0.9992512035F, 0.9992655525F,
+  0.9992796961F, 0.9992936361F, 0.9993073744F, 0.9993209131F,
+  0.9993342538F, 0.9993473987F, 0.9993603494F, 0.9993731080F,
+  0.9993856762F, 0.9993980559F, 0.9994102490F, 0.9994222573F,
+  0.9994340827F, 0.9994457269F, 0.9994571918F, 0.9994684793F,
+  0.9994795910F, 0.9994905288F, 0.9995012945F, 0.9995118898F,
+  0.9995223165F, 0.9995325765F, 0.9995426713F, 0.9995526029F,
+  0.9995623728F, 0.9995719829F, 0.9995814349F, 0.9995907304F,
+  0.9995998712F, 0.9996088590F, 0.9996176954F, 0.9996263821F,
+  0.9996349208F, 0.9996433132F, 0.9996515609F, 0.9996596656F,
+  0.9996676288F, 0.9996754522F, 0.9996831375F, 0.9996906862F,
+  0.9996981000F, 0.9997053804F, 0.9997125290F, 0.9997195474F,
+  0.9997264371F, 0.9997331998F, 0.9997398369F, 0.9997463500F,
+  0.9997527406F, 0.9997590103F, 0.9997651606F, 0.9997711930F,
+  0.9997771089F, 0.9997829098F, 0.9997885973F, 0.9997941728F,
+  0.9997996378F, 0.9998049936F, 0.9998102419F, 0.9998153839F,
+  0.9998204211F, 0.9998253550F, 0.9998301868F, 0.9998349182F,
+  0.9998395503F, 0.9998440847F, 0.9998485226F, 0.9998528654F,
+  0.9998571146F, 0.9998612713F, 0.9998653370F, 0.9998693130F,
+  0.9998732007F, 0.9998770012F, 0.9998807159F, 0.9998843461F,
+  0.9998878931F, 0.9998913581F, 0.9998947424F, 0.9998980473F,
+  0.9999012740F, 0.9999044237F, 0.9999074976F, 0.9999104971F,
+  0.9999134231F, 0.9999162771F, 0.9999190601F, 0.9999217733F,
+  0.9999244179F, 0.9999269950F, 0.9999295058F, 0.9999319515F,
+  0.9999343332F, 0.9999366519F, 0.9999389088F, 0.9999411050F,
+  0.9999432416F, 0.9999453196F, 0.9999473402F, 0.9999493044F,
+  0.9999512132F, 0.9999530677F, 0.9999548690F, 0.9999566180F,
+  0.9999583157F, 0.9999599633F, 0.9999615616F, 0.9999631116F,
+  0.9999646144F, 0.9999660709F, 0.9999674820F, 0.9999688487F,
+  0.9999701719F, 0.9999714526F, 0.9999726917F, 0.9999738900F,
+  0.9999750486F, 0.9999761682F, 0.9999772497F, 0.9999782941F,
+  0.9999793021F, 0.9999802747F, 0.9999812126F, 0.9999821167F,
+  0.9999829878F, 0.9999838268F, 0.9999846343F, 0.9999854113F,
+  0.9999861584F, 0.9999868765F, 0.9999875664F, 0.9999882287F,
+  0.9999888642F, 0.9999894736F, 0.9999900577F, 0.9999906172F,
+  0.9999911528F, 0.9999916651F, 0.9999921548F, 0.9999926227F,
+  0.9999930693F, 0.9999934954F, 0.9999939015F, 0.9999942883F,
+  0.9999946564F, 0.9999950064F, 0.9999953390F, 0.9999956547F,
+  0.9999959541F, 0.9999962377F, 0.9999965062F, 0.9999967601F,
+  0.9999969998F, 0.9999972260F, 0.9999974392F, 0.9999976399F,
+  0.9999978285F, 0.9999980056F, 0.9999981716F, 0.9999983271F,
+  0.9999984724F, 0.9999986081F, 0.9999987345F, 0.9999988521F,
+  0.9999989613F, 0.9999990625F, 0.9999991562F, 0.9999992426F,
+  0.9999993223F, 0.9999993954F, 0.9999994625F, 0.9999995239F,
+  0.9999995798F, 0.9999996307F, 0.9999996768F, 0.9999997184F,
+  0.9999997559F, 0.9999997895F, 0.9999998195F, 0.9999998462F,
+  0.9999998698F, 0.9999998906F, 0.9999999088F, 0.9999999246F,
+  0.9999999383F, 0.9999999500F, 0.9999999600F, 0.9999999684F,
+  0.9999999754F, 0.9999999811F, 0.9999999858F, 0.9999999896F,
+  0.9999999925F, 0.9999999948F, 0.9999999965F, 0.9999999978F,
+  0.9999999986F, 0.9999999992F, 0.9999999996F, 0.9999999998F,
+  0.9999999999F, 1.0000000000F, 1.0000000000F, 1.0000000000F,
 };
 
 static float vwin8192[4096] = {
-  0.0000000578F, 0.0000005198F, 0.0000014438F, 0.0000028299F, 
-  0.0000046780F, 0.0000069882F, 0.0000097604F, 0.0000129945F, 
-  0.0000166908F, 0.0000208490F, 0.0000254692F, 0.0000305515F, 
-  0.0000360958F, 0.0000421021F, 0.0000485704F, 0.0000555006F, 
-  0.0000628929F, 0.0000707472F, 0.0000790635F, 0.0000878417F, 
-  0.0000970820F, 0.0001067842F, 0.0001169483F, 0.0001275744F, 
-  0.0001386625F, 0.0001502126F, 0.0001622245F, 0.0001746984F, 
-  0.0001876343F, 0.0002010320F, 0.0002148917F, 0.0002292132F, 
-  0.0002439967F, 0.0002592421F, 0.0002749493F, 0.0002911184F, 
-  0.0003077493F, 0.0003248421F, 0.0003423967F, 0.0003604132F, 
-  0.0003788915F, 0.0003978316F, 0.0004172335F, 0.0004370971F, 
-  0.0004574226F, 0.0004782098F, 0.0004994587F, 0.0005211694F, 
-  0.0005433418F, 0.0005659759F, 0.0005890717F, 0.0006126292F, 
-  0.0006366484F, 0.0006611292F, 0.0006860716F, 0.0007114757F, 
-  0.0007373414F, 0.0007636687F, 0.0007904576F, 0.0008177080F, 
-  0.0008454200F, 0.0008735935F, 0.0009022285F, 0.0009313250F, 
-  0.0009608830F, 0.0009909025F, 0.0010213834F, 0.0010523257F, 
-  0.0010837295F, 0.0011155946F, 0.0011479211F, 0.0011807090F, 
-  0.0012139582F, 0.0012476687F, 0.0012818405F, 0.0013164736F, 
-  0.0013515679F, 0.0013871235F, 0.0014231402F, 0.0014596182F, 
-  0.0014965573F, 0.0015339576F, 0.0015718190F, 0.0016101415F, 
-  0.0016489251F, 0.0016881698F, 0.0017278754F, 0.0017680421F, 
-  0.0018086698F, 0.0018497584F, 0.0018913080F, 0.0019333185F, 
-  0.0019757898F, 0.0020187221F, 0.0020621151F, 0.0021059690F, 
-  0.0021502837F, 0.0021950591F, 0.0022402953F, 0.0022859921F, 
-  0.0023321497F, 0.0023787679F, 0.0024258467F, 0.0024733861F, 
-  0.0025213861F, 0.0025698466F, 0.0026187676F, 0.0026681491F, 
-  0.0027179911F, 0.0027682935F, 0.0028190562F, 0.0028702794F, 
-  0.0029219628F, 0.0029741066F, 0.0030267107F, 0.0030797749F, 
-  0.0031332994F, 0.0031872841F, 0.0032417289F, 0.0032966338F, 
-  0.0033519988F, 0.0034078238F, 0.0034641089F, 0.0035208539F, 
-  0.0035780589F, 0.0036357237F, 0.0036938485F, 0.0037524331F, 
-  0.0038114775F, 0.0038709817F, 0.0039309456F, 0.0039913692F, 
-  0.0040522524F, 0.0041135953F, 0.0041753978F, 0.0042376599F, 
-  0.0043003814F, 0.0043635624F, 0.0044272029F, 0.0044913028F, 
-  0.0045558620F, 0.0046208806F, 0.0046863585F, 0.0047522955F, 
-  0.0048186919F, 0.0048855473F, 0.0049528619F, 0.0050206356F, 
-  0.0050888684F, 0.0051575601F, 0.0052267108F, 0.0052963204F, 
-  0.0053663890F, 0.0054369163F, 0.0055079025F, 0.0055793474F, 
-  0.0056512510F, 0.0057236133F, 0.0057964342F, 0.0058697137F, 
-  0.0059434517F, 0.0060176482F, 0.0060923032F, 0.0061674166F, 
-  0.0062429883F, 0.0063190183F, 0.0063955066F, 0.0064724532F, 
-  0.0065498579F, 0.0066277207F, 0.0067060416F, 0.0067848205F, 
-  0.0068640575F, 0.0069437523F, 0.0070239051F, 0.0071045157F, 
-  0.0071855840F, 0.0072671102F, 0.0073490940F, 0.0074315355F, 
-  0.0075144345F, 0.0075977911F, 0.0076816052F, 0.0077658768F, 
-  0.0078506057F, 0.0079357920F, 0.0080214355F, 0.0081075363F, 
-  0.0081940943F, 0.0082811094F, 0.0083685816F, 0.0084565108F, 
-  0.0085448970F, 0.0086337401F, 0.0087230401F, 0.0088127969F, 
-  0.0089030104F, 0.0089936807F, 0.0090848076F, 0.0091763911F, 
-  0.0092684311F, 0.0093609276F, 0.0094538805F, 0.0095472898F, 
-  0.0096411554F, 0.0097354772F, 0.0098302552F, 0.0099254894F, 
-  0.0100211796F, 0.0101173259F, 0.0102139281F, 0.0103109863F, 
-  0.0104085002F, 0.0105064700F, 0.0106048955F, 0.0107037766F, 
-  0.0108031133F, 0.0109029056F, 0.0110031534F, 0.0111038565F, 
-  0.0112050151F, 0.0113066289F, 0.0114086980F, 0.0115112222F, 
-  0.0116142015F, 0.0117176359F, 0.0118215252F, 0.0119258695F, 
-  0.0120306686F, 0.0121359225F, 0.0122416312F, 0.0123477944F, 
-  0.0124544123F, 0.0125614847F, 0.0126690116F, 0.0127769928F, 
-  0.0128854284F, 0.0129943182F, 0.0131036623F, 0.0132134604F, 
-  0.0133237126F, 0.0134344188F, 0.0135455790F, 0.0136571929F, 
-  0.0137692607F, 0.0138817821F, 0.0139947572F, 0.0141081859F, 
-  0.0142220681F, 0.0143364037F, 0.0144511927F, 0.0145664350F, 
-  0.0146821304F, 0.0147982791F, 0.0149148808F, 0.0150319355F, 
-  0.0151494431F, 0.0152674036F, 0.0153858168F, 0.0155046828F, 
-  0.0156240014F, 0.0157437726F, 0.0158639962F, 0.0159846723F, 
-  0.0161058007F, 0.0162273814F, 0.0163494142F, 0.0164718991F, 
-  0.0165948361F, 0.0167182250F, 0.0168420658F, 0.0169663584F, 
-  0.0170911027F, 0.0172162987F, 0.0173419462F, 0.0174680452F, 
-  0.0175945956F, 0.0177215974F, 0.0178490504F, 0.0179769545F, 
-  0.0181053098F, 0.0182341160F, 0.0183633732F, 0.0184930812F, 
-  0.0186232399F, 0.0187538494F, 0.0188849094F, 0.0190164200F, 
-  0.0191483809F, 0.0192807923F, 0.0194136539F, 0.0195469656F, 
-  0.0196807275F, 0.0198149394F, 0.0199496012F, 0.0200847128F, 
-  0.0202202742F, 0.0203562853F, 0.0204927460F, 0.0206296561F, 
-  0.0207670157F, 0.0209048245F, 0.0210430826F, 0.0211817899F, 
-  0.0213209462F, 0.0214605515F, 0.0216006057F, 0.0217411086F, 
-  0.0218820603F, 0.0220234605F, 0.0221653093F, 0.0223076066F, 
-  0.0224503521F, 0.0225935459F, 0.0227371879F, 0.0228812779F, 
-  0.0230258160F, 0.0231708018F, 0.0233162355F, 0.0234621169F, 
-  0.0236084459F, 0.0237552224F, 0.0239024462F, 0.0240501175F, 
-  0.0241982359F, 0.0243468015F, 0.0244958141F, 0.0246452736F, 
-  0.0247951800F, 0.0249455331F, 0.0250963329F, 0.0252475792F, 
-  0.0253992720F, 0.0255514111F, 0.0257039965F, 0.0258570281F, 
-  0.0260105057F, 0.0261644293F, 0.0263187987F, 0.0264736139F, 
-  0.0266288747F, 0.0267845811F, 0.0269407330F, 0.0270973302F, 
-  0.0272543727F, 0.0274118604F, 0.0275697930F, 0.0277281707F, 
-  0.0278869932F, 0.0280462604F, 0.0282059723F, 0.0283661287F, 
-  0.0285267295F, 0.0286877747F, 0.0288492641F, 0.0290111976F, 
-  0.0291735751F, 0.0293363965F, 0.0294996617F, 0.0296633706F, 
-  0.0298275231F, 0.0299921190F, 0.0301571583F, 0.0303226409F, 
-  0.0304885667F, 0.0306549354F, 0.0308217472F, 0.0309890017F, 
-  0.0311566989F, 0.0313248388F, 0.0314934211F, 0.0316624459F, 
-  0.0318319128F, 0.0320018220F, 0.0321721732F, 0.0323429663F, 
-  0.0325142013F, 0.0326858779F, 0.0328579962F, 0.0330305559F, 
-  0.0332035570F, 0.0333769994F, 0.0335508829F, 0.0337252074F, 
-  0.0338999728F, 0.0340751790F, 0.0342508259F, 0.0344269134F, 
-  0.0346034412F, 0.0347804094F, 0.0349578178F, 0.0351356663F, 
-  0.0353139548F, 0.0354926831F, 0.0356718511F, 0.0358514588F, 
-  0.0360315059F, 0.0362119924F, 0.0363929182F, 0.0365742831F, 
-  0.0367560870F, 0.0369383297F, 0.0371210113F, 0.0373041315F, 
-  0.0374876902F, 0.0376716873F, 0.0378561226F, 0.0380409961F, 
-  0.0382263077F, 0.0384120571F, 0.0385982443F, 0.0387848691F, 
-  0.0389719315F, 0.0391594313F, 0.0393473683F, 0.0395357425F, 
-  0.0397245537F, 0.0399138017F, 0.0401034866F, 0.0402936080F, 
-  0.0404841660F, 0.0406751603F, 0.0408665909F, 0.0410584576F, 
-  0.0412507603F, 0.0414434988F, 0.0416366731F, 0.0418302829F, 
-  0.0420243282F, 0.0422188088F, 0.0424137246F, 0.0426090755F, 
-  0.0428048613F, 0.0430010819F, 0.0431977371F, 0.0433948269F, 
-  0.0435923511F, 0.0437903095F, 0.0439887020F, 0.0441875285F, 
-  0.0443867889F, 0.0445864830F, 0.0447866106F, 0.0449871717F, 
-  0.0451881661F, 0.0453895936F, 0.0455914542F, 0.0457937477F, 
-  0.0459964738F, 0.0461996326F, 0.0464032239F, 0.0466072475F, 
-  0.0468117032F, 0.0470165910F, 0.0472219107F, 0.0474276622F, 
-  0.0476338452F, 0.0478404597F, 0.0480475056F, 0.0482549827F, 
-  0.0484628907F, 0.0486712297F, 0.0488799994F, 0.0490891998F, 
-  0.0492988306F, 0.0495088917F, 0.0497193830F, 0.0499303043F, 
-  0.0501416554F, 0.0503534363F, 0.0505656468F, 0.0507782867F, 
-  0.0509913559F, 0.0512048542F, 0.0514187815F, 0.0516331376F, 
-  0.0518479225F, 0.0520631358F, 0.0522787775F, 0.0524948475F, 
-  0.0527113455F, 0.0529282715F, 0.0531456252F, 0.0533634066F, 
-  0.0535816154F, 0.0538002515F, 0.0540193148F, 0.0542388051F, 
-  0.0544587222F, 0.0546790660F, 0.0548998364F, 0.0551210331F, 
-  0.0553426561F, 0.0555647051F, 0.0557871801F, 0.0560100807F, 
-  0.0562334070F, 0.0564571587F, 0.0566813357F, 0.0569059378F, 
-  0.0571309649F, 0.0573564168F, 0.0575822933F, 0.0578085942F, 
-  0.0580353195F, 0.0582624689F, 0.0584900423F, 0.0587180396F, 
-  0.0589464605F, 0.0591753049F, 0.0594045726F, 0.0596342635F, 
-  0.0598643774F, 0.0600949141F, 0.0603258735F, 0.0605572555F, 
-  0.0607890597F, 0.0610212862F, 0.0612539346F, 0.0614870049F, 
-  0.0617204968F, 0.0619544103F, 0.0621887451F, 0.0624235010F, 
-  0.0626586780F, 0.0628942758F, 0.0631302942F, 0.0633667331F, 
-  0.0636035923F, 0.0638408717F, 0.0640785710F, 0.0643166901F, 
-  0.0645552288F, 0.0647941870F, 0.0650335645F, 0.0652733610F, 
-  0.0655135765F, 0.0657542108F, 0.0659952636F, 0.0662367348F, 
-  0.0664786242F, 0.0667209316F, 0.0669636570F, 0.0672068000F, 
-  0.0674503605F, 0.0676943384F, 0.0679387334F, 0.0681835454F, 
-  0.0684287742F, 0.0686744196F, 0.0689204814F, 0.0691669595F, 
-  0.0694138536F, 0.0696611637F, 0.0699088894F, 0.0701570307F, 
-  0.0704055873F, 0.0706545590F, 0.0709039458F, 0.0711537473F, 
-  0.0714039634F, 0.0716545939F, 0.0719056387F, 0.0721570975F, 
-  0.0724089702F, 0.0726612565F, 0.0729139563F, 0.0731670694F, 
-  0.0734205956F, 0.0736745347F, 0.0739288866F, 0.0741836510F, 
-  0.0744388277F, 0.0746944166F, 0.0749504175F, 0.0752068301F, 
-  0.0754636543F, 0.0757208899F, 0.0759785367F, 0.0762365946F, 
-  0.0764950632F, 0.0767539424F, 0.0770132320F, 0.0772729319F, 
-  0.0775330418F, 0.0777935616F, 0.0780544909F, 0.0783158298F, 
-  0.0785775778F, 0.0788397349F, 0.0791023009F, 0.0793652755F, 
-  0.0796286585F, 0.0798924498F, 0.0801566492F, 0.0804212564F, 
-  0.0806862712F, 0.0809516935F, 0.0812175231F, 0.0814837597F, 
-  0.0817504031F, 0.0820174532F, 0.0822849097F, 0.0825527724F, 
-  0.0828210412F, 0.0830897158F, 0.0833587960F, 0.0836282816F, 
-  0.0838981724F, 0.0841684682F, 0.0844391688F, 0.0847102740F, 
-  0.0849817835F, 0.0852536973F, 0.0855260150F, 0.0857987364F, 
-  0.0860718614F, 0.0863453897F, 0.0866193211F, 0.0868936554F, 
-  0.0871683924F, 0.0874435319F, 0.0877190737F, 0.0879950175F, 
-  0.0882713632F, 0.0885481105F, 0.0888252592F, 0.0891028091F, 
-  0.0893807600F, 0.0896591117F, 0.0899378639F, 0.0902170165F, 
-  0.0904965692F, 0.0907765218F, 0.0910568740F, 0.0913376258F, 
-  0.0916187767F, 0.0919003268F, 0.0921822756F, 0.0924646230F, 
-  0.0927473687F, 0.0930305126F, 0.0933140545F, 0.0935979940F, 
-  0.0938823310F, 0.0941670653F, 0.0944521966F, 0.0947377247F, 
-  0.0950236494F, 0.0953099704F, 0.0955966876F, 0.0958838007F, 
-  0.0961713094F, 0.0964592136F, 0.0967475131F, 0.0970362075F, 
-  0.0973252967F, 0.0976147805F, 0.0979046585F, 0.0981949307F, 
-  0.0984855967F, 0.0987766563F, 0.0990681093F, 0.0993599555F, 
-  0.0996521945F, 0.0999448263F, 0.1002378506F, 0.1005312671F, 
-  0.1008250755F, 0.1011192757F, 0.1014138675F, 0.1017088505F, 
-  0.1020042246F, 0.1022999895F, 0.1025961450F, 0.1028926909F, 
-  0.1031896268F, 0.1034869526F, 0.1037846680F, 0.1040827729F, 
-  0.1043812668F, 0.1046801497F, 0.1049794213F, 0.1052790813F, 
-  0.1055791294F, 0.1058795656F, 0.1061803894F, 0.1064816006F, 
-  0.1067831991F, 0.1070851846F, 0.1073875568F, 0.1076903155F, 
-  0.1079934604F, 0.1082969913F, 0.1086009079F, 0.1089052101F, 
-  0.1092098975F, 0.1095149699F, 0.1098204270F, 0.1101262687F, 
-  0.1104324946F, 0.1107391045F, 0.1110460982F, 0.1113534754F, 
-  0.1116612359F, 0.1119693793F, 0.1122779055F, 0.1125868142F, 
-  0.1128961052F, 0.1132057781F, 0.1135158328F, 0.1138262690F, 
-  0.1141370863F, 0.1144482847F, 0.1147598638F, 0.1150718233F, 
-  0.1153841631F, 0.1156968828F, 0.1160099822F, 0.1163234610F, 
-  0.1166373190F, 0.1169515559F, 0.1172661714F, 0.1175811654F, 
-  0.1178965374F, 0.1182122874F, 0.1185284149F, 0.1188449198F, 
-  0.1191618018F, 0.1194790606F, 0.1197966960F, 0.1201147076F, 
-  0.1204330953F, 0.1207518587F, 0.1210709976F, 0.1213905118F, 
-  0.1217104009F, 0.1220306647F, 0.1223513029F, 0.1226723153F, 
-  0.1229937016F, 0.1233154615F, 0.1236375948F, 0.1239601011F, 
-  0.1242829803F, 0.1246062319F, 0.1249298559F, 0.1252538518F, 
-  0.1255782195F, 0.1259029586F, 0.1262280689F, 0.1265535501F, 
-  0.1268794019F, 0.1272056241F, 0.1275322163F, 0.1278591784F, 
-  0.1281865099F, 0.1285142108F, 0.1288422805F, 0.1291707190F, 
-  0.1294995259F, 0.1298287009F, 0.1301582437F, 0.1304881542F, 
-  0.1308184319F, 0.1311490766F, 0.1314800881F, 0.1318114660F, 
-  0.1321432100F, 0.1324753200F, 0.1328077955F, 0.1331406364F, 
-  0.1334738422F, 0.1338074129F, 0.1341413479F, 0.1344756472F, 
-  0.1348103103F, 0.1351453370F, 0.1354807270F, 0.1358164801F, 
-  0.1361525959F, 0.1364890741F, 0.1368259145F, 0.1371631167F, 
-  0.1375006805F, 0.1378386056F, 0.1381768917F, 0.1385155384F, 
-  0.1388545456F, 0.1391939129F, 0.1395336400F, 0.1398737266F, 
-  0.1402141724F, 0.1405549772F, 0.1408961406F, 0.1412376623F, 
-  0.1415795421F, 0.1419217797F, 0.1422643746F, 0.1426073268F, 
-  0.1429506358F, 0.1432943013F, 0.1436383231F, 0.1439827008F, 
-  0.1443274342F, 0.1446725229F, 0.1450179667F, 0.1453637652F, 
-  0.1457099181F, 0.1460564252F, 0.1464032861F, 0.1467505006F, 
-  0.1470980682F, 0.1474459888F, 0.1477942620F, 0.1481428875F, 
-  0.1484918651F, 0.1488411942F, 0.1491908748F, 0.1495409065F, 
-  0.1498912889F, 0.1502420218F, 0.1505931048F, 0.1509445376F, 
-  0.1512963200F, 0.1516484516F, 0.1520009321F, 0.1523537612F, 
-  0.1527069385F, 0.1530604638F, 0.1534143368F, 0.1537685571F, 
-  0.1541231244F, 0.1544780384F, 0.1548332987F, 0.1551889052F, 
-  0.1555448574F, 0.1559011550F, 0.1562577978F, 0.1566147853F, 
-  0.1569721173F, 0.1573297935F, 0.1576878135F, 0.1580461771F, 
-  0.1584048838F, 0.1587639334F, 0.1591233255F, 0.1594830599F, 
-  0.1598431361F, 0.1602035540F, 0.1605643131F, 0.1609254131F, 
-  0.1612868537F, 0.1616486346F, 0.1620107555F, 0.1623732160F, 
-  0.1627360158F, 0.1630991545F, 0.1634626319F, 0.1638264476F, 
-  0.1641906013F, 0.1645550926F, 0.1649199212F, 0.1652850869F, 
-  0.1656505892F, 0.1660164278F, 0.1663826024F, 0.1667491127F, 
-  0.1671159583F, 0.1674831388F, 0.1678506541F, 0.1682185036F, 
-  0.1685866872F, 0.1689552044F, 0.1693240549F, 0.1696932384F, 
-  0.1700627545F, 0.1704326029F, 0.1708027833F, 0.1711732952F, 
-  0.1715441385F, 0.1719153127F, 0.1722868175F, 0.1726586526F, 
-  0.1730308176F, 0.1734033121F, 0.1737761359F, 0.1741492886F, 
-  0.1745227698F, 0.1748965792F, 0.1752707164F, 0.1756451812F, 
-  0.1760199731F, 0.1763950918F, 0.1767705370F, 0.1771463083F, 
-  0.1775224054F, 0.1778988279F, 0.1782755754F, 0.1786526477F, 
-  0.1790300444F, 0.1794077651F, 0.1797858094F, 0.1801641771F, 
-  0.1805428677F, 0.1809218810F, 0.1813012165F, 0.1816808739F, 
-  0.1820608528F, 0.1824411530F, 0.1828217739F, 0.1832027154F, 
-  0.1835839770F, 0.1839655584F, 0.1843474592F, 0.1847296790F, 
-  0.1851122175F, 0.1854950744F, 0.1858782492F, 0.1862617417F, 
-  0.1866455514F, 0.1870296780F, 0.1874141211F, 0.1877988804F, 
-  0.1881839555F, 0.1885693461F, 0.1889550517F, 0.1893410721F, 
-  0.1897274068F, 0.1901140555F, 0.1905010178F, 0.1908882933F, 
-  0.1912758818F, 0.1916637828F, 0.1920519959F, 0.1924405208F, 
-  0.1928293571F, 0.1932185044F, 0.1936079625F, 0.1939977308F, 
-  0.1943878091F, 0.1947781969F, 0.1951688939F, 0.1955598998F, 
-  0.1959512141F, 0.1963428364F, 0.1967347665F, 0.1971270038F, 
-  0.1975195482F, 0.1979123990F, 0.1983055561F, 0.1986990190F, 
-  0.1990927873F, 0.1994868607F, 0.1998812388F, 0.2002759212F, 
-  0.2006709075F, 0.2010661974F, 0.2014617904F, 0.2018576862F, 
-  0.2022538844F, 0.2026503847F, 0.2030471865F, 0.2034442897F, 
-  0.2038416937F, 0.2042393982F, 0.2046374028F, 0.2050357071F, 
-  0.2054343107F, 0.2058332133F, 0.2062324145F, 0.2066319138F, 
-  0.2070317110F, 0.2074318055F, 0.2078321970F, 0.2082328852F, 
-  0.2086338696F, 0.2090351498F, 0.2094367255F, 0.2098385962F, 
-  0.2102407617F, 0.2106432213F, 0.2110459749F, 0.2114490220F, 
-  0.2118523621F, 0.2122559950F, 0.2126599202F, 0.2130641373F, 
-  0.2134686459F, 0.2138734456F, 0.2142785361F, 0.2146839168F, 
-  0.2150895875F, 0.2154955478F, 0.2159017972F, 0.2163083353F, 
-  0.2167151617F, 0.2171222761F, 0.2175296780F, 0.2179373670F, 
-  0.2183453428F, 0.2187536049F, 0.2191621529F, 0.2195709864F, 
-  0.2199801051F, 0.2203895085F, 0.2207991961F, 0.2212091677F, 
-  0.2216194228F, 0.2220299610F, 0.2224407818F, 0.2228518850F, 
-  0.2232632699F, 0.2236749364F, 0.2240868839F, 0.2244991121F, 
-  0.2249116204F, 0.2253244086F, 0.2257374763F, 0.2261508229F, 
-  0.2265644481F, 0.2269783514F, 0.2273925326F, 0.2278069911F, 
-  0.2282217265F, 0.2286367384F, 0.2290520265F, 0.2294675902F, 
-  0.2298834292F, 0.2302995431F, 0.2307159314F, 0.2311325937F, 
-  0.2315495297F, 0.2319667388F, 0.2323842207F, 0.2328019749F, 
-  0.2332200011F, 0.2336382988F, 0.2340568675F, 0.2344757070F, 
-  0.2348948166F, 0.2353141961F, 0.2357338450F, 0.2361537629F, 
-  0.2365739493F, 0.2369944038F, 0.2374151261F, 0.2378361156F, 
-  0.2382573720F, 0.2386788948F, 0.2391006836F, 0.2395227380F, 
-  0.2399450575F, 0.2403676417F, 0.2407904902F, 0.2412136026F, 
-  0.2416369783F, 0.2420606171F, 0.2424845185F, 0.2429086820F, 
-  0.2433331072F, 0.2437577936F, 0.2441827409F, 0.2446079486F, 
-  0.2450334163F, 0.2454591435F, 0.2458851298F, 0.2463113747F, 
-  0.2467378779F, 0.2471646389F, 0.2475916573F, 0.2480189325F, 
-  0.2484464643F, 0.2488742521F, 0.2493022955F, 0.2497305940F, 
-  0.2501591473F, 0.2505879549F, 0.2510170163F, 0.2514463311F, 
-  0.2518758989F, 0.2523057193F, 0.2527357916F, 0.2531661157F, 
-  0.2535966909F, 0.2540275169F, 0.2544585931F, 0.2548899193F, 
-  0.2553214948F, 0.2557533193F, 0.2561853924F, 0.2566177135F, 
-  0.2570502822F, 0.2574830981F, 0.2579161608F, 0.2583494697F, 
-  0.2587830245F, 0.2592168246F, 0.2596508697F, 0.2600851593F, 
-  0.2605196929F, 0.2609544701F, 0.2613894904F, 0.2618247534F, 
-  0.2622602586F, 0.2626960055F, 0.2631319938F, 0.2635682230F, 
-  0.2640046925F, 0.2644414021F, 0.2648783511F, 0.2653155391F, 
-  0.2657529657F, 0.2661906305F, 0.2666285329F, 0.2670666725F, 
-  0.2675050489F, 0.2679436616F, 0.2683825101F, 0.2688215940F, 
-  0.2692609127F, 0.2697004660F, 0.2701402532F, 0.2705802739F, 
-  0.2710205278F, 0.2714610142F, 0.2719017327F, 0.2723426830F, 
-  0.2727838644F, 0.2732252766F, 0.2736669191F, 0.2741087914F, 
-  0.2745508930F, 0.2749932235F, 0.2754357824F, 0.2758785693F, 
-  0.2763215837F, 0.2767648251F, 0.2772082930F, 0.2776519870F, 
-  0.2780959066F, 0.2785400513F, 0.2789844207F, 0.2794290143F, 
-  0.2798738316F, 0.2803188722F, 0.2807641355F, 0.2812096211F, 
-  0.2816553286F, 0.2821012574F, 0.2825474071F, 0.2829937773F, 
-  0.2834403673F, 0.2838871768F, 0.2843342053F, 0.2847814523F, 
-  0.2852289174F, 0.2856765999F, 0.2861244996F, 0.2865726159F, 
-  0.2870209482F, 0.2874694962F, 0.2879182594F, 0.2883672372F, 
-  0.2888164293F, 0.2892658350F, 0.2897154540F, 0.2901652858F, 
-  0.2906153298F, 0.2910655856F, 0.2915160527F, 0.2919667306F, 
-  0.2924176189F, 0.2928687171F, 0.2933200246F, 0.2937715409F, 
-  0.2942232657F, 0.2946751984F, 0.2951273386F, 0.2955796856F, 
-  0.2960322391F, 0.2964849986F, 0.2969379636F, 0.2973911335F, 
-  0.2978445080F, 0.2982980864F, 0.2987518684F, 0.2992058534F, 
-  0.2996600409F, 0.3001144305F, 0.3005690217F, 0.3010238139F, 
-  0.3014788067F, 0.3019339995F, 0.3023893920F, 0.3028449835F, 
-  0.3033007736F, 0.3037567618F, 0.3042129477F, 0.3046693306F, 
-  0.3051259102F, 0.3055826859F, 0.3060396572F, 0.3064968236F, 
-  0.3069541847F, 0.3074117399F, 0.3078694887F, 0.3083274307F, 
-  0.3087855653F, 0.3092438920F, 0.3097024104F, 0.3101611199F, 
-  0.3106200200F, 0.3110791103F, 0.3115383902F, 0.3119978592F, 
-  0.3124575169F, 0.3129173627F, 0.3133773961F, 0.3138376166F, 
-  0.3142980238F, 0.3147586170F, 0.3152193959F, 0.3156803598F, 
-  0.3161415084F, 0.3166028410F, 0.3170643573F, 0.3175260566F, 
-  0.3179879384F, 0.3184500023F, 0.3189122478F, 0.3193746743F, 
-  0.3198372814F, 0.3203000685F, 0.3207630351F, 0.3212261807F, 
-  0.3216895048F, 0.3221530069F, 0.3226166865F, 0.3230805430F, 
-  0.3235445760F, 0.3240087849F, 0.3244731693F, 0.3249377285F, 
-  0.3254024622F, 0.3258673698F, 0.3263324507F, 0.3267977045F, 
-  0.3272631306F, 0.3277287286F, 0.3281944978F, 0.3286604379F, 
-  0.3291265482F, 0.3295928284F, 0.3300592777F, 0.3305258958F, 
-  0.3309926821F, 0.3314596361F, 0.3319267573F, 0.3323940451F, 
-  0.3328614990F, 0.3333291186F, 0.3337969033F, 0.3342648525F, 
-  0.3347329658F, 0.3352012427F, 0.3356696825F, 0.3361382849F, 
-  0.3366070492F, 0.3370759749F, 0.3375450616F, 0.3380143087F, 
-  0.3384837156F, 0.3389532819F, 0.3394230071F, 0.3398928905F, 
-  0.3403629317F, 0.3408331302F, 0.3413034854F, 0.3417739967F, 
-  0.3422446638F, 0.3427154860F, 0.3431864628F, 0.3436575938F, 
-  0.3441288782F, 0.3446003158F, 0.3450719058F, 0.3455436478F, 
-  0.3460155412F, 0.3464875856F, 0.3469597804F, 0.3474321250F, 
-  0.3479046189F, 0.3483772617F, 0.3488500527F, 0.3493229914F, 
-  0.3497960774F, 0.3502693100F, 0.3507426887F, 0.3512162131F, 
-  0.3516898825F, 0.3521636965F, 0.3526376545F, 0.3531117559F, 
-  0.3535860003F, 0.3540603870F, 0.3545349157F, 0.3550095856F, 
-  0.3554843964F, 0.3559593474F, 0.3564344381F, 0.3569096680F, 
-  0.3573850366F, 0.3578605432F, 0.3583361875F, 0.3588119687F, 
-  0.3592878865F, 0.3597639402F, 0.3602401293F, 0.3607164533F, 
-  0.3611929117F, 0.3616695038F, 0.3621462292F, 0.3626230873F, 
-  0.3631000776F, 0.3635771995F, 0.3640544525F, 0.3645318360F, 
-  0.3650093496F, 0.3654869926F, 0.3659647645F, 0.3664426648F, 
-  0.3669206930F, 0.3673988484F, 0.3678771306F, 0.3683555390F, 
-  0.3688340731F, 0.3693127322F, 0.3697915160F, 0.3702704237F, 
-  0.3707494549F, 0.3712286091F, 0.3717078857F, 0.3721872840F, 
-  0.3726668037F, 0.3731464441F, 0.3736262047F, 0.3741060850F, 
-  0.3745860843F, 0.3750662023F, 0.3755464382F, 0.3760267915F, 
-  0.3765072618F, 0.3769878484F, 0.3774685509F, 0.3779493686F, 
-  0.3784303010F, 0.3789113475F, 0.3793925076F, 0.3798737809F, 
-  0.3803551666F, 0.3808366642F, 0.3813182733F, 0.3817999932F, 
-  0.3822818234F, 0.3827637633F, 0.3832458124F, 0.3837279702F, 
-  0.3842102360F, 0.3846926093F, 0.3851750897F, 0.3856576764F, 
-  0.3861403690F, 0.3866231670F, 0.3871060696F, 0.3875890765F, 
-  0.3880721870F, 0.3885554007F, 0.3890387168F, 0.3895221349F, 
-  0.3900056544F, 0.3904892748F, 0.3909729955F, 0.3914568160F, 
-  0.3919407356F, 0.3924247539F, 0.3929088702F, 0.3933930841F, 
-  0.3938773949F, 0.3943618021F, 0.3948463052F, 0.3953309035F, 
-  0.3958155966F, 0.3963003838F, 0.3967852646F, 0.3972702385F, 
-  0.3977553048F, 0.3982404631F, 0.3987257127F, 0.3992110531F, 
-  0.3996964838F, 0.4001820041F, 0.4006676136F, 0.4011533116F, 
-  0.4016390976F, 0.4021249710F, 0.4026109313F, 0.4030969779F, 
-  0.4035831102F, 0.4040693277F, 0.4045556299F, 0.4050420160F, 
-  0.4055284857F, 0.4060150383F, 0.4065016732F, 0.4069883899F, 
-  0.4074751879F, 0.4079620665F, 0.4084490252F, 0.4089360635F, 
-  0.4094231807F, 0.4099103763F, 0.4103976498F, 0.4108850005F, 
-  0.4113724280F, 0.4118599315F, 0.4123475107F, 0.4128351648F, 
-  0.4133228934F, 0.4138106959F, 0.4142985716F, 0.4147865201F, 
-  0.4152745408F, 0.4157626330F, 0.4162507963F, 0.4167390301F, 
-  0.4172273337F, 0.4177157067F, 0.4182041484F, 0.4186926583F, 
-  0.4191812359F, 0.4196698805F, 0.4201585915F, 0.4206473685F, 
-  0.4211362108F, 0.4216251179F, 0.4221140892F, 0.4226031241F, 
-  0.4230922221F, 0.4235813826F, 0.4240706050F, 0.4245598887F, 
-  0.4250492332F, 0.4255386379F, 0.4260281022F, 0.4265176256F, 
-  0.4270072075F, 0.4274968473F, 0.4279865445F, 0.4284762984F, 
-  0.4289661086F, 0.4294559743F, 0.4299458951F, 0.4304358704F, 
-  0.4309258996F, 0.4314159822F, 0.4319061175F, 0.4323963050F, 
-  0.4328865441F, 0.4333768342F, 0.4338671749F, 0.4343575654F, 
-  0.4348480052F, 0.4353384938F, 0.4358290306F, 0.4363196149F, 
-  0.4368102463F, 0.4373009241F, 0.4377916478F, 0.4382824168F, 
-  0.4387732305F, 0.4392640884F, 0.4397549899F, 0.4402459343F, 
-  0.4407369212F, 0.4412279499F, 0.4417190198F, 0.4422101305F, 
-  0.4427012813F, 0.4431924717F, 0.4436837010F, 0.4441749686F, 
-  0.4446662742F, 0.4451576169F, 0.4456489963F, 0.4461404118F, 
-  0.4466318628F, 0.4471233487F, 0.4476148690F, 0.4481064230F, 
-  0.4485980103F, 0.4490896302F, 0.4495812821F, 0.4500729654F, 
-  0.4505646797F, 0.4510564243F, 0.4515481986F, 0.4520400021F, 
-  0.4525318341F, 0.4530236942F, 0.4535155816F, 0.4540074959F, 
-  0.4544994365F, 0.4549914028F, 0.4554833941F, 0.4559754100F, 
-  0.4564674499F, 0.4569595131F, 0.4574515991F, 0.4579437074F, 
-  0.4584358372F, 0.4589279881F, 0.4594201595F, 0.4599123508F, 
-  0.4604045615F, 0.4608967908F, 0.4613890383F, 0.4618813034F, 
-  0.4623735855F, 0.4628658841F, 0.4633581984F, 0.4638505281F, 
-  0.4643428724F, 0.4648352308F, 0.4653276028F, 0.4658199877F, 
-  0.4663123849F, 0.4668047940F, 0.4672972143F, 0.4677896451F, 
-  0.4682820861F, 0.4687745365F, 0.4692669958F, 0.4697594634F, 
-  0.4702519387F, 0.4707444211F, 0.4712369102F, 0.4717294052F, 
-  0.4722219056F, 0.4727144109F, 0.4732069204F, 0.4736994336F, 
-  0.4741919498F, 0.4746844686F, 0.4751769893F, 0.4756695113F, 
-  0.4761620341F, 0.4766545571F, 0.4771470797F, 0.4776396013F, 
-  0.4781321213F, 0.4786246392F, 0.4791171544F, 0.4796096663F, 
-  0.4801021744F, 0.4805946779F, 0.4810871765F, 0.4815796694F, 
-  0.4820721561F, 0.4825646360F, 0.4830571086F, 0.4835495732F, 
-  0.4840420293F, 0.4845344763F, 0.4850269136F, 0.4855193407F, 
-  0.4860117569F, 0.4865041617F, 0.4869965545F, 0.4874889347F, 
-  0.4879813018F, 0.4884736551F, 0.4889659941F, 0.4894583182F, 
-  0.4899506268F, 0.4904429193F, 0.4909351952F, 0.4914274538F, 
-  0.4919196947F, 0.4924119172F, 0.4929041207F, 0.4933963046F, 
-  0.4938884685F, 0.4943806116F, 0.4948727335F, 0.4953648335F, 
-  0.4958569110F, 0.4963489656F, 0.4968409965F, 0.4973330032F, 
-  0.4978249852F, 0.4983169419F, 0.4988088726F, 0.4993007768F, 
-  0.4997926539F, 0.5002845034F, 0.5007763247F, 0.5012681171F, 
-  0.5017598801F, 0.5022516132F, 0.5027433157F, 0.5032349871F, 
-  0.5037266268F, 0.5042182341F, 0.5047098086F, 0.5052013497F, 
-  0.5056928567F, 0.5061843292F, 0.5066757664F, 0.5071671679F, 
-  0.5076585330F, 0.5081498613F, 0.5086411520F, 0.5091324047F, 
-  0.5096236187F, 0.5101147934F, 0.5106059284F, 0.5110970230F, 
-  0.5115880766F, 0.5120790887F, 0.5125700587F, 0.5130609860F, 
-  0.5135518700F, 0.5140427102F, 0.5145335059F, 0.5150242566F, 
-  0.5155149618F, 0.5160056208F, 0.5164962331F, 0.5169867980F, 
-  0.5174773151F, 0.5179677837F, 0.5184582033F, 0.5189485733F, 
-  0.5194388931F, 0.5199291621F, 0.5204193798F, 0.5209095455F, 
-  0.5213996588F, 0.5218897190F, 0.5223797256F, 0.5228696779F, 
-  0.5233595755F, 0.5238494177F, 0.5243392039F, 0.5248289337F, 
-  0.5253186063F, 0.5258082213F, 0.5262977781F, 0.5267872760F, 
-  0.5272767146F, 0.5277660932F, 0.5282554112F, 0.5287446682F, 
-  0.5292338635F, 0.5297229965F, 0.5302120667F, 0.5307010736F, 
-  0.5311900164F, 0.5316788947F, 0.5321677079F, 0.5326564554F, 
-  0.5331451366F, 0.5336337511F, 0.5341222981F, 0.5346107771F, 
-  0.5350991876F, 0.5355875290F, 0.5360758007F, 0.5365640021F, 
-  0.5370521327F, 0.5375401920F, 0.5380281792F, 0.5385160939F, 
-  0.5390039355F, 0.5394917034F, 0.5399793971F, 0.5404670159F, 
-  0.5409545594F, 0.5414420269F, 0.5419294179F, 0.5424167318F, 
-  0.5429039680F, 0.5433911261F, 0.5438782053F, 0.5443652051F, 
-  0.5448521250F, 0.5453389644F, 0.5458257228F, 0.5463123995F, 
-  0.5467989940F, 0.5472855057F, 0.5477719341F, 0.5482582786F, 
-  0.5487445387F, 0.5492307137F, 0.5497168031F, 0.5502028063F, 
-  0.5506887228F, 0.5511745520F, 0.5516602934F, 0.5521459463F, 
-  0.5526315103F, 0.5531169847F, 0.5536023690F, 0.5540876626F, 
-  0.5545728649F, 0.5550579755F, 0.5555429937F, 0.5560279189F, 
-  0.5565127507F, 0.5569974884F, 0.5574821315F, 0.5579666794F, 
-  0.5584511316F, 0.5589354875F, 0.5594197465F, 0.5599039080F, 
-  0.5603879716F, 0.5608719367F, 0.5613558026F, 0.5618395689F, 
-  0.5623232350F, 0.5628068002F, 0.5632902642F, 0.5637736262F, 
-  0.5642568858F, 0.5647400423F, 0.5652230953F, 0.5657060442F, 
-  0.5661888883F, 0.5666716272F, 0.5671542603F, 0.5676367870F, 
-  0.5681192069F, 0.5686015192F, 0.5690837235F, 0.5695658192F, 
-  0.5700478058F, 0.5705296827F, 0.5710114494F, 0.5714931052F, 
-  0.5719746497F, 0.5724560822F, 0.5729374023F, 0.5734186094F, 
-  0.5738997029F, 0.5743806823F, 0.5748615470F, 0.5753422965F, 
-  0.5758229301F, 0.5763034475F, 0.5767838480F, 0.5772641310F, 
-  0.5777442960F, 0.5782243426F, 0.5787042700F, 0.5791840778F, 
-  0.5796637654F, 0.5801433322F, 0.5806227778F, 0.5811021016F, 
-  0.5815813029F, 0.5820603814F, 0.5825393363F, 0.5830181673F, 
-  0.5834968737F, 0.5839754549F, 0.5844539105F, 0.5849322399F, 
-  0.5854104425F, 0.5858885179F, 0.5863664653F, 0.5868442844F, 
-  0.5873219746F, 0.5877995353F, 0.5882769660F, 0.5887542661F, 
-  0.5892314351F, 0.5897084724F, 0.5901853776F, 0.5906621500F, 
-  0.5911387892F, 0.5916152945F, 0.5920916655F, 0.5925679016F, 
-  0.5930440022F, 0.5935199669F, 0.5939957950F, 0.5944714861F, 
-  0.5949470396F, 0.5954224550F, 0.5958977317F, 0.5963728692F, 
-  0.5968478669F, 0.5973227244F, 0.5977974411F, 0.5982720163F, 
-  0.5987464497F, 0.5992207407F, 0.5996948887F, 0.6001688932F, 
-  0.6006427537F, 0.6011164696F, 0.6015900405F, 0.6020634657F, 
-  0.6025367447F, 0.6030098770F, 0.6034828621F, 0.6039556995F, 
-  0.6044283885F, 0.6049009288F, 0.6053733196F, 0.6058455606F, 
-  0.6063176512F, 0.6067895909F, 0.6072613790F, 0.6077330152F, 
-  0.6082044989F, 0.6086758295F, 0.6091470065F, 0.6096180294F, 
-  0.6100888977F, 0.6105596108F, 0.6110301682F, 0.6115005694F, 
-  0.6119708139F, 0.6124409011F, 0.6129108305F, 0.6133806017F, 
-  0.6138502139F, 0.6143196669F, 0.6147889599F, 0.6152580926F, 
-  0.6157270643F, 0.6161958746F, 0.6166645230F, 0.6171330088F, 
-  0.6176013317F, 0.6180694910F, 0.6185374863F, 0.6190053171F, 
-  0.6194729827F, 0.6199404828F, 0.6204078167F, 0.6208749841F, 
-  0.6213419842F, 0.6218088168F, 0.6222754811F, 0.6227419768F, 
-  0.6232083032F, 0.6236744600F, 0.6241404465F, 0.6246062622F, 
-  0.6250719067F, 0.6255373795F, 0.6260026799F, 0.6264678076F, 
-  0.6269327619F, 0.6273975425F, 0.6278621487F, 0.6283265800F, 
-  0.6287908361F, 0.6292549163F, 0.6297188201F, 0.6301825471F, 
-  0.6306460966F, 0.6311094683F, 0.6315726617F, 0.6320356761F, 
-  0.6324985111F, 0.6329611662F, 0.6334236410F, 0.6338859348F, 
-  0.6343480472F, 0.6348099777F, 0.6352717257F, 0.6357332909F, 
-  0.6361946726F, 0.6366558704F, 0.6371168837F, 0.6375777122F, 
-  0.6380383552F, 0.6384988123F, 0.6389590830F, 0.6394191668F, 
-  0.6398790631F, 0.6403387716F, 0.6407982916F, 0.6412576228F, 
-  0.6417167645F, 0.6421757163F, 0.6426344778F, 0.6430930483F, 
-  0.6435514275F, 0.6440096149F, 0.6444676098F, 0.6449254119F, 
-  0.6453830207F, 0.6458404356F, 0.6462976562F, 0.6467546820F, 
-  0.6472115125F, 0.6476681472F, 0.6481245856F, 0.6485808273F, 
-  0.6490368717F, 0.6494927183F, 0.6499483667F, 0.6504038164F, 
-  0.6508590670F, 0.6513141178F, 0.6517689684F, 0.6522236185F, 
-  0.6526780673F, 0.6531323146F, 0.6535863598F, 0.6540402024F, 
-  0.6544938419F, 0.6549472779F, 0.6554005099F, 0.6558535373F, 
-  0.6563063598F, 0.6567589769F, 0.6572113880F, 0.6576635927F, 
-  0.6581155906F, 0.6585673810F, 0.6590189637F, 0.6594703380F, 
-  0.6599215035F, 0.6603724598F, 0.6608232064F, 0.6612737427F, 
-  0.6617240684F, 0.6621741829F, 0.6626240859F, 0.6630737767F, 
-  0.6635232550F, 0.6639725202F, 0.6644215720F, 0.6648704098F, 
-  0.6653190332F, 0.6657674417F, 0.6662156348F, 0.6666636121F, 
-  0.6671113731F, 0.6675589174F, 0.6680062445F, 0.6684533538F, 
-  0.6689002450F, 0.6693469177F, 0.6697933712F, 0.6702396052F, 
-  0.6706856193F, 0.6711314129F, 0.6715769855F, 0.6720223369F, 
-  0.6724674664F, 0.6729123736F, 0.6733570581F, 0.6738015194F, 
-  0.6742457570F, 0.6746897706F, 0.6751335596F, 0.6755771236F, 
-  0.6760204621F, 0.6764635747F, 0.6769064609F, 0.6773491204F, 
-  0.6777915525F, 0.6782337570F, 0.6786757332F, 0.6791174809F, 
-  0.6795589995F, 0.6800002886F, 0.6804413477F, 0.6808821765F, 
-  0.6813227743F, 0.6817631409F, 0.6822032758F, 0.6826431785F, 
-  0.6830828485F, 0.6835222855F, 0.6839614890F, 0.6844004585F, 
-  0.6848391936F, 0.6852776939F, 0.6857159589F, 0.6861539883F, 
-  0.6865917815F, 0.6870293381F, 0.6874666576F, 0.6879037398F, 
-  0.6883405840F, 0.6887771899F, 0.6892135571F, 0.6896496850F, 
-  0.6900855733F, 0.6905212216F, 0.6909566294F, 0.6913917963F, 
-  0.6918267218F, 0.6922614055F, 0.6926958471F, 0.6931300459F, 
-  0.6935640018F, 0.6939977141F, 0.6944311825F, 0.6948644066F, 
-  0.6952973859F, 0.6957301200F, 0.6961626085F, 0.6965948510F, 
-  0.6970268470F, 0.6974585961F, 0.6978900980F, 0.6983213521F, 
-  0.6987523580F, 0.6991831154F, 0.6996136238F, 0.7000438828F, 
-  0.7004738921F, 0.7009036510F, 0.7013331594F, 0.7017624166F, 
-  0.7021914224F, 0.7026201763F, 0.7030486779F, 0.7034769268F, 
-  0.7039049226F, 0.7043326648F, 0.7047601531F, 0.7051873870F, 
-  0.7056143662F, 0.7060410902F, 0.7064675586F, 0.7068937711F, 
-  0.7073197271F, 0.7077454264F, 0.7081708684F, 0.7085960529F, 
-  0.7090209793F, 0.7094456474F, 0.7098700566F, 0.7102942066F, 
-  0.7107180970F, 0.7111417274F, 0.7115650974F, 0.7119882066F, 
-  0.7124110545F, 0.7128336409F, 0.7132559653F, 0.7136780272F, 
-  0.7140998264F, 0.7145213624F, 0.7149426348F, 0.7153636433F, 
-  0.7157843874F, 0.7162048668F, 0.7166250810F, 0.7170450296F, 
-  0.7174647124F, 0.7178841289F, 0.7183032786F, 0.7187221613F, 
-  0.7191407765F, 0.7195591239F, 0.7199772030F, 0.7203950135F, 
-  0.7208125550F, 0.7212298271F, 0.7216468294F, 0.7220635616F, 
-  0.7224800233F, 0.7228962140F, 0.7233121335F, 0.7237277813F, 
-  0.7241431571F, 0.7245582604F, 0.7249730910F, 0.7253876484F, 
-  0.7258019322F, 0.7262159422F, 0.7266296778F, 0.7270431388F, 
-  0.7274563247F, 0.7278692353F, 0.7282818700F, 0.7286942287F, 
-  0.7291063108F, 0.7295181160F, 0.7299296440F, 0.7303408944F, 
-  0.7307518669F, 0.7311625609F, 0.7315729763F, 0.7319831126F, 
-  0.7323929695F, 0.7328025466F, 0.7332118435F, 0.7336208600F, 
-  0.7340295955F, 0.7344380499F, 0.7348462226F, 0.7352541134F, 
-  0.7356617220F, 0.7360690478F, 0.7364760907F, 0.7368828502F, 
-  0.7372893259F, 0.7376955176F, 0.7381014249F, 0.7385070475F, 
-  0.7389123849F, 0.7393174368F, 0.7397222029F, 0.7401266829F, 
-  0.7405308763F, 0.7409347829F, 0.7413384023F, 0.7417417341F, 
-  0.7421447780F, 0.7425475338F, 0.7429500009F, 0.7433521791F, 
-  0.7437540681F, 0.7441556674F, 0.7445569769F, 0.7449579960F, 
-  0.7453587245F, 0.7457591621F, 0.7461593084F, 0.7465591631F, 
-  0.7469587259F, 0.7473579963F, 0.7477569741F, 0.7481556590F, 
-  0.7485540506F, 0.7489521486F, 0.7493499526F, 0.7497474623F, 
-  0.7501446775F, 0.7505415977F, 0.7509382227F, 0.7513345521F, 
-  0.7517305856F, 0.7521263229F, 0.7525217636F, 0.7529169074F, 
-  0.7533117541F, 0.7537063032F, 0.7541005545F, 0.7544945076F, 
-  0.7548881623F, 0.7552815182F, 0.7556745749F, 0.7560673323F, 
-  0.7564597899F, 0.7568519474F, 0.7572438046F, 0.7576353611F, 
-  0.7580266166F, 0.7584175708F, 0.7588082235F, 0.7591985741F, 
-  0.7595886226F, 0.7599783685F, 0.7603678116F, 0.7607569515F, 
-  0.7611457879F, 0.7615343206F, 0.7619225493F, 0.7623104735F, 
-  0.7626980931F, 0.7630854078F, 0.7634724171F, 0.7638591209F, 
-  0.7642455188F, 0.7646316106F, 0.7650173959F, 0.7654028744F, 
-  0.7657880459F, 0.7661729100F, 0.7665574664F, 0.7669417150F, 
-  0.7673256553F, 0.7677092871F, 0.7680926100F, 0.7684756239F, 
-  0.7688583284F, 0.7692407232F, 0.7696228080F, 0.7700045826F, 
-  0.7703860467F, 0.7707671999F, 0.7711480420F, 0.7715285728F, 
-  0.7719087918F, 0.7722886989F, 0.7726682938F, 0.7730475762F, 
-  0.7734265458F, 0.7738052023F, 0.7741835454F, 0.7745615750F, 
-  0.7749392906F, 0.7753166921F, 0.7756937791F, 0.7760705514F, 
-  0.7764470087F, 0.7768231508F, 0.7771989773F, 0.7775744880F, 
-  0.7779496827F, 0.7783245610F, 0.7786991227F, 0.7790733676F, 
-  0.7794472953F, 0.7798209056F, 0.7801941982F, 0.7805671729F, 
-  0.7809398294F, 0.7813121675F, 0.7816841869F, 0.7820558873F, 
-  0.7824272684F, 0.7827983301F, 0.7831690720F, 0.7835394940F, 
-  0.7839095957F, 0.7842793768F, 0.7846488373F, 0.7850179767F, 
-  0.7853867948F, 0.7857552914F, 0.7861234663F, 0.7864913191F, 
-  0.7868588497F, 0.7872260578F, 0.7875929431F, 0.7879595055F, 
-  0.7883257445F, 0.7886916601F, 0.7890572520F, 0.7894225198F, 
-  0.7897874635F, 0.7901520827F, 0.7905163772F, 0.7908803468F, 
-  0.7912439912F, 0.7916073102F, 0.7919703035F, 0.7923329710F, 
-  0.7926953124F, 0.7930573274F, 0.7934190158F, 0.7937803774F, 
-  0.7941414120F, 0.7945021193F, 0.7948624991F, 0.7952225511F, 
-  0.7955822752F, 0.7959416711F, 0.7963007387F, 0.7966594775F, 
-  0.7970178875F, 0.7973759685F, 0.7977337201F, 0.7980911422F, 
-  0.7984482346F, 0.7988049970F, 0.7991614292F, 0.7995175310F, 
-  0.7998733022F, 0.8002287426F, 0.8005838519F, 0.8009386299F, 
-  0.8012930765F, 0.8016471914F, 0.8020009744F, 0.8023544253F, 
-  0.8027075438F, 0.8030603298F, 0.8034127831F, 0.8037649035F, 
-  0.8041166906F, 0.8044681445F, 0.8048192647F, 0.8051700512F, 
-  0.8055205038F, 0.8058706222F, 0.8062204062F, 0.8065698556F, 
-  0.8069189702F, 0.8072677499F, 0.8076161944F, 0.8079643036F, 
-  0.8083120772F, 0.8086595151F, 0.8090066170F, 0.8093533827F, 
-  0.8096998122F, 0.8100459051F, 0.8103916613F, 0.8107370806F, 
-  0.8110821628F, 0.8114269077F, 0.8117713151F, 0.8121153849F, 
-  0.8124591169F, 0.8128025108F, 0.8131455666F, 0.8134882839F, 
-  0.8138306627F, 0.8141727027F, 0.8145144038F, 0.8148557658F, 
-  0.8151967886F, 0.8155374718F, 0.8158778154F, 0.8162178192F, 
-  0.8165574830F, 0.8168968067F, 0.8172357900F, 0.8175744328F, 
-  0.8179127349F, 0.8182506962F, 0.8185883164F, 0.8189255955F, 
-  0.8192625332F, 0.8195991295F, 0.8199353840F, 0.8202712967F, 
-  0.8206068673F, 0.8209420958F, 0.8212769820F, 0.8216115256F, 
-  0.8219457266F, 0.8222795848F, 0.8226131000F, 0.8229462721F, 
-  0.8232791009F, 0.8236115863F, 0.8239437280F, 0.8242755260F, 
-  0.8246069801F, 0.8249380901F, 0.8252688559F, 0.8255992774F, 
-  0.8259293544F, 0.8262590867F, 0.8265884741F, 0.8269175167F, 
-  0.8272462141F, 0.8275745663F, 0.8279025732F, 0.8282302344F, 
-  0.8285575501F, 0.8288845199F, 0.8292111437F, 0.8295374215F, 
-  0.8298633530F, 0.8301889382F, 0.8305141768F, 0.8308390688F, 
-  0.8311636141F, 0.8314878124F, 0.8318116637F, 0.8321351678F, 
-  0.8324583246F, 0.8327811340F, 0.8331035957F, 0.8334257098F, 
-  0.8337474761F, 0.8340688944F, 0.8343899647F, 0.8347106867F, 
-  0.8350310605F, 0.8353510857F, 0.8356707624F, 0.8359900904F, 
-  0.8363090696F, 0.8366276999F, 0.8369459811F, 0.8372639131F, 
-  0.8375814958F, 0.8378987292F, 0.8382156130F, 0.8385321472F, 
-  0.8388483316F, 0.8391641662F, 0.8394796508F, 0.8397947853F, 
-  0.8401095697F, 0.8404240037F, 0.8407380873F, 0.8410518204F, 
-  0.8413652029F, 0.8416782347F, 0.8419909156F, 0.8423032456F, 
-  0.8426152245F, 0.8429268523F, 0.8432381289F, 0.8435490541F, 
-  0.8438596279F, 0.8441698502F, 0.8444797208F, 0.8447892396F, 
-  0.8450984067F, 0.8454072218F, 0.8457156849F, 0.8460237959F, 
-  0.8463315547F, 0.8466389612F, 0.8469460154F, 0.8472527170F, 
-  0.8475590661F, 0.8478650625F, 0.8481707063F, 0.8484759971F, 
-  0.8487809351F, 0.8490855201F, 0.8493897521F, 0.8496936308F, 
-  0.8499971564F, 0.8503003286F, 0.8506031474F, 0.8509056128F, 
-  0.8512077246F, 0.8515094828F, 0.8518108872F, 0.8521119379F, 
-  0.8524126348F, 0.8527129777F, 0.8530129666F, 0.8533126015F, 
-  0.8536118822F, 0.8539108087F, 0.8542093809F, 0.8545075988F, 
-  0.8548054623F, 0.8551029712F, 0.8554001257F, 0.8556969255F, 
-  0.8559933707F, 0.8562894611F, 0.8565851968F, 0.8568805775F, 
-  0.8571756034F, 0.8574702743F, 0.8577645902F, 0.8580585509F, 
-  0.8583521566F, 0.8586454070F, 0.8589383021F, 0.8592308420F, 
-  0.8595230265F, 0.8598148556F, 0.8601063292F, 0.8603974473F, 
-  0.8606882098F, 0.8609786167F, 0.8612686680F, 0.8615583636F, 
-  0.8618477034F, 0.8621366874F, 0.8624253156F, 0.8627135878F, 
-  0.8630015042F, 0.8632890646F, 0.8635762690F, 0.8638631173F, 
-  0.8641496096F, 0.8644357457F, 0.8647215257F, 0.8650069495F, 
-  0.8652920171F, 0.8655767283F, 0.8658610833F, 0.8661450820F, 
-  0.8664287243F, 0.8667120102F, 0.8669949397F, 0.8672775127F, 
-  0.8675597293F, 0.8678415894F, 0.8681230929F, 0.8684042398F, 
-  0.8686850302F, 0.8689654640F, 0.8692455412F, 0.8695252617F, 
-  0.8698046255F, 0.8700836327F, 0.8703622831F, 0.8706405768F, 
-  0.8709185138F, 0.8711960940F, 0.8714733174F, 0.8717501840F, 
-  0.8720266939F, 0.8723028469F, 0.8725786430F, 0.8728540824F, 
-  0.8731291648F, 0.8734038905F, 0.8736782592F, 0.8739522711F, 
-  0.8742259261F, 0.8744992242F, 0.8747721653F, 0.8750447496F, 
-  0.8753169770F, 0.8755888475F, 0.8758603611F, 0.8761315177F, 
-  0.8764023175F, 0.8766727603F, 0.8769428462F, 0.8772125752F, 
-  0.8774819474F, 0.8777509626F, 0.8780196209F, 0.8782879224F, 
-  0.8785558669F, 0.8788234546F, 0.8790906854F, 0.8793575594F, 
-  0.8796240765F, 0.8798902368F, 0.8801560403F, 0.8804214870F, 
-  0.8806865768F, 0.8809513099F, 0.8812156863F, 0.8814797059F, 
-  0.8817433687F, 0.8820066749F, 0.8822696243F, 0.8825322171F, 
-  0.8827944532F, 0.8830563327F, 0.8833178556F, 0.8835790219F, 
-  0.8838398316F, 0.8841002848F, 0.8843603815F, 0.8846201217F, 
-  0.8848795054F, 0.8851385327F, 0.8853972036F, 0.8856555182F, 
-  0.8859134764F, 0.8861710783F, 0.8864283239F, 0.8866852133F, 
-  0.8869417464F, 0.8871979234F, 0.8874537443F, 0.8877092090F, 
-  0.8879643177F, 0.8882190704F, 0.8884734671F, 0.8887275078F, 
-  0.8889811927F, 0.8892345216F, 0.8894874948F, 0.8897401122F, 
-  0.8899923738F, 0.8902442798F, 0.8904958301F, 0.8907470248F, 
-  0.8909978640F, 0.8912483477F, 0.8914984759F, 0.8917482487F, 
-  0.8919976662F, 0.8922467284F, 0.8924954353F, 0.8927437871F, 
-  0.8929917837F, 0.8932394252F, 0.8934867118F, 0.8937336433F, 
-  0.8939802199F, 0.8942264417F, 0.8944723087F, 0.8947178210F, 
-  0.8949629785F, 0.8952077815F, 0.8954522299F, 0.8956963239F, 
-  0.8959400634F, 0.8961834486F, 0.8964264795F, 0.8966691561F, 
-  0.8969114786F, 0.8971534470F, 0.8973950614F, 0.8976363219F, 
-  0.8978772284F, 0.8981177812F, 0.8983579802F, 0.8985978256F, 
-  0.8988373174F, 0.8990764556F, 0.8993152405F, 0.8995536720F, 
-  0.8997917502F, 0.9000294751F, 0.9002668470F, 0.9005038658F, 
-  0.9007405317F, 0.9009768446F, 0.9012128048F, 0.9014484123F, 
-  0.9016836671F, 0.9019185693F, 0.9021531191F, 0.9023873165F, 
-  0.9026211616F, 0.9028546546F, 0.9030877954F, 0.9033205841F, 
-  0.9035530210F, 0.9037851059F, 0.9040168392F, 0.9042482207F, 
-  0.9044792507F, 0.9047099293F, 0.9049402564F, 0.9051702323F, 
-  0.9053998569F, 0.9056291305F, 0.9058580531F, 0.9060866248F, 
-  0.9063148457F, 0.9065427159F, 0.9067702355F, 0.9069974046F, 
-  0.9072242233F, 0.9074506917F, 0.9076768100F, 0.9079025782F, 
-  0.9081279964F, 0.9083530647F, 0.9085777833F, 0.9088021523F, 
-  0.9090261717F, 0.9092498417F, 0.9094731623F, 0.9096961338F, 
-  0.9099187561F, 0.9101410295F, 0.9103629540F, 0.9105845297F, 
-  0.9108057568F, 0.9110266354F, 0.9112471656F, 0.9114673475F, 
-  0.9116871812F, 0.9119066668F, 0.9121258046F, 0.9123445945F, 
-  0.9125630367F, 0.9127811314F, 0.9129988786F, 0.9132162785F, 
-  0.9134333312F, 0.9136500368F, 0.9138663954F, 0.9140824073F, 
-  0.9142980724F, 0.9145133910F, 0.9147283632F, 0.9149429890F, 
-  0.9151572687F, 0.9153712023F, 0.9155847900F, 0.9157980319F, 
-  0.9160109282F, 0.9162234790F, 0.9164356844F, 0.9166475445F, 
-  0.9168590595F, 0.9170702296F, 0.9172810548F, 0.9174915354F, 
-  0.9177016714F, 0.9179114629F, 0.9181209102F, 0.9183300134F, 
-  0.9185387726F, 0.9187471879F, 0.9189552595F, 0.9191629876F, 
-  0.9193703723F, 0.9195774136F, 0.9197841119F, 0.9199904672F, 
-  0.9201964797F, 0.9204021495F, 0.9206074767F, 0.9208124616F, 
-  0.9210171043F, 0.9212214049F, 0.9214253636F, 0.9216289805F, 
-  0.9218322558F, 0.9220351896F, 0.9222377821F, 0.9224400335F, 
-  0.9226419439F, 0.9228435134F, 0.9230447423F, 0.9232456307F, 
-  0.9234461787F, 0.9236463865F, 0.9238462543F, 0.9240457822F, 
-  0.9242449704F, 0.9244438190F, 0.9246423282F, 0.9248404983F, 
-  0.9250383293F, 0.9252358214F, 0.9254329747F, 0.9256297896F, 
-  0.9258262660F, 0.9260224042F, 0.9262182044F, 0.9264136667F, 
-  0.9266087913F, 0.9268035783F, 0.9269980280F, 0.9271921405F, 
-  0.9273859160F, 0.9275793546F, 0.9277724566F, 0.9279652221F, 
-  0.9281576513F, 0.9283497443F, 0.9285415014F, 0.9287329227F, 
-  0.9289240084F, 0.9291147586F, 0.9293051737F, 0.9294952536F, 
-  0.9296849987F, 0.9298744091F, 0.9300634850F, 0.9302522266F, 
-  0.9304406340F, 0.9306287074F, 0.9308164471F, 0.9310038532F, 
-  0.9311909259F, 0.9313776654F, 0.9315640719F, 0.9317501455F, 
-  0.9319358865F, 0.9321212951F, 0.9323063713F, 0.9324911155F, 
-  0.9326755279F, 0.9328596085F, 0.9330433577F, 0.9332267756F, 
-  0.9334098623F, 0.9335926182F, 0.9337750434F, 0.9339571380F, 
-  0.9341389023F, 0.9343203366F, 0.9345014409F, 0.9346822155F, 
-  0.9348626606F, 0.9350427763F, 0.9352225630F, 0.9354020207F, 
-  0.9355811498F, 0.9357599503F, 0.9359384226F, 0.9361165667F, 
-  0.9362943830F, 0.9364718716F, 0.9366490327F, 0.9368258666F, 
-  0.9370023733F, 0.9371785533F, 0.9373544066F, 0.9375299335F, 
-  0.9377051341F, 0.9378800087F, 0.9380545576F, 0.9382287809F, 
-  0.9384026787F, 0.9385762515F, 0.9387494993F, 0.9389224223F, 
-  0.9390950209F, 0.9392672951F, 0.9394392453F, 0.9396108716F, 
-  0.9397821743F, 0.9399531536F, 0.9401238096F, 0.9402941427F, 
-  0.9404641530F, 0.9406338407F, 0.9408032061F, 0.9409722495F, 
-  0.9411409709F, 0.9413093707F, 0.9414774491F, 0.9416452062F, 
-  0.9418126424F, 0.9419797579F, 0.9421465528F, 0.9423130274F, 
-  0.9424791819F, 0.9426450166F, 0.9428105317F, 0.9429757274F, 
-  0.9431406039F, 0.9433051616F, 0.9434694005F, 0.9436333209F, 
-  0.9437969232F, 0.9439602074F, 0.9441231739F, 0.9442858229F, 
-  0.9444481545F, 0.9446101691F, 0.9447718669F, 0.9449332481F, 
-  0.9450943129F, 0.9452550617F, 0.9454154945F, 0.9455756118F, 
-  0.9457354136F, 0.9458949003F, 0.9460540721F, 0.9462129292F, 
-  0.9463714719F, 0.9465297003F, 0.9466876149F, 0.9468452157F, 
-  0.9470025031F, 0.9471594772F, 0.9473161384F, 0.9474724869F, 
-  0.9476285229F, 0.9477842466F, 0.9479396584F, 0.9480947585F, 
-  0.9482495470F, 0.9484040243F, 0.9485581906F, 0.9487120462F, 
-  0.9488655913F, 0.9490188262F, 0.9491717511F, 0.9493243662F, 
-  0.9494766718F, 0.9496286683F, 0.9497803557F, 0.9499317345F, 
-  0.9500828047F, 0.9502335668F, 0.9503840209F, 0.9505341673F, 
-  0.9506840062F, 0.9508335380F, 0.9509827629F, 0.9511316810F, 
-  0.9512802928F, 0.9514285984F, 0.9515765982F, 0.9517242923F, 
-  0.9518716810F, 0.9520187646F, 0.9521655434F, 0.9523120176F, 
-  0.9524581875F, 0.9526040534F, 0.9527496154F, 0.9528948739F, 
-  0.9530398292F, 0.9531844814F, 0.9533288310F, 0.9534728780F, 
-  0.9536166229F, 0.9537600659F, 0.9539032071F, 0.9540460470F, 
-  0.9541885858F, 0.9543308237F, 0.9544727611F, 0.9546143981F, 
-  0.9547557351F, 0.9548967723F, 0.9550375100F, 0.9551779485F, 
-  0.9553180881F, 0.9554579290F, 0.9555974714F, 0.9557367158F, 
-  0.9558756623F, 0.9560143112F, 0.9561526628F, 0.9562907174F, 
-  0.9564284752F, 0.9565659366F, 0.9567031017F, 0.9568399710F, 
-  0.9569765446F, 0.9571128229F, 0.9572488061F, 0.9573844944F, 
-  0.9575198883F, 0.9576549879F, 0.9577897936F, 0.9579243056F, 
-  0.9580585242F, 0.9581924497F, 0.9583260824F, 0.9584594226F, 
-  0.9585924705F, 0.9587252264F, 0.9588576906F, 0.9589898634F, 
-  0.9591217452F, 0.9592533360F, 0.9593846364F, 0.9595156465F, 
-  0.9596463666F, 0.9597767971F, 0.9599069382F, 0.9600367901F, 
-  0.9601663533F, 0.9602956279F, 0.9604246143F, 0.9605533128F, 
-  0.9606817236F, 0.9608098471F, 0.9609376835F, 0.9610652332F, 
-  0.9611924963F, 0.9613194733F, 0.9614461644F, 0.9615725699F, 
-  0.9616986901F, 0.9618245253F, 0.9619500757F, 0.9620753418F, 
-  0.9622003238F, 0.9623250219F, 0.9624494365F, 0.9625735679F, 
-  0.9626974163F, 0.9628209821F, 0.9629442656F, 0.9630672671F, 
-  0.9631899868F, 0.9633124251F, 0.9634345822F, 0.9635564585F, 
-  0.9636780543F, 0.9637993699F, 0.9639204056F, 0.9640411616F, 
-  0.9641616383F, 0.9642818359F, 0.9644017549F, 0.9645213955F, 
-  0.9646407579F, 0.9647598426F, 0.9648786497F, 0.9649971797F, 
-  0.9651154328F, 0.9652334092F, 0.9653511095F, 0.9654685337F, 
-  0.9655856823F, 0.9657025556F, 0.9658191538F, 0.9659354773F, 
-  0.9660515263F, 0.9661673013F, 0.9662828024F, 0.9663980300F, 
-  0.9665129845F, 0.9666276660F, 0.9667420750F, 0.9668562118F, 
-  0.9669700766F, 0.9670836698F, 0.9671969917F, 0.9673100425F, 
-  0.9674228227F, 0.9675353325F, 0.9676475722F, 0.9677595422F, 
-  0.9678712428F, 0.9679826742F, 0.9680938368F, 0.9682047309F, 
-  0.9683153569F, 0.9684257150F, 0.9685358056F, 0.9686456289F, 
-  0.9687551853F, 0.9688644752F, 0.9689734987F, 0.9690822564F, 
-  0.9691907483F, 0.9692989750F, 0.9694069367F, 0.9695146337F, 
-  0.9696220663F, 0.9697292349F, 0.9698361398F, 0.9699427813F, 
-  0.9700491597F, 0.9701552754F, 0.9702611286F, 0.9703667197F, 
-  0.9704720490F, 0.9705771169F, 0.9706819236F, 0.9707864695F, 
-  0.9708907549F, 0.9709947802F, 0.9710985456F, 0.9712020514F, 
-  0.9713052981F, 0.9714082859F, 0.9715110151F, 0.9716134862F, 
-  0.9717156993F, 0.9718176549F, 0.9719193532F, 0.9720207946F, 
-  0.9721219794F, 0.9722229080F, 0.9723235806F, 0.9724239976F, 
-  0.9725241593F, 0.9726240661F, 0.9727237183F, 0.9728231161F, 
-  0.9729222601F, 0.9730211503F, 0.9731197873F, 0.9732181713F, 
-  0.9733163027F, 0.9734141817F, 0.9735118088F, 0.9736091842F, 
-  0.9737063083F, 0.9738031814F, 0.9738998039F, 0.9739961760F, 
-  0.9740922981F, 0.9741881706F, 0.9742837938F, 0.9743791680F, 
-  0.9744742935F, 0.9745691707F, 0.9746637999F, 0.9747581814F, 
-  0.9748523157F, 0.9749462029F, 0.9750398435F, 0.9751332378F, 
-  0.9752263861F, 0.9753192887F, 0.9754119461F, 0.9755043585F, 
-  0.9755965262F, 0.9756884496F, 0.9757801291F, 0.9758715650F, 
-  0.9759627575F, 0.9760537071F, 0.9761444141F, 0.9762348789F, 
-  0.9763251016F, 0.9764150828F, 0.9765048228F, 0.9765943218F, 
-  0.9766835802F, 0.9767725984F, 0.9768613767F, 0.9769499154F, 
-  0.9770382149F, 0.9771262755F, 0.9772140976F, 0.9773016815F, 
-  0.9773890275F, 0.9774761360F, 0.9775630073F, 0.9776496418F, 
-  0.9777360398F, 0.9778222016F, 0.9779081277F, 0.9779938182F, 
-  0.9780792736F, 0.9781644943F, 0.9782494805F, 0.9783342326F, 
-  0.9784187509F, 0.9785030359F, 0.9785870877F, 0.9786709069F, 
-  0.9787544936F, 0.9788378484F, 0.9789209714F, 0.9790038631F, 
-  0.9790865238F, 0.9791689538F, 0.9792511535F, 0.9793331232F, 
-  0.9794148633F, 0.9794963742F, 0.9795776561F, 0.9796587094F, 
-  0.9797395345F, 0.9798201316F, 0.9799005013F, 0.9799806437F, 
-  0.9800605593F, 0.9801402483F, 0.9802197112F, 0.9802989483F, 
-  0.9803779600F, 0.9804567465F, 0.9805353082F, 0.9806136455F, 
-  0.9806917587F, 0.9807696482F, 0.9808473143F, 0.9809247574F, 
-  0.9810019778F, 0.9810789759F, 0.9811557519F, 0.9812323064F, 
-  0.9813086395F, 0.9813847517F, 0.9814606433F, 0.9815363147F, 
-  0.9816117662F, 0.9816869981F, 0.9817620108F, 0.9818368047F, 
-  0.9819113801F, 0.9819857374F, 0.9820598769F, 0.9821337989F, 
-  0.9822075038F, 0.9822809920F, 0.9823542638F, 0.9824273195F, 
-  0.9825001596F, 0.9825727843F, 0.9826451940F, 0.9827173891F, 
-  0.9827893700F, 0.9828611368F, 0.9829326901F, 0.9830040302F, 
-  0.9830751574F, 0.9831460720F, 0.9832167745F, 0.9832872652F, 
-  0.9833575444F, 0.9834276124F, 0.9834974697F, 0.9835671166F, 
-  0.9836365535F, 0.9837057806F, 0.9837747983F, 0.9838436071F, 
-  0.9839122072F, 0.9839805990F, 0.9840487829F, 0.9841167591F, 
-  0.9841845282F, 0.9842520903F, 0.9843194459F, 0.9843865953F, 
-  0.9844535389F, 0.9845202771F, 0.9845868101F, 0.9846531383F, 
-  0.9847192622F, 0.9847851820F, 0.9848508980F, 0.9849164108F, 
-  0.9849817205F, 0.9850468276F, 0.9851117324F, 0.9851764352F, 
-  0.9852409365F, 0.9853052366F, 0.9853693358F, 0.9854332344F, 
-  0.9854969330F, 0.9855604317F, 0.9856237309F, 0.9856868310F, 
-  0.9857497325F, 0.9858124355F, 0.9858749404F, 0.9859372477F, 
-  0.9859993577F, 0.9860612707F, 0.9861229871F, 0.9861845072F, 
-  0.9862458315F, 0.9863069601F, 0.9863678936F, 0.9864286322F, 
-  0.9864891764F, 0.9865495264F, 0.9866096826F, 0.9866696454F, 
-  0.9867294152F, 0.9867889922F, 0.9868483769F, 0.9869075695F, 
-  0.9869665706F, 0.9870253803F, 0.9870839991F, 0.9871424273F, 
-  0.9872006653F, 0.9872587135F, 0.9873165721F, 0.9873742415F, 
-  0.9874317222F, 0.9874890144F, 0.9875461185F, 0.9876030348F, 
-  0.9876597638F, 0.9877163057F, 0.9877726610F, 0.9878288300F, 
-  0.9878848130F, 0.9879406104F, 0.9879962225F, 0.9880516497F, 
-  0.9881068924F, 0.9881619509F, 0.9882168256F, 0.9882715168F, 
-  0.9883260249F, 0.9883803502F, 0.9884344931F, 0.9884884539F, 
-  0.9885422331F, 0.9885958309F, 0.9886492477F, 0.9887024838F, 
-  0.9887555397F, 0.9888084157F, 0.9888611120F, 0.9889136292F, 
-  0.9889659675F, 0.9890181273F, 0.9890701089F, 0.9891219128F, 
-  0.9891735392F, 0.9892249885F, 0.9892762610F, 0.9893273572F, 
-  0.9893782774F, 0.9894290219F, 0.9894795911F, 0.9895299853F, 
-  0.9895802049F, 0.9896302502F, 0.9896801217F, 0.9897298196F, 
-  0.9897793443F, 0.9898286961F, 0.9898778755F, 0.9899268828F, 
-  0.9899757183F, 0.9900243823F, 0.9900728753F, 0.9901211976F, 
-  0.9901693495F, 0.9902173314F, 0.9902651436F, 0.9903127865F, 
-  0.9903602605F, 0.9904075659F, 0.9904547031F, 0.9905016723F, 
-  0.9905484740F, 0.9905951086F, 0.9906415763F, 0.9906878775F, 
-  0.9907340126F, 0.9907799819F, 0.9908257858F, 0.9908714247F, 
-  0.9909168988F, 0.9909622086F, 0.9910073543F, 0.9910523364F, 
-  0.9910971552F, 0.9911418110F, 0.9911863042F, 0.9912306351F, 
-  0.9912748042F, 0.9913188117F, 0.9913626580F, 0.9914063435F, 
-  0.9914498684F, 0.9914932333F, 0.9915364383F, 0.9915794839F, 
-  0.9916223703F, 0.9916650981F, 0.9917076674F, 0.9917500787F, 
-  0.9917923323F, 0.9918344286F, 0.9918763679F, 0.9919181505F, 
-  0.9919597769F, 0.9920012473F, 0.9920425621F, 0.9920837217F, 
-  0.9921247263F, 0.9921655765F, 0.9922062724F, 0.9922468145F, 
-  0.9922872030F, 0.9923274385F, 0.9923675211F, 0.9924074513F, 
-  0.9924472294F, 0.9924868557F, 0.9925263306F, 0.9925656544F, 
-  0.9926048275F, 0.9926438503F, 0.9926827230F, 0.9927214461F, 
-  0.9927600199F, 0.9927984446F, 0.9928367208F, 0.9928748486F, 
-  0.9929128285F, 0.9929506608F, 0.9929883459F, 0.9930258841F, 
-  0.9930632757F, 0.9931005211F, 0.9931376207F, 0.9931745747F, 
-  0.9932113836F, 0.9932480476F, 0.9932845671F, 0.9933209425F, 
-  0.9933571742F, 0.9933932623F, 0.9934292074F, 0.9934650097F, 
-  0.9935006696F, 0.9935361874F, 0.9935715635F, 0.9936067982F, 
-  0.9936418919F, 0.9936768448F, 0.9937116574F, 0.9937463300F, 
-  0.9937808629F, 0.9938152565F, 0.9938495111F, 0.9938836271F, 
-  0.9939176047F, 0.9939514444F, 0.9939851465F, 0.9940187112F, 
-  0.9940521391F, 0.9940854303F, 0.9941185853F, 0.9941516044F, 
-  0.9941844879F, 0.9942172361F, 0.9942498495F, 0.9942823283F, 
-  0.9943146729F, 0.9943468836F, 0.9943789608F, 0.9944109047F, 
-  0.9944427158F, 0.9944743944F, 0.9945059408F, 0.9945373553F, 
-  0.9945686384F, 0.9945997902F, 0.9946308112F, 0.9946617017F, 
-  0.9946924621F, 0.9947230926F, 0.9947535937F, 0.9947839656F, 
-  0.9948142086F, 0.9948443232F, 0.9948743097F, 0.9949041683F, 
-  0.9949338995F, 0.9949635035F, 0.9949929807F, 0.9950223315F, 
-  0.9950515561F, 0.9950806549F, 0.9951096282F, 0.9951384764F, 
-  0.9951671998F, 0.9951957987F, 0.9952242735F, 0.9952526245F, 
-  0.9952808520F, 0.9953089564F, 0.9953369380F, 0.9953647971F, 
-  0.9953925340F, 0.9954201491F, 0.9954476428F, 0.9954750153F, 
-  0.9955022670F, 0.9955293981F, 0.9955564092F, 0.9955833003F, 
-  0.9956100720F, 0.9956367245F, 0.9956632582F, 0.9956896733F, 
-  0.9957159703F, 0.9957421494F, 0.9957682110F, 0.9957941553F, 
-  0.9958199828F, 0.9958456937F, 0.9958712884F, 0.9958967672F, 
-  0.9959221305F, 0.9959473784F, 0.9959725115F, 0.9959975300F, 
-  0.9960224342F, 0.9960472244F, 0.9960719011F, 0.9960964644F, 
-  0.9961209148F, 0.9961452525F, 0.9961694779F, 0.9961935913F, 
-  0.9962175930F, 0.9962414834F, 0.9962652627F, 0.9962889313F, 
-  0.9963124895F, 0.9963359377F, 0.9963592761F, 0.9963825051F, 
-  0.9964056250F, 0.9964286361F, 0.9964515387F, 0.9964743332F, 
-  0.9964970198F, 0.9965195990F, 0.9965420709F, 0.9965644360F, 
-  0.9965866946F, 0.9966088469F, 0.9966308932F, 0.9966528340F, 
-  0.9966746695F, 0.9966964001F, 0.9967180260F, 0.9967395475F, 
-  0.9967609651F, 0.9967822789F, 0.9968034894F, 0.9968245968F, 
-  0.9968456014F, 0.9968665036F, 0.9968873037F, 0.9969080019F, 
-  0.9969285987F, 0.9969490942F, 0.9969694889F, 0.9969897830F, 
-  0.9970099769F, 0.9970300708F, 0.9970500651F, 0.9970699601F, 
-  0.9970897561F, 0.9971094533F, 0.9971290522F, 0.9971485531F, 
-  0.9971679561F, 0.9971872617F, 0.9972064702F, 0.9972255818F, 
-  0.9972445968F, 0.9972635157F, 0.9972823386F, 0.9973010659F, 
-  0.9973196980F, 0.9973382350F, 0.9973566773F, 0.9973750253F, 
-  0.9973932791F, 0.9974114392F, 0.9974295059F, 0.9974474793F, 
-  0.9974653599F, 0.9974831480F, 0.9975008438F, 0.9975184476F, 
-  0.9975359598F, 0.9975533806F, 0.9975707104F, 0.9975879495F, 
-  0.9976050981F, 0.9976221566F, 0.9976391252F, 0.9976560043F, 
-  0.9976727941F, 0.9976894950F, 0.9977061073F, 0.9977226312F, 
-  0.9977390671F, 0.9977554152F, 0.9977716759F, 0.9977878495F, 
-  0.9978039361F, 0.9978199363F, 0.9978358501F, 0.9978516780F, 
-  0.9978674202F, 0.9978830771F, 0.9978986488F, 0.9979141358F, 
-  0.9979295383F, 0.9979448566F, 0.9979600909F, 0.9979752417F, 
-  0.9979903091F, 0.9980052936F, 0.9980201952F, 0.9980350145F, 
-  0.9980497515F, 0.9980644067F, 0.9980789804F, 0.9980934727F, 
-  0.9981078841F, 0.9981222147F, 0.9981364649F, 0.9981506350F, 
-  0.9981647253F, 0.9981787360F, 0.9981926674F, 0.9982065199F, 
-  0.9982202936F, 0.9982339890F, 0.9982476062F, 0.9982611456F, 
-  0.9982746074F, 0.9982879920F, 0.9983012996F, 0.9983145304F, 
-  0.9983276849F, 0.9983407632F, 0.9983537657F, 0.9983666926F, 
-  0.9983795442F, 0.9983923208F, 0.9984050226F, 0.9984176501F, 
-  0.9984302033F, 0.9984426827F, 0.9984550884F, 0.9984674208F, 
-  0.9984796802F, 0.9984918667F, 0.9985039808F, 0.9985160227F, 
-  0.9985279926F, 0.9985398909F, 0.9985517177F, 0.9985634734F, 
-  0.9985751583F, 0.9985867727F, 0.9985983167F, 0.9986097907F, 
-  0.9986211949F, 0.9986325297F, 0.9986437953F, 0.9986549919F, 
-  0.9986661199F, 0.9986771795F, 0.9986881710F, 0.9986990946F, 
-  0.9987099507F, 0.9987207394F, 0.9987314611F, 0.9987421161F, 
-  0.9987527045F, 0.9987632267F, 0.9987736829F, 0.9987840734F, 
-  0.9987943985F, 0.9988046584F, 0.9988148534F, 0.9988249838F, 
-  0.9988350498F, 0.9988450516F, 0.9988549897F, 0.9988648641F, 
-  0.9988746753F, 0.9988844233F, 0.9988941086F, 0.9989037313F, 
-  0.9989132918F, 0.9989227902F, 0.9989322269F, 0.9989416021F, 
-  0.9989509160F, 0.9989601690F, 0.9989693613F, 0.9989784931F, 
-  0.9989875647F, 0.9989965763F, 0.9990055283F, 0.9990144208F, 
-  0.9990232541F, 0.9990320286F, 0.9990407443F, 0.9990494016F, 
-  0.9990580008F, 0.9990665421F, 0.9990750257F, 0.9990834519F, 
-  0.9990918209F, 0.9991001331F, 0.9991083886F, 0.9991165877F, 
-  0.9991247307F, 0.9991328177F, 0.9991408491F, 0.9991488251F, 
-  0.9991567460F, 0.9991646119F, 0.9991724232F, 0.9991801801F, 
-  0.9991878828F, 0.9991955316F, 0.9992031267F, 0.9992106684F, 
-  0.9992181569F, 0.9992255925F, 0.9992329753F, 0.9992403057F, 
-  0.9992475839F, 0.9992548101F, 0.9992619846F, 0.9992691076F, 
-  0.9992761793F, 0.9992832001F, 0.9992901701F, 0.9992970895F, 
-  0.9993039587F, 0.9993107777F, 0.9993175470F, 0.9993242667F, 
-  0.9993309371F, 0.9993375583F, 0.9993441307F, 0.9993506545F, 
-  0.9993571298F, 0.9993635570F, 0.9993699362F, 0.9993762678F, 
-  0.9993825519F, 0.9993887887F, 0.9993949785F, 0.9994011216F, 
-  0.9994072181F, 0.9994132683F, 0.9994192725F, 0.9994252307F, 
-  0.9994311434F, 0.9994370107F, 0.9994428327F, 0.9994486099F, 
-  0.9994543423F, 0.9994600303F, 0.9994656739F, 0.9994712736F, 
-  0.9994768294F, 0.9994823417F, 0.9994878105F, 0.9994932363F, 
-  0.9994986191F, 0.9995039592F, 0.9995092568F, 0.9995145122F, 
-  0.9995197256F, 0.9995248971F, 0.9995300270F, 0.9995351156F, 
-  0.9995401630F, 0.9995451695F, 0.9995501352F, 0.9995550604F, 
-  0.9995599454F, 0.9995647903F, 0.9995695953F, 0.9995743607F, 
-  0.9995790866F, 0.9995837734F, 0.9995884211F, 0.9995930300F, 
-  0.9995976004F, 0.9996021324F, 0.9996066263F, 0.9996110822F, 
-  0.9996155004F, 0.9996198810F, 0.9996242244F, 0.9996285306F, 
-  0.9996327999F, 0.9996370326F, 0.9996412287F, 0.9996453886F, 
-  0.9996495125F, 0.9996536004F, 0.9996576527F, 0.9996616696F, 
-  0.9996656512F, 0.9996695977F, 0.9996735094F, 0.9996773865F, 
-  0.9996812291F, 0.9996850374F, 0.9996888118F, 0.9996925523F, 
-  0.9996962591F, 0.9996999325F, 0.9997035727F, 0.9997071798F, 
-  0.9997107541F, 0.9997142957F, 0.9997178049F, 0.9997212818F, 
-  0.9997247266F, 0.9997281396F, 0.9997315209F, 0.9997348708F, 
-  0.9997381893F, 0.9997414767F, 0.9997447333F, 0.9997479591F, 
-  0.9997511544F, 0.9997543194F, 0.9997574542F, 0.9997605591F, 
-  0.9997636342F, 0.9997666797F, 0.9997696958F, 0.9997726828F, 
-  0.9997756407F, 0.9997785698F, 0.9997814703F, 0.9997843423F, 
-  0.9997871860F, 0.9997900016F, 0.9997927894F, 0.9997955494F, 
-  0.9997982818F, 0.9998009869F, 0.9998036648F, 0.9998063157F, 
-  0.9998089398F, 0.9998115373F, 0.9998141082F, 0.9998166529F, 
-  0.9998191715F, 0.9998216642F, 0.9998241311F, 0.9998265724F, 
-  0.9998289884F, 0.9998313790F, 0.9998337447F, 0.9998360854F, 
-  0.9998384015F, 0.9998406930F, 0.9998429602F, 0.9998452031F, 
-  0.9998474221F, 0.9998496171F, 0.9998517885F, 0.9998539364F, 
-  0.9998560610F, 0.9998581624F, 0.9998602407F, 0.9998622962F, 
-  0.9998643291F, 0.9998663394F, 0.9998683274F, 0.9998702932F, 
-  0.9998722370F, 0.9998741589F, 0.9998760591F, 0.9998779378F, 
-  0.9998797952F, 0.9998816313F, 0.9998834464F, 0.9998852406F, 
-  0.9998870141F, 0.9998887670F, 0.9998904995F, 0.9998922117F, 
-  0.9998939039F, 0.9998955761F, 0.9998972285F, 0.9998988613F, 
-  0.9999004746F, 0.9999020686F, 0.9999036434F, 0.9999051992F, 
-  0.9999067362F, 0.9999082544F, 0.9999097541F, 0.9999112354F, 
-  0.9999126984F, 0.9999141433F, 0.9999155703F, 0.9999169794F, 
-  0.9999183709F, 0.9999197449F, 0.9999211014F, 0.9999224408F, 
-  0.9999237631F, 0.9999250684F, 0.9999263570F, 0.9999276289F, 
-  0.9999288843F, 0.9999301233F, 0.9999313461F, 0.9999325529F, 
-  0.9999337437F, 0.9999349187F, 0.9999360780F, 0.9999372218F, 
-  0.9999383503F, 0.9999394635F, 0.9999405616F, 0.9999416447F, 
-  0.9999427129F, 0.9999437665F, 0.9999448055F, 0.9999458301F, 
-  0.9999468404F, 0.9999478365F, 0.9999488185F, 0.9999497867F, 
-  0.9999507411F, 0.9999516819F, 0.9999526091F, 0.9999535230F, 
-  0.9999544236F, 0.9999553111F, 0.9999561856F, 0.9999570472F, 
-  0.9999578960F, 0.9999587323F, 0.9999595560F, 0.9999603674F, 
-  0.9999611666F, 0.9999619536F, 0.9999627286F, 0.9999634917F, 
-  0.9999642431F, 0.9999649828F, 0.9999657110F, 0.9999664278F, 
-  0.9999671334F, 0.9999678278F, 0.9999685111F, 0.9999691835F, 
-  0.9999698451F, 0.9999704960F, 0.9999711364F, 0.9999717662F, 
-  0.9999723858F, 0.9999729950F, 0.9999735942F, 0.9999741834F, 
-  0.9999747626F, 0.9999753321F, 0.9999758919F, 0.9999764421F, 
-  0.9999769828F, 0.9999775143F, 0.9999780364F, 0.9999785495F, 
-  0.9999790535F, 0.9999795485F, 0.9999800348F, 0.9999805124F, 
-  0.9999809813F, 0.9999814417F, 0.9999818938F, 0.9999823375F, 
-  0.9999827731F, 0.9999832005F, 0.9999836200F, 0.9999840316F, 
-  0.9999844353F, 0.9999848314F, 0.9999852199F, 0.9999856008F, 
-  0.9999859744F, 0.9999863407F, 0.9999866997F, 0.9999870516F, 
-  0.9999873965F, 0.9999877345F, 0.9999880656F, 0.9999883900F, 
-  0.9999887078F, 0.9999890190F, 0.9999893237F, 0.9999896220F, 
-  0.9999899140F, 0.9999901999F, 0.9999904796F, 0.9999907533F, 
-  0.9999910211F, 0.9999912830F, 0.9999915391F, 0.9999917896F, 
-  0.9999920345F, 0.9999922738F, 0.9999925077F, 0.9999927363F, 
-  0.9999929596F, 0.9999931777F, 0.9999933907F, 0.9999935987F, 
-  0.9999938018F, 0.9999940000F, 0.9999941934F, 0.9999943820F, 
-  0.9999945661F, 0.9999947456F, 0.9999949206F, 0.9999950912F, 
-  0.9999952575F, 0.9999954195F, 0.9999955773F, 0.9999957311F, 
-  0.9999958807F, 0.9999960265F, 0.9999961683F, 0.9999963063F, 
-  0.9999964405F, 0.9999965710F, 0.9999966979F, 0.9999968213F, 
-  0.9999969412F, 0.9999970576F, 0.9999971707F, 0.9999972805F, 
-  0.9999973871F, 0.9999974905F, 0.9999975909F, 0.9999976881F, 
-  0.9999977824F, 0.9999978738F, 0.9999979624F, 0.9999980481F, 
-  0.9999981311F, 0.9999982115F, 0.9999982892F, 0.9999983644F, 
-  0.9999984370F, 0.9999985072F, 0.9999985750F, 0.9999986405F, 
-  0.9999987037F, 0.9999987647F, 0.9999988235F, 0.9999988802F, 
-  0.9999989348F, 0.9999989873F, 0.9999990379F, 0.9999990866F, 
-  0.9999991334F, 0.9999991784F, 0.9999992217F, 0.9999992632F, 
-  0.9999993030F, 0.9999993411F, 0.9999993777F, 0.9999994128F, 
-  0.9999994463F, 0.9999994784F, 0.9999995091F, 0.9999995384F, 
-  0.9999995663F, 0.9999995930F, 0.9999996184F, 0.9999996426F, 
-  0.9999996657F, 0.9999996876F, 0.9999997084F, 0.9999997282F, 
-  0.9999997469F, 0.9999997647F, 0.9999997815F, 0.9999997973F, 
-  0.9999998123F, 0.9999998265F, 0.9999998398F, 0.9999998524F, 
-  0.9999998642F, 0.9999998753F, 0.9999998857F, 0.9999998954F, 
-  0.9999999045F, 0.9999999130F, 0.9999999209F, 0.9999999282F, 
-  0.9999999351F, 0.9999999414F, 0.9999999472F, 0.9999999526F, 
-  0.9999999576F, 0.9999999622F, 0.9999999664F, 0.9999999702F, 
-  0.9999999737F, 0.9999999769F, 0.9999999798F, 0.9999999824F, 
-  0.9999999847F, 0.9999999868F, 0.9999999887F, 0.9999999904F, 
-  0.9999999919F, 0.9999999932F, 0.9999999943F, 0.9999999953F, 
-  0.9999999961F, 0.9999999969F, 0.9999999975F, 0.9999999980F, 
-  0.9999999985F, 0.9999999988F, 0.9999999991F, 0.9999999993F, 
-  0.9999999995F, 0.9999999997F, 0.9999999998F, 0.9999999999F, 
-  0.9999999999F, 1.0000000000F, 1.0000000000F, 1.0000000000F, 
-  1.0000000000F, 1.0000000000F, 1.0000000000F, 1.0000000000F, 
+  0.0000000578F, 0.0000005198F, 0.0000014438F, 0.0000028299F,
+  0.0000046780F, 0.0000069882F, 0.0000097604F, 0.0000129945F,
+  0.0000166908F, 0.0000208490F, 0.0000254692F, 0.0000305515F,
+  0.0000360958F, 0.0000421021F, 0.0000485704F, 0.0000555006F,
+  0.0000628929F, 0.0000707472F, 0.0000790635F, 0.0000878417F,
+  0.0000970820F, 0.0001067842F, 0.0001169483F, 0.0001275744F,
+  0.0001386625F, 0.0001502126F, 0.0001622245F, 0.0001746984F,
+  0.0001876343F, 0.0002010320F, 0.0002148917F, 0.0002292132F,
+  0.0002439967F, 0.0002592421F, 0.0002749493F, 0.0002911184F,
+  0.0003077493F, 0.0003248421F, 0.0003423967F, 0.0003604132F,
+  0.0003788915F, 0.0003978316F, 0.0004172335F, 0.0004370971F,
+  0.0004574226F, 0.0004782098F, 0.0004994587F, 0.0005211694F,
+  0.0005433418F, 0.0005659759F, 0.0005890717F, 0.0006126292F,
+  0.0006366484F, 0.0006611292F, 0.0006860716F, 0.0007114757F,
+  0.0007373414F, 0.0007636687F, 0.0007904576F, 0.0008177080F,
+  0.0008454200F, 0.0008735935F, 0.0009022285F, 0.0009313250F,
+  0.0009608830F, 0.0009909025F, 0.0010213834F, 0.0010523257F,
+  0.0010837295F, 0.0011155946F, 0.0011479211F, 0.0011807090F,
+  0.0012139582F, 0.0012476687F, 0.0012818405F, 0.0013164736F,
+  0.0013515679F, 0.0013871235F, 0.0014231402F, 0.0014596182F,
+  0.0014965573F, 0.0015339576F, 0.0015718190F, 0.0016101415F,
+  0.0016489251F, 0.0016881698F, 0.0017278754F, 0.0017680421F,
+  0.0018086698F, 0.0018497584F, 0.0018913080F, 0.0019333185F,
+  0.0019757898F, 0.0020187221F, 0.0020621151F, 0.0021059690F,
+  0.0021502837F, 0.0021950591F, 0.0022402953F, 0.0022859921F,
+  0.0023321497F, 0.0023787679F, 0.0024258467F, 0.0024733861F,
+  0.0025213861F, 0.0025698466F, 0.0026187676F, 0.0026681491F,
+  0.0027179911F, 0.0027682935F, 0.0028190562F, 0.0028702794F,
+  0.0029219628F, 0.0029741066F, 0.0030267107F, 0.0030797749F,
+  0.0031332994F, 0.0031872841F, 0.0032417289F, 0.0032966338F,
+  0.0033519988F, 0.0034078238F, 0.0034641089F, 0.0035208539F,
+  0.0035780589F, 0.0036357237F, 0.0036938485F, 0.0037524331F,
+  0.0038114775F, 0.0038709817F, 0.0039309456F, 0.0039913692F,
+  0.0040522524F, 0.0041135953F, 0.0041753978F, 0.0042376599F,
+  0.0043003814F, 0.0043635624F, 0.0044272029F, 0.0044913028F,
+  0.0045558620F, 0.0046208806F, 0.0046863585F, 0.0047522955F,
+  0.0048186919F, 0.0048855473F, 0.0049528619F, 0.0050206356F,
+  0.0050888684F, 0.0051575601F, 0.0052267108F, 0.0052963204F,
+  0.0053663890F, 0.0054369163F, 0.0055079025F, 0.0055793474F,
+  0.0056512510F, 0.0057236133F, 0.0057964342F, 0.0058697137F,
+  0.0059434517F, 0.0060176482F, 0.0060923032F, 0.0061674166F,
+  0.0062429883F, 0.0063190183F, 0.0063955066F, 0.0064724532F,
+  0.0065498579F, 0.0066277207F, 0.0067060416F, 0.0067848205F,
+  0.0068640575F, 0.0069437523F, 0.0070239051F, 0.0071045157F,
+  0.0071855840F, 0.0072671102F, 0.0073490940F, 0.0074315355F,
+  0.0075144345F, 0.0075977911F, 0.0076816052F, 0.0077658768F,
+  0.0078506057F, 0.0079357920F, 0.0080214355F, 0.0081075363F,
+  0.0081940943F, 0.0082811094F, 0.0083685816F, 0.0084565108F,
+  0.0085448970F, 0.0086337401F, 0.0087230401F, 0.0088127969F,
+  0.0089030104F, 0.0089936807F, 0.0090848076F, 0.0091763911F,
+  0.0092684311F, 0.0093609276F, 0.0094538805F, 0.0095472898F,
+  0.0096411554F, 0.0097354772F, 0.0098302552F, 0.0099254894F,
+  0.0100211796F, 0.0101173259F, 0.0102139281F, 0.0103109863F,
+  0.0104085002F, 0.0105064700F, 0.0106048955F, 0.0107037766F,
+  0.0108031133F, 0.0109029056F, 0.0110031534F, 0.0111038565F,
+  0.0112050151F, 0.0113066289F, 0.0114086980F, 0.0115112222F,
+  0.0116142015F, 0.0117176359F, 0.0118215252F, 0.0119258695F,
+  0.0120306686F, 0.0121359225F, 0.0122416312F, 0.0123477944F,
+  0.0124544123F, 0.0125614847F, 0.0126690116F, 0.0127769928F,
+  0.0128854284F, 0.0129943182F, 0.0131036623F, 0.0132134604F,
+  0.0133237126F, 0.0134344188F, 0.0135455790F, 0.0136571929F,
+  0.0137692607F, 0.0138817821F, 0.0139947572F, 0.0141081859F,
+  0.0142220681F, 0.0143364037F, 0.0144511927F, 0.0145664350F,
+  0.0146821304F, 0.0147982791F, 0.0149148808F, 0.0150319355F,
+  0.0151494431F, 0.0152674036F, 0.0153858168F, 0.0155046828F,
+  0.0156240014F, 0.0157437726F, 0.0158639962F, 0.0159846723F,
+  0.0161058007F, 0.0162273814F, 0.0163494142F, 0.0164718991F,
+  0.0165948361F, 0.0167182250F, 0.0168420658F, 0.0169663584F,
+  0.0170911027F, 0.0172162987F, 0.0173419462F, 0.0174680452F,
+  0.0175945956F, 0.0177215974F, 0.0178490504F, 0.0179769545F,
+  0.0181053098F, 0.0182341160F, 0.0183633732F, 0.0184930812F,
+  0.0186232399F, 0.0187538494F, 0.0188849094F, 0.0190164200F,
+  0.0191483809F, 0.0192807923F, 0.0194136539F, 0.0195469656F,
+  0.0196807275F, 0.0198149394F, 0.0199496012F, 0.0200847128F,
+  0.0202202742F, 0.0203562853F, 0.0204927460F, 0.0206296561F,
+  0.0207670157F, 0.0209048245F, 0.0210430826F, 0.0211817899F,
+  0.0213209462F, 0.0214605515F, 0.0216006057F, 0.0217411086F,
+  0.0218820603F, 0.0220234605F, 0.0221653093F, 0.0223076066F,
+  0.0224503521F, 0.0225935459F, 0.0227371879F, 0.0228812779F,
+  0.0230258160F, 0.0231708018F, 0.0233162355F, 0.0234621169F,
+  0.0236084459F, 0.0237552224F, 0.0239024462F, 0.0240501175F,
+  0.0241982359F, 0.0243468015F, 0.0244958141F, 0.0246452736F,
+  0.0247951800F, 0.0249455331F, 0.0250963329F, 0.0252475792F,
+  0.0253992720F, 0.0255514111F, 0.0257039965F, 0.0258570281F,
+  0.0260105057F, 0.0261644293F, 0.0263187987F, 0.0264736139F,
+  0.0266288747F, 0.0267845811F, 0.0269407330F, 0.0270973302F,
+  0.0272543727F, 0.0274118604F, 0.0275697930F, 0.0277281707F,
+  0.0278869932F, 0.0280462604F, 0.0282059723F, 0.0283661287F,
+  0.0285267295F, 0.0286877747F, 0.0288492641F, 0.0290111976F,
+  0.0291735751F, 0.0293363965F, 0.0294996617F, 0.0296633706F,
+  0.0298275231F, 0.0299921190F, 0.0301571583F, 0.0303226409F,
+  0.0304885667F, 0.0306549354F, 0.0308217472F, 0.0309890017F,
+  0.0311566989F, 0.0313248388F, 0.0314934211F, 0.0316624459F,
+  0.0318319128F, 0.0320018220F, 0.0321721732F, 0.0323429663F,
+  0.0325142013F, 0.0326858779F, 0.0328579962F, 0.0330305559F,
+  0.0332035570F, 0.0333769994F, 0.0335508829F, 0.0337252074F,
+  0.0338999728F, 0.0340751790F, 0.0342508259F, 0.0344269134F,
+  0.0346034412F, 0.0347804094F, 0.0349578178F, 0.0351356663F,
+  0.0353139548F, 0.0354926831F, 0.0356718511F, 0.0358514588F,
+  0.0360315059F, 0.0362119924F, 0.0363929182F, 0.0365742831F,
+  0.0367560870F, 0.0369383297F, 0.0371210113F, 0.0373041315F,
+  0.0374876902F, 0.0376716873F, 0.0378561226F, 0.0380409961F,
+  0.0382263077F, 0.0384120571F, 0.0385982443F, 0.0387848691F,
+  0.0389719315F, 0.0391594313F, 0.0393473683F, 0.0395357425F,
+  0.0397245537F, 0.0399138017F, 0.0401034866F, 0.0402936080F,
+  0.0404841660F, 0.0406751603F, 0.0408665909F, 0.0410584576F,
+  0.0412507603F, 0.0414434988F, 0.0416366731F, 0.0418302829F,
+  0.0420243282F, 0.0422188088F, 0.0424137246F, 0.0426090755F,
+  0.0428048613F, 0.0430010819F, 0.0431977371F, 0.0433948269F,
+  0.0435923511F, 0.0437903095F, 0.0439887020F, 0.0441875285F,
+  0.0443867889F, 0.0445864830F, 0.0447866106F, 0.0449871717F,
+  0.0451881661F, 0.0453895936F, 0.0455914542F, 0.0457937477F,
+  0.0459964738F, 0.0461996326F, 0.0464032239F, 0.0466072475F,
+  0.0468117032F, 0.0470165910F, 0.0472219107F, 0.0474276622F,
+  0.0476338452F, 0.0478404597F, 0.0480475056F, 0.0482549827F,
+  0.0484628907F, 0.0486712297F, 0.0488799994F, 0.0490891998F,
+  0.0492988306F, 0.0495088917F, 0.0497193830F, 0.0499303043F,
+  0.0501416554F, 0.0503534363F, 0.0505656468F, 0.0507782867F,
+  0.0509913559F, 0.0512048542F, 0.0514187815F, 0.0516331376F,
+  0.0518479225F, 0.0520631358F, 0.0522787775F, 0.0524948475F,
+  0.0527113455F, 0.0529282715F, 0.0531456252F, 0.0533634066F,
+  0.0535816154F, 0.0538002515F, 0.0540193148F, 0.0542388051F,
+  0.0544587222F, 0.0546790660F, 0.0548998364F, 0.0551210331F,
+  0.0553426561F, 0.0555647051F, 0.0557871801F, 0.0560100807F,
+  0.0562334070F, 0.0564571587F, 0.0566813357F, 0.0569059378F,
+  0.0571309649F, 0.0573564168F, 0.0575822933F, 0.0578085942F,
+  0.0580353195F, 0.0582624689F, 0.0584900423F, 0.0587180396F,
+  0.0589464605F, 0.0591753049F, 0.0594045726F, 0.0596342635F,
+  0.0598643774F, 0.0600949141F, 0.0603258735F, 0.0605572555F,
+  0.0607890597F, 0.0610212862F, 0.0612539346F, 0.0614870049F,
+  0.0617204968F, 0.0619544103F, 0.0621887451F, 0.0624235010F,
+  0.0626586780F, 0.0628942758F, 0.0631302942F, 0.0633667331F,
+  0.0636035923F, 0.0638408717F, 0.0640785710F, 0.0643166901F,
+  0.0645552288F, 0.0647941870F, 0.0650335645F, 0.0652733610F,
+  0.0655135765F, 0.0657542108F, 0.0659952636F, 0.0662367348F,
+  0.0664786242F, 0.0667209316F, 0.0669636570F, 0.0672068000F,
+  0.0674503605F, 0.0676943384F, 0.0679387334F, 0.0681835454F,
+  0.0684287742F, 0.0686744196F, 0.0689204814F, 0.0691669595F,
+  0.0694138536F, 0.0696611637F, 0.0699088894F, 0.0701570307F,
+  0.0704055873F, 0.0706545590F, 0.0709039458F, 0.0711537473F,
+  0.0714039634F, 0.0716545939F, 0.0719056387F, 0.0721570975F,
+  0.0724089702F, 0.0726612565F, 0.0729139563F, 0.0731670694F,
+  0.0734205956F, 0.0736745347F, 0.0739288866F, 0.0741836510F,
+  0.0744388277F, 0.0746944166F, 0.0749504175F, 0.0752068301F,
+  0.0754636543F, 0.0757208899F, 0.0759785367F, 0.0762365946F,
+  0.0764950632F, 0.0767539424F, 0.0770132320F, 0.0772729319F,
+  0.0775330418F, 0.0777935616F, 0.0780544909F, 0.0783158298F,
+  0.0785775778F, 0.0788397349F, 0.0791023009F, 0.0793652755F,
+  0.0796286585F, 0.0798924498F, 0.0801566492F, 0.0804212564F,
+  0.0806862712F, 0.0809516935F, 0.0812175231F, 0.0814837597F,
+  0.0817504031F, 0.0820174532F, 0.0822849097F, 0.0825527724F,
+  0.0828210412F, 0.0830897158F, 0.0833587960F, 0.0836282816F,
+  0.0838981724F, 0.0841684682F, 0.0844391688F, 0.0847102740F,
+  0.0849817835F, 0.0852536973F, 0.0855260150F, 0.0857987364F,
+  0.0860718614F, 0.0863453897F, 0.0866193211F, 0.0868936554F,
+  0.0871683924F, 0.0874435319F, 0.0877190737F, 0.0879950175F,
+  0.0882713632F, 0.0885481105F, 0.0888252592F, 0.0891028091F,
+  0.0893807600F, 0.0896591117F, 0.0899378639F, 0.0902170165F,
+  0.0904965692F, 0.0907765218F, 0.0910568740F, 0.0913376258F,
+  0.0916187767F, 0.0919003268F, 0.0921822756F, 0.0924646230F,
+  0.0927473687F, 0.0930305126F, 0.0933140545F, 0.0935979940F,
+  0.0938823310F, 0.0941670653F, 0.0944521966F, 0.0947377247F,
+  0.0950236494F, 0.0953099704F, 0.0955966876F, 0.0958838007F,
+  0.0961713094F, 0.0964592136F, 0.0967475131F, 0.0970362075F,
+  0.0973252967F, 0.0976147805F, 0.0979046585F, 0.0981949307F,
+  0.0984855967F, 0.0987766563F, 0.0990681093F, 0.0993599555F,
+  0.0996521945F, 0.0999448263F, 0.1002378506F, 0.1005312671F,
+  0.1008250755F, 0.1011192757F, 0.1014138675F, 0.1017088505F,
+  0.1020042246F, 0.1022999895F, 0.1025961450F, 0.1028926909F,
+  0.1031896268F, 0.1034869526F, 0.1037846680F, 0.1040827729F,
+  0.1043812668F, 0.1046801497F, 0.1049794213F, 0.1052790813F,
+  0.1055791294F, 0.1058795656F, 0.1061803894F, 0.1064816006F,
+  0.1067831991F, 0.1070851846F, 0.1073875568F, 0.1076903155F,
+  0.1079934604F, 0.1082969913F, 0.1086009079F, 0.1089052101F,
+  0.1092098975F, 0.1095149699F, 0.1098204270F, 0.1101262687F,
+  0.1104324946F, 0.1107391045F, 0.1110460982F, 0.1113534754F,
+  0.1116612359F, 0.1119693793F, 0.1122779055F, 0.1125868142F,
+  0.1128961052F, 0.1132057781F, 0.1135158328F, 0.1138262690F,
+  0.1141370863F, 0.1144482847F, 0.1147598638F, 0.1150718233F,
+  0.1153841631F, 0.1156968828F, 0.1160099822F, 0.1163234610F,
+  0.1166373190F, 0.1169515559F, 0.1172661714F, 0.1175811654F,
+  0.1178965374F, 0.1182122874F, 0.1185284149F, 0.1188449198F,
+  0.1191618018F, 0.1194790606F, 0.1197966960F, 0.1201147076F,
+  0.1204330953F, 0.1207518587F, 0.1210709976F, 0.1213905118F,
+  0.1217104009F, 0.1220306647F, 0.1223513029F, 0.1226723153F,
+  0.1229937016F, 0.1233154615F, 0.1236375948F, 0.1239601011F,
+  0.1242829803F, 0.1246062319F, 0.1249298559F, 0.1252538518F,
+  0.1255782195F, 0.1259029586F, 0.1262280689F, 0.1265535501F,
+  0.1268794019F, 0.1272056241F, 0.1275322163F, 0.1278591784F,
+  0.1281865099F, 0.1285142108F, 0.1288422805F, 0.1291707190F,
+  0.1294995259F, 0.1298287009F, 0.1301582437F, 0.1304881542F,
+  0.1308184319F, 0.1311490766F, 0.1314800881F, 0.1318114660F,
+  0.1321432100F, 0.1324753200F, 0.1328077955F, 0.1331406364F,
+  0.1334738422F, 0.1338074129F, 0.1341413479F, 0.1344756472F,
+  0.1348103103F, 0.1351453370F, 0.1354807270F, 0.1358164801F,
+  0.1361525959F, 0.1364890741F, 0.1368259145F, 0.1371631167F,
+  0.1375006805F, 0.1378386056F, 0.1381768917F, 0.1385155384F,
+  0.1388545456F, 0.1391939129F, 0.1395336400F, 0.1398737266F,
+  0.1402141724F, 0.1405549772F, 0.1408961406F, 0.1412376623F,
+  0.1415795421F, 0.1419217797F, 0.1422643746F, 0.1426073268F,
+  0.1429506358F, 0.1432943013F, 0.1436383231F, 0.1439827008F,
+  0.1443274342F, 0.1446725229F, 0.1450179667F, 0.1453637652F,
+  0.1457099181F, 0.1460564252F, 0.1464032861F, 0.1467505006F,
+  0.1470980682F, 0.1474459888F, 0.1477942620F, 0.1481428875F,
+  0.1484918651F, 0.1488411942F, 0.1491908748F, 0.1495409065F,
+  0.1498912889F, 0.1502420218F, 0.1505931048F, 0.1509445376F,
+  0.1512963200F, 0.1516484516F, 0.1520009321F, 0.1523537612F,
+  0.1527069385F, 0.1530604638F, 0.1534143368F, 0.1537685571F,
+  0.1541231244F, 0.1544780384F, 0.1548332987F, 0.1551889052F,
+  0.1555448574F, 0.1559011550F, 0.1562577978F, 0.1566147853F,
+  0.1569721173F, 0.1573297935F, 0.1576878135F, 0.1580461771F,
+  0.1584048838F, 0.1587639334F, 0.1591233255F, 0.1594830599F,
+  0.1598431361F, 0.1602035540F, 0.1605643131F, 0.1609254131F,
+  0.1612868537F, 0.1616486346F, 0.1620107555F, 0.1623732160F,
+  0.1627360158F, 0.1630991545F, 0.1634626319F, 0.1638264476F,
+  0.1641906013F, 0.1645550926F, 0.1649199212F, 0.1652850869F,
+  0.1656505892F, 0.1660164278F, 0.1663826024F, 0.1667491127F,
+  0.1671159583F, 0.1674831388F, 0.1678506541F, 0.1682185036F,
+  0.1685866872F, 0.1689552044F, 0.1693240549F, 0.1696932384F,
+  0.1700627545F, 0.1704326029F, 0.1708027833F, 0.1711732952F,
+  0.1715441385F, 0.1719153127F, 0.1722868175F, 0.1726586526F,
+  0.1730308176F, 0.1734033121F, 0.1737761359F, 0.1741492886F,
+  0.1745227698F, 0.1748965792F, 0.1752707164F, 0.1756451812F,
+  0.1760199731F, 0.1763950918F, 0.1767705370F, 0.1771463083F,
+  0.1775224054F, 0.1778988279F, 0.1782755754F, 0.1786526477F,
+  0.1790300444F, 0.1794077651F, 0.1797858094F, 0.1801641771F,
+  0.1805428677F, 0.1809218810F, 0.1813012165F, 0.1816808739F,
+  0.1820608528F, 0.1824411530F, 0.1828217739F, 0.1832027154F,
+  0.1835839770F, 0.1839655584F, 0.1843474592F, 0.1847296790F,
+  0.1851122175F, 0.1854950744F, 0.1858782492F, 0.1862617417F,
+  0.1866455514F, 0.1870296780F, 0.1874141211F, 0.1877988804F,
+  0.1881839555F, 0.1885693461F, 0.1889550517F, 0.1893410721F,
+  0.1897274068F, 0.1901140555F, 0.1905010178F, 0.1908882933F,
+  0.1912758818F, 0.1916637828F, 0.1920519959F, 0.1924405208F,
+  0.1928293571F, 0.1932185044F, 0.1936079625F, 0.1939977308F,
+  0.1943878091F, 0.1947781969F, 0.1951688939F, 0.1955598998F,
+  0.1959512141F, 0.1963428364F, 0.1967347665F, 0.1971270038F,
+  0.1975195482F, 0.1979123990F, 0.1983055561F, 0.1986990190F,
+  0.1990927873F, 0.1994868607F, 0.1998812388F, 0.2002759212F,
+  0.2006709075F, 0.2010661974F, 0.2014617904F, 0.2018576862F,
+  0.2022538844F, 0.2026503847F, 0.2030471865F, 0.2034442897F,
+  0.2038416937F, 0.2042393982F, 0.2046374028F, 0.2050357071F,
+  0.2054343107F, 0.2058332133F, 0.2062324145F, 0.2066319138F,
+  0.2070317110F, 0.2074318055F, 0.2078321970F, 0.2082328852F,
+  0.2086338696F, 0.2090351498F, 0.2094367255F, 0.2098385962F,
+  0.2102407617F, 0.2106432213F, 0.2110459749F, 0.2114490220F,
+  0.2118523621F, 0.2122559950F, 0.2126599202F, 0.2130641373F,
+  0.2134686459F, 0.2138734456F, 0.2142785361F, 0.2146839168F,
+  0.2150895875F, 0.2154955478F, 0.2159017972F, 0.2163083353F,
+  0.2167151617F, 0.2171222761F, 0.2175296780F, 0.2179373670F,
+  0.2183453428F, 0.2187536049F, 0.2191621529F, 0.2195709864F,
+  0.2199801051F, 0.2203895085F, 0.2207991961F, 0.2212091677F,
+  0.2216194228F, 0.2220299610F, 0.2224407818F, 0.2228518850F,
+  0.2232632699F, 0.2236749364F, 0.2240868839F, 0.2244991121F,
+  0.2249116204F, 0.2253244086F, 0.2257374763F, 0.2261508229F,
+  0.2265644481F, 0.2269783514F, 0.2273925326F, 0.2278069911F,
+  0.2282217265F, 0.2286367384F, 0.2290520265F, 0.2294675902F,
+  0.2298834292F, 0.2302995431F, 0.2307159314F, 0.2311325937F,
+  0.2315495297F, 0.2319667388F, 0.2323842207F, 0.2328019749F,
+  0.2332200011F, 0.2336382988F, 0.2340568675F, 0.2344757070F,
+  0.2348948166F, 0.2353141961F, 0.2357338450F, 0.2361537629F,
+  0.2365739493F, 0.2369944038F, 0.2374151261F, 0.2378361156F,
+  0.2382573720F, 0.2386788948F, 0.2391006836F, 0.2395227380F,
+  0.2399450575F, 0.2403676417F, 0.2407904902F, 0.2412136026F,
+  0.2416369783F, 0.2420606171F, 0.2424845185F, 0.2429086820F,
+  0.2433331072F, 0.2437577936F, 0.2441827409F, 0.2446079486F,
+  0.2450334163F, 0.2454591435F, 0.2458851298F, 0.2463113747F,
+  0.2467378779F, 0.2471646389F, 0.2475916573F, 0.2480189325F,
+  0.2484464643F, 0.2488742521F, 0.2493022955F, 0.2497305940F,
+  0.2501591473F, 0.2505879549F, 0.2510170163F, 0.2514463311F,
+  0.2518758989F, 0.2523057193F, 0.2527357916F, 0.2531661157F,
+  0.2535966909F, 0.2540275169F, 0.2544585931F, 0.2548899193F,
+  0.2553214948F, 0.2557533193F, 0.2561853924F, 0.2566177135F,
+  0.2570502822F, 0.2574830981F, 0.2579161608F, 0.2583494697F,
+  0.2587830245F, 0.2592168246F, 0.2596508697F, 0.2600851593F,
+  0.2605196929F, 0.2609544701F, 0.2613894904F, 0.2618247534F,
+  0.2622602586F, 0.2626960055F, 0.2631319938F, 0.2635682230F,
+  0.2640046925F, 0.2644414021F, 0.2648783511F, 0.2653155391F,
+  0.2657529657F, 0.2661906305F, 0.2666285329F, 0.2670666725F,
+  0.2675050489F, 0.2679436616F, 0.2683825101F, 0.2688215940F,
+  0.2692609127F, 0.2697004660F, 0.2701402532F, 0.2705802739F,
+  0.2710205278F, 0.2714610142F, 0.2719017327F, 0.2723426830F,
+  0.2727838644F, 0.2732252766F, 0.2736669191F, 0.2741087914F,
+  0.2745508930F, 0.2749932235F, 0.2754357824F, 0.2758785693F,
+  0.2763215837F, 0.2767648251F, 0.2772082930F, 0.2776519870F,
+  0.2780959066F, 0.2785400513F, 0.2789844207F, 0.2794290143F,
+  0.2798738316F, 0.2803188722F, 0.2807641355F, 0.2812096211F,
+  0.2816553286F, 0.2821012574F, 0.2825474071F, 0.2829937773F,
+  0.2834403673F, 0.2838871768F, 0.2843342053F, 0.2847814523F,
+  0.2852289174F, 0.2856765999F, 0.2861244996F, 0.2865726159F,
+  0.2870209482F, 0.2874694962F, 0.2879182594F, 0.2883672372F,
+  0.2888164293F, 0.2892658350F, 0.2897154540F, 0.2901652858F,
+  0.2906153298F, 0.2910655856F, 0.2915160527F, 0.2919667306F,
+  0.2924176189F, 0.2928687171F, 0.2933200246F, 0.2937715409F,
+  0.2942232657F, 0.2946751984F, 0.2951273386F, 0.2955796856F,
+  0.2960322391F, 0.2964849986F, 0.2969379636F, 0.2973911335F,
+  0.2978445080F, 0.2982980864F, 0.2987518684F, 0.2992058534F,
+  0.2996600409F, 0.3001144305F, 0.3005690217F, 0.3010238139F,
+  0.3014788067F, 0.3019339995F, 0.3023893920F, 0.3028449835F,
+  0.3033007736F, 0.3037567618F, 0.3042129477F, 0.3046693306F,
+  0.3051259102F, 0.3055826859F, 0.3060396572F, 0.3064968236F,
+  0.3069541847F, 0.3074117399F, 0.3078694887F, 0.3083274307F,
+  0.3087855653F, 0.3092438920F, 0.3097024104F, 0.3101611199F,
+  0.3106200200F, 0.3110791103F, 0.3115383902F, 0.3119978592F,
+  0.3124575169F, 0.3129173627F, 0.3133773961F, 0.3138376166F,
+  0.3142980238F, 0.3147586170F, 0.3152193959F, 0.3156803598F,
+  0.3161415084F, 0.3166028410F, 0.3170643573F, 0.3175260566F,
+  0.3179879384F, 0.3184500023F, 0.3189122478F, 0.3193746743F,
+  0.3198372814F, 0.3203000685F, 0.3207630351F, 0.3212261807F,
+  0.3216895048F, 0.3221530069F, 0.3226166865F, 0.3230805430F,
+  0.3235445760F, 0.3240087849F, 0.3244731693F, 0.3249377285F,
+  0.3254024622F, 0.3258673698F, 0.3263324507F, 0.3267977045F,
+  0.3272631306F, 0.3277287286F, 0.3281944978F, 0.3286604379F,
+  0.3291265482F, 0.3295928284F, 0.3300592777F, 0.3305258958F,
+  0.3309926821F, 0.3314596361F, 0.3319267573F, 0.3323940451F,
+  0.3328614990F, 0.3333291186F, 0.3337969033F, 0.3342648525F,
+  0.3347329658F, 0.3352012427F, 0.3356696825F, 0.3361382849F,
+  0.3366070492F, 0.3370759749F, 0.3375450616F, 0.3380143087F,
+  0.3384837156F, 0.3389532819F, 0.3394230071F, 0.3398928905F,
+  0.3403629317F, 0.3408331302F, 0.3413034854F, 0.3417739967F,
+  0.3422446638F, 0.3427154860F, 0.3431864628F, 0.3436575938F,
+  0.3441288782F, 0.3446003158F, 0.3450719058F, 0.3455436478F,
+  0.3460155412F, 0.3464875856F, 0.3469597804F, 0.3474321250F,
+  0.3479046189F, 0.3483772617F, 0.3488500527F, 0.3493229914F,
+  0.3497960774F, 0.3502693100F, 0.3507426887F, 0.3512162131F,
+  0.3516898825F, 0.3521636965F, 0.3526376545F, 0.3531117559F,
+  0.3535860003F, 0.3540603870F, 0.3545349157F, 0.3550095856F,
+  0.3554843964F, 0.3559593474F, 0.3564344381F, 0.3569096680F,
+  0.3573850366F, 0.3578605432F, 0.3583361875F, 0.3588119687F,
+  0.3592878865F, 0.3597639402F, 0.3602401293F, 0.3607164533F,
+  0.3611929117F, 0.3616695038F, 0.3621462292F, 0.3626230873F,
+  0.3631000776F, 0.3635771995F, 0.3640544525F, 0.3645318360F,
+  0.3650093496F, 0.3654869926F, 0.3659647645F, 0.3664426648F,
+  0.3669206930F, 0.3673988484F, 0.3678771306F, 0.3683555390F,
+  0.3688340731F, 0.3693127322F, 0.3697915160F, 0.3702704237F,
+  0.3707494549F, 0.3712286091F, 0.3717078857F, 0.3721872840F,
+  0.3726668037F, 0.3731464441F, 0.3736262047F, 0.3741060850F,
+  0.3745860843F, 0.3750662023F, 0.3755464382F, 0.3760267915F,
+  0.3765072618F, 0.3769878484F, 0.3774685509F, 0.3779493686F,
+  0.3784303010F, 0.3789113475F, 0.3793925076F, 0.3798737809F,
+  0.3803551666F, 0.3808366642F, 0.3813182733F, 0.3817999932F,
+  0.3822818234F, 0.3827637633F, 0.3832458124F, 0.3837279702F,
+  0.3842102360F, 0.3846926093F, 0.3851750897F, 0.3856576764F,
+  0.3861403690F, 0.3866231670F, 0.3871060696F, 0.3875890765F,
+  0.3880721870F, 0.3885554007F, 0.3890387168F, 0.3895221349F,
+  0.3900056544F, 0.3904892748F, 0.3909729955F, 0.3914568160F,
+  0.3919407356F, 0.3924247539F, 0.3929088702F, 0.3933930841F,
+  0.3938773949F, 0.3943618021F, 0.3948463052F, 0.3953309035F,
+  0.3958155966F, 0.3963003838F, 0.3967852646F, 0.3972702385F,
+  0.3977553048F, 0.3982404631F, 0.3987257127F, 0.3992110531F,
+  0.3996964838F, 0.4001820041F, 0.4006676136F, 0.4011533116F,
+  0.4016390976F, 0.4021249710F, 0.4026109313F, 0.4030969779F,
+  0.4035831102F, 0.4040693277F, 0.4045556299F, 0.4050420160F,
+  0.4055284857F, 0.4060150383F, 0.4065016732F, 0.4069883899F,
+  0.4074751879F, 0.4079620665F, 0.4084490252F, 0.4089360635F,
+  0.4094231807F, 0.4099103763F, 0.4103976498F, 0.4108850005F,
+  0.4113724280F, 0.4118599315F, 0.4123475107F, 0.4128351648F,
+  0.4133228934F, 0.4138106959F, 0.4142985716F, 0.4147865201F,
+  0.4152745408F, 0.4157626330F, 0.4162507963F, 0.4167390301F,
+  0.4172273337F, 0.4177157067F, 0.4182041484F, 0.4186926583F,
+  0.4191812359F, 0.4196698805F, 0.4201585915F, 0.4206473685F,
+  0.4211362108F, 0.4216251179F, 0.4221140892F, 0.4226031241F,
+  0.4230922221F, 0.4235813826F, 0.4240706050F, 0.4245598887F,
+  0.4250492332F, 0.4255386379F, 0.4260281022F, 0.4265176256F,
+  0.4270072075F, 0.4274968473F, 0.4279865445F, 0.4284762984F,
+  0.4289661086F, 0.4294559743F, 0.4299458951F, 0.4304358704F,
+  0.4309258996F, 0.4314159822F, 0.4319061175F, 0.4323963050F,
+  0.4328865441F, 0.4333768342F, 0.4338671749F, 0.4343575654F,
+  0.4348480052F, 0.4353384938F, 0.4358290306F, 0.4363196149F,
+  0.4368102463F, 0.4373009241F, 0.4377916478F, 0.4382824168F,
+  0.4387732305F, 0.4392640884F, 0.4397549899F, 0.4402459343F,
+  0.4407369212F, 0.4412279499F, 0.4417190198F, 0.4422101305F,
+  0.4427012813F, 0.4431924717F, 0.4436837010F, 0.4441749686F,
+  0.4446662742F, 0.4451576169F, 0.4456489963F, 0.4461404118F,
+  0.4466318628F, 0.4471233487F, 0.4476148690F, 0.4481064230F,
+  0.4485980103F, 0.4490896302F, 0.4495812821F, 0.4500729654F,
+  0.4505646797F, 0.4510564243F, 0.4515481986F, 0.4520400021F,
+  0.4525318341F, 0.4530236942F, 0.4535155816F, 0.4540074959F,
+  0.4544994365F, 0.4549914028F, 0.4554833941F, 0.4559754100F,
+  0.4564674499F, 0.4569595131F, 0.4574515991F, 0.4579437074F,
+  0.4584358372F, 0.4589279881F, 0.4594201595F, 0.4599123508F,
+  0.4604045615F, 0.4608967908F, 0.4613890383F, 0.4618813034F,
+  0.4623735855F, 0.4628658841F, 0.4633581984F, 0.4638505281F,
+  0.4643428724F, 0.4648352308F, 0.4653276028F, 0.4658199877F,
+  0.4663123849F, 0.4668047940F, 0.4672972143F, 0.4677896451F,
+  0.4682820861F, 0.4687745365F, 0.4692669958F, 0.4697594634F,
+  0.4702519387F, 0.4707444211F, 0.4712369102F, 0.4717294052F,
+  0.4722219056F, 0.4727144109F, 0.4732069204F, 0.4736994336F,
+  0.4741919498F, 0.4746844686F, 0.4751769893F, 0.4756695113F,
+  0.4761620341F, 0.4766545571F, 0.4771470797F, 0.4776396013F,
+  0.4781321213F, 0.4786246392F, 0.4791171544F, 0.4796096663F,
+  0.4801021744F, 0.4805946779F, 0.4810871765F, 0.4815796694F,
+  0.4820721561F, 0.4825646360F, 0.4830571086F, 0.4835495732F,
+  0.4840420293F, 0.4845344763F, 0.4850269136F, 0.4855193407F,
+  0.4860117569F, 0.4865041617F, 0.4869965545F, 0.4874889347F,
+  0.4879813018F, 0.4884736551F, 0.4889659941F, 0.4894583182F,
+  0.4899506268F, 0.4904429193F, 0.4909351952F, 0.4914274538F,
+  0.4919196947F, 0.4924119172F, 0.4929041207F, 0.4933963046F,
+  0.4938884685F, 0.4943806116F, 0.4948727335F, 0.4953648335F,
+  0.4958569110F, 0.4963489656F, 0.4968409965F, 0.4973330032F,
+  0.4978249852F, 0.4983169419F, 0.4988088726F, 0.4993007768F,
+  0.4997926539F, 0.5002845034F, 0.5007763247F, 0.5012681171F,
+  0.5017598801F, 0.5022516132F, 0.5027433157F, 0.5032349871F,
+  0.5037266268F, 0.5042182341F, 0.5047098086F, 0.5052013497F,
+  0.5056928567F, 0.5061843292F, 0.5066757664F, 0.5071671679F,
+  0.5076585330F, 0.5081498613F, 0.5086411520F, 0.5091324047F,
+  0.5096236187F, 0.5101147934F, 0.5106059284F, 0.5110970230F,
+  0.5115880766F, 0.5120790887F, 0.5125700587F, 0.5130609860F,
+  0.5135518700F, 0.5140427102F, 0.5145335059F, 0.5150242566F,
+  0.5155149618F, 0.5160056208F, 0.5164962331F, 0.5169867980F,
+  0.5174773151F, 0.5179677837F, 0.5184582033F, 0.5189485733F,
+  0.5194388931F, 0.5199291621F, 0.5204193798F, 0.5209095455F,
+  0.5213996588F, 0.5218897190F, 0.5223797256F, 0.5228696779F,
+  0.5233595755F, 0.5238494177F, 0.5243392039F, 0.5248289337F,
+  0.5253186063F, 0.5258082213F, 0.5262977781F, 0.5267872760F,
+  0.5272767146F, 0.5277660932F, 0.5282554112F, 0.5287446682F,
+  0.5292338635F, 0.5297229965F, 0.5302120667F, 0.5307010736F,
+  0.5311900164F, 0.5316788947F, 0.5321677079F, 0.5326564554F,
+  0.5331451366F, 0.5336337511F, 0.5341222981F, 0.5346107771F,
+  0.5350991876F, 0.5355875290F, 0.5360758007F, 0.5365640021F,
+  0.5370521327F, 0.5375401920F, 0.5380281792F, 0.5385160939F,
+  0.5390039355F, 0.5394917034F, 0.5399793971F, 0.5404670159F,
+  0.5409545594F, 0.5414420269F, 0.5419294179F, 0.5424167318F,
+  0.5429039680F, 0.5433911261F, 0.5438782053F, 0.5443652051F,
+  0.5448521250F, 0.5453389644F, 0.5458257228F, 0.5463123995F,
+  0.5467989940F, 0.5472855057F, 0.5477719341F, 0.5482582786F,
+  0.5487445387F, 0.5492307137F, 0.5497168031F, 0.5502028063F,
+  0.5506887228F, 0.5511745520F, 0.5516602934F, 0.5521459463F,
+  0.5526315103F, 0.5531169847F, 0.5536023690F, 0.5540876626F,
+  0.5545728649F, 0.5550579755F, 0.5555429937F, 0.5560279189F,
+  0.5565127507F, 0.5569974884F, 0.5574821315F, 0.5579666794F,
+  0.5584511316F, 0.5589354875F, 0.5594197465F, 0.5599039080F,
+  0.5603879716F, 0.5608719367F, 0.5613558026F, 0.5618395689F,
+  0.5623232350F, 0.5628068002F, 0.5632902642F, 0.5637736262F,
+  0.5642568858F, 0.5647400423F, 0.5652230953F, 0.5657060442F,
+  0.5661888883F, 0.5666716272F, 0.5671542603F, 0.5676367870F,
+  0.5681192069F, 0.5686015192F, 0.5690837235F, 0.5695658192F,
+  0.5700478058F, 0.5705296827F, 0.5710114494F, 0.5714931052F,
+  0.5719746497F, 0.5724560822F, 0.5729374023F, 0.5734186094F,
+  0.5738997029F, 0.5743806823F, 0.5748615470F, 0.5753422965F,
+  0.5758229301F, 0.5763034475F, 0.5767838480F, 0.5772641310F,
+  0.5777442960F, 0.5782243426F, 0.5787042700F, 0.5791840778F,
+  0.5796637654F, 0.5801433322F, 0.5806227778F, 0.5811021016F,
+  0.5815813029F, 0.5820603814F, 0.5825393363F, 0.5830181673F,
+  0.5834968737F, 0.5839754549F, 0.5844539105F, 0.5849322399F,
+  0.5854104425F, 0.5858885179F, 0.5863664653F, 0.5868442844F,
+  0.5873219746F, 0.5877995353F, 0.5882769660F, 0.5887542661F,
+  0.5892314351F, 0.5897084724F, 0.5901853776F, 0.5906621500F,
+  0.5911387892F, 0.5916152945F, 0.5920916655F, 0.5925679016F,
+  0.5930440022F, 0.5935199669F, 0.5939957950F, 0.5944714861F,
+  0.5949470396F, 0.5954224550F, 0.5958977317F, 0.5963728692F,
+  0.5968478669F, 0.5973227244F, 0.5977974411F, 0.5982720163F,
+  0.5987464497F, 0.5992207407F, 0.5996948887F, 0.6001688932F,
+  0.6006427537F, 0.6011164696F, 0.6015900405F, 0.6020634657F,
+  0.6025367447F, 0.6030098770F, 0.6034828621F, 0.6039556995F,
+  0.6044283885F, 0.6049009288F, 0.6053733196F, 0.6058455606F,
+  0.6063176512F, 0.6067895909F, 0.6072613790F, 0.6077330152F,
+  0.6082044989F, 0.6086758295F, 0.6091470065F, 0.6096180294F,
+  0.6100888977F, 0.6105596108F, 0.6110301682F, 0.6115005694F,
+  0.6119708139F, 0.6124409011F, 0.6129108305F, 0.6133806017F,
+  0.6138502139F, 0.6143196669F, 0.6147889599F, 0.6152580926F,
+  0.6157270643F, 0.6161958746F, 0.6166645230F, 0.6171330088F,
+  0.6176013317F, 0.6180694910F, 0.6185374863F, 0.6190053171F,
+  0.6194729827F, 0.6199404828F, 0.6204078167F, 0.6208749841F,
+  0.6213419842F, 0.6218088168F, 0.6222754811F, 0.6227419768F,
+  0.6232083032F, 0.6236744600F, 0.6241404465F, 0.6246062622F,
+  0.6250719067F, 0.6255373795F, 0.6260026799F, 0.6264678076F,
+  0.6269327619F, 0.6273975425F, 0.6278621487F, 0.6283265800F,
+  0.6287908361F, 0.6292549163F, 0.6297188201F, 0.6301825471F,
+  0.6306460966F, 0.6311094683F, 0.6315726617F, 0.6320356761F,
+  0.6324985111F, 0.6329611662F, 0.6334236410F, 0.6338859348F,
+  0.6343480472F, 0.6348099777F, 0.6352717257F, 0.6357332909F,
+  0.6361946726F, 0.6366558704F, 0.6371168837F, 0.6375777122F,
+  0.6380383552F, 0.6384988123F, 0.6389590830F, 0.6394191668F,
+  0.6398790631F, 0.6403387716F, 0.6407982916F, 0.6412576228F,
+  0.6417167645F, 0.6421757163F, 0.6426344778F, 0.6430930483F,
+  0.6435514275F, 0.6440096149F, 0.6444676098F, 0.6449254119F,
+  0.6453830207F, 0.6458404356F, 0.6462976562F, 0.6467546820F,
+  0.6472115125F, 0.6476681472F, 0.6481245856F, 0.6485808273F,
+  0.6490368717F, 0.6494927183F, 0.6499483667F, 0.6504038164F,
+  0.6508590670F, 0.6513141178F, 0.6517689684F, 0.6522236185F,
+  0.6526780673F, 0.6531323146F, 0.6535863598F, 0.6540402024F,
+  0.6544938419F, 0.6549472779F, 0.6554005099F, 0.6558535373F,
+  0.6563063598F, 0.6567589769F, 0.6572113880F, 0.6576635927F,
+  0.6581155906F, 0.6585673810F, 0.6590189637F, 0.6594703380F,
+  0.6599215035F, 0.6603724598F, 0.6608232064F, 0.6612737427F,
+  0.6617240684F, 0.6621741829F, 0.6626240859F, 0.6630737767F,
+  0.6635232550F, 0.6639725202F, 0.6644215720F, 0.6648704098F,
+  0.6653190332F, 0.6657674417F, 0.6662156348F, 0.6666636121F,
+  0.6671113731F, 0.6675589174F, 0.6680062445F, 0.6684533538F,
+  0.6689002450F, 0.6693469177F, 0.6697933712F, 0.6702396052F,
+  0.6706856193F, 0.6711314129F, 0.6715769855F, 0.6720223369F,
+  0.6724674664F, 0.6729123736F, 0.6733570581F, 0.6738015194F,
+  0.6742457570F, 0.6746897706F, 0.6751335596F, 0.6755771236F,
+  0.6760204621F, 0.6764635747F, 0.6769064609F, 0.6773491204F,
+  0.6777915525F, 0.6782337570F, 0.6786757332F, 0.6791174809F,
+  0.6795589995F, 0.6800002886F, 0.6804413477F, 0.6808821765F,
+  0.6813227743F, 0.6817631409F, 0.6822032758F, 0.6826431785F,
+  0.6830828485F, 0.6835222855F, 0.6839614890F, 0.6844004585F,
+  0.6848391936F, 0.6852776939F, 0.6857159589F, 0.6861539883F,
+  0.6865917815F, 0.6870293381F, 0.6874666576F, 0.6879037398F,
+  0.6883405840F, 0.6887771899F, 0.6892135571F, 0.6896496850F,
+  0.6900855733F, 0.6905212216F, 0.6909566294F, 0.6913917963F,
+  0.6918267218F, 0.6922614055F, 0.6926958471F, 0.6931300459F,
+  0.6935640018F, 0.6939977141F, 0.6944311825F, 0.6948644066F,
+  0.6952973859F, 0.6957301200F, 0.6961626085F, 0.6965948510F,
+  0.6970268470F, 0.6974585961F, 0.6978900980F, 0.6983213521F,
+  0.6987523580F, 0.6991831154F, 0.6996136238F, 0.7000438828F,
+  0.7004738921F, 0.7009036510F, 0.7013331594F, 0.7017624166F,
+  0.7021914224F, 0.7026201763F, 0.7030486779F, 0.7034769268F,
+  0.7039049226F, 0.7043326648F, 0.7047601531F, 0.7051873870F,
+  0.7056143662F, 0.7060410902F, 0.7064675586F, 0.7068937711F,
+  0.7073197271F, 0.7077454264F, 0.7081708684F, 0.7085960529F,
+  0.7090209793F, 0.7094456474F, 0.7098700566F, 0.7102942066F,
+  0.7107180970F, 0.7111417274F, 0.7115650974F, 0.7119882066F,
+  0.7124110545F, 0.7128336409F, 0.7132559653F, 0.7136780272F,
+  0.7140998264F, 0.7145213624F, 0.7149426348F, 0.7153636433F,
+  0.7157843874F, 0.7162048668F, 0.7166250810F, 0.7170450296F,
+  0.7174647124F, 0.7178841289F, 0.7183032786F, 0.7187221613F,
+  0.7191407765F, 0.7195591239F, 0.7199772030F, 0.7203950135F,
+  0.7208125550F, 0.7212298271F, 0.7216468294F, 0.7220635616F,
+  0.7224800233F, 0.7228962140F, 0.7233121335F, 0.7237277813F,
+  0.7241431571F, 0.7245582604F, 0.7249730910F, 0.7253876484F,
+  0.7258019322F, 0.7262159422F, 0.7266296778F, 0.7270431388F,
+  0.7274563247F, 0.7278692353F, 0.7282818700F, 0.7286942287F,
+  0.7291063108F, 0.7295181160F, 0.7299296440F, 0.7303408944F,
+  0.7307518669F, 0.7311625609F, 0.7315729763F, 0.7319831126F,
+  0.7323929695F, 0.7328025466F, 0.7332118435F, 0.7336208600F,
+  0.7340295955F, 0.7344380499F, 0.7348462226F, 0.7352541134F,
+  0.7356617220F, 0.7360690478F, 0.7364760907F, 0.7368828502F,
+  0.7372893259F, 0.7376955176F, 0.7381014249F, 0.7385070475F,
+  0.7389123849F, 0.7393174368F, 0.7397222029F, 0.7401266829F,
+  0.7405308763F, 0.7409347829F, 0.7413384023F, 0.7417417341F,
+  0.7421447780F, 0.7425475338F, 0.7429500009F, 0.7433521791F,
+  0.7437540681F, 0.7441556674F, 0.7445569769F, 0.7449579960F,
+  0.7453587245F, 0.7457591621F, 0.7461593084F, 0.7465591631F,
+  0.7469587259F, 0.7473579963F, 0.7477569741F, 0.7481556590F,
+  0.7485540506F, 0.7489521486F, 0.7493499526F, 0.7497474623F,
+  0.7501446775F, 0.7505415977F, 0.7509382227F, 0.7513345521F,
+  0.7517305856F, 0.7521263229F, 0.7525217636F, 0.7529169074F,
+  0.7533117541F, 0.7537063032F, 0.7541005545F, 0.7544945076F,
+  0.7548881623F, 0.7552815182F, 0.7556745749F, 0.7560673323F,
+  0.7564597899F, 0.7568519474F, 0.7572438046F, 0.7576353611F,
+  0.7580266166F, 0.7584175708F, 0.7588082235F, 0.7591985741F,
+  0.7595886226F, 0.7599783685F, 0.7603678116F, 0.7607569515F,
+  0.7611457879F, 0.7615343206F, 0.7619225493F, 0.7623104735F,
+  0.7626980931F, 0.7630854078F, 0.7634724171F, 0.7638591209F,
+  0.7642455188F, 0.7646316106F, 0.7650173959F, 0.7654028744F,
+  0.7657880459F, 0.7661729100F, 0.7665574664F, 0.7669417150F,
+  0.7673256553F, 0.7677092871F, 0.7680926100F, 0.7684756239F,
+  0.7688583284F, 0.7692407232F, 0.7696228080F, 0.7700045826F,
+  0.7703860467F, 0.7707671999F, 0.7711480420F, 0.7715285728F,
+  0.7719087918F, 0.7722886989F, 0.7726682938F, 0.7730475762F,
+  0.7734265458F, 0.7738052023F, 0.7741835454F, 0.7745615750F,
+  0.7749392906F, 0.7753166921F, 0.7756937791F, 0.7760705514F,
+  0.7764470087F, 0.7768231508F, 0.7771989773F, 0.7775744880F,
+  0.7779496827F, 0.7783245610F, 0.7786991227F, 0.7790733676F,
+  0.7794472953F, 0.7798209056F, 0.7801941982F, 0.7805671729F,
+  0.7809398294F, 0.7813121675F, 0.7816841869F, 0.7820558873F,
+  0.7824272684F, 0.7827983301F, 0.7831690720F, 0.7835394940F,
+  0.7839095957F, 0.7842793768F, 0.7846488373F, 0.7850179767F,
+  0.7853867948F, 0.7857552914F, 0.7861234663F, 0.7864913191F,
+  0.7868588497F, 0.7872260578F, 0.7875929431F, 0.7879595055F,
+  0.7883257445F, 0.7886916601F, 0.7890572520F, 0.7894225198F,
+  0.7897874635F, 0.7901520827F, 0.7905163772F, 0.7908803468F,
+  0.7912439912F, 0.7916073102F, 0.7919703035F, 0.7923329710F,
+  0.7926953124F, 0.7930573274F, 0.7934190158F, 0.7937803774F,
+  0.7941414120F, 0.7945021193F, 0.7948624991F, 0.7952225511F,
+  0.7955822752F, 0.7959416711F, 0.7963007387F, 0.7966594775F,
+  0.7970178875F, 0.7973759685F, 0.7977337201F, 0.7980911422F,
+  0.7984482346F, 0.7988049970F, 0.7991614292F, 0.7995175310F,
+  0.7998733022F, 0.8002287426F, 0.8005838519F, 0.8009386299F,
+  0.8012930765F, 0.8016471914F, 0.8020009744F, 0.8023544253F,
+  0.8027075438F, 0.8030603298F, 0.8034127831F, 0.8037649035F,
+  0.8041166906F, 0.8044681445F, 0.8048192647F, 0.8051700512F,
+  0.8055205038F, 0.8058706222F, 0.8062204062F, 0.8065698556F,
+  0.8069189702F, 0.8072677499F, 0.8076161944F, 0.8079643036F,
+  0.8083120772F, 0.8086595151F, 0.8090066170F, 0.8093533827F,
+  0.8096998122F, 0.8100459051F, 0.8103916613F, 0.8107370806F,
+  0.8110821628F, 0.8114269077F, 0.8117713151F, 0.8121153849F,
+  0.8124591169F, 0.8128025108F, 0.8131455666F, 0.8134882839F,
+  0.8138306627F, 0.8141727027F, 0.8145144038F, 0.8148557658F,
+  0.8151967886F, 0.8155374718F, 0.8158778154F, 0.8162178192F,
+  0.8165574830F, 0.8168968067F, 0.8172357900F, 0.8175744328F,
+  0.8179127349F, 0.8182506962F, 0.8185883164F, 0.8189255955F,
+  0.8192625332F, 0.8195991295F, 0.8199353840F, 0.8202712967F,
+  0.8206068673F, 0.8209420958F, 0.8212769820F, 0.8216115256F,
+  0.8219457266F, 0.8222795848F, 0.8226131000F, 0.8229462721F,
+  0.8232791009F, 0.8236115863F, 0.8239437280F, 0.8242755260F,
+  0.8246069801F, 0.8249380901F, 0.8252688559F, 0.8255992774F,
+  0.8259293544F, 0.8262590867F, 0.8265884741F, 0.8269175167F,
+  0.8272462141F, 0.8275745663F, 0.8279025732F, 0.8282302344F,
+  0.8285575501F, 0.8288845199F, 0.8292111437F, 0.8295374215F,
+  0.8298633530F, 0.8301889382F, 0.8305141768F, 0.8308390688F,
+  0.8311636141F, 0.8314878124F, 0.8318116637F, 0.8321351678F,
+  0.8324583246F, 0.8327811340F, 0.8331035957F, 0.8334257098F,
+  0.8337474761F, 0.8340688944F, 0.8343899647F, 0.8347106867F,
+  0.8350310605F, 0.8353510857F, 0.8356707624F, 0.8359900904F,
+  0.8363090696F, 0.8366276999F, 0.8369459811F, 0.8372639131F,
+  0.8375814958F, 0.8378987292F, 0.8382156130F, 0.8385321472F,
+  0.8388483316F, 0.8391641662F, 0.8394796508F, 0.8397947853F,
+  0.8401095697F, 0.8404240037F, 0.8407380873F, 0.8410518204F,
+  0.8413652029F, 0.8416782347F, 0.8419909156F, 0.8423032456F,
+  0.8426152245F, 0.8429268523F, 0.8432381289F, 0.8435490541F,
+  0.8438596279F, 0.8441698502F, 0.8444797208F, 0.8447892396F,
+  0.8450984067F, 0.8454072218F, 0.8457156849F, 0.8460237959F,
+  0.8463315547F, 0.8466389612F, 0.8469460154F, 0.8472527170F,
+  0.8475590661F, 0.8478650625F, 0.8481707063F, 0.8484759971F,
+  0.8487809351F, 0.8490855201F, 0.8493897521F, 0.8496936308F,
+  0.8499971564F, 0.8503003286F, 0.8506031474F, 0.8509056128F,
+  0.8512077246F, 0.8515094828F, 0.8518108872F, 0.8521119379F,
+  0.8524126348F, 0.8527129777F, 0.8530129666F, 0.8533126015F,
+  0.8536118822F, 0.8539108087F, 0.8542093809F, 0.8545075988F,
+  0.8548054623F, 0.8551029712F, 0.8554001257F, 0.8556969255F,
+  0.8559933707F, 0.8562894611F, 0.8565851968F, 0.8568805775F,
+  0.8571756034F, 0.8574702743F, 0.8577645902F, 0.8580585509F,
+  0.8583521566F, 0.8586454070F, 0.8589383021F, 0.8592308420F,
+  0.8595230265F, 0.8598148556F, 0.8601063292F, 0.8603974473F,
+  0.8606882098F, 0.8609786167F, 0.8612686680F, 0.8615583636F,
+  0.8618477034F, 0.8621366874F, 0.8624253156F, 0.8627135878F,
+  0.8630015042F, 0.8632890646F, 0.8635762690F, 0.8638631173F,
+  0.8641496096F, 0.8644357457F, 0.8647215257F, 0.8650069495F,
+  0.8652920171F, 0.8655767283F, 0.8658610833F, 0.8661450820F,
+  0.8664287243F, 0.8667120102F, 0.8669949397F, 0.8672775127F,
+  0.8675597293F, 0.8678415894F, 0.8681230929F, 0.8684042398F,
+  0.8686850302F, 0.8689654640F, 0.8692455412F, 0.8695252617F,
+  0.8698046255F, 0.8700836327F, 0.8703622831F, 0.8706405768F,
+  0.8709185138F, 0.8711960940F, 0.8714733174F, 0.8717501840F,
+  0.8720266939F, 0.8723028469F, 0.8725786430F, 0.8728540824F,
+  0.8731291648F, 0.8734038905F, 0.8736782592F, 0.8739522711F,
+  0.8742259261F, 0.8744992242F, 0.8747721653F, 0.8750447496F,
+  0.8753169770F, 0.8755888475F, 0.8758603611F, 0.8761315177F,
+  0.8764023175F, 0.8766727603F, 0.8769428462F, 0.8772125752F,
+  0.8774819474F, 0.8777509626F, 0.8780196209F, 0.8782879224F,
+  0.8785558669F, 0.8788234546F, 0.8790906854F, 0.8793575594F,
+  0.8796240765F, 0.8798902368F, 0.8801560403F, 0.8804214870F,
+  0.8806865768F, 0.8809513099F, 0.8812156863F, 0.8814797059F,
+  0.8817433687F, 0.8820066749F, 0.8822696243F, 0.8825322171F,
+  0.8827944532F, 0.8830563327F, 0.8833178556F, 0.8835790219F,
+  0.8838398316F, 0.8841002848F, 0.8843603815F, 0.8846201217F,
+  0.8848795054F, 0.8851385327F, 0.8853972036F, 0.8856555182F,
+  0.8859134764F, 0.8861710783F, 0.8864283239F, 0.8866852133F,
+  0.8869417464F, 0.8871979234F, 0.8874537443F, 0.8877092090F,
+  0.8879643177F, 0.8882190704F, 0.8884734671F, 0.8887275078F,
+  0.8889811927F, 0.8892345216F, 0.8894874948F, 0.8897401122F,
+  0.8899923738F, 0.8902442798F, 0.8904958301F, 0.8907470248F,
+  0.8909978640F, 0.8912483477F, 0.8914984759F, 0.8917482487F,
+  0.8919976662F, 0.8922467284F, 0.8924954353F, 0.8927437871F,
+  0.8929917837F, 0.8932394252F, 0.8934867118F, 0.8937336433F,
+  0.8939802199F, 0.8942264417F, 0.8944723087F, 0.8947178210F,
+  0.8949629785F, 0.8952077815F, 0.8954522299F, 0.8956963239F,
+  0.8959400634F, 0.8961834486F, 0.8964264795F, 0.8966691561F,
+  0.8969114786F, 0.8971534470F, 0.8973950614F, 0.8976363219F,
+  0.8978772284F, 0.8981177812F, 0.8983579802F, 0.8985978256F,
+  0.8988373174F, 0.8990764556F, 0.8993152405F, 0.8995536720F,
+  0.8997917502F, 0.9000294751F, 0.9002668470F, 0.9005038658F,
+  0.9007405317F, 0.9009768446F, 0.9012128048F, 0.9014484123F,
+  0.9016836671F, 0.9019185693F, 0.9021531191F, 0.9023873165F,
+  0.9026211616F, 0.9028546546F, 0.9030877954F, 0.9033205841F,
+  0.9035530210F, 0.9037851059F, 0.9040168392F, 0.9042482207F,
+  0.9044792507F, 0.9047099293F, 0.9049402564F, 0.9051702323F,
+  0.9053998569F, 0.9056291305F, 0.9058580531F, 0.9060866248F,
+  0.9063148457F, 0.9065427159F, 0.9067702355F, 0.9069974046F,
+  0.9072242233F, 0.9074506917F, 0.9076768100F, 0.9079025782F,
+  0.9081279964F, 0.9083530647F, 0.9085777833F, 0.9088021523F,
+  0.9090261717F, 0.9092498417F, 0.9094731623F, 0.9096961338F,
+  0.9099187561F, 0.9101410295F, 0.9103629540F, 0.9105845297F,
+  0.9108057568F, 0.9110266354F, 0.9112471656F, 0.9114673475F,
+  0.9116871812F, 0.9119066668F, 0.9121258046F, 0.9123445945F,
+  0.9125630367F, 0.9127811314F, 0.9129988786F, 0.9132162785F,
+  0.9134333312F, 0.9136500368F, 0.9138663954F, 0.9140824073F,
+  0.9142980724F, 0.9145133910F, 0.9147283632F, 0.9149429890F,
+  0.9151572687F, 0.9153712023F, 0.9155847900F, 0.9157980319F,
+  0.9160109282F, 0.9162234790F, 0.9164356844F, 0.9166475445F,
+  0.9168590595F, 0.9170702296F, 0.9172810548F, 0.9174915354F,
+  0.9177016714F, 0.9179114629F, 0.9181209102F, 0.9183300134F,
+  0.9185387726F, 0.9187471879F, 0.9189552595F, 0.9191629876F,
+  0.9193703723F, 0.9195774136F, 0.9197841119F, 0.9199904672F,
+  0.9201964797F, 0.9204021495F, 0.9206074767F, 0.9208124616F,
+  0.9210171043F, 0.9212214049F, 0.9214253636F, 0.9216289805F,
+  0.9218322558F, 0.9220351896F, 0.9222377821F, 0.9224400335F,
+  0.9226419439F, 0.9228435134F, 0.9230447423F, 0.9232456307F,
+  0.9234461787F, 0.9236463865F, 0.9238462543F, 0.9240457822F,
+  0.9242449704F, 0.9244438190F, 0.9246423282F, 0.9248404983F,
+  0.9250383293F, 0.9252358214F, 0.9254329747F, 0.9256297896F,
+  0.9258262660F, 0.9260224042F, 0.9262182044F, 0.9264136667F,
+  0.9266087913F, 0.9268035783F, 0.9269980280F, 0.9271921405F,
+  0.9273859160F, 0.9275793546F, 0.9277724566F, 0.9279652221F,
+  0.9281576513F, 0.9283497443F, 0.9285415014F, 0.9287329227F,
+  0.9289240084F, 0.9291147586F, 0.9293051737F, 0.9294952536F,
+  0.9296849987F, 0.9298744091F, 0.9300634850F, 0.9302522266F,
+  0.9304406340F, 0.9306287074F, 0.9308164471F, 0.9310038532F,
+  0.9311909259F, 0.9313776654F, 0.9315640719F, 0.9317501455F,
+  0.9319358865F, 0.9321212951F, 0.9323063713F, 0.9324911155F,
+  0.9326755279F, 0.9328596085F, 0.9330433577F, 0.9332267756F,
+  0.9334098623F, 0.9335926182F, 0.9337750434F, 0.9339571380F,
+  0.9341389023F, 0.9343203366F, 0.9345014409F, 0.9346822155F,
+  0.9348626606F, 0.9350427763F, 0.9352225630F, 0.9354020207F,
+  0.9355811498F, 0.9357599503F, 0.9359384226F, 0.9361165667F,
+  0.9362943830F, 0.9364718716F, 0.9366490327F, 0.9368258666F,
+  0.9370023733F, 0.9371785533F, 0.9373544066F, 0.9375299335F,
+  0.9377051341F, 0.9378800087F, 0.9380545576F, 0.9382287809F,
+  0.9384026787F, 0.9385762515F, 0.9387494993F, 0.9389224223F,
+  0.9390950209F, 0.9392672951F, 0.9394392453F, 0.9396108716F,
+  0.9397821743F, 0.9399531536F, 0.9401238096F, 0.9402941427F,
+  0.9404641530F, 0.9406338407F, 0.9408032061F, 0.9409722495F,
+  0.9411409709F, 0.9413093707F, 0.9414774491F, 0.9416452062F,
+  0.9418126424F, 0.9419797579F, 0.9421465528F, 0.9423130274F,
+  0.9424791819F, 0.9426450166F, 0.9428105317F, 0.9429757274F,
+  0.9431406039F, 0.9433051616F, 0.9434694005F, 0.9436333209F,
+  0.9437969232F, 0.9439602074F, 0.9441231739F, 0.9442858229F,
+  0.9444481545F, 0.9446101691F, 0.9447718669F, 0.9449332481F,
+  0.9450943129F, 0.9452550617F, 0.9454154945F, 0.9455756118F,
+  0.9457354136F, 0.9458949003F, 0.9460540721F, 0.9462129292F,
+  0.9463714719F, 0.9465297003F, 0.9466876149F, 0.9468452157F,
+  0.9470025031F, 0.9471594772F, 0.9473161384F, 0.9474724869F,
+  0.9476285229F, 0.9477842466F, 0.9479396584F, 0.9480947585F,
+  0.9482495470F, 0.9484040243F, 0.9485581906F, 0.9487120462F,
+  0.9488655913F, 0.9490188262F, 0.9491717511F, 0.9493243662F,
+  0.9494766718F, 0.9496286683F, 0.9497803557F, 0.9499317345F,
+  0.9500828047F, 0.9502335668F, 0.9503840209F, 0.9505341673F,
+  0.9506840062F, 0.9508335380F, 0.9509827629F, 0.9511316810F,
+  0.9512802928F, 0.9514285984F, 0.9515765982F, 0.9517242923F,
+  0.9518716810F, 0.9520187646F, 0.9521655434F, 0.9523120176F,
+  0.9524581875F, 0.9526040534F, 0.9527496154F, 0.9528948739F,
+  0.9530398292F, 0.9531844814F, 0.9533288310F, 0.9534728780F,
+  0.9536166229F, 0.9537600659F, 0.9539032071F, 0.9540460470F,
+  0.9541885858F, 0.9543308237F, 0.9544727611F, 0.9546143981F,
+  0.9547557351F, 0.9548967723F, 0.9550375100F, 0.9551779485F,
+  0.9553180881F, 0.9554579290F, 0.9555974714F, 0.9557367158F,
+  0.9558756623F, 0.9560143112F, 0.9561526628F, 0.9562907174F,
+  0.9564284752F, 0.9565659366F, 0.9567031017F, 0.9568399710F,
+  0.9569765446F, 0.9571128229F, 0.9572488061F, 0.9573844944F,
+  0.9575198883F, 0.9576549879F, 0.9577897936F, 0.9579243056F,
+  0.9580585242F, 0.9581924497F, 0.9583260824F, 0.9584594226F,
+  0.9585924705F, 0.9587252264F, 0.9588576906F, 0.9589898634F,
+  0.9591217452F, 0.9592533360F, 0.9593846364F, 0.9595156465F,
+  0.9596463666F, 0.9597767971F, 0.9599069382F, 0.9600367901F,
+  0.9601663533F, 0.9602956279F, 0.9604246143F, 0.9605533128F,
+  0.9606817236F, 0.9608098471F, 0.9609376835F, 0.9610652332F,
+  0.9611924963F, 0.9613194733F, 0.9614461644F, 0.9615725699F,
+  0.9616986901F, 0.9618245253F, 0.9619500757F, 0.9620753418F,
+  0.9622003238F, 0.9623250219F, 0.9624494365F, 0.9625735679F,
+  0.9626974163F, 0.9628209821F, 0.9629442656F, 0.9630672671F,
+  0.9631899868F, 0.9633124251F, 0.9634345822F, 0.9635564585F,
+  0.9636780543F, 0.9637993699F, 0.9639204056F, 0.9640411616F,
+  0.9641616383F, 0.9642818359F, 0.9644017549F, 0.9645213955F,
+  0.9646407579F, 0.9647598426F, 0.9648786497F, 0.9649971797F,
+  0.9651154328F, 0.9652334092F, 0.9653511095F, 0.9654685337F,
+  0.9655856823F, 0.9657025556F, 0.9658191538F, 0.9659354773F,
+  0.9660515263F, 0.9661673013F, 0.9662828024F, 0.9663980300F,
+  0.9665129845F, 0.9666276660F, 0.9667420750F, 0.9668562118F,
+  0.9669700766F, 0.9670836698F, 0.9671969917F, 0.9673100425F,
+  0.9674228227F, 0.9675353325F, 0.9676475722F, 0.9677595422F,
+  0.9678712428F, 0.9679826742F, 0.9680938368F, 0.9682047309F,
+  0.9683153569F, 0.9684257150F, 0.9685358056F, 0.9686456289F,
+  0.9687551853F, 0.9688644752F, 0.9689734987F, 0.9690822564F,
+  0.9691907483F, 0.9692989750F, 0.9694069367F, 0.9695146337F,
+  0.9696220663F, 0.9697292349F, 0.9698361398F, 0.9699427813F,
+  0.9700491597F, 0.9701552754F, 0.9702611286F, 0.9703667197F,
+  0.9704720490F, 0.9705771169F, 0.9706819236F, 0.9707864695F,
+  0.9708907549F, 0.9709947802F, 0.9710985456F, 0.9712020514F,
+  0.9713052981F, 0.9714082859F, 0.9715110151F, 0.9716134862F,
+  0.9717156993F, 0.9718176549F, 0.9719193532F, 0.9720207946F,
+  0.9721219794F, 0.9722229080F, 0.9723235806F, 0.9724239976F,
+  0.9725241593F, 0.9726240661F, 0.9727237183F, 0.9728231161F,
+  0.9729222601F, 0.9730211503F, 0.9731197873F, 0.9732181713F,
+  0.9733163027F, 0.9734141817F, 0.9735118088F, 0.9736091842F,
+  0.9737063083F, 0.9738031814F, 0.9738998039F, 0.9739961760F,
+  0.9740922981F, 0.9741881706F, 0.9742837938F, 0.9743791680F,
+  0.9744742935F, 0.9745691707F, 0.9746637999F, 0.9747581814F,
+  0.9748523157F, 0.9749462029F, 0.9750398435F, 0.9751332378F,
+  0.9752263861F, 0.9753192887F, 0.9754119461F, 0.9755043585F,
+  0.9755965262F, 0.9756884496F, 0.9757801291F, 0.9758715650F,
+  0.9759627575F, 0.9760537071F, 0.9761444141F, 0.9762348789F,
+  0.9763251016F, 0.9764150828F, 0.9765048228F, 0.9765943218F,
+  0.9766835802F, 0.9767725984F, 0.9768613767F, 0.9769499154F,
+  0.9770382149F, 0.9771262755F, 0.9772140976F, 0.9773016815F,
+  0.9773890275F, 0.9774761360F, 0.9775630073F, 0.9776496418F,
+  0.9777360398F, 0.9778222016F, 0.9779081277F, 0.9779938182F,
+  0.9780792736F, 0.9781644943F, 0.9782494805F, 0.9783342326F,
+  0.9784187509F, 0.9785030359F, 0.9785870877F, 0.9786709069F,
+  0.9787544936F, 0.9788378484F, 0.9789209714F, 0.9790038631F,
+  0.9790865238F, 0.9791689538F, 0.9792511535F, 0.9793331232F,
+  0.9794148633F, 0.9794963742F, 0.9795776561F, 0.9796587094F,
+  0.9797395345F, 0.9798201316F, 0.9799005013F, 0.9799806437F,
+  0.9800605593F, 0.9801402483F, 0.9802197112F, 0.9802989483F,
+  0.9803779600F, 0.9804567465F, 0.9805353082F, 0.9806136455F,
+  0.9806917587F, 0.9807696482F, 0.9808473143F, 0.9809247574F,
+  0.9810019778F, 0.9810789759F, 0.9811557519F, 0.9812323064F,
+  0.9813086395F, 0.9813847517F, 0.9814606433F, 0.9815363147F,
+  0.9816117662F, 0.9816869981F, 0.9817620108F, 0.9818368047F,
+  0.9819113801F, 0.9819857374F, 0.9820598769F, 0.9821337989F,
+  0.9822075038F, 0.9822809920F, 0.9823542638F, 0.9824273195F,
+  0.9825001596F, 0.9825727843F, 0.9826451940F, 0.9827173891F,
+  0.9827893700F, 0.9828611368F, 0.9829326901F, 0.9830040302F,
+  0.9830751574F, 0.9831460720F, 0.9832167745F, 0.9832872652F,
+  0.9833575444F, 0.9834276124F, 0.9834974697F, 0.9835671166F,
+  0.9836365535F, 0.9837057806F, 0.9837747983F, 0.9838436071F,
+  0.9839122072F, 0.9839805990F, 0.9840487829F, 0.9841167591F,
+  0.9841845282F, 0.9842520903F, 0.9843194459F, 0.9843865953F,
+  0.9844535389F, 0.9845202771F, 0.9845868101F, 0.9846531383F,
+  0.9847192622F, 0.9847851820F, 0.9848508980F, 0.9849164108F,
+  0.9849817205F, 0.9850468276F, 0.9851117324F, 0.9851764352F,
+  0.9852409365F, 0.9853052366F, 0.9853693358F, 0.9854332344F,
+  0.9854969330F, 0.9855604317F, 0.9856237309F, 0.9856868310F,
+  0.9857497325F, 0.9858124355F, 0.9858749404F, 0.9859372477F,
+  0.9859993577F, 0.9860612707F, 0.9861229871F, 0.9861845072F,
+  0.9862458315F, 0.9863069601F, 0.9863678936F, 0.9864286322F,
+  0.9864891764F, 0.9865495264F, 0.9866096826F, 0.9866696454F,
+  0.9867294152F, 0.9867889922F, 0.9868483769F, 0.9869075695F,
+  0.9869665706F, 0.9870253803F, 0.9870839991F, 0.9871424273F,
+  0.9872006653F, 0.9872587135F, 0.9873165721F, 0.9873742415F,
+  0.9874317222F, 0.9874890144F, 0.9875461185F, 0.9876030348F,
+  0.9876597638F, 0.9877163057F, 0.9877726610F, 0.9878288300F,
+  0.9878848130F, 0.9879406104F, 0.9879962225F, 0.9880516497F,
+  0.9881068924F, 0.9881619509F, 0.9882168256F, 0.9882715168F,
+  0.9883260249F, 0.9883803502F, 0.9884344931F, 0.9884884539F,
+  0.9885422331F, 0.9885958309F, 0.9886492477F, 0.9887024838F,
+  0.9887555397F, 0.9888084157F, 0.9888611120F, 0.9889136292F,
+  0.9889659675F, 0.9890181273F, 0.9890701089F, 0.9891219128F,
+  0.9891735392F, 0.9892249885F, 0.9892762610F, 0.9893273572F,
+  0.9893782774F, 0.9894290219F, 0.9894795911F, 0.9895299853F,
+  0.9895802049F, 0.9896302502F, 0.9896801217F, 0.9897298196F,
+  0.9897793443F, 0.9898286961F, 0.9898778755F, 0.9899268828F,
+  0.9899757183F, 0.9900243823F, 0.9900728753F, 0.9901211976F,
+  0.9901693495F, 0.9902173314F, 0.9902651436F, 0.9903127865F,
+  0.9903602605F, 0.9904075659F, 0.9904547031F, 0.9905016723F,
+  0.9905484740F, 0.9905951086F, 0.9906415763F, 0.9906878775F,
+  0.9907340126F, 0.9907799819F, 0.9908257858F, 0.9908714247F,
+  0.9909168988F, 0.9909622086F, 0.9910073543F, 0.9910523364F,
+  0.9910971552F, 0.9911418110F, 0.9911863042F, 0.9912306351F,
+  0.9912748042F, 0.9913188117F, 0.9913626580F, 0.9914063435F,
+  0.9914498684F, 0.9914932333F, 0.9915364383F, 0.9915794839F,
+  0.9916223703F, 0.9916650981F, 0.9917076674F, 0.9917500787F,
+  0.9917923323F, 0.9918344286F, 0.9918763679F, 0.9919181505F,
+  0.9919597769F, 0.9920012473F, 0.9920425621F, 0.9920837217F,
+  0.9921247263F, 0.9921655765F, 0.9922062724F, 0.9922468145F,
+  0.9922872030F, 0.9923274385F, 0.9923675211F, 0.9924074513F,
+  0.9924472294F, 0.9924868557F, 0.9925263306F, 0.9925656544F,
+  0.9926048275F, 0.9926438503F, 0.9926827230F, 0.9927214461F,
+  0.9927600199F, 0.9927984446F, 0.9928367208F, 0.9928748486F,
+  0.9929128285F, 0.9929506608F, 0.9929883459F, 0.9930258841F,
+  0.9930632757F, 0.9931005211F, 0.9931376207F, 0.9931745747F,
+  0.9932113836F, 0.9932480476F, 0.9932845671F, 0.9933209425F,
+  0.9933571742F, 0.9933932623F, 0.9934292074F, 0.9934650097F,
+  0.9935006696F, 0.9935361874F, 0.9935715635F, 0.9936067982F,
+  0.9936418919F, 0.9936768448F, 0.9937116574F, 0.9937463300F,
+  0.9937808629F, 0.9938152565F, 0.9938495111F, 0.9938836271F,
+  0.9939176047F, 0.9939514444F, 0.9939851465F, 0.9940187112F,
+  0.9940521391F, 0.9940854303F, 0.9941185853F, 0.9941516044F,
+  0.9941844879F, 0.9942172361F, 0.9942498495F, 0.9942823283F,
+  0.9943146729F, 0.9943468836F, 0.9943789608F, 0.9944109047F,
+  0.9944427158F, 0.9944743944F, 0.9945059408F, 0.9945373553F,
+  0.9945686384F, 0.9945997902F, 0.9946308112F, 0.9946617017F,
+  0.9946924621F, 0.9947230926F, 0.9947535937F, 0.9947839656F,
+  0.9948142086F, 0.9948443232F, 0.9948743097F, 0.9949041683F,
+  0.9949338995F, 0.9949635035F, 0.9949929807F, 0.9950223315F,
+  0.9950515561F, 0.9950806549F, 0.9951096282F, 0.9951384764F,
+  0.9951671998F, 0.9951957987F, 0.9952242735F, 0.9952526245F,
+  0.9952808520F, 0.9953089564F, 0.9953369380F, 0.9953647971F,
+  0.9953925340F, 0.9954201491F, 0.9954476428F, 0.9954750153F,
+  0.9955022670F, 0.9955293981F, 0.9955564092F, 0.9955833003F,
+  0.9956100720F, 0.9956367245F, 0.9956632582F, 0.9956896733F,
+  0.9957159703F, 0.9957421494F, 0.9957682110F, 0.9957941553F,
+  0.9958199828F, 0.9958456937F, 0.9958712884F, 0.9958967672F,
+  0.9959221305F, 0.9959473784F, 0.9959725115F, 0.9959975300F,
+  0.9960224342F, 0.9960472244F, 0.9960719011F, 0.9960964644F,
+  0.9961209148F, 0.9961452525F, 0.9961694779F, 0.9961935913F,
+  0.9962175930F, 0.9962414834F, 0.9962652627F, 0.9962889313F,
+  0.9963124895F, 0.9963359377F, 0.9963592761F, 0.9963825051F,
+  0.9964056250F, 0.9964286361F, 0.9964515387F, 0.9964743332F,
+  0.9964970198F, 0.9965195990F, 0.9965420709F, 0.9965644360F,
+  0.9965866946F, 0.9966088469F, 0.9966308932F, 0.9966528340F,
+  0.9966746695F, 0.9966964001F, 0.9967180260F, 0.9967395475F,
+  0.9967609651F, 0.9967822789F, 0.9968034894F, 0.9968245968F,
+  0.9968456014F, 0.9968665036F, 0.9968873037F, 0.9969080019F,
+  0.9969285987F, 0.9969490942F, 0.9969694889F, 0.9969897830F,
+  0.9970099769F, 0.9970300708F, 0.9970500651F, 0.9970699601F,
+  0.9970897561F, 0.9971094533F, 0.9971290522F, 0.9971485531F,
+  0.9971679561F, 0.9971872617F, 0.9972064702F, 0.9972255818F,
+  0.9972445968F, 0.9972635157F, 0.9972823386F, 0.9973010659F,
+  0.9973196980F, 0.9973382350F, 0.9973566773F, 0.9973750253F,
+  0.9973932791F, 0.9974114392F, 0.9974295059F, 0.9974474793F,
+  0.9974653599F, 0.9974831480F, 0.9975008438F, 0.9975184476F,
+  0.9975359598F, 0.9975533806F, 0.9975707104F, 0.9975879495F,
+  0.9976050981F, 0.9976221566F, 0.9976391252F, 0.9976560043F,
+  0.9976727941F, 0.9976894950F, 0.9977061073F, 0.9977226312F,
+  0.9977390671F, 0.9977554152F, 0.9977716759F, 0.9977878495F,
+  0.9978039361F, 0.9978199363F, 0.9978358501F, 0.9978516780F,
+  0.9978674202F, 0.9978830771F, 0.9978986488F, 0.9979141358F,
+  0.9979295383F, 0.9979448566F, 0.9979600909F, 0.9979752417F,
+  0.9979903091F, 0.9980052936F, 0.9980201952F, 0.9980350145F,
+  0.9980497515F, 0.9980644067F, 0.9980789804F, 0.9980934727F,
+  0.9981078841F, 0.9981222147F, 0.9981364649F, 0.9981506350F,
+  0.9981647253F, 0.9981787360F, 0.9981926674F, 0.9982065199F,
+  0.9982202936F, 0.9982339890F, 0.9982476062F, 0.9982611456F,
+  0.9982746074F, 0.9982879920F, 0.9983012996F, 0.9983145304F,
+  0.9983276849F, 0.9983407632F, 0.9983537657F, 0.9983666926F,
+  0.9983795442F, 0.9983923208F, 0.9984050226F, 0.9984176501F,
+  0.9984302033F, 0.9984426827F, 0.9984550884F, 0.9984674208F,
+  0.9984796802F, 0.9984918667F, 0.9985039808F, 0.9985160227F,
+  0.9985279926F, 0.9985398909F, 0.9985517177F, 0.9985634734F,
+  0.9985751583F, 0.9985867727F, 0.9985983167F, 0.9986097907F,
+  0.9986211949F, 0.9986325297F, 0.9986437953F, 0.9986549919F,
+  0.9986661199F, 0.9986771795F, 0.9986881710F, 0.9986990946F,
+  0.9987099507F, 0.9987207394F, 0.9987314611F, 0.9987421161F,
+  0.9987527045F, 0.9987632267F, 0.9987736829F, 0.9987840734F,
+  0.9987943985F, 0.9988046584F, 0.9988148534F, 0.9988249838F,
+  0.9988350498F, 0.9988450516F, 0.9988549897F, 0.9988648641F,
+  0.9988746753F, 0.9988844233F, 0.9988941086F, 0.9989037313F,
+  0.9989132918F, 0.9989227902F, 0.9989322269F, 0.9989416021F,
+  0.9989509160F, 0.9989601690F, 0.9989693613F, 0.9989784931F,
+  0.9989875647F, 0.9989965763F, 0.9990055283F, 0.9990144208F,
+  0.9990232541F, 0.9990320286F, 0.9990407443F, 0.9990494016F,
+  0.9990580008F, 0.9990665421F, 0.9990750257F, 0.9990834519F,
+  0.9990918209F, 0.9991001331F, 0.9991083886F, 0.9991165877F,
+  0.9991247307F, 0.9991328177F, 0.9991408491F, 0.9991488251F,
+  0.9991567460F, 0.9991646119F, 0.9991724232F, 0.9991801801F,
+  0.9991878828F, 0.9991955316F, 0.9992031267F, 0.9992106684F,
+  0.9992181569F, 0.9992255925F, 0.9992329753F, 0.9992403057F,
+  0.9992475839F, 0.9992548101F, 0.9992619846F, 0.9992691076F,
+  0.9992761793F, 0.9992832001F, 0.9992901701F, 0.9992970895F,
+  0.9993039587F, 0.9993107777F, 0.9993175470F, 0.9993242667F,
+  0.9993309371F, 0.9993375583F, 0.9993441307F, 0.9993506545F,
+  0.9993571298F, 0.9993635570F, 0.9993699362F, 0.9993762678F,
+  0.9993825519F, 0.9993887887F, 0.9993949785F, 0.9994011216F,
+  0.9994072181F, 0.9994132683F, 0.9994192725F, 0.9994252307F,
+  0.9994311434F, 0.9994370107F, 0.9994428327F, 0.9994486099F,
+  0.9994543423F, 0.9994600303F, 0.9994656739F, 0.9994712736F,
+  0.9994768294F, 0.9994823417F, 0.9994878105F, 0.9994932363F,
+  0.9994986191F, 0.9995039592F, 0.9995092568F, 0.9995145122F,
+  0.9995197256F, 0.9995248971F, 0.9995300270F, 0.9995351156F,
+  0.9995401630F, 0.9995451695F, 0.9995501352F, 0.9995550604F,
+  0.9995599454F, 0.9995647903F, 0.9995695953F, 0.9995743607F,
+  0.9995790866F, 0.9995837734F, 0.9995884211F, 0.9995930300F,
+  0.9995976004F, 0.9996021324F, 0.9996066263F, 0.9996110822F,
+  0.9996155004F, 0.9996198810F, 0.9996242244F, 0.9996285306F,
+  0.9996327999F, 0.9996370326F, 0.9996412287F, 0.9996453886F,
+  0.9996495125F, 0.9996536004F, 0.9996576527F, 0.9996616696F,
+  0.9996656512F, 0.9996695977F, 0.9996735094F, 0.9996773865F,
+  0.9996812291F, 0.9996850374F, 0.9996888118F, 0.9996925523F,
+  0.9996962591F, 0.9996999325F, 0.9997035727F, 0.9997071798F,
+  0.9997107541F, 0.9997142957F, 0.9997178049F, 0.9997212818F,
+  0.9997247266F, 0.9997281396F, 0.9997315209F, 0.9997348708F,
+  0.9997381893F, 0.9997414767F, 0.9997447333F, 0.9997479591F,
+  0.9997511544F, 0.9997543194F, 0.9997574542F, 0.9997605591F,
+  0.9997636342F, 0.9997666797F, 0.9997696958F, 0.9997726828F,
+  0.9997756407F, 0.9997785698F, 0.9997814703F, 0.9997843423F,
+  0.9997871860F, 0.9997900016F, 0.9997927894F, 0.9997955494F,
+  0.9997982818F, 0.9998009869F, 0.9998036648F, 0.9998063157F,
+  0.9998089398F, 0.9998115373F, 0.9998141082F, 0.9998166529F,
+  0.9998191715F, 0.9998216642F, 0.9998241311F, 0.9998265724F,
+  0.9998289884F, 0.9998313790F, 0.9998337447F, 0.9998360854F,
+  0.9998384015F, 0.9998406930F, 0.9998429602F, 0.9998452031F,
+  0.9998474221F, 0.9998496171F, 0.9998517885F, 0.9998539364F,
+  0.9998560610F, 0.9998581624F, 0.9998602407F, 0.9998622962F,
+  0.9998643291F, 0.9998663394F, 0.9998683274F, 0.9998702932F,
+  0.9998722370F, 0.9998741589F, 0.9998760591F, 0.9998779378F,
+  0.9998797952F, 0.9998816313F, 0.9998834464F, 0.9998852406F,
+  0.9998870141F, 0.9998887670F, 0.9998904995F, 0.9998922117F,
+  0.9998939039F, 0.9998955761F, 0.9998972285F, 0.9998988613F,
+  0.9999004746F, 0.9999020686F, 0.9999036434F, 0.9999051992F,
+  0.9999067362F, 0.9999082544F, 0.9999097541F, 0.9999112354F,
+  0.9999126984F, 0.9999141433F, 0.9999155703F, 0.9999169794F,
+  0.9999183709F, 0.9999197449F, 0.9999211014F, 0.9999224408F,
+  0.9999237631F, 0.9999250684F, 0.9999263570F, 0.9999276289F,
+  0.9999288843F, 0.9999301233F, 0.9999313461F, 0.9999325529F,
+  0.9999337437F, 0.9999349187F, 0.9999360780F, 0.9999372218F,
+  0.9999383503F, 0.9999394635F, 0.9999405616F, 0.9999416447F,
+  0.9999427129F, 0.9999437665F, 0.9999448055F, 0.9999458301F,
+  0.9999468404F, 0.9999478365F, 0.9999488185F, 0.9999497867F,
+  0.9999507411F, 0.9999516819F, 0.9999526091F, 0.9999535230F,
+  0.9999544236F, 0.9999553111F, 0.9999561856F, 0.9999570472F,
+  0.9999578960F, 0.9999587323F, 0.9999595560F, 0.9999603674F,
+  0.9999611666F, 0.9999619536F, 0.9999627286F, 0.9999634917F,
+  0.9999642431F, 0.9999649828F, 0.9999657110F, 0.9999664278F,
+  0.9999671334F, 0.9999678278F, 0.9999685111F, 0.9999691835F,
+  0.9999698451F, 0.9999704960F, 0.9999711364F, 0.9999717662F,
+  0.9999723858F, 0.9999729950F, 0.9999735942F, 0.9999741834F,
+  0.9999747626F, 0.9999753321F, 0.9999758919F, 0.9999764421F,
+  0.9999769828F, 0.9999775143F, 0.9999780364F, 0.9999785495F,
+  0.9999790535F, 0.9999795485F, 0.9999800348F, 0.9999805124F,
+  0.9999809813F, 0.9999814417F, 0.9999818938F, 0.9999823375F,
+  0.9999827731F, 0.9999832005F, 0.9999836200F, 0.9999840316F,
+  0.9999844353F, 0.9999848314F, 0.9999852199F, 0.9999856008F,
+  0.9999859744F, 0.9999863407F, 0.9999866997F, 0.9999870516F,
+  0.9999873965F, 0.9999877345F, 0.9999880656F, 0.9999883900F,
+  0.9999887078F, 0.9999890190F, 0.9999893237F, 0.9999896220F,
+  0.9999899140F, 0.9999901999F, 0.9999904796F, 0.9999907533F,
+  0.9999910211F, 0.9999912830F, 0.9999915391F, 0.9999917896F,
+  0.9999920345F, 0.9999922738F, 0.9999925077F, 0.9999927363F,
+  0.9999929596F, 0.9999931777F, 0.9999933907F, 0.9999935987F,
+  0.9999938018F, 0.9999940000F, 0.9999941934F, 0.9999943820F,
+  0.9999945661F, 0.9999947456F, 0.9999949206F, 0.9999950912F,
+  0.9999952575F, 0.9999954195F, 0.9999955773F, 0.9999957311F,
+  0.9999958807F, 0.9999960265F, 0.9999961683F, 0.9999963063F,
+  0.9999964405F, 0.9999965710F, 0.9999966979F, 0.9999968213F,
+  0.9999969412F, 0.9999970576F, 0.9999971707F, 0.9999972805F,
+  0.9999973871F, 0.9999974905F, 0.9999975909F, 0.9999976881F,
+  0.9999977824F, 0.9999978738F, 0.9999979624F, 0.9999980481F,
+  0.9999981311F, 0.9999982115F, 0.9999982892F, 0.9999983644F,
+  0.9999984370F, 0.9999985072F, 0.9999985750F, 0.9999986405F,
+  0.9999987037F, 0.9999987647F, 0.9999988235F, 0.9999988802F,
+  0.9999989348F, 0.9999989873F, 0.9999990379F, 0.9999990866F,
+  0.9999991334F, 0.9999991784F, 0.9999992217F, 0.9999992632F,
+  0.9999993030F, 0.9999993411F, 0.9999993777F, 0.9999994128F,
+  0.9999994463F, 0.9999994784F, 0.9999995091F, 0.9999995384F,
+  0.9999995663F, 0.9999995930F, 0.9999996184F, 0.9999996426F,
+  0.9999996657F, 0.9999996876F, 0.9999997084F, 0.9999997282F,
+  0.9999997469F, 0.9999997647F, 0.9999997815F, 0.9999997973F,
+  0.9999998123F, 0.9999998265F, 0.9999998398F, 0.9999998524F,
+  0.9999998642F, 0.9999998753F, 0.9999998857F, 0.9999998954F,
+  0.9999999045F, 0.9999999130F, 0.9999999209F, 0.9999999282F,
+  0.9999999351F, 0.9999999414F, 0.9999999472F, 0.9999999526F,
+  0.9999999576F, 0.9999999622F, 0.9999999664F, 0.9999999702F,
+  0.9999999737F, 0.9999999769F, 0.9999999798F, 0.9999999824F,
+  0.9999999847F, 0.9999999868F, 0.9999999887F, 0.9999999904F,
+  0.9999999919F, 0.9999999932F, 0.9999999943F, 0.9999999953F,
+  0.9999999961F, 0.9999999969F, 0.9999999975F, 0.9999999980F,
+  0.9999999985F, 0.9999999988F, 0.9999999991F, 0.9999999993F,
+  0.9999999995F, 0.9999999997F, 0.9999999998F, 0.9999999999F,
+  0.9999999999F, 1.0000000000F, 1.0000000000F, 1.0000000000F,
+  1.0000000000F, 1.0000000000F, 1.0000000000F, 1.0000000000F,
 };
 
 static float *vwin[8] = {
@@ -53393,7 +53404,7 @@ void _vorbis_apply_window(float *d,int *winno,long *blocksizes,
 			  int lW,int W,int nW){
   lW=(W?lW:0);
   nW=(W?nW:0);
-  
+
   {
     float *windowLW=vwin[winno[lW]];
     float *windowNW=vwin[winno[nW]];
@@ -53401,24 +53412,24 @@ void _vorbis_apply_window(float *d,int *winno,long *blocksizes,
     long n=blocksizes[W];
     long ln=blocksizes[lW];
     long rn=blocksizes[nW];
-    
+
     long leftbegin=n/4-ln/4;
     long leftend=leftbegin+ln/2;
-    
+
     long rightbegin=n/2+n/4-rn/4;
     long rightend=rightbegin+rn/2;
-    
+
     int i,p;
-    
+
     for(i=0;i<leftbegin;i++)
       d[i]=0.f;
-    
+
     for(p=0;i<leftend;i++,p++)
       d[i]*=windowLW[p];
-    
+
     for(i=rightbegin,p=rn/2-1;i<rightend;i++,p--)
       d[i]*=windowNW[p];
-    
+
     for(;i<n;i++)
       d[i]=0.f;
   }
@@ -53466,7 +53477,7 @@ extern int vorbis_lpc_to_lsp(float *lpc,float *lsp,int m);
 extern void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,
 				float *lsp,int m,
 				float amp,float ampoffset);
-  
+
 typedef struct {
   int ln;
   int  m;
@@ -53517,12 +53528,12 @@ static vorbis_info_floor *floor0_unpack (vorbis_info *vi,oggpack_buffer *opb){
   info->ampbits=oggpack_read(opb,6);
   info->ampdB=oggpack_read(opb,8);
   info->numbooks=oggpack_read(opb,4)+1;
-  
+
   if(info->order<1)goto err_out;
   if(info->rate<1)goto err_out;
   if(info->barkmap<1)goto err_out;
   if(info->numbooks<1)goto err_out;
-    
+
   for(j=0;j<info->numbooks;j++){
     info->books[j]=oggpack_read(opb,8);
     if(info->books[j]<0 || info->books[j]>=ci->books)goto err_out;
@@ -53557,7 +53568,7 @@ static void floor0_map_lazy_init(vorbis_block      *vb,
        floor(bark(rate/2-1)*C)=mapped-1
      floor(bark(rate/2)*C)=mapped */
     float scale=look->ln/toBARK(info->rate/2.f);
-    
+
     /* the mapping from a linear scale to a smaller bark scale is
        straightforward.  We do *not* make sure that the linear mapping
        does not skip bark-scale bins; the decoder simply skips them and
@@ -53566,7 +53577,7 @@ static void floor0_map_lazy_init(vorbis_block      *vb,
        accurate */
     look->linearmap[W]=_ogg_malloc((n+1)*sizeof(**look->linearmap));
     for(j=0;j<n;j++){
-      int val=floor( toBARK((info->rate/2.f)/n*j) 
+      int val=floor( toBARK((info->rate/2.f)/n*j)
 		     *scale); /* bark numbers represent band edges */
       if(val>=look->ln)val=look->ln-1; /* guard against the approximation */
       look->linearmap[W][j]=val;
@@ -53599,7 +53610,7 @@ static void *floor0_inverse1(vorbis_block *vb,vorbis_look_floor *i){
     long maxval=(1<<info->ampbits)-1;
     float amp=(float)ampraw/maxval*info->ampdB;
     int booknum=oggpack_read(&vb->opb,_ilog(info->numbooks));
-    
+
     if(booknum!=-1 && booknum<info->numbooks){ /* be paranoid */
       codec_setup_info  *ci=vb->vd->vi->codec_setup;
       codebook *b=ci->fullbooks+info->books[booknum];
@@ -53609,14 +53620,14 @@ static void *floor0_inverse1(vorbis_block *vb,vorbis_look_floor *i){
          smash; b->dim is provably more than we can overflow the
          vector */
       float *lsp=_vorbis_block_alloc(vb,sizeof(*lsp)*(look->m+b->dim+1));
-            
+
       for(j=0;j<look->m;j+=b->dim)
 	if(vorbis_book_decodev_set(b,lsp+j,&vb->opb,b->dim)==-1)goto eop;
       for(j=0;j<look->m;){
 	for(k=0;k<b->dim;k++,j++)lsp[j]+=last;
 	last=lsp[j-1];
       }
-      
+
       lsp[look->m]=amp;
       return(lsp);
     }
@@ -53629,7 +53640,7 @@ static int floor0_inverse2(vorbis_block *vb,vorbis_look_floor *i,
 			   void *memo,float *out){
   vorbis_look_floor0 *look=(vorbis_look_floor0 *)i;
   vorbis_info_floor0 *info=look->vi;
-  
+
   floor0_map_lazy_init(vb,info,look);
 
   if(memo){
@@ -53715,7 +53726,7 @@ extern float vorbis_fromdBlook(float a);
 extern long vorbis_invsqlook_i(long a,long e);
 extern long vorbis_coslook_i(long a);
 extern float vorbis_fromdBlook_i(long a);
-#endif 
+#endif
 
 /* three possible LSP to f curve functions; the exact computation
    (float), a lookup based float implementation, and an integer
@@ -53969,16 +53980,16 @@ float vorbis_fromdBlook(float a){
 
 #ifdef INT_LOOKUP
 /* interpolated 1./sqrt(p) where .5 <= a < 1. (.100000... to .111111...) in
-   16.16 format 
+   16.16 format
 
    returns in m.8 format */
 long vorbis_invsqlook_i(long a,long e){
-  long i=(a&0x7fff)>>(INVSQ_LOOKUP_I_SHIFT-1); 
+  long i=(a&0x7fff)>>(INVSQ_LOOKUP_I_SHIFT-1);
   long d=(a&INVSQ_LOOKUP_I_MASK)<<(16-INVSQ_LOOKUP_I_SHIFT); /*  0.16 */
   long val=INVSQ_LOOKUP_I[i]-                                /*  1.16 */
     (((INVSQ_LOOKUP_I[i]-INVSQ_LOOKUP_I[i+1])*               /*  0.16 */
       d)>>16);                                               /* result 1.16 */
-  
+
   e+=32;
   if(e&1)val=(val*5792)>>13; /* multiply val by 1/sqrt(2) */
   e=(e>>1)-8;
@@ -54012,7 +54023,7 @@ void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,float *lsp,int m,
   int i;
   float wdel=M_PI/ln;
   vorbis_fpu_control fpu;
-  
+
   vorbis_fpu_setround(&fpu);
   for(i=0;i<m;i++)lsp[i]=vorbis_coslook(lsp[i]);
 
@@ -54045,9 +54056,9 @@ void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,float *lsp,int m,
     }
 
     q=frexp(p+q,&qexp);
-    q=vorbis_fromdBlook(amp*             
+    q=vorbis_fromdBlook(amp*
 			vorbis_invsqlook(q)*
-			vorbis_invsq2explook(qexp+m)- 
+			vorbis_invsq2explook(qexp+m)-
 			ampoffset);
 
     do{
@@ -54126,7 +54137,7 @@ void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,float *lsp,int m,
       if(!(shift=MLOOP_1[(pi|qi)>>25]))
 	if(!(shift=MLOOP_2[(pi|qi)>>19]))
 	  shift=MLOOP_3[(pi|qi)>>16];
-      
+
       pi>>=shift;
       qi>>=shift;
       qexp+=shift-14*((m+1)>>1);
@@ -54143,7 +54154,7 @@ void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,float *lsp,int m,
 
       /* p*=p(1-w), q*=q(1+w), let normalization drift because it isn't
 	 worth tracking step by step */
-      
+
       pi>>=shift;
       qi>>=shift;
       qexp+=shift-7*m;
@@ -54151,27 +54162,27 @@ void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,float *lsp,int m,
       pi=((pi*pi)>>16);
       qi=((qi*qi)>>16);
       qexp=qexp*2+m;
-      
+
       pi*=(1<<14)-wi;
       qi*=(1<<14)+wi;
       qi=(qi+pi)>>14;
-      
+
     }
-    
+
 
     /* we've let the normalization drift because it wasn't important;
        however, for the lookup, things must be normalized again.  We
        need at most one right shift or a number of left shifts */
 
     if(qi&0xffff0000){ /* checks for 1.xxxxxxxxxxxxxxxx */
-      qi>>=1; qexp++; 
+      qi>>=1; qexp++;
     }else
       while(qi && !(qi&0x8000)){ /* checks for 0.0xxxxxxxxxxxxxxx or less*/
-	qi<<=1; qexp--; 
+	qi<<=1; qexp--;
       }
 
     amp=vorbis_fromdBlook_i(ampi*                     /*  n.4         */
-			    vorbis_invsqlook_i(qi,qexp)- 
+			    vorbis_invsqlook_i(qi,qexp)-
 			                              /*  m.8, m+n<=8 */
 			    ampoffseti);              /*  8.12[0]     */
 
@@ -54180,7 +54191,7 @@ void vorbis_lsp_to_curve(float *curve,int *map,int n,int ln,float *lsp,int m,
   }
 }
 
-#else 
+#else
 
 /* old, nonoptimized but simple version for any poor sap who needs to
    figure out what the hell this code does, or wants the other
@@ -54232,7 +54243,7 @@ static void cheby(float *g, int ord) {
   for(i=2; i<= ord; i++) {
     for(j=ord; j >= i; j--) {
       g[j-2] -= g[j];
-      g[j] += g[j]; 
+      g[j] += g[j];
     }
   }
 }
@@ -54261,14 +54272,14 @@ static int Laguerre_With_Deflation(float *a,int ord,float *r){
     /* iterate a root */
     while(1){
       double p=defl[m],pp=0.f,ppp=0.f,denom;
-      
+
       /* eval the polynomial and its first two derivatives */
       for(i=m;i>0;i--){
 	ppp = new*ppp + pp;
 	pp  = new*pp  + p;
 	p   = new*p   + defl[i-1];
       }
-      
+
       /* Laguerre's method */
       denom=(m-1) * ((m-1)*pp*pp - m*p*ppp);
       if(denom<0)
@@ -54287,14 +54298,14 @@ static int Laguerre_With_Deflation(float *a,int ord,float *r){
 
       if(delta<0.f)delta*=-1;
 
-      if(fabs(delta/new)<10e-12)break; 
+      if(fabs(delta/new)<10e-12)break;
       lastdelta=delta;
     }
 
     r[m-1]=new;
 
     /* forward deflation */
-    
+
     for(i=m;i>0;i--)
       defl[i-1]+=new*defl[i];
     defl++;
@@ -54311,10 +54322,10 @@ static int Newton_Raphson(float *a,int ord,float *r){
   double *root=alloca(ord*sizeof(*root));
 
   for(i=0; i<ord;i++) root[i] = r[i];
-  
+
   while(error>1e-20){
     error=0;
-    
+
     for(i=0; i<ord; i++) { /* Update each point. */
       double pp=0.,delta;
       double rooti=root[i];
@@ -54329,9 +54340,9 @@ static int Newton_Raphson(float *a,int ord,float *r){
       root[i] -= delta;
       error+= delta*delta;
     }
-    
+
     if(count>40)return(-1);
-     
+
     count++;
   }
 
@@ -54361,12 +54372,12 @@ int vorbis_lpc_to_lsp(float *lpc,float *lsp,int m){
   /* Compute the first half of K & R F1 & F2 polynomials. */
   /* Compute half of the symmetric and antisymmetric polynomials. */
   /* Remove the roots at +1 and -1. */
-  
+
   g1[g1_order] = 1.f;
   for(i=1;i<=g1_order;i++) g1[g1_order-i] = lpc[i-1]+lpc[m-i];
   g2[g2_order] = 1.f;
   for(i=1;i<=g2_order;i++) g2[g2_order-i] = lpc[i-1]-lpc[m-i];
-  
+
   if(g1_order>g2_order){
     for(i=2; i<=g2_order;i++) g2[g2_order-i] += g2[g2_order-i+2];
   }else{
@@ -54421,7 +54432,7 @@ typedef struct {
   int sorted_index[VIF_POSIT+2];
   int forward_index[VIF_POSIT+2];
   int reverse_index[VIF_POSIT+2];
-  
+
   int hineighbor[VIF_POSIT];
   int loneighbor[VIF_POSIT];
   int posts;
@@ -54443,12 +54454,12 @@ typedef struct lsfit_acc{
   long ya;
   long x2a;
   long y2a;
-  long xya; 
+  long xya;
   long an;
 } lsfit_acc;
 
 /***********************************************/
- 
+
 static void floor1_free_info(vorbis_info_floor *i){
   vorbis_info_floor1 *info=(vorbis_info_floor1 *)i;
   if(info){
@@ -54504,12 +54515,12 @@ static void floor1_pack (vorbis_info_floor *i,oggpack_buffer *opb){
   }
 
   /* save out the post list */
-  oggpack_write(opb,info->mult-1,2);     /* only 1,2,3,4 legal now */ 
+  oggpack_write(opb,info->mult-1,2);     /* only 1,2,3,4 legal now */
   oggpack_write(opb,ilog2(maxposit),4);
   rangebits=ilog2(maxposit);
 
   for(j=0,k=0;j<info->partitions;j++){
-    count+=info->class_dim[info->partitionclass[j]]; 
+    count+=info->class_dim[info->partitionclass[j]];
     for(;k<count;k++)
       oggpack_write(opb,info->postlist[k+2],rangebits);
   }
@@ -54545,11 +54556,11 @@ static vorbis_info_floor *floor1_unpack (vorbis_info *vi,oggpack_buffer *opb){
   }
 
   /* read the post list */
-  info->mult=oggpack_read(opb,2)+1;     /* only 1,2,3,4 legal now */ 
+  info->mult=oggpack_read(opb,2)+1;     /* only 1,2,3,4 legal now */
   rangebits=oggpack_read(opb,4);
 
   for(j=0,k=0;j<info->partitions;j++){
-    count+=info->class_dim[info->partitionclass[j]]; 
+    count+=info->class_dim[info->partitionclass[j]];
     for(;k<count;k++){
       int t=info->postlist[k+2]=oggpack_read(opb,rangebits);
       if(t<0 || t>=(1<<rangebits))
@@ -54560,7 +54571,7 @@ static vorbis_info_floor *floor1_unpack (vorbis_info *vi,oggpack_buffer *opb){
   info->postlist[1]=1<<rangebits;
 
   return(info);
-  
+
  err_out:
   floor1_free_info(info);
   return(NULL);
@@ -54580,7 +54591,7 @@ static vorbis_look_floor *floor1_look(vorbis_dsp_state *vd,
 
   look->vi=info;
   look->n=info->postlist[1];
- 
+
   /* we drop each position value in-between already decoded values,
      and use linear interpolation to predict each new value past the
      edges.  The positions are read in the order of the position
@@ -54602,7 +54613,7 @@ static vorbis_look_floor *floor1_look(vorbis_dsp_state *vd,
   for(i=0;i<n;i++)look->reverse_index[look->forward_index[i]]=i;
   /* we actually need the post values too */
   for(i=0;i<n;i++)look->sorted_index[i]=info->postlist[look->forward_index[i]];
-  
+
   /* quantize values to multiplier spec */
   switch(info->mult){
   case 1: /* 1024 -> 256 */
@@ -54648,13 +54659,13 @@ static vorbis_look_floor *floor1_look(vorbis_dsp_state *vd,
 static int render_point(int x0,int x1,int y0,int y1,int x){
   y0&=0x7fff; /* mask off flag */
   y1&=0x7fff;
-    
+
   {
     int dy=y1-y0;
     int adx=x1-x0;
     int ady=abs(dy);
     int err=ady*(x-x0);
-    
+
     int off=err/adx;
     if(dy<0)return(y0-off);
     return(y0+off);
@@ -54669,70 +54680,70 @@ static int vorbis_dBquant(const float *x){
 }
 
 static float FLOOR1_fromdB_LOOKUP[256]={
-  1.0649863e-07F, 1.1341951e-07F, 1.2079015e-07F, 1.2863978e-07F, 
-  1.3699951e-07F, 1.4590251e-07F, 1.5538408e-07F, 1.6548181e-07F, 
-  1.7623575e-07F, 1.8768855e-07F, 1.9988561e-07F, 2.128753e-07F, 
-  2.2670913e-07F, 2.4144197e-07F, 2.5713223e-07F, 2.7384213e-07F, 
-  2.9163793e-07F, 3.1059021e-07F, 3.3077411e-07F, 3.5226968e-07F, 
-  3.7516214e-07F, 3.9954229e-07F, 4.2550680e-07F, 4.5315863e-07F, 
-  4.8260743e-07F, 5.1396998e-07F, 5.4737065e-07F, 5.8294187e-07F, 
-  6.2082472e-07F, 6.6116941e-07F, 7.0413592e-07F, 7.4989464e-07F, 
-  7.9862701e-07F, 8.5052630e-07F, 9.0579828e-07F, 9.6466216e-07F, 
-  1.0273513e-06F, 1.0941144e-06F, 1.1652161e-06F, 1.2409384e-06F, 
-  1.3215816e-06F, 1.4074654e-06F, 1.4989305e-06F, 1.5963394e-06F, 
-  1.7000785e-06F, 1.8105592e-06F, 1.9282195e-06F, 2.0535261e-06F, 
-  2.1869758e-06F, 2.3290978e-06F, 2.4804557e-06F, 2.6416497e-06F, 
-  2.8133190e-06F, 2.9961443e-06F, 3.1908506e-06F, 3.3982101e-06F, 
-  3.6190449e-06F, 3.8542308e-06F, 4.1047004e-06F, 4.3714470e-06F, 
-  4.6555282e-06F, 4.9580707e-06F, 5.2802740e-06F, 5.6234160e-06F, 
-  5.9888572e-06F, 6.3780469e-06F, 6.7925283e-06F, 7.2339451e-06F, 
-  7.7040476e-06F, 8.2047000e-06F, 8.7378876e-06F, 9.3057248e-06F, 
-  9.9104632e-06F, 1.0554501e-05F, 1.1240392e-05F, 1.1970856e-05F, 
-  1.2748789e-05F, 1.3577278e-05F, 1.4459606e-05F, 1.5399272e-05F, 
-  1.6400004e-05F, 1.7465768e-05F, 1.8600792e-05F, 1.9809576e-05F, 
-  2.1096914e-05F, 2.2467911e-05F, 2.3928002e-05F, 2.5482978e-05F, 
-  2.7139006e-05F, 2.8902651e-05F, 3.0780908e-05F, 3.2781225e-05F, 
-  3.4911534e-05F, 3.7180282e-05F, 3.9596466e-05F, 4.2169667e-05F, 
-  4.4910090e-05F, 4.7828601e-05F, 5.0936773e-05F, 5.4246931e-05F, 
-  5.7772202e-05F, 6.1526565e-05F, 6.5524908e-05F, 6.9783085e-05F, 
-  7.4317983e-05F, 7.9147585e-05F, 8.4291040e-05F, 8.9768747e-05F, 
-  9.5602426e-05F, 0.00010181521F, 0.00010843174F, 0.00011547824F, 
-  0.00012298267F, 0.00013097477F, 0.00013948625F, 0.00014855085F, 
-  0.00015820453F, 0.00016848555F, 0.00017943469F, 0.00019109536F, 
-  0.00020351382F, 0.00021673929F, 0.00023082423F, 0.00024582449F, 
-  0.00026179955F, 0.00027881276F, 0.00029693158F, 0.00031622787F, 
-  0.00033677814F, 0.00035866388F, 0.00038197188F, 0.00040679456F, 
-  0.00043323036F, 0.00046138411F, 0.00049136745F, 0.00052329927F, 
-  0.00055730621F, 0.00059352311F, 0.00063209358F, 0.00067317058F, 
-  0.00071691700F, 0.00076350630F, 0.00081312324F, 0.00086596457F, 
-  0.00092223983F, 0.00098217216F, 0.0010459992F, 0.0011139742F, 
-  0.0011863665F, 0.0012634633F, 0.0013455702F, 0.0014330129F, 
-  0.0015261382F, 0.0016253153F, 0.0017309374F, 0.0018434235F, 
-  0.0019632195F, 0.0020908006F, 0.0022266726F, 0.0023713743F, 
-  0.0025254795F, 0.0026895994F, 0.0028643847F, 0.0030505286F, 
-  0.0032487691F, 0.0034598925F, 0.0036847358F, 0.0039241906F, 
-  0.0041792066F, 0.0044507950F, 0.0047400328F, 0.0050480668F, 
-  0.0053761186F, 0.0057254891F, 0.0060975636F, 0.0064938176F, 
-  0.0069158225F, 0.0073652516F, 0.0078438871F, 0.0083536271F, 
-  0.0088964928F, 0.009474637F, 0.010090352F, 0.010746080F, 
-  0.011444421F, 0.012188144F, 0.012980198F, 0.013823725F, 
-  0.014722068F, 0.015678791F, 0.016697687F, 0.017782797F, 
-  0.018938423F, 0.020169149F, 0.021479854F, 0.022875735F, 
-  0.024362330F, 0.025945531F, 0.027631618F, 0.029427276F, 
-  0.031339626F, 0.033376252F, 0.035545228F, 0.037855157F, 
-  0.040315199F, 0.042935108F, 0.045725273F, 0.048696758F, 
-  0.051861348F, 0.055231591F, 0.058820850F, 0.062643361F, 
-  0.066714279F, 0.071049749F, 0.075666962F, 0.080584227F, 
-  0.085821044F, 0.091398179F, 0.097337747F, 0.10366330F, 
-  0.11039993F, 0.11757434F, 0.12521498F, 0.13335215F, 
-  0.14201813F, 0.15124727F, 0.16107617F, 0.17154380F, 
-  0.18269168F, 0.19456402F, 0.20720788F, 0.22067342F, 
-  0.23501402F, 0.25028656F, 0.26655159F, 0.28387361F, 
-  0.30232132F, 0.32196786F, 0.34289114F, 0.36517414F, 
-  0.38890521F, 0.41417847F, 0.44109412F, 0.46975890F, 
-  0.50028648F, 0.53279791F, 0.56742212F, 0.60429640F, 
-  0.64356699F, 0.68538959F, 0.72993007F, 0.77736504F, 
-  0.82788260F, 0.88168307F, 0.9389798F, 1.F, 
+  1.0649863e-07F, 1.1341951e-07F, 1.2079015e-07F, 1.2863978e-07F,
+  1.3699951e-07F, 1.4590251e-07F, 1.5538408e-07F, 1.6548181e-07F,
+  1.7623575e-07F, 1.8768855e-07F, 1.9988561e-07F, 2.128753e-07F,
+  2.2670913e-07F, 2.4144197e-07F, 2.5713223e-07F, 2.7384213e-07F,
+  2.9163793e-07F, 3.1059021e-07F, 3.3077411e-07F, 3.5226968e-07F,
+  3.7516214e-07F, 3.9954229e-07F, 4.2550680e-07F, 4.5315863e-07F,
+  4.8260743e-07F, 5.1396998e-07F, 5.4737065e-07F, 5.8294187e-07F,
+  6.2082472e-07F, 6.6116941e-07F, 7.0413592e-07F, 7.4989464e-07F,
+  7.9862701e-07F, 8.5052630e-07F, 9.0579828e-07F, 9.6466216e-07F,
+  1.0273513e-06F, 1.0941144e-06F, 1.1652161e-06F, 1.2409384e-06F,
+  1.3215816e-06F, 1.4074654e-06F, 1.4989305e-06F, 1.5963394e-06F,
+  1.7000785e-06F, 1.8105592e-06F, 1.9282195e-06F, 2.0535261e-06F,
+  2.1869758e-06F, 2.3290978e-06F, 2.4804557e-06F, 2.6416497e-06F,
+  2.8133190e-06F, 2.9961443e-06F, 3.1908506e-06F, 3.3982101e-06F,
+  3.6190449e-06F, 3.8542308e-06F, 4.1047004e-06F, 4.3714470e-06F,
+  4.6555282e-06F, 4.9580707e-06F, 5.2802740e-06F, 5.6234160e-06F,
+  5.9888572e-06F, 6.3780469e-06F, 6.7925283e-06F, 7.2339451e-06F,
+  7.7040476e-06F, 8.2047000e-06F, 8.7378876e-06F, 9.3057248e-06F,
+  9.9104632e-06F, 1.0554501e-05F, 1.1240392e-05F, 1.1970856e-05F,
+  1.2748789e-05F, 1.3577278e-05F, 1.4459606e-05F, 1.5399272e-05F,
+  1.6400004e-05F, 1.7465768e-05F, 1.8600792e-05F, 1.9809576e-05F,
+  2.1096914e-05F, 2.2467911e-05F, 2.3928002e-05F, 2.5482978e-05F,
+  2.7139006e-05F, 2.8902651e-05F, 3.0780908e-05F, 3.2781225e-05F,
+  3.4911534e-05F, 3.7180282e-05F, 3.9596466e-05F, 4.2169667e-05F,
+  4.4910090e-05F, 4.7828601e-05F, 5.0936773e-05F, 5.4246931e-05F,
+  5.7772202e-05F, 6.1526565e-05F, 6.5524908e-05F, 6.9783085e-05F,
+  7.4317983e-05F, 7.9147585e-05F, 8.4291040e-05F, 8.9768747e-05F,
+  9.5602426e-05F, 0.00010181521F, 0.00010843174F, 0.00011547824F,
+  0.00012298267F, 0.00013097477F, 0.00013948625F, 0.00014855085F,
+  0.00015820453F, 0.00016848555F, 0.00017943469F, 0.00019109536F,
+  0.00020351382F, 0.00021673929F, 0.00023082423F, 0.00024582449F,
+  0.00026179955F, 0.00027881276F, 0.00029693158F, 0.00031622787F,
+  0.00033677814F, 0.00035866388F, 0.00038197188F, 0.00040679456F,
+  0.00043323036F, 0.00046138411F, 0.00049136745F, 0.00052329927F,
+  0.00055730621F, 0.00059352311F, 0.00063209358F, 0.00067317058F,
+  0.00071691700F, 0.00076350630F, 0.00081312324F, 0.00086596457F,
+  0.00092223983F, 0.00098217216F, 0.0010459992F, 0.0011139742F,
+  0.0011863665F, 0.0012634633F, 0.0013455702F, 0.0014330129F,
+  0.0015261382F, 0.0016253153F, 0.0017309374F, 0.0018434235F,
+  0.0019632195F, 0.0020908006F, 0.0022266726F, 0.0023713743F,
+  0.0025254795F, 0.0026895994F, 0.0028643847F, 0.0030505286F,
+  0.0032487691F, 0.0034598925F, 0.0036847358F, 0.0039241906F,
+  0.0041792066F, 0.0044507950F, 0.0047400328F, 0.0050480668F,
+  0.0053761186F, 0.0057254891F, 0.0060975636F, 0.0064938176F,
+  0.0069158225F, 0.0073652516F, 0.0078438871F, 0.0083536271F,
+  0.0088964928F, 0.009474637F, 0.010090352F, 0.010746080F,
+  0.011444421F, 0.012188144F, 0.012980198F, 0.013823725F,
+  0.014722068F, 0.015678791F, 0.016697687F, 0.017782797F,
+  0.018938423F, 0.020169149F, 0.021479854F, 0.022875735F,
+  0.024362330F, 0.025945531F, 0.027631618F, 0.029427276F,
+  0.031339626F, 0.033376252F, 0.035545228F, 0.037855157F,
+  0.040315199F, 0.042935108F, 0.045725273F, 0.048696758F,
+  0.051861348F, 0.055231591F, 0.058820850F, 0.062643361F,
+  0.066714279F, 0.071049749F, 0.075666962F, 0.080584227F,
+  0.085821044F, 0.091398179F, 0.097337747F, 0.10366330F,
+  0.11039993F, 0.11757434F, 0.12521498F, 0.13335215F,
+  0.14201813F, 0.15124727F, 0.16107617F, 0.17154380F,
+  0.18269168F, 0.19456402F, 0.20720788F, 0.22067342F,
+  0.23501402F, 0.25028656F, 0.26655159F, 0.28387361F,
+  0.30232132F, 0.32196786F, 0.34289114F, 0.36517414F,
+  0.38890521F, 0.41417847F, 0.44109412F, 0.46975890F,
+  0.50028648F, 0.53279791F, 0.56742212F, 0.60429640F,
+  0.64356699F, 0.68538959F, 0.72993007F, 0.77736504F,
+  0.82788260F, 0.88168307F, 0.9389798F, 1.F,
 };
 
 static void render_line(int x0,int x1,int y0,int y1,float *d){
@@ -54872,7 +54883,7 @@ static void fit_line(lsfit_acc *a,int fits,int *y0,int *y1){
     xy+= *y1 *  x1;
     an++;
   }
-  
+
   if(an){
     /* need 64 bit multiplies, which C doesn't give portably as int */
     double fx=x;
@@ -54884,13 +54895,13 @@ static void fit_line(lsfit_acc *a,int fits,int *y0,int *y1){
     double b=(an*fxy-fx*fy)*denom;
     *y0=rint(a+b*x0);
     *y1=rint(a+b*x1);
-    
+
     /* limit to our range! */
     if(*y0>1023)*y0=1023;
     if(*y1>1023)*y1=1023;
     if(*y0<0)*y0=0;
     if(*y1<0)*y1=0;
-    
+
   }else{
     *y0=0;
     *y1=0;
@@ -54903,7 +54914,7 @@ static void fit_line(lsfit_acc *a,int fits,int *y0,int *y1){
 
   for(i=0;i<fits && y==0;i++)
     y+=a[i].ya;
-  
+
   *y0=*y1=y;
   }*/
 
@@ -54923,7 +54934,7 @@ static int inspect_error(int x0,int x1,int y0,int y1,const float *mask,
   int n=0;
 
   ady-=abs(base*adx);
-  
+
   mse=(y-val);
   mse*=mse;
   n++;
@@ -54951,7 +54962,7 @@ static int inspect_error(int x0,int x1,int y0,int y1,const float *mask,
       }
     }
   }
-  
+
   if(info->maxover*info->maxover/n>info->maxerr)return(0);
   if(info->maxunder*info->maxunder/n>info->maxerr)return(0);
   if(mse/n>info->maxerr)return(1);
@@ -54980,7 +54991,7 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
   int fit_valueB[VIF_POSIT+2]; /* index by range list position */
 
   int loneighbor[VIF_POSIT+2]; /* sorted index of range list position (+2) */
-  int hineighbor[VIF_POSIT+2]; 
+  int hineighbor[VIF_POSIT+2];
   int *output=NULL;
   int memo[VIF_POSIT+2];
 
@@ -55000,7 +55011,7 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
 			      look->sorted_index[i+1],fits+i,
 			      n,info);
   }
-  
+
   if(nonzero){
     /* start by fitting the implicit base case.... */
     int y0=-200;
@@ -55020,21 +55031,21 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
       int sortpos=look->reverse_index[i];
       int ln=loneighbor[sortpos];
       int hn=hineighbor[sortpos];
-      
+
       /* eliminate repeat searches of a particular range with a memo */
       if(memo[ln]!=hn){
 	/* haven't performed this error search yet */
 	int lsortpos=look->reverse_index[ln];
 	int hsortpos=look->reverse_index[hn];
 	memo[ln]=hn;
-		
+
 	{
 	  /* A note: we want to bound/minimize *local*, not global, error */
 	  int lx=info->postlist[ln];
-	  int hx=info->postlist[hn];	  
+	  int hx=info->postlist[hn];
 	  int ly=post_Y(fit_valueA,fit_valueB,ln);
 	  int hy=post_Y(fit_valueA,fit_valueB,hn);
-	  
+
 	  if(ly==-1 || hy==-1){
 	    exit(1);
 	  }
@@ -55047,7 +55058,7 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
 	    int hy1=-200;
 	    fit_line(fits+lsortpos,sortpos-lsortpos,&ly0,&ly1);
 	    fit_line(fits+sortpos,hsortpos-sortpos,&hy0,&hy1);
-	    
+
 	    /* store new edge values */
 	    fit_valueB[ln]=ly0;
 	    if(ln==0)fit_valueA[ln]=ly0;
@@ -55055,7 +55066,7 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
 	    fit_valueB[i]=hy0;
 	    fit_valueA[hn]=hy1;
 	    if(hn==1)fit_valueB[hn]=hy1;
-	    
+
 	    if(ly1>=0 || hy0>=0){
 	      /* store new neighbor values */
 	      for(j=sortpos-1;j>=0;j--)
@@ -55068,22 +55079,22 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
 		  loneighbor[j]=i;
 		else
 		  break;
-	      
+
 	    }
 	  }else{
-	    
+
 	    fit_valueA[i]=-200;
 	    fit_valueB[i]=-200;
 	  }
 	}
       }
     }
-  
+
     output=_vorbis_block_alloc(vb,sizeof(*output)*posts);
-    
+
     output[0]=post_Y(fit_valueA,fit_valueB,0);
     output[1]=post_Y(fit_valueA,fit_valueB,1);
-    
+
     /* fill in posts marked as not using a fit; we will zero
        back out to 'unused' when encoding them so long as curve
        interpolation doesn't force them into use */
@@ -55094,11 +55105,11 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
       int x1=info->postlist[hn];
       int y0=output[ln];
       int y1=output[hn];
-      
+
       int predicted=render_point(x0,x1,y0,y1,info->postlist[i]);
       int vx=post_Y(fit_valueA,fit_valueB,i);
-      
-      if(vx>=0 && predicted!=vx){ 
+
+      if(vx>=0 && predicted!=vx){
 	output[i]=vx;
       }else{
 	output[i]= predicted|0x8000;
@@ -55107,9 +55118,9 @@ int *floor1_fit(vorbis_block *vb,vorbis_look_floor1 *look,
   }
 
   return(output);
-  
+
 }
-		
+
 int *floor1_interpolate_fit(vorbis_block *vb,vorbis_look_floor1 *look,
 			  int *A,int *B,
 			  int del){
@@ -55117,10 +55128,10 @@ int *floor1_interpolate_fit(vorbis_block *vb,vorbis_look_floor1 *look,
   long i;
   long posts=look->posts;
   int *output=NULL;
-  
+
   if(A && B){
     output=_vorbis_block_alloc(vb,sizeof(*output)*posts);
-    
+
     for(i=0;i<posts;i++){
       output[i]=((65536-del)*(A[i]&0x7fff)+del*(B[i]&0x7fff)+32768)>>16;
       if(A[i]&0x8000 && B[i]&0x8000)output[i]|=0x8000;
@@ -55141,7 +55152,7 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
   int out[VIF_POSIT+2];
   static_codebook **sbooks=ci->book_param;
   codebook *books=ci->fullbooks;
-  static long seq=0; 
+  static long seq=0;
 
   /* quantize values to multiplier spec */
   if(post){
@@ -55175,9 +55186,9 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
       int x1=info->postlist[hn];
       int y0=post[ln];
       int y1=post[hn];
-      
+
       int predicted=render_point(x0,x1,y0,y1,info->postlist[i]);
-      
+
       if((post[i]&0x8000) || (predicted==post[i])){
 	post[i]=predicted|0x8000; /* in case there was roundoff jitter
 				     in interpolation */
@@ -55185,15 +55196,15 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
       }else{
 	int headroom=(look->quant_q-predicted<predicted?
 		      look->quant_q-predicted:predicted);
-	
+
 	int val=post[i]-predicted;
-	
+
 	/* at this point the 'deviation' value is in the range +/- max
 	   range, but the real, unique range can always be mapped to
 	   only [0-maxrange).  So we want to wrap the deviation into
 	   this limited range, but do it in the way that least screws
 	   an essentially gaussian probability distribution. */
-	
+
 	if(val<0)
 	  if(val<-headroom)
 	    val=headroom-val-1;
@@ -55204,24 +55215,24 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
 	    val= val+headroom;
 	  else
 	    val<<=1;
-	
+
 	out[i]=val;
 	post[ln]&=0x7fff;
 	post[hn]&=0x7fff;
       }
     }
-    
+
     /* we have everything we need. pack it out */
     /* mark nontrivial floor */
     oggpack_write(&vb->opb,1,1);
-      
+
     /* beginning/end post */
     look->frames++;
     look->postbits+=ilog(look->quant_q-1)*2;
     oggpack_write(&vb->opb,out[0],ilog(look->quant_q-1));
     oggpack_write(&vb->opb,out[1],ilog(look->quant_q-1));
-      
-      
+
+
     /* partition by partition */
     for(i=0,j=2;i<info->partitions;i++){
       int class=info->partitionclass[i];
@@ -55258,7 +55269,7 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
 	/* write it */
 	look->phrasebits+=
 	  vorbis_book_encode(books+info->class_book[class],cval,&vb->opb);
-	
+
 #ifdef TRAIN_FLOOR1
 	{
 	  FILE *of;
@@ -55271,7 +55282,7 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
 	}
 #endif
       }
-	
+
       /* write post values */
       for(k=0;k<cdim;k++){
 	int book=info->class_subbook[class][bookas[k]];
@@ -55282,7 +55293,7 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
 					       out[j+k],&vb->opb);
 	  /*else
 	    fprintf(stderr,"+!");*/
-	  
+
 #ifdef TRAIN_FLOOR1
 	  {
 	    FILE *of;
@@ -55298,7 +55309,7 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
       }
       j+=cdim;
     }
-    
+
     {
       /* generate quantized floor equivalent to what we'd unpack in decode */
       /* render the lines */
@@ -55309,17 +55320,17 @@ int floor1_encode(vorbis_block *vb,vorbis_look_floor1 *look,
 	int current=look->forward_index[j];
 	int hy=post[current]&0x7fff;
 	if(hy==post[current]){
-	  
+
 	  hy*=info->mult;
 	  hx=info->postlist[current];
-	
+
 	  render_line0(lx,hx,ly,hy,ilogmask);
-	
+
 	  lx=hx;
 	  ly=hy;
 	}
       }
-      for(j=hx;j<vb->pcmend/2;j++)ilogmask[j]=ly; /* be certain */    
+      for(j=hx;j<vb->pcmend/2;j++)ilogmask[j]=ly; /* be certain */
       seq++;
       return(1);
     }
@@ -55335,9 +55346,9 @@ static void *floor1_inverse1(vorbis_block *vb,vorbis_look_floor *in){
   vorbis_look_floor1 *look=(vorbis_look_floor1 *)in;
   vorbis_info_floor1 *info=look->vi;
   codec_setup_info   *ci=vb->vd->vi->codec_setup;
-  
+
   int i,j,k;
-  codebook *books=ci->fullbooks;   
+  codebook *books=ci->fullbooks;
 
   /* unpack wrapped/predicted values from stream */
   if(oggpack_read(&vb->opb,1)==1){
@@ -55408,7 +55419,7 @@ static void *floor1_inverse1(vorbis_block *vb,vorbis_look_floor *in){
       }else{
 	fit_value[i]=predicted|0x8000;
       }
-	
+
     }
 
     return(fit_value);
@@ -55436,17 +55447,17 @@ static int floor1_inverse2(vorbis_block *vb,vorbis_look_floor *in,void *memo,
       int current=look->forward_index[j];
       int hy=fit_value[current]&0x7fff;
       if(hy==fit_value[current]){
-	
+
 	hy*=info->mult;
 	hx=info->postlist[current];
-	
+
 	render_line(lx,hx,ly,hy,out);
-	
+
 	lx=hx;
 	ly=hy;
       }
     }
-    for(j=hx;j<n;j++)out[j]*=FLOOR1_fromdB_LOOKUP[ly]; /* be certain */    
+    for(j=hx;j<n;j++)out[j]*=FLOOR1_fromdB_LOOKUP[ly]; /* be certain */
     return(1);
   }
   memset(out,0,sizeof(*out)*n);
@@ -55484,11 +55495,11 @@ vorbis_func_floor floor1_exportbundle={
 
 
 #ifdef TRAIN_RES
-#endif 
+#endif
 
 typedef struct {
   vorbis_info_residue0 *info;
-  
+
   int         parts;
   int         stages;
   codebook   *fullbooks;
@@ -55537,16 +55548,16 @@ void res0_free_look(vorbis_look_residue *i){
 	    char buffer[80];
 	    FILE *of;
 	    codebook *statebook=look->partbooks[j][k];
-	    
+
 	    /* long and short into the same bucket by current convention */
 	    sprintf(buffer,"res_part%d_pass%d.vqd",j,k);
 	    of=fopen(buffer,"a");
 
 	    for(l=0;l<statebook->entries;l++)
 	      fprintf(of,"%d:%ld\n",l,look->training_data[k][j][l]);
-	    
+
 	    fclose(of);
-	    
+
 	    /*fprintf(stderr,"%d(%.2f|%.2f) ",k,
 	      look->training_min[k][j],look->training_max[k][j]);*/
 
@@ -55571,7 +55582,7 @@ void res0_free_look(vorbis_look_residue *i){
 	    "(%g/frame) \n",look->frames,look->phrasebits,
 	    look->resbitsflat,
 	    (look->phrasebits+look->resbitsflat)/(float)look->frames);
-    
+
     for(j=0;j<look->parts;j++){
       long acc=0;
       fprintf(stderr,"\t[%d] == ",j);
@@ -55614,7 +55625,7 @@ void res0_pack(vorbis_info_residue *vr,oggpack_buffer *opb){
   oggpack_write(opb,info->begin,24);
   oggpack_write(opb,info->end,24);
 
-  oggpack_write(opb,info->grouping-1,24);  /* residue vectors to group and 
+  oggpack_write(opb,info->grouping-1,24);  /* residue vectors to group and
 					     code with a partitioned book */
   oggpack_write(opb,info->partitions-1,6); /* possible partition choices */
   oggpack_write(opb,info->groupbook,8);  /* group huffman book */
@@ -55625,9 +55636,9 @@ void res0_pack(vorbis_info_residue *vr,oggpack_buffer *opb){
   for(j=0;j<info->partitions;j++){
     if(ilog(info->secondstages[j])>3){
       /* yes, this is a minor hack due to not thinking ahead */
-      oggpack_write(opb,info->secondstages[j],3); 
+      oggpack_write(opb,info->secondstages[j],3);
       oggpack_write(opb,1,1);
-      oggpack_write(opb,info->secondstages[j]>>3,5); 
+      oggpack_write(opb,info->secondstages[j]>>3,5);
     }else
       oggpack_write(opb,info->secondstages[j],4); /* trailing zero */
     acc+=icount(info->secondstages[j]);
@@ -55738,23 +55749,23 @@ static int local_book_besterror(codebook *book,float *a){
     float val=a[--o];
     i=tt->threshvals>>1;
 
-    if(val<tt->quantthresh[i]){      
+    if(val<tt->quantthresh[i]){
       if(val<tt->quantthresh[i-1]){
 	for(--i;i>0;--i)
 	  if(val>=tt->quantthresh[i-1])
 	    break;
       }
     }else{
-      
+
       for(++i;i<tt->threshvals-1;++i)
 	if(val<tt->quantthresh[i])break;
-      
+
     }
-    
+
     best=(best*tt->quantvals)+tt->quantmap[i];
   }
   /* regular lattices are easy :-) */
-  
+
   if(book->c->lengthlist[best]<=0){
     const static_codebook *c=book->c;
     int i,j;
@@ -55815,7 +55826,7 @@ static long **_01class(vorbis_block *vb,vorbis_look_residue *vl,
   int samples_per_partition=info->grouping;
   int possible_partitions=info->partitions;
   int n=info->end-info->begin;
-  
+
   int partvals=n/samples_per_partition;
   long **partword=_vorbis_block_alloc(vb,ch*sizeof(*partword));
   float scale=100./samples_per_partition;
@@ -55823,12 +55834,12 @@ static long **_01class(vorbis_block *vb,vorbis_look_residue *vl,
   /* we find the partition type for each partition of each
      channel.  We'll go back and do the interleaved encoding in a
      bit.  For now, clarity */
- 
+
   for(i=0;i<ch;i++){
     partword[i]=_vorbis_block_alloc(vb,n/samples_per_partition*sizeof(*partword[i]));
     memset(partword[i],0,n/samples_per_partition*sizeof(*partword[i]));
   }
-  
+
   for(i=0;i<partvals;i++){
     int offset=i*samples_per_partition+info->begin;
     for(j=0;j<ch;j++){
@@ -55839,13 +55850,13 @@ static long **_01class(vorbis_block *vb,vorbis_look_residue *vl,
 	ent+=fabs(rint(in[j][offset+k]));
       }
       ent*=scale;
-      
+
       for(k=0;k<possible_partitions-1;k++)
 	if(max<=info->classmetric1[k] &&
 	   (info->classmetric2[k]<0 || (int)ent<info->classmetric2[k]))
 	  break;
-      
-      partword[j][i]=k;  
+
+      partword[j][i]=k;
     }
   }
 
@@ -55853,7 +55864,7 @@ static long **_01class(vorbis_block *vb,vorbis_look_residue *vl,
   {
     FILE *of;
     char buffer[80];
-  
+
     for(i=0;i<ch;i++){
       sprintf(buffer,"resaux_%d.vqd",look->train_seq);
       of=fopen(buffer,"a");
@@ -55890,7 +55901,7 @@ static long **_2class(vorbis_block *vb,vorbis_look_residue *vl,float **in,
   FILE *of;
   char buffer[80];
 #endif
-  
+
   partword[0]=_vorbis_block_alloc(vb,n*ch/samples_per_partition*sizeof(*partword[0]));
   memset(partword[0],0,n*ch/samples_per_partition*sizeof(*partword[0]));
 
@@ -55911,8 +55922,8 @@ static long **_2class(vorbis_block *vb,vorbis_look_residue *vl,float **in,
 
     partword[0][i]=j;
 
-  }  
-  
+  }
+
 #ifdef TRAIN_RESAUX
   sprintf(buffer,"resaux_%d.vqd",look->train_seq);
   of=fopen(buffer,"a");
@@ -55956,7 +55967,7 @@ static int _01forward(vorbis_block *vb,vorbis_look_residue *vl,
 
   memset(resbits,0,sizeof(resbits));
   memset(resvals,0,sizeof(resvals));
-  
+
   /* we code the partition words for each channel, then the residual
      words for a partition per channel until we've written all the
      residual words for that partition word.  Then write the next
@@ -55974,7 +55985,7 @@ static int _01forward(vorbis_block *vb,vorbis_look_residue *vl,
 	    val*=possible_partitions;
 	    if(i+k<partvals)
 	      val+=partword[j][i+k];
-	  }	
+	  }
 
 	  /* training hack */
 	  if(val<look->phrasebook->entries)
@@ -55983,14 +55994,14 @@ static int _01forward(vorbis_block *vb,vorbis_look_residue *vl,
 	  else
 	    fprintf(stderr,"!");
 #endif
-	
+
 	}
       }
-      
+
       /* now we encode interleaved residual values for the partitions */
       for(k=0;k<partitions_per_word && i<partvals;k++,i++){
 	long offset=i*samples_per_partition+info->begin;
-	
+
 	for(j=0;j<ch;j++){
 	  if(s==0)resvals[partword[j][i]]+=samples_per_partition;
 	  if(info->secondstages[partword[j][i]]&(1<<s)){
@@ -56012,7 +56023,7 @@ static int _01forward(vorbis_block *vb,vorbis_look_residue *vl,
 		}
 	      }
 #endif
-	      
+
 	      ret=encode(&vb->opb,in[j]+offset,samples_per_partition,
 			 statebook,accumulator);
 
@@ -56034,7 +56045,7 @@ static int _01forward(vorbis_block *vb,vorbis_look_residue *vl,
       total+=resvals[k];
       totalbits+=resbits[k];
       }
-    
+
     fprintf(stderr,":: %ld:%1.2g\n",total,(double)totalbits/total);
     }*/
   return(0);
@@ -56043,7 +56054,7 @@ static int _01forward(vorbis_block *vb,vorbis_look_residue *vl,
 /* a truncated packet here just means 'stop working'; it's not an error */
 static int _01inverse(vorbis_block *vb,vorbis_look_residue *vl,
 		      float **in,int ch,
-		      long (*decodepart)(codebook *, float *, 
+		      long (*decodepart)(codebook *, float *,
 					 oggpack_buffer *,int)){
 
   long i,j,k,l,s;
@@ -56054,7 +56065,7 @@ static int _01inverse(vorbis_block *vb,vorbis_look_residue *vl,
   int samples_per_partition=info->grouping;
   int partitions_per_word=look->phrasebook->dim;
   int n=info->end-info->begin;
-  
+
   int partvals=n/samples_per_partition;
   int partwords=(partvals+partitions_per_word-1)/partitions_per_word;
   int ***partword=alloca(ch*sizeof(*partword));
@@ -56064,7 +56075,7 @@ static int _01inverse(vorbis_block *vb,vorbis_look_residue *vl,
 
   for(s=0;s<look->stages;s++){
 
-    /* each loop decodes on partition codeword containing 
+    /* each loop decodes on partition codeword containing
        partitions_pre_word partitions */
     for(i=0,l=0;i<partvals;l++){
       if(s==0){
@@ -56076,7 +56087,7 @@ static int _01inverse(vorbis_block *vb,vorbis_look_residue *vl,
 	  if(partword[j][l]==NULL)goto errout;
 	}
       }
-      
+
       /* now we decode residual values for the partitions */
       for(k=0;k<partitions_per_word && i<partvals;k++,i++)
 	for(j=0;j<ch;j++){
@@ -56089,9 +56100,9 @@ static int _01inverse(vorbis_block *vb,vorbis_look_residue *vl,
 	    }
 	  }
 	}
-    } 
+    }
   }
-  
+
  errout:
  eopbreak:
   return(0);
@@ -56239,7 +56250,7 @@ int res2_forward(vorbis_block *vb,vorbis_look_residue *vl,
     for(j=0,k=i;j<n;j++,k+=ch)
       work[k]=pcm[j];
   }
-  
+
   if(used){
     int ret=_01forward(vb,vl,&work,1,partword,_encodepart);
     /* update the sofar vector */
@@ -56249,7 +56260,7 @@ int res2_forward(vorbis_block *vb,vorbis_look_residue *vl,
 	float *sofar=out[i];
 	for(j=0,k=i;j<n;j++,k+=ch)
 	  sofar[j]+=pcm[j]-work[k];
-	
+
       }
     }
     return(ret);
@@ -56292,7 +56303,7 @@ int res2_inverse(vorbis_block *vb,vorbis_look_residue *vl,
       for(k=0;k<partitions_per_word && i<partvals;k++,i++)
 	if(info->secondstages[partword[l][k]]&(1<<s)){
 	  codebook *stagebook=look->partbooks[partword[l][k]][s];
-	  
+
 	  if(stagebook){
 	    if(vorbis_book_decodevv_add(stagebook,in,
 					i*samples_per_partition+info->begin,ch,
@@ -56300,9 +56311,9 @@ int res2_inverse(vorbis_block *vb,vorbis_look_residue *vl,
 	      goto eopbreak;
 	  }
 	}
-    } 
+    }
   }
-  
+
  errout:
  eopbreak:
   return(0);
@@ -56397,14 +56408,14 @@ static void mapping0_pack(vorbis_info *vi,vorbis_info_mapping *vm,
   if(info->coupling_steps>0){
     oggpack_write(opb,1,1);
     oggpack_write(opb,info->coupling_steps-1,8);
-    
+
     for(i=0;i<info->coupling_steps;i++){
       oggpack_write(opb,info->coupling_mag[i],ilog(vi->channels));
       oggpack_write(opb,info->coupling_ang[i],ilog(vi->channels));
     }
   }else
     oggpack_write(opb,0,1);
-  
+
   oggpack_write(opb,0,2); /* 2,3:reserved */
 
   /* we don't write the channel submappings if we only have one... */
@@ -56438,9 +56449,9 @@ static vorbis_info_mapping *mapping0_unpack(vorbis_info *vi,oggpack_buffer *opb)
       int testM=info->coupling_mag[i]=oggpack_read(opb,ilog(vi->channels));
       int testA=info->coupling_ang[i]=oggpack_read(opb,ilog(vi->channels));
 
-      if(testM<0 || 
-	 testA<0 || 
-	 testM==testA || 
+      if(testM<0 ||
+	 testA<0 ||
+	 testM==testA ||
 	 testM>=vi->channels ||
 	 testA>=vi->channels) goto err_out;
     }
@@ -56448,7 +56459,7 @@ static vorbis_info_mapping *mapping0_unpack(vorbis_info *vi,oggpack_buffer *opb)
   }
 
   if(oggpack_read(opb,2)>0)goto err_out; /* 2,3:reserved */
-    
+
   if(info->submaps>1){
     for(i=0;i<vi->channels;i++){
       info->chmuxlist[i]=oggpack_read(opb,4);
@@ -56474,73 +56485,73 @@ static vorbis_info_mapping *mapping0_unpack(vorbis_info *vi,oggpack_buffer *opb)
 static long seq=0;
 static ogg_int64_t total=0;
 static float FLOOR1_fromdB_LOOKUP[256]={
-  1.0649863e-07F, 1.1341951e-07F, 1.2079015e-07F, 1.2863978e-07F, 
-  1.3699951e-07F, 1.4590251e-07F, 1.5538408e-07F, 1.6548181e-07F, 
-  1.7623575e-07F, 1.8768855e-07F, 1.9988561e-07F, 2.128753e-07F, 
-  2.2670913e-07F, 2.4144197e-07F, 2.5713223e-07F, 2.7384213e-07F, 
-  2.9163793e-07F, 3.1059021e-07F, 3.3077411e-07F, 3.5226968e-07F, 
-  3.7516214e-07F, 3.9954229e-07F, 4.2550680e-07F, 4.5315863e-07F, 
-  4.8260743e-07F, 5.1396998e-07F, 5.4737065e-07F, 5.8294187e-07F, 
-  6.2082472e-07F, 6.6116941e-07F, 7.0413592e-07F, 7.4989464e-07F, 
-  7.9862701e-07F, 8.5052630e-07F, 9.0579828e-07F, 9.6466216e-07F, 
-  1.0273513e-06F, 1.0941144e-06F, 1.1652161e-06F, 1.2409384e-06F, 
-  1.3215816e-06F, 1.4074654e-06F, 1.4989305e-06F, 1.5963394e-06F, 
-  1.7000785e-06F, 1.8105592e-06F, 1.9282195e-06F, 2.0535261e-06F, 
-  2.1869758e-06F, 2.3290978e-06F, 2.4804557e-06F, 2.6416497e-06F, 
-  2.8133190e-06F, 2.9961443e-06F, 3.1908506e-06F, 3.3982101e-06F, 
-  3.6190449e-06F, 3.8542308e-06F, 4.1047004e-06F, 4.3714470e-06F, 
-  4.6555282e-06F, 4.9580707e-06F, 5.2802740e-06F, 5.6234160e-06F, 
-  5.9888572e-06F, 6.3780469e-06F, 6.7925283e-06F, 7.2339451e-06F, 
-  7.7040476e-06F, 8.2047000e-06F, 8.7378876e-06F, 9.3057248e-06F, 
-  9.9104632e-06F, 1.0554501e-05F, 1.1240392e-05F, 1.1970856e-05F, 
-  1.2748789e-05F, 1.3577278e-05F, 1.4459606e-05F, 1.5399272e-05F, 
-  1.6400004e-05F, 1.7465768e-05F, 1.8600792e-05F, 1.9809576e-05F, 
-  2.1096914e-05F, 2.2467911e-05F, 2.3928002e-05F, 2.5482978e-05F, 
-  2.7139006e-05F, 2.8902651e-05F, 3.0780908e-05F, 3.2781225e-05F, 
-  3.4911534e-05F, 3.7180282e-05F, 3.9596466e-05F, 4.2169667e-05F, 
-  4.4910090e-05F, 4.7828601e-05F, 5.0936773e-05F, 5.4246931e-05F, 
-  5.7772202e-05F, 6.1526565e-05F, 6.5524908e-05F, 6.9783085e-05F, 
-  7.4317983e-05F, 7.9147585e-05F, 8.4291040e-05F, 8.9768747e-05F, 
-  9.5602426e-05F, 0.00010181521F, 0.00010843174F, 0.00011547824F, 
-  0.00012298267F, 0.00013097477F, 0.00013948625F, 0.00014855085F, 
-  0.00015820453F, 0.00016848555F, 0.00017943469F, 0.00019109536F, 
-  0.00020351382F, 0.00021673929F, 0.00023082423F, 0.00024582449F, 
-  0.00026179955F, 0.00027881276F, 0.00029693158F, 0.00031622787F, 
-  0.00033677814F, 0.00035866388F, 0.00038197188F, 0.00040679456F, 
-  0.00043323036F, 0.00046138411F, 0.00049136745F, 0.00052329927F, 
-  0.00055730621F, 0.00059352311F, 0.00063209358F, 0.00067317058F, 
-  0.00071691700F, 0.00076350630F, 0.00081312324F, 0.00086596457F, 
-  0.00092223983F, 0.00098217216F, 0.0010459992F, 0.0011139742F, 
-  0.0011863665F, 0.0012634633F, 0.0013455702F, 0.0014330129F, 
-  0.0015261382F, 0.0016253153F, 0.0017309374F, 0.0018434235F, 
-  0.0019632195F, 0.0020908006F, 0.0022266726F, 0.0023713743F, 
-  0.0025254795F, 0.0026895994F, 0.0028643847F, 0.0030505286F, 
-  0.0032487691F, 0.0034598925F, 0.0036847358F, 0.0039241906F, 
-  0.0041792066F, 0.0044507950F, 0.0047400328F, 0.0050480668F, 
-  0.0053761186F, 0.0057254891F, 0.0060975636F, 0.0064938176F, 
-  0.0069158225F, 0.0073652516F, 0.0078438871F, 0.0083536271F, 
-  0.0088964928F, 0.009474637F, 0.010090352F, 0.010746080F, 
-  0.011444421F, 0.012188144F, 0.012980198F, 0.013823725F, 
-  0.014722068F, 0.015678791F, 0.016697687F, 0.017782797F, 
-  0.018938423F, 0.020169149F, 0.021479854F, 0.022875735F, 
-  0.024362330F, 0.025945531F, 0.027631618F, 0.029427276F, 
-  0.031339626F, 0.033376252F, 0.035545228F, 0.037855157F, 
-  0.040315199F, 0.042935108F, 0.045725273F, 0.048696758F, 
-  0.051861348F, 0.055231591F, 0.058820850F, 0.062643361F, 
-  0.066714279F, 0.071049749F, 0.075666962F, 0.080584227F, 
-  0.085821044F, 0.091398179F, 0.097337747F, 0.10366330F, 
-  0.11039993F, 0.11757434F, 0.12521498F, 0.13335215F, 
-  0.14201813F, 0.15124727F, 0.16107617F, 0.17154380F, 
-  0.18269168F, 0.19456402F, 0.20720788F, 0.22067342F, 
-  0.23501402F, 0.25028656F, 0.26655159F, 0.28387361F, 
-  0.30232132F, 0.32196786F, 0.34289114F, 0.36517414F, 
-  0.38890521F, 0.41417847F, 0.44109412F, 0.46975890F, 
-  0.50028648F, 0.53279791F, 0.56742212F, 0.60429640F, 
-  0.64356699F, 0.68538959F, 0.72993007F, 0.77736504F, 
-  0.82788260F, 0.88168307F, 0.9389798F, 1.F, 
+  1.0649863e-07F, 1.1341951e-07F, 1.2079015e-07F, 1.2863978e-07F,
+  1.3699951e-07F, 1.4590251e-07F, 1.5538408e-07F, 1.6548181e-07F,
+  1.7623575e-07F, 1.8768855e-07F, 1.9988561e-07F, 2.128753e-07F,
+  2.2670913e-07F, 2.4144197e-07F, 2.5713223e-07F, 2.7384213e-07F,
+  2.9163793e-07F, 3.1059021e-07F, 3.3077411e-07F, 3.5226968e-07F,
+  3.7516214e-07F, 3.9954229e-07F, 4.2550680e-07F, 4.5315863e-07F,
+  4.8260743e-07F, 5.1396998e-07F, 5.4737065e-07F, 5.8294187e-07F,
+  6.2082472e-07F, 6.6116941e-07F, 7.0413592e-07F, 7.4989464e-07F,
+  7.9862701e-07F, 8.5052630e-07F, 9.0579828e-07F, 9.6466216e-07F,
+  1.0273513e-06F, 1.0941144e-06F, 1.1652161e-06F, 1.2409384e-06F,
+  1.3215816e-06F, 1.4074654e-06F, 1.4989305e-06F, 1.5963394e-06F,
+  1.7000785e-06F, 1.8105592e-06F, 1.9282195e-06F, 2.0535261e-06F,
+  2.1869758e-06F, 2.3290978e-06F, 2.4804557e-06F, 2.6416497e-06F,
+  2.8133190e-06F, 2.9961443e-06F, 3.1908506e-06F, 3.3982101e-06F,
+  3.6190449e-06F, 3.8542308e-06F, 4.1047004e-06F, 4.3714470e-06F,
+  4.6555282e-06F, 4.9580707e-06F, 5.2802740e-06F, 5.6234160e-06F,
+  5.9888572e-06F, 6.3780469e-06F, 6.7925283e-06F, 7.2339451e-06F,
+  7.7040476e-06F, 8.2047000e-06F, 8.7378876e-06F, 9.3057248e-06F,
+  9.9104632e-06F, 1.0554501e-05F, 1.1240392e-05F, 1.1970856e-05F,
+  1.2748789e-05F, 1.3577278e-05F, 1.4459606e-05F, 1.5399272e-05F,
+  1.6400004e-05F, 1.7465768e-05F, 1.8600792e-05F, 1.9809576e-05F,
+  2.1096914e-05F, 2.2467911e-05F, 2.3928002e-05F, 2.5482978e-05F,
+  2.7139006e-05F, 2.8902651e-05F, 3.0780908e-05F, 3.2781225e-05F,
+  3.4911534e-05F, 3.7180282e-05F, 3.9596466e-05F, 4.2169667e-05F,
+  4.4910090e-05F, 4.7828601e-05F, 5.0936773e-05F, 5.4246931e-05F,
+  5.7772202e-05F, 6.1526565e-05F, 6.5524908e-05F, 6.9783085e-05F,
+  7.4317983e-05F, 7.9147585e-05F, 8.4291040e-05F, 8.9768747e-05F,
+  9.5602426e-05F, 0.00010181521F, 0.00010843174F, 0.00011547824F,
+  0.00012298267F, 0.00013097477F, 0.00013948625F, 0.00014855085F,
+  0.00015820453F, 0.00016848555F, 0.00017943469F, 0.00019109536F,
+  0.00020351382F, 0.00021673929F, 0.00023082423F, 0.00024582449F,
+  0.00026179955F, 0.00027881276F, 0.00029693158F, 0.00031622787F,
+  0.00033677814F, 0.00035866388F, 0.00038197188F, 0.00040679456F,
+  0.00043323036F, 0.00046138411F, 0.00049136745F, 0.00052329927F,
+  0.00055730621F, 0.00059352311F, 0.00063209358F, 0.00067317058F,
+  0.00071691700F, 0.00076350630F, 0.00081312324F, 0.00086596457F,
+  0.00092223983F, 0.00098217216F, 0.0010459992F, 0.0011139742F,
+  0.0011863665F, 0.0012634633F, 0.0013455702F, 0.0014330129F,
+  0.0015261382F, 0.0016253153F, 0.0017309374F, 0.0018434235F,
+  0.0019632195F, 0.0020908006F, 0.0022266726F, 0.0023713743F,
+  0.0025254795F, 0.0026895994F, 0.0028643847F, 0.0030505286F,
+  0.0032487691F, 0.0034598925F, 0.0036847358F, 0.0039241906F,
+  0.0041792066F, 0.0044507950F, 0.0047400328F, 0.0050480668F,
+  0.0053761186F, 0.0057254891F, 0.0060975636F, 0.0064938176F,
+  0.0069158225F, 0.0073652516F, 0.0078438871F, 0.0083536271F,
+  0.0088964928F, 0.009474637F, 0.010090352F, 0.010746080F,
+  0.011444421F, 0.012188144F, 0.012980198F, 0.013823725F,
+  0.014722068F, 0.015678791F, 0.016697687F, 0.017782797F,
+  0.018938423F, 0.020169149F, 0.021479854F, 0.022875735F,
+  0.024362330F, 0.025945531F, 0.027631618F, 0.029427276F,
+  0.031339626F, 0.033376252F, 0.035545228F, 0.037855157F,
+  0.040315199F, 0.042935108F, 0.045725273F, 0.048696758F,
+  0.051861348F, 0.055231591F, 0.058820850F, 0.062643361F,
+  0.066714279F, 0.071049749F, 0.075666962F, 0.080584227F,
+  0.085821044F, 0.091398179F, 0.097337747F, 0.10366330F,
+  0.11039993F, 0.11757434F, 0.12521498F, 0.13335215F,
+  0.14201813F, 0.15124727F, 0.16107617F, 0.17154380F,
+  0.18269168F, 0.19456402F, 0.20720788F, 0.22067342F,
+  0.23501402F, 0.25028656F, 0.26655159F, 0.28387361F,
+  0.30232132F, 0.32196786F, 0.34289114F, 0.36517414F,
+  0.38890521F, 0.41417847F, 0.44109412F, 0.46975890F,
+  0.50028648F, 0.53279791F, 0.56742212F, 0.60429640F,
+  0.64356699F, 0.68538959F, 0.72993007F, 0.77736504F,
+  0.82788260F, 0.88168307F, 0.9389798F, 1.F,
 };
 
-#endif 
+#endif
 
 void oggpack_writealign(oggpack_buffer *b);
 
@@ -56557,7 +56568,7 @@ static int mapping0_forward(vorbis_block *vb){
   float  **gmdct     = _vorbis_block_alloc(vb,vi->channels*sizeof(*gmdct));
   int    **ilogmaskch= _vorbis_block_alloc(vb,vi->channels*sizeof(*ilogmaskch));
   int ***floor_posts = _vorbis_block_alloc(vb,vi->channels*sizeof(*floor_posts));
-  
+
   float global_ampmax=vbi->ampmax;
   float *local_ampmax=alloca(sizeof(*local_ampmax)*vi->channels);
   int blocktype=vbi->blocktype;
@@ -56573,7 +56584,7 @@ static int mapping0_forward(vorbis_block *vb){
     float scale=4.f/n;
     float scale_dB;
 
-    float *pcm     =vb->pcm[i]; 
+    float *pcm     =vb->pcm[i];
     float *logfft  =pcm;
 
     gmdct[i]=_vorbis_block_alloc(vb,n/2*sizeof(**gmdct));
@@ -56587,7 +56598,7 @@ static int mapping0_forward(vorbis_block *vb){
       else
 	_analysis_output("pcmR",seq,pcm,n,0,0,total-n/2);
 #endif
-  
+
     /* window the PCM data */
     _vorbis_apply_window(pcm,b->window,ci->blocksizes,vb->lW,vb->W,vb->nW);
 
@@ -56602,7 +56613,7 @@ static int mapping0_forward(vorbis_block *vb){
     /* transform the PCM data */
     /* only MDCT right now.... */
     mdct_forward(b->transform[vb->W][0],pcm,gmdct[i]);
-    
+
     /* FFT yields more accurate tonal estimation (not phase sensitive) */
     drft_forward(&b->fft_look[vb->W],pcm);
     logfft[0]=scale_dB+todB(pcm);
@@ -56625,21 +56636,21 @@ static int mapping0_forward(vorbis_block *vb){
 #endif
 
   }
-  
+
   {
     float   *noise        = _vorbis_block_alloc(vb,n/2*sizeof(*noise));
     float   *tone         = _vorbis_block_alloc(vb,n/2*sizeof(*tone));
-    
+
     for(i=0;i<vi->channels;i++){
       /* the encoder setup assumes that all the modes used by any
 	 specific bitrate tweaking use the same floor */
-      
+
       int submap=info->chmuxlist[i];
-      
+
       /* the following makes things clearer to *me* anyway */
       float *mdct    =gmdct[i];
       float *logfft  =vb->pcm[i];
-      
+
       float *logmdct =logfft+n/2;
       float *logmask =logfft;
 
@@ -56647,7 +56658,7 @@ static int mapping0_forward(vorbis_block *vb){
 
       floor_posts[i]=_vorbis_block_alloc(vb,PACKETBLOBS*sizeof(**floor_posts));
       memset(floor_posts[i],0,sizeof(**floor_posts)*PACKETBLOBS);
-      
+
       for(j=0;j<n/2;j++)
 	logmdct[j]=todB(mdct+j);
 
@@ -56660,8 +56671,8 @@ static int mapping0_forward(vorbis_block *vb){
       }else{
 	_analysis_output("mdct",seq,logmdct,n/2,1,0,0);
       }
-#endif 
-      
+#endif
+
       /* first step; noise masking.  Not only does 'noise masking'
          give us curves from which we can decide how much resolution
          to give noise parts of the spectrum, it also implicitly hands
@@ -56704,7 +56715,7 @@ static int mapping0_forward(vorbis_block *vb){
 	 masking.  We then do a floor1-specific line fit.  If we're
 	 performing bitrate management, the line fit is performed
 	 multiple times for up/down tweakage on demand. */
-      
+
       _vp_offset_and_mix(psy_look,
 			 noise,
 			 tone,
@@ -56729,7 +56740,7 @@ static int mapping0_forward(vorbis_block *vb){
 	floor1_fit(vb,b->flr[info->floorsubmap[submap]],
 		   logmdct,
 		   logmask);
-      
+
       /* are we managing bitrate?  If so, perform two more fits for
          later rate tweaking (fits represent hi/lo) */
       if(vorbis_bitrate_managed(vb) && floor_posts[i][PACKETBLOBS/2]){
@@ -56749,12 +56760,12 @@ static int mapping0_forward(vorbis_block *vb){
 	    _analysis_output("mask2R",seq,logmask,n/2,1,0,0);
 	}
 #endif
-	
+
 	floor_posts[i][PACKETBLOBS-1]=
 	  floor1_fit(vb,b->flr[info->floorsubmap[submap]],
 		     logmdct,
 		     logmask);
-      
+
 	/* lower rate by way of higher noise curve */
 	_vp_offset_and_mix(psy_look,
 			   noise,
@@ -56774,7 +56785,7 @@ static int mapping0_forward(vorbis_block *vb){
 	  floor1_fit(vb,b->flr[info->floorsubmap[submap]],
 		     logmdct,
 		     logmask);
-	
+
 	/* we also interpolate a range of intermediate curves for
            intermediate rates */
 	for(k=1;k<PACKETBLOBS/2;k++)
@@ -56797,13 +56808,13 @@ static int mapping0_forward(vorbis_block *vb){
   /*
     the next phases are performed once for vbr-only and PACKETBLOB
     times for bitrate managed modes.
-    
+
     1) encode actual mode being used
     2) encode the floor for each channel, compute coded mask curve/res
     3) normalize and couple.
     4) encode residue
     5) save packet bytes to the packetblob vector
-    
+
   */
 
   /* iterate over the many masking curve fits we've created */
@@ -56821,12 +56832,12 @@ static int mapping0_forward(vorbis_block *vb){
 					&ci->psy_g_param,
 					psy_look,
 					info,
-					gmdct);    
-      
+					gmdct);
+
       mag_sort=_vp_quantize_couple_sort(vb,
 					psy_look,
 					info,
-					mag_memo);    
+					mag_memo);
     }
 
     memset(sortindex,0,sizeof(*sortindex)*vi->channels);
@@ -56860,7 +56871,7 @@ static int mapping0_forward(vorbis_block *vb){
 	float *res     =vb->pcm[i];
 	int   *ilogmask=ilogmaskch[i]=
 	  _vorbis_block_alloc(vb,n/2*sizeof(**gmdct));
-      
+
 	nonzero[i]=floor1_encode(vb,b->flr[info->floorsubmap[submap]],
 				 floor_posts[i][k],
 				 ilogmask);
@@ -56882,7 +56893,7 @@ static int mapping0_forward(vorbis_block *vb){
 
 	_vp_noise_normalize(psy_look,res,res+n/2,sortindex[i]);
 
-	
+
 #if 0
 	{
 	  char buf[80];
@@ -56895,10 +56906,10 @@ static int mapping0_forward(vorbis_block *vb){
 	}
 #endif
       }
-      
+
       /* our iteration is now based on masking curve, not prequant and
 	 coupling.  Only one prequant/coupling step */
-      
+
       /* quantize/couple */
       /* incomplete implementation that assumes the tree is all depth
          one, or no tree at all */
@@ -56914,7 +56925,7 @@ static int mapping0_forward(vorbis_block *vb){
 		   nonzero,
 		   ci->psy_g_param.sliding_lowpass[vb->W][k]);
       }
-      
+
       /* classify and encode by submap */
       for(i=0;i<info->submaps;i++){
 	int ch_in_bundle=0;
@@ -56929,21 +56940,21 @@ static int mapping0_forward(vorbis_block *vb){
 	    couple_bundle[ch_in_bundle++]=vb->pcm[j]+n/2;
 	  }
 	}
-	
+
 	classifications=_residue_P[ci->residue_type[resnum]]->
 	  class(vb,b->residue[resnum],couple_bundle,zerobundle,ch_in_bundle);
-	
+
 	_residue_P[ci->residue_type[resnum]]->
 	  forward(vb,b->residue[resnum],
 		  couple_bundle,NULL,zerobundle,ch_in_bundle,classifications);
       }
-      
+
       /* ok, done encoding.  Mark this protopacket and prepare next. */
       oggpack_writealign(&vb->opb);
       vbi->packetblob_markers[k]=oggpack_bytes(&vb->opb);
-      
+
     }
-    
+
   }
 
 #if 0
@@ -56968,7 +56979,7 @@ static int mapping0_inverse(vorbis_block *vb,vorbis_info_mapping *l){
 
   int   *nonzero  =alloca(sizeof(*nonzero)*vi->channels);
   void **floormemo=alloca(sizeof(*floormemo)*vi->channels);
-  
+
   /* recover the spectral envelope; store it in the PCM vector for now */
   for(i=0;i<vi->channels;i++){
     int submap=info->chmuxlist[i];
@@ -56977,7 +56988,7 @@ static int mapping0_inverse(vorbis_block *vb,vorbis_info_mapping *l){
     if(floormemo[i])
       nonzero[i]=1;
     else
-      nonzero[i]=0;      
+      nonzero[i]=0;
     memset(vb->pcm[i],0,sizeof(*vb->pcm[i])*n/2);
   }
 
@@ -56985,8 +56996,8 @@ static int mapping0_inverse(vorbis_block *vb,vorbis_info_mapping *l){
   for(i=0;i<info->coupling_steps;i++){
     if(nonzero[info->coupling_mag[i]] ||
        nonzero[info->coupling_ang[i]]){
-      nonzero[info->coupling_mag[i]]=1; 
-      nonzero[info->coupling_ang[i]]=1; 
+      nonzero[info->coupling_mag[i]]=1;
+      nonzero[info->coupling_ang[i]]=1;
     }
   }
 
@@ -57137,17 +57148,17 @@ void oggpack_write(oggpack_buffer *b,unsigned long value,int bits){
     b->ptr=b->buffer+b->endbyte;
   }
 
-  value&=mask[bits]; 
+  value&=mask[bits];
   bits+=b->endbit;
 
-  b->ptr[0]|=value<<b->endbit;  
-  
+  b->ptr[0]|=value<<b->endbit;
+
   if(bits>=8){
-    b->ptr[1]=value>>(8-b->endbit);  
+    b->ptr[1]=value>>(8-b->endbit);
     if(bits>=16){
-      b->ptr[2]=value>>(16-b->endbit);  
+      b->ptr[2]=value>>(16-b->endbit);
       if(bits>=24){
-	b->ptr[3]=value>>(24-b->endbit);  
+	b->ptr[3]=value>>(24-b->endbit);
 	if(bits>=32){
 	  if(b->endbit)
 	    b->ptr[4]=value>>(32-b->endbit);
@@ -57171,17 +57182,17 @@ void oggpackB_write(oggpack_buffer *b,unsigned long value,int bits){
     b->ptr=b->buffer+b->endbyte;
   }
 
-  value=(value&mask[bits])<<(32-bits); 
+  value=(value&mask[bits])<<(32-bits);
   bits+=b->endbit;
 
-  b->ptr[0]|=value>>(24+b->endbit);  
-  
+  b->ptr[0]|=value>>(24+b->endbit);
+
   if(bits>=8){
-    b->ptr[1]=value>>(16+b->endbit);  
+    b->ptr[1]=value>>(16+b->endbit);
     if(bits>=16){
-      b->ptr[2]=value>>(8+b->endbit);  
+      b->ptr[2]=value>>(8+b->endbit);
       if(bits>=24){
-	b->ptr[3]=value>>(b->endbit);  
+	b->ptr[3]=value>>(b->endbit);
 	if(bits>=32){
 	  if(b->endbit)
 	    b->ptr[4]=value<<(8-b->endbit);
@@ -57225,7 +57236,7 @@ static void oggpack_writecopy_helper(oggpack_buffer *b,
     int i;
     /* unaligned copy.  Do it the hard way. */
     for(i=0;i<bytes;i++)
-      w(b,(unsigned long)(ptr[i]),8);    
+      w(b,(unsigned long)(ptr[i]),8);
   }else{
     /* aligned block copy */
     if(b->endbyte+bytes+1>=b->storage){
@@ -57242,9 +57253,9 @@ static void oggpack_writecopy_helper(oggpack_buffer *b,
   }
   if(bits){
     if(msb)
-      w(b,(unsigned long)(ptr[bytes]>>(8-bits)),bits);    
+      w(b,(unsigned long)(ptr[bytes]>>(8-bits)),bits);
     else
-      w(b,(unsigned long)(ptr[bytes]),bits);    
+      w(b,(unsigned long)(ptr[bytes]),bits);
   }
 }
 
@@ -57296,14 +57307,14 @@ long oggpack_look(oggpack_buffer *b,int bits){
     /* not the main path */
     if(b->endbyte*8+bits>b->storage*8)return(-1);
   }
-  
+
   ret=b->ptr[0]>>b->endbit;
   if(bits>8){
-    ret|=b->ptr[1]<<(8-b->endbit);  
+    ret|=b->ptr[1]<<(8-b->endbit);
     if(bits>16){
-      ret|=b->ptr[2]<<(16-b->endbit);  
+      ret|=b->ptr[2]<<(16-b->endbit);
       if(bits>24){
-	ret|=b->ptr[3]<<(24-b->endbit);  
+	ret|=b->ptr[3]<<(24-b->endbit);
 	if(bits>32 && b->endbit)
 	  ret|=b->ptr[4]<<(32-b->endbit);
       }
@@ -57323,14 +57334,14 @@ long oggpackB_look(oggpack_buffer *b,int bits){
     /* not the main path */
     if(b->endbyte*8+bits>b->storage*8)return(-1);
   }
-  
+
   ret=b->ptr[0]<<(24+b->endbit);
   if(bits>8){
-    ret|=b->ptr[1]<<(16+b->endbit);  
+    ret|=b->ptr[1]<<(16+b->endbit);
     if(bits>16){
-      ret|=b->ptr[2]<<(8+b->endbit);  
+      ret|=b->ptr[2]<<(8+b->endbit);
       if(bits>24){
-	ret|=b->ptr[3]<<(b->endbit);  
+	ret|=b->ptr[3]<<(b->endbit);
 	if(bits>32 && b->endbit)
 	  ret|=b->ptr[4]>>(8-b->endbit);
       }
@@ -57384,14 +57395,14 @@ long oggpack_read(oggpack_buffer *b,int bits){
     ret=-1UL;
     if(b->endbyte*8+bits>b->storage*8)goto overflow;
   }
-  
+
   ret=b->ptr[0]>>b->endbit;
   if(bits>8){
-    ret|=b->ptr[1]<<(8-b->endbit);  
+    ret|=b->ptr[1]<<(8-b->endbit);
     if(bits>16){
-      ret|=b->ptr[2]<<(16-b->endbit);  
+      ret|=b->ptr[2]<<(16-b->endbit);
       if(bits>24){
-	ret|=b->ptr[3]<<(24-b->endbit);  
+	ret|=b->ptr[3]<<(24-b->endbit);
 	if(bits>32 && b->endbit){
 	  ret|=b->ptr[4]<<(32-b->endbit);
 	}
@@ -57399,7 +57410,7 @@ long oggpack_read(oggpack_buffer *b,int bits){
     }
   }
   ret&=m;
-  
+
  overflow:
 
   b->ptr+=bits/8;
@@ -57412,7 +57423,7 @@ long oggpack_read(oggpack_buffer *b,int bits){
 long oggpackB_read(oggpack_buffer *b,int bits){
   unsigned long ret;
   long m=32-bits;
-  
+
   bits+=b->endbit;
 
   if(b->endbyte+4>=b->storage){
@@ -57420,21 +57431,21 @@ long oggpackB_read(oggpack_buffer *b,int bits){
     ret=-1UL;
     if(b->endbyte*8+bits>b->storage*8)goto overflow;
   }
-  
+
   ret=b->ptr[0]<<(24+b->endbit);
   if(bits>8){
-    ret|=b->ptr[1]<<(16+b->endbit);  
+    ret|=b->ptr[1]<<(16+b->endbit);
     if(bits>16){
-      ret|=b->ptr[2]<<(8+b->endbit);  
+      ret|=b->ptr[2]<<(8+b->endbit);
       if(bits>24){
-	ret|=b->ptr[3]<<(b->endbit);  
+	ret|=b->ptr[3]<<(b->endbit);
 	if(bits>32 && b->endbit)
 	  ret|=b->ptr[4]>>(8-b->endbit);
       }
     }
   }
   ret=(ret>>(m>>1))>>((m+1)>>1);
-  
+
  overflow:
 
   b->ptr+=bits/8;
@@ -57445,7 +57456,7 @@ long oggpackB_read(oggpack_buffer *b,int bits){
 
 long oggpack_read1(oggpack_buffer *b){
   unsigned long ret;
-  
+
   if(b->endbyte>=b->storage){
     /* not the main path */
     ret=-1UL;
@@ -57453,7 +57464,7 @@ long oggpack_read1(oggpack_buffer *b){
   }
 
   ret=(b->ptr[0]>>b->endbit)&1;
-  
+
  overflow:
 
   b->endbit++;
@@ -57467,7 +57478,7 @@ long oggpack_read1(oggpack_buffer *b){
 
 long oggpackB_read1(oggpack_buffer *b){
   unsigned long ret;
-  
+
   if(b->endbyte>=b->storage){
     /* not the main path */
     ret=-1UL;
@@ -57475,7 +57486,7 @@ long oggpackB_read1(oggpack_buffer *b){
   }
 
   ret=(b->ptr[0]>>(7-b->endbit))&1;
-  
+
  overflow:
 
   b->endbit++;
@@ -57502,7 +57513,7 @@ long oggpackB_bytes(oggpack_buffer *b){
 long oggpackB_bits(oggpack_buffer *b){
   return oggpack_bits(b);
 }
-  
+
 unsigned char *oggpack_get_buffer(oggpack_buffer *b){
   return(b->buffer);
 }
@@ -57573,7 +57584,7 @@ int ogg_page_serialno(ogg_page *og){
 	 (og->header[16]<<16) |
 	 (og->header[17]<<24));
 }
- 
+
 long ogg_page_pageno(ogg_page *og){
   return(og->header[18] |
 	 (og->header[19]<<8) |
@@ -57590,13 +57601,13 @@ long ogg_page_pageno(ogg_page *og){
 /* NOTE:
 If a page consists of a packet begun on a previous page, and a new
 packet begun (but not completed) on this page, the return will be:
-  ogg_page_packets(page)   ==1, 
+  ogg_page_packets(page)   ==1,
   ogg_page_continued(page) !=0
 
 If a page happens to be a single packet that was begun on a
 previous page, and spans to the next page (in the case of a three or
-more page packet), the return will be: 
-  ogg_page_packets(page)   ==0, 
+more page packet), the return will be:
+  ogg_page_packets(page)   ==0,
   ogg_page_continued(page) !=0
 */
 
@@ -57712,7 +57723,7 @@ int ogg_stream_init(ogg_stream_state *os,int serialno){
     return(0);
   }
   return(-1);
-} 
+}
 
 /* _clear does not free os, only the non-flat storage within */
 int ogg_stream_clear(ogg_stream_state *os){
@@ -57721,10 +57732,10 @@ int ogg_stream_clear(ogg_stream_state *os){
     if(os->lacing_vals)_ogg_free(os->lacing_vals);
     if(os->granule_vals)_ogg_free(os->granule_vals);
 
-    memset(os,0,sizeof(*os));    
+    memset(os,0,sizeof(*os));
   }
   return(0);
-} 
+}
 
 int ogg_stream_destroy(ogg_stream_state *os){
   if(os){
@@ -57732,7 +57743,7 @@ int ogg_stream_destroy(ogg_stream_state *os){
     _ogg_free(os);
   }
   return(0);
-} 
+}
 
 /* Helpers for ogg_stream_encode; this keeps the structure and
    what's happening fairly clear */
@@ -57766,12 +57777,12 @@ void ogg_page_checksum_set(ogg_page *og){
     og->header[23]=0;
     og->header[24]=0;
     og->header[25]=0;
-    
+
     for(i=0;i<og->header_len;i++)
       crc_reg=(crc_reg<<8)^crc_lookup[((crc_reg >> 24)&0xff)^og->header[i]];
     for(i=0;i<og->body_len;i++)
       crc_reg=(crc_reg<<8)^crc_lookup[((crc_reg >> 24)&0xff)^og->body[i]];
-    
+
     og->header[22]=crc_reg&0xff;
     og->header[23]=(crc_reg>>8)&0xff;
     og->header[24]=(crc_reg>>16)&0xff;
@@ -57787,14 +57798,14 @@ int ogg_stream_packetin(ogg_stream_state *os,ogg_packet *op){
     /* advance packet data according to the body_returned pointer. We
        had to keep it around to return a pointer into the buffer last
        call */
-    
+
     os->body_fill-=os->body_returned;
     if(os->body_fill)
       memmove(os->body_data,os->body_data+os->body_returned,
 	      os->body_fill);
     os->body_returned=0;
   }
- 
+
   /* make sure we have the buffer storage */
   _os_body_expand(os,op->bytes);
   _os_lacing_expand(os,lacing_vals);
@@ -57839,7 +57850,7 @@ int ogg_stream_packetin(ogg_stream_state *os,ogg_packet *op){
 
    since ogg_stream_flush will flush the last page in a stream even if
    it's undersized, you almost certainly want to use ogg_stream_pageout
-   (and *not* ogg_stream_flush) unless you specifically need to flush 
+   (and *not* ogg_stream_flush) unless you specifically need to flush
    an page regardless of size in the middle of a stream. */
 
 int ogg_stream_flush(ogg_stream_state *os,ogg_page *og){
@@ -57851,10 +57862,10 @@ int ogg_stream_flush(ogg_stream_state *os,ogg_page *og){
   ogg_int64_t granule_pos=os->granule_vals[0];
 
   if(maxvals==0)return(0);
-  
+
   /* construct a page */
   /* decide how many segments to include */
-  
+
   /* If this is the initial header case, the first page must only include
      the initial header packet */
   if(os->b_o_s==0){  /* 'initial header page' case */
@@ -57872,13 +57883,13 @@ int ogg_stream_flush(ogg_stream_state *os,ogg_page *og){
       granule_pos=os->granule_vals[vals];
     }
   }
-  
+
   /* construct the header in temp storage */
   memcpy(os->header,"OggS",4);
-  
+
   /* stream structure version */
   os->header[4]=0x00;
-  
+
   /* continued packet flag? */
   os->header[5]=0x00;
   if((os->lacing_vals[0]&0x100)==0)os->header[5]|=0x01;
@@ -57917,33 +57928,33 @@ int ogg_stream_flush(ogg_stream_state *os,ogg_page *og){
       pageno>>=8;
     }
   }
-  
+
   /* zero for computation; filled in later */
   os->header[22]=0;
   os->header[23]=0;
   os->header[24]=0;
   os->header[25]=0;
-  
+
   /* segment table */
   os->header[26]=vals&0xff;
   for(i=0;i<vals;i++)
     bytes+=os->header[i+27]=(os->lacing_vals[i]&0xff);
-  
+
   /* set pointers in the ogg_page struct */
   og->header=os->header;
   og->header_len=os->header_fill=vals+27;
   og->body=os->body_data+os->body_returned;
   og->body_len=bytes;
-  
+
   /* advance the lacing data and set the body_returned pointer */
-  
+
   os->lacing_fill-=vals;
   memmove(os->lacing_vals,os->lacing_vals+vals,os->lacing_fill*sizeof(*os->lacing_vals));
   memmove(os->granule_vals,os->granule_vals+vals,os->lacing_fill*sizeof(*os->granule_vals));
   os->body_returned+=bytes;
-  
+
   /* calculate the checksum */
-  
+
   ogg_page_checksum_set(og);
 
   /* done */
@@ -57961,10 +57972,10 @@ int ogg_stream_pageout(ogg_stream_state *os, ogg_page *og){
      os->body_fill-os->body_returned > 4096 ||/* 'page nominal size' case */
      os->lacing_fill>=255 ||                  /* 'segment table full' case */
      (os->lacing_fill&&!os->b_o_s)){          /* 'initial header page' case */
-        
+
     return(ogg_stream_flush(os,og));
   }
-  
+
   /* not enough data to construct a page and not end of stream */
   return(0);
 }
@@ -58052,61 +58063,61 @@ int ogg_sync_wrote(ogg_sync_state *oy, long bytes){
   -n) skipped n bytes
    0) page not ready; more data (no bytes skipped)
    n) page synced at current location; page length n bytes
-   
+
 */
 
 long ogg_sync_pageseek(ogg_sync_state *oy,ogg_page *og){
   unsigned char *page=oy->data+oy->returned;
   unsigned char *next;
   long bytes=oy->fill-oy->returned;
-  
+
   if(oy->headerbytes==0){
     int headerbytes,i;
     if(bytes<27)return(0); /* not enough for a header */
-    
+
     /* verify capture pattern */
     if(memcmp(page,"OggS",4))goto sync_fail;
-    
+
     headerbytes=page[26]+27;
     if(bytes<headerbytes)return(0); /* not enough for header + seg table */
-    
+
     /* count up body length in the segment table */
-    
+
     for(i=0;i<page[26];i++)
       oy->bodybytes+=page[27+i];
     oy->headerbytes=headerbytes;
   }
-  
+
   if(oy->bodybytes+oy->headerbytes>bytes)return(0);
-  
+
   /* The whole test page is buffered.  Verify the checksum */
   {
     /* Grab the checksum bytes, set the header field to zero */
     char chksum[4];
     ogg_page log;
-    
+
     memcpy(chksum,page+22,4);
     memset(page+22,0,4);
-    
+
     /* set up a temp page struct and recompute the checksum */
     log.header=page;
     log.header_len=oy->headerbytes;
     log.body=page+oy->headerbytes;
     log.body_len=oy->bodybytes;
     ogg_page_checksum_set(&log);
-    
+
     /* Compare */
     if(memcmp(chksum,page+22,4)){
       /* D'oh.  Mismatch! Corrupt page (or miscapture and not a page
 	 at all) */
       /* replace the computed checksum with the one actually read in */
       memcpy(page+22,chksum,4);
-      
+
       /* Bad checksum. Lose sync */
       goto sync_fail;
     }
   }
-  
+
   /* yes, have a whole page all ready to go */
   {
     unsigned char *page=oy->data+oy->returned;
@@ -58125,12 +58136,12 @@ long ogg_sync_pageseek(ogg_sync_state *oy,ogg_page *og){
     oy->bodybytes=0;
     return(bytes);
   }
-  
+
  sync_fail:
-  
+
   oy->headerbytes=0;
   oy->bodybytes=0;
-  
+
   /* search for possible capture */
   next=memchr(page+1,'O',bytes-1);
   if(!next)
@@ -58167,7 +58178,7 @@ int ogg_sync_pageout(ogg_sync_state *oy, ogg_page *og){
       /* need more data */
       return(0);
     }
-    
+
     /* head did not start a synced page... skipped some bytes */
     if(!oy->unsynced){
       oy->unsynced=1;
@@ -58196,7 +58207,7 @@ int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
   int serialno=ogg_page_serialno(og);
   long pageno=ogg_page_pageno(og);
   int segments=header[26];
-  
+
   /* clean up 'returned data' */
   {
     long lr=os->lacing_returned;
@@ -58260,7 +58271,7 @@ int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
       }
     }
   }
-  
+
   if(bodysize){
     _os_body_expand(os,bodysize);
     memcpy(os->body_data+os->body_fill,body,bodysize);
@@ -58273,20 +58284,20 @@ int ogg_stream_pagein(ogg_stream_state *os, ogg_page *og){
       int val=header[27+segptr];
       os->lacing_vals[os->lacing_fill]=val;
       os->granule_vals[os->lacing_fill]=-1;
-      
+
       if(bos){
 	os->lacing_vals[os->lacing_fill]|=0x100;
 	bos=0;
       }
-      
+
       if(val<255)saved=os->lacing_fill;
-      
+
       os->lacing_fill++;
       segptr++;
-      
+
       if(val<255)os->lacing_packet=os->lacing_fill;
     }
-  
+
     /* set the granulepos on the last granuleval of the last full packet */
     if(saved!=-1){
       os->granule_vals[saved]=granulepos;
@@ -58406,8 +58417,3 @@ void ogg_packet_clear(ogg_packet *op) {
   _ogg_free(op->packet);
   memset(op, 0, sizeof(*op));
 }
-
-
-
-
-
