@@ -27,7 +27,12 @@
 
 // knobs to control workload
 #define NUM_FIB_ONLY 4
-#define ITERS 10
+
+#ifdef SMALL_PROBLEM_SIZE
+  #define ITERS 4
+#else
+  #define ITERS 10
+#endif
 
 // https://oeis.org/A006577/list
 #define START_HAILSTONE 27

@@ -51,7 +51,7 @@ Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, StringRef 
 }
 
 Error cleanup(Module &Module, StringRef TargetFunc) {
-  bool Pr = true; // printing?
+  bool Pr = false; // printing?
   SimplePassBuilder PB(/*DebugAnalyses*/ false);
   ModulePassManager MPM;
 
