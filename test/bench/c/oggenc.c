@@ -2,6 +2,7 @@
 
 RUN: %clang %s -fhalo -lm -o %t
 RUN: false
+XFAIL: *
 
 consider downloading the .WAV file suggested from the link below
 

@@ -2,6 +2,7 @@
 
 RUN: %clang -std=c90 -fhalo %s -o %t
 RUN: %testhalo %server 5 '%t --compress --best --stdout %p/gcc.c.src' > /dev/null
+XFAIL: *
 
 */
 
