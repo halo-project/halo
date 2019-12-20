@@ -97,6 +97,7 @@ Error cleanup(Module &Module, StringRef TargetFunc) {
 }
 
 Error optimize(Module &Module, TargetMachine &TM) {
+  bool Pr = false; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
   // PGOOptions PGO; // TODO: would want to use this later.
   SimplePassBuilder PB(&TM, PTO);
@@ -106,7 +107,7 @@ Error optimize(Module &Module, TargetMachine &TM) {
                                           /*Debug*/ false,
                                           /*LTOPreLink*/ false);
 
-  pb::addPrintPass(true, MPM, "after optimization pipeline.");
+  pb::addPrintPass(Pr, MPM, "after optimization pipeline.");
   MPM.run(Module, PB.getAnalyses());
 
   return Error::success();

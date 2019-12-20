@@ -21,7 +21,7 @@ struct GroupState {
   using ClientCollection = std::list<std::unique_ptr<ClientSession>>;
 
   ClientCollection Clients;
-  std::list<std::pair<llvm::StringRef,
+  std::list<std::pair<std::string,
                       std::future<CompilationPipeline::compile_expected>
                      >
            > InFlight;
