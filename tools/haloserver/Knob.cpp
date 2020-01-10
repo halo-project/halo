@@ -2,7 +2,7 @@
 
 
 namespace halo {
-  std::atomic<KnobID> KnobTicker {1};
+  std::atomic<KnobTicket> KnobTicker {1};
 
 template <typename S>
 bool operator== (const ScalarKnob<S>& A, const ScalarKnob<S>& B) {

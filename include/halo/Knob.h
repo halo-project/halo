@@ -6,7 +6,7 @@
 #include <cassert>
 #include <atomic>
 
-#include <halo/Utility.h>
+#include "halo/Utility.h"
 
 namespace halo {
 
@@ -24,11 +24,11 @@ namespace halo {
   // that's what we mean. This is still robust, since a new virtual method will
   // cause the compiler to point out places where you haven't updated your code
 
-  using KnobID = uint64_t;
+  using KnobTicket = uint64_t;
 
   // used to ensure knob IDs are unique.
   // we rely on the fact that 0 is an invalid knob ID
-  extern std::atomic<KnobID> KnobTicker;
+  extern std::atomic<KnobTicket> KnobTicker;
 
   // Base class for tunable compiler "knobs", which
   // are simply tunable components.
@@ -36,28 +36,24 @@ namespace halo {
   class Knob {
 
   private:
-    KnobID id__;
+    KnobTicket ticker__;
 
   public:
     Knob() {
-      id__ = KnobTicker.fetch_add(1);
-      assert(id__ != 0 && "exhausted the knob ticker!");
+      ticker__ = KnobTicker.fetch_add(1);
+      assert(ticker__ != 0 && "exhausted the knob ticker!");
     }
     virtual ~Knob() = default;
     // value accessors
     virtual ValTy getDefault() const = 0;
     virtual ValTy getVal() const = 0;
     virtual void setVal(ValTy) = 0;
+    // a human-readable but unique name that idenifies this tunable knob
+    virtual std::string const& getID() const = 0;
 
-    // a unique ID relative to all knobs in the process.
-    // since multiple instances of autotuners can be created
-    // per process, this only guarentees uniqueness of each
-    // instance, it is otherwise unstable.
-    KnobID getID() const { return id__; }
-
-    virtual std::string getName() const {
-       return "knob id " + std::to_string(getID());
-    }
+    // a unique number relative to all knobs in the current process only.
+    // suitable for use in the ID of a dynamically generated Knob
+    KnobTicket getTicket() const { return ticker__; }
 
     // members related to exporting to a flat array
 
@@ -109,20 +105,6 @@ namespace halo {
     }
 
   }; // end class FlagKnob
-
-////////////////////////
-// handy type aliases and type utilities
-
-namespace knob_type {
-  using ScalarInt = ScalarKnob<int>;
-}
-
-// this needs to appear first, before specializations.
-template< typename Any >
-struct is_knob {
-  static constexpr bool value = false;
-  using rawTy = void;
-};
 
 
 } // namespace tuner

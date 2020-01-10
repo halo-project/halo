@@ -101,6 +101,7 @@ namespace halo {
     unsigned LoopID;
     unsigned nestingDepth;
     std::vector<LoopKnob*> kids;
+    std::string Name;
 
     // NOTE could probably add some utilities to check the
     // sanity of a loop setting to this class?
@@ -110,7 +111,8 @@ namespace halo {
     LoopKnob (unsigned name, std::vector<LoopKnob*> children_, unsigned depth_)
       : LoopID(name),
         nestingDepth(depth_),
-        kids(std::move(children_)) {}
+        kids(std::move(children_)),
+        Name("loop #" + std::to_string(LoopID)) {}
 
     LoopSetting getDefault() const override {
       LoopSetting Empty;
@@ -129,8 +131,8 @@ namespace halo {
 
     unsigned getLoopName() const { return LoopID; }
 
-    virtual std::string getName() const override {
-       return "loop #" + std::to_string(getLoopName());
+    virtual std::string const& getID() const override {
+       return Name;
     }
 
     virtual size_t size() const override {
@@ -156,12 +158,6 @@ LoopSetting genNearbyLoopSetting(RNE &Eng, LoopSetting LS, double energy);
 
 extern template
 LoopSetting genNearbyLoopSetting<std::mt19937_64>(std::mt19937_64&, LoopSetting, double);
-
-
-// handy type aliases.
-namespace knob_type {
-  using Loop = LoopKnob;
-}
 
 } // namespace tuner
 
