@@ -42,6 +42,11 @@ void service_group(ClientGroup &G) {
 
 
 int main(int argc, char* argv[]) {
+  // Verify that the version of the library that we linked against is
+  // compatible with the version of the headers we compiled against.
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
+
   cl::ParseCommandLineOptions(argc, argv, "Halo Server\n");
 
   // Initialize parts of LLVM related to JIT compilation.
