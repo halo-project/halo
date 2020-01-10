@@ -1,2 +1,0 @@
-
-#include <halo/ScalarKnob.h>

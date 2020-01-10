@@ -2,5 +2,15 @@
 
 
 namespace halo {
-  std::atomic<uint64_t> KnobTicker {1};
+  std::atomic<KnobID> KnobTicker {1};
+
+template <typename S>
+bool operator== (const ScalarKnob<S>& A, const ScalarKnob<S>& B) {
+  return (
+    A.max() == B.max() &&
+    A.min() == B.min() &&
+    A.getDefault() == B.getDefault()
+  );
+}
+
 }

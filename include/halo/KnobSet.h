@@ -1,20 +1,19 @@
 #pragma once
 
-#include <halo/Knob.h>
-#include <tuner/LoopKnob.h>
+#include "halo/Knob.h"
+#include "halo/LoopKnob.h"
 
 #include <unordered_map>
 
 namespace halo {
 
-  // FIXME:
   // using std::variant & std::visit to try and combine the
-  // different instances of Knob into a single container
-  // would be nice, but requires C++17:
-  //    https://en.cppreference.com/w/cpp/utility/variant/visit
-  // Also, maybe it requires RTTI?
+  // different templated instances of Knob<T> into a single container
+  // would be nice but requires C++17, and possibly RTTI
   //
-  // Instead, we use abstract function-objects to implement the equivalent
+  // https://en.cppreference.com/w/cpp/utility/variant/visit
+  //
+  // instead, we use abstract function-objects to implement the equivalent
   // of a lambda-case in a functional language, e.g., (\x -> case x of ...)
   // and write our own generic operations over them.
 

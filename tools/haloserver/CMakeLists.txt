@@ -38,9 +38,9 @@ add_executable(${SERVER_BIN}
   CompilationPipeline.cpp
   HaloServer.cpp
   Knob.cpp
+  KnobSet.cpp
   MDUtils.cpp
   PerformanceData.cpp
-  ScalarKnob.cpp
   ${HALO_NET_DIR}/Logging.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}
