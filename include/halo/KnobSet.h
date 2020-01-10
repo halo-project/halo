@@ -38,6 +38,11 @@ namespace halo {
 
   public:
 
+    template <class... Args>
+    /*ScalarInt&*/ void emplaceScalarInt(Args&&... args) {
+      IntKnobs.emplace(std::forward(args)...);
+    }
+
     size_t size() const;
 
     void applyToKnobs(KnobSetAppFn &&F);
