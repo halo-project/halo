@@ -2,6 +2,8 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/TargetSelect.h"
 
+#include "halo/nlohmann/json.hpp"
+
 #include "boost/asio.hpp"
 
 #include "halo/ClientRegistrar.h"
