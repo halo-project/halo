@@ -8,44 +8,41 @@
 namespace halo {
 
   // handy type aliases.
-  namespace knob_type {
-    using LoopKnob = LoopKnob;
-    using ScalarInt = ScalarKnob<int>;
+  namespace knob_ty {
+    using Loop = LoopKnob;
+    using Int = ScalarKnob<int>;
   }
-
-  // using std::variant & std::visit to try and combine the
-  // different templated instances of Knob<T> into a single container
-  // would be nice but requires C++17, and possibly RTTI
-  //
-  // https://en.cppreference.com/w/cpp/utility/variant/visit
-  //
-  // instead, we use abstract function-objects + ad-hoc polymorphism to
-  // implement the equivalent of a lambda-case in a functional language,
-  // e.g., (\x -> case x of type1 -> ... | type2 -> ... etc)
-
-  // applies some arbitrary operation to a KnobSet
-  class KnobSetAppFn {
-  public:
-      virtual void operator()(knob_type::ScalarInt&) = 0;
-      virtual void operator()(knob_type::LoopKnob&) = 0;
-  };
 
 
   class KnobSet {
   private:
-    std::unordered_map<std::string, std::unique_ptr<knob_type::ScalarInt>> IntKnobs;
-    std::unordered_map<std::string, std::unique_ptr<knob_type::LoopKnob>> LoopKnobs;
+    std::unordered_map<std::string, std::unique_ptr<Knob>> Knobs;
 
   public:
 
     template <class... Args>
-    /*ScalarInt&*/ void emplaceScalarInt(Args&&... args) {
-      IntKnobs.emplace(std::forward(args)...);
+    Knob& emplace(Args&&... args) {
+      auto Res = Knobs.emplace(std::forward(args)...);
+      auto Iter = Res.first;
+      auto InsertionOccured = Res.second;
+      if (!InsertionOccured) llvm::report_fatal_error("Tried to add knob "
+                              "with name that already exists in the set!");
+      return *Iter;
     }
 
-    size_t size() const;
+    Knob& lookup(std::string const& Name) {
+      auto Search = Knobs.find(Name);
+      if (Search != Knobs.end())
+        return *Search->second;
+    }
 
-    void applyToKnobs(KnobSetAppFn &&F);
+    auto begin() noexcept { return Knobs.begin(); }
+    auto begin() const noexcept { return Knobs.begin(); }
+
+    auto end() noexcept { return Knobs.end(); }
+    auto end() const noexcept { return Knobs.end(); }
+
+    size_t size() const;
 
   };
 

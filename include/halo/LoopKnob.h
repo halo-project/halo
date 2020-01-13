@@ -95,7 +95,7 @@ namespace halo {
 
   };
 
-  class LoopKnob : public Knob<LoopSetting> {
+  class LoopKnob : public Knob {
   private:
     LoopSetting Opt;
     unsigned LoopID;
@@ -109,25 +109,21 @@ namespace halo {
 
   public:
     LoopKnob (unsigned name, std::vector<LoopKnob*> children_, unsigned depth_)
-      : LoopID(name),
+      : Knob(KK_Loop),
+        LoopID(name),
         nestingDepth(depth_),
         kids(std::move(children_)),
         Name("loop #" + std::to_string(LoopID)) {}
 
-    LoopSetting getDefault() const override {
-      LoopSetting Empty;
-      return Empty;
-    }
+    LoopSetting getDefault() const { return LoopSetting(); }
+    LoopSetting getVal() const { return Opt; }
+    void setVal (LoopSetting LS) { Opt = LS; }
 
     // loop structure information
     std::vector<LoopKnob*>& children() { return kids; }
     auto begin() { return kids.begin(); }
     auto end() { return kids.end(); }
     unsigned loopDepth() const { return nestingDepth; }
-
-    LoopSetting getVal() const override { return Opt; }
-
-    void setVal (LoopSetting LS) override { Opt = LS; }
 
     unsigned getLoopName() const { return LoopID; }
 
@@ -137,6 +133,10 @@ namespace halo {
 
     virtual size_t size() const override {
       return Opt.size();
+    }
+
+    static bool classof(const Knob *K) {
+      return K->getKind() == KK_Loop;
     }
 
   }; // end class
