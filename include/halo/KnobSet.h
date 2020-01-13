@@ -2,6 +2,7 @@
 
 #include "halo/Knob.h"
 #include "halo/LoopKnob.h"
+#include "halo/NamedKnobs.h"
 
 #include <unordered_map>
 
@@ -33,10 +34,27 @@ namespace halo {
       return *(Iter->second);
     }
 
-    Knob& lookup(std::string const& Name) {
+    template <typename T>
+    T& lookup(named_knob::ty const& Name) const {
+      return lookup<T>(Name.first);
+    }
+
+    // Performs a lookup for the given knob name having the specified type,
+    // crashing if either one fails.
+    // FIXME: make it return an option type instead.
+    template <typename T>
+    T& lookup(std::string const& Name) const {
       auto Search = Knobs.find(Name);
-      if (Search != Knobs.end())
-        return *Search->second;
+      if (Search != Knobs.end()) {
+        Knob* Ptr = Search->second.get();
+
+        if (T* Derived = llvm::dyn_cast<T>(Ptr))
+          return *Derived;
+        else
+          llvm::report_fatal_error("unexpected type for knob during lookup");
+      }
+
+      llvm::report_fatal_error("unknown knob name requested");
     }
 
     auto begin() noexcept { return Knobs.begin(); }

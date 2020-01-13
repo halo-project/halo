@@ -3,8 +3,11 @@
 #include "halo/LinkageFixupPass.h"
 #include "halo/LoopNamerPass.h"
 #include "halo/SimplePassBuilder.h"
+#include "halo/NamedKnobs.h"
+
 #include "llvm/Transforms/IPO.h"
 #include "llvm/IR/DebugInfo.h"
+
 #include "Logging.h"
 
 using namespace llvm;
@@ -96,14 +99,15 @@ Error cleanup(Module &Module, StringRef TargetFunc) {
   return Error::success();
 }
 
-Error optimize(Module &Module, TargetMachine &TM) {
+Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   bool Pr = false; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
   // PGOOptions PGO; // TODO: would want to use this later.
   SimplePassBuilder PB(&TM, PTO);
 
+  auto OptLevel = Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel).getVal();
   ModulePassManager MPM =
-        PB.buildPerModuleDefaultPipeline(PassBuilder::O3,
+        PB.buildPerModuleDefaultPipeline(OptLevel,
                                           /*Debug*/ false,
                                           /*LTOPreLink*/ false);
 
@@ -115,7 +119,7 @@ Error optimize(Module &Module, TargetMachine &TM) {
 
 // The complete pipeline
 Expected<CompilationPipeline::compile_result>
-  CompilationPipeline::_run(Module &Module, StringRef TargetFunc) {
+  CompilationPipeline::_run(Module &Module, StringRef TargetFunc, KnobSet const& Knobs) {
 
   llvm::orc::JITTargetMachineBuilder JTMB(Triple);
   auto MaybeTM = JTMB.createTargetMachine();
@@ -123,14 +127,25 @@ Expected<CompilationPipeline::compile_result>
     return MaybeTM.takeError();
 
   auto TM = std::move(MaybeTM.get());
-  // TODO: modify the TargetMachine according to the input configuration.
+  TargetOptions TO = TM->DefaultOptions; // grab defaults
+
+  TO.EnableIPRA = Knobs.lookup<FlagKnob>(named_knob::IPRA).getFlag();
+
+  TO.EnableFastISel = Knobs.lookup<FlagKnob>(named_knob::FastISel).getFlag();
+  TO.EnableGlobalISel = Knobs.lookup<FlagKnob>(named_knob::GlobalISel).getFlag();
+
+  TO.EnableMachineOutliner = Knobs.lookup<FlagKnob>(named_knob::MachineOutline).getFlag();
+  TO.GuaranteedTailCallOpt = Knobs.lookup<FlagKnob>(named_knob::GuaranteeTCO).getFlag();
+
+  TM->Options = TO; // save the options
+
 
   auto CleanupErr = cleanup(Module, TargetFunc);
   if (CleanupErr)
     return CleanupErr;
 
 
-  auto OptErr = optimize(Module, *TM);
+  auto OptErr = optimize(Module, *TM, Knobs);
   if (OptErr)
     return OptErr;
 

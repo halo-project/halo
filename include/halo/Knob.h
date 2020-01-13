@@ -9,6 +9,7 @@
 #include "halo/Utility.h"
 
 #include "llvm/Support/Casting.h"
+#include "llvm/Passes/PassBuilder.h"
 
 namespace halo {
 
@@ -32,7 +33,8 @@ namespace halo {
     enum KnobKind {
       KK_Int,
       KK_Flag,
-      KK_Loop
+      KK_Loop,
+      KK_OptLvl
     };
 
     Knob(KnobKind Kind) : kind_(Kind) {
@@ -127,6 +129,43 @@ namespace halo {
     }
 
   }; // end class FlagKnob
+
+  class OptLvlKnob : public ScalarKnob<llvm::PassBuilder::OptimizationLevel> {
+  public:
+    using LevelTy = llvm::PassBuilder::OptimizationLevel;
+    OptLvlKnob(std::string const& Name, std::string const& current,
+               std::string const& dflt, std::string const& min, std::string const& max)
+      : ScalarKnob<LevelTy>(KK_OptLvl, Name,
+          parseLevel(current), parseLevel(dflt), parseLevel(min), parseLevel(max)) {}
+
+    static LevelTy parseLevel(std::string const& Level) {
+
+      if (Level == "O0")
+        return LevelTy::O0;
+
+      if (Level == "O1")
+        return LevelTy::O1;
+
+      if (Level == "O2")
+        return LevelTy::O2;
+
+      if (Level == "O3")
+        return LevelTy::O3;
+
+      if (Level == "Os")
+        return LevelTy::Os;
+
+      if (Level == "Oz")
+        return LevelTy::Oz;
+
+      llvm::report_fatal_error("invalid opt level string");
+    }
+
+    static bool classof(const Knob *K) {
+      return K->getKind() == KK_OptLvl;
+    }
+
+  }; // end class OptLvlKnob
 
 
 

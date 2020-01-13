@@ -28,6 +28,9 @@ namespace halo {
     CompilationPipeline(llvm::Triple Triple, llvm::StringRef CPU)
       : Triple(Triple), CPUName(CPU) {}
 
+    // NOTE: it is important that the KnobSet is passed by value here, since we
+    // want to take in a standalone copy of the knobs so as to not create
+    // a data race, etc.
     compile_expected run(llvm::MemoryBuffer &Bitcode, llvm::StringRef TargetFunc, KnobSet Knobs) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
 
@@ -39,7 +42,7 @@ namespace halo {
 
       std::unique_ptr<llvm::Module> Module = std::move(MaybeModule.get());
 
-      auto Result = _run(*Module, TargetFunc);
+      auto Result = _run(*Module, TargetFunc, Knobs);
       if (Result)
         return std::move(Result.get());
 
@@ -61,7 +64,7 @@ namespace halo {
     llvm::StringRef getCPUName() const { return CPUName; }
 
   private:
-    llvm::Expected<compile_result> _run(llvm::Module&, llvm::StringRef);
+    llvm::Expected<compile_result> _run(llvm::Module&, llvm::StringRef, KnobSet const&);
     llvm::Expected<std::unique_ptr<llvm::Module>> _parseBitcode(llvm::LLVMContext&, llvm::MemoryBuffer&);
 
     llvm::Triple Triple;
