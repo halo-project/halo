@@ -3,8 +3,11 @@
 #include "halo/Knob.h"
 #include "halo/LoopKnob.h"
 #include "halo/NamedKnobs.h"
+#include "halo/nlohmann/json_fwd.hpp"
 
 #include <unordered_map>
+
+using JSON = nlohmann::json;
 
 namespace halo {
 
@@ -64,6 +67,8 @@ namespace halo {
     auto end() const noexcept { return Knobs.end(); }
 
     size_t size() const;
+
+    static void InitializeKnobs(JSON const&, KnobSet&);
 
   };
 

@@ -1,6 +1,8 @@
 
 #include "halo/KnobSet.h"
 
+#include "halo/nlohmann/json.hpp"
+
 namespace halo {
 
 KnobSet::KnobSet(const KnobSet& Other) {
@@ -28,6 +30,10 @@ size_t KnobSet::size() const {
      numVals += Entry.second->size();
 
    return numVals;
+ }
+
+ void KnobSet::InitializeKnobs(JSON const& Config, KnobSet& Knobs) {
+   llvm::report_fatal_error("todo: read the JSON object");
  }
 
 } // end namespace halo

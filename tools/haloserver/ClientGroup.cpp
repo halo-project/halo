@@ -194,14 +194,14 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
 }
 
 
-ClientGroup::ClientGroup(ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
+ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
       ShouldStop(false), Pool(Pool), BitcodeHash(BitcodeSHA1) {
 
-      if (!CS->Enrolled) {
-        std::cerr << "was given a non-enrolled client!!\n";
-        // TODO: proper error facilities.
-      }
+      KnobSet::InitializeKnobs(Config, Knobs);
+
+      if (!CS->Enrolled)
+        llvm::report_fatal_error("was given a non-enrolled client!");
 
       pb::ClientEnroll &Client = CS->Client;
       // pb::ModuleInfo const& Module = Client.module();

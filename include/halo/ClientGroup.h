@@ -14,7 +14,12 @@
 #include "halo/SequentialAccess.h"
 #include "halo/Profiler.h"
 #include "halo/KnobSet.h"
+
 #include "llvm/Support/MemoryBuffer.h"
+
+#include "halo/nlohmann/json_fwd.hpp"
+
+using JSON = nlohmann::json;
 
 namespace halo {
 
@@ -44,7 +49,7 @@ public:
   std::atomic<bool> ShouldStop;
 
   // Construct a singleton client group based on its initial member.
-  ClientGroup(ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);
+  ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);
 
   // returns true if the session became a member of the group.
   bool tryAdd(ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);

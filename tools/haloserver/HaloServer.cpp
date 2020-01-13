@@ -1,6 +1,7 @@
 
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/TargetSelect.h"
+#include "llvm/Support/Error.h"
 
 #include "halo/nlohmann/json.hpp"
 
@@ -9,11 +10,15 @@
 #include "halo/ClientRegistrar.h"
 
 #include <cinttypes>
+#include <fstream>
+#include <iomanip>
 
 
 namespace cl = llvm::cl;
 namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
+
+using JSON = nlohmann::json;
 
 /////////////
 // Command-line Options
@@ -34,10 +39,31 @@ cl::opt<uint32_t> CL_TimeoutSec("timeout",
                       cl::desc("Quit with non-zero exit code if N seconds have elapsed. Zero means disabled."),
                       cl::init(0));
 
+cl::opt<std::string> CL_ConfigPath("config",
+                      cl::desc("Path to the JSON-formatted configuration file."),
+                      cl::init("./server-config.json"));
+
 namespace halo {
 
 void service_group(ClientGroup &G) {
     G.start_services();
+}
+
+JSON ReadConfigFile(std::string &Path) {
+  // Read the configuration file.
+  std::ifstream file(Path);
+
+  if (!file.is_open()) {
+    std::cerr << "Unable to open server config file: " << Path << std::endl;
+    llvm::report_fatal_error("exiting due to previous error");
+  }
+
+  JSON ServerConfig;
+  file >> ServerConfig;
+  std::cout << "Read the following server config:\n"
+            << std::setw(2) << ServerConfig << std::endl;
+
+  return ServerConfig;
 }
 
 } // end namespace halo
@@ -51,6 +77,12 @@ int main(int argc, char* argv[]) {
 
   cl::ParseCommandLineOptions(argc, argv, "Halo Server\n");
 
+  JSON ServerConfig = halo::ReadConfigFile(CL_ConfigPath);
+
+  // TODO: remove this, it's just for testing
+  // halo::KnobSet S;
+  // halo::KnobSet::InitializeKnobs(ServerConfig, S);
+
   // Initialize parts of LLVM related to JIT compilation.
   // See llvm/Support/TargetSelect.h for other items.
   llvm::InitializeAllTargetInfos();
@@ -63,7 +95,7 @@ int main(int argc, char* argv[]) {
 
   asio::io_service IOService;
 
-  halo::ClientRegistrar CR(IOService, CL_Port, CL_NoPersist);
+  halo::ClientRegistrar CR(IOService, CL_Port, CL_NoPersist, ServerConfig);
 
   std::thread io_thread([&](){ IOService.run(); });
 

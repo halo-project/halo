@@ -4,6 +4,8 @@
 #include "llvm/Support/SHA1.h"
 #include "halo/ClientGroup.h"
 #include "halo/ThreadPool.h"
+#include "halo/nlohmann/json_fwd.hpp"
+
 #include "Logging.h"
 
 #include <cinttypes>
@@ -15,13 +17,16 @@ namespace asio = boost::asio;
 namespace ip = boost::asio::ip;
 namespace msg = halo::msg;
 
+using JSON = nlohmann::json;
+
 namespace halo {
 
 class ClientRegistrar {
 public:
-  ClientRegistrar(asio::io_service &service, uint32_t port, bool nopersist)
+  ClientRegistrar(asio::io_service &service, uint32_t port, bool nopersist, JSON config)
       : NoPersist(nopersist),
         Port(port),
+        ServerConfig(config),
         IOService(service),
         Endpoint(ip::tcp::v4(), Port),
         Acceptor(IOService, Endpoint) {
@@ -88,6 +93,7 @@ DO_SHUTDOWN:
 private:
   bool NoPersist;
   uint32_t Port;
+  JSON ServerConfig;
   asio::io_service &IOService;
   ip::tcp::endpoint Endpoint;
   ip::tcp::acceptor Acceptor;
@@ -153,7 +159,7 @@ private:
 
         if (!Added) {
           // we've not seen a client like this before.
-          Groups.emplace_back(Pool, CS, Hash);
+          Groups.emplace_back(ServerConfig, Pool, CS, Hash);
         }
 
         info("Client has successfully registered.", true);
