@@ -20,14 +20,17 @@ namespace halo {
 
   public:
 
-    template <class... Args>
-    Knob& emplace(Args&&... args) {
-      auto Res = Knobs.emplace(std::forward(args)...);
+    KnobSet() {}
+    KnobSet(const KnobSet&);
+
+    Knob& insert(std::unique_ptr<Knob> KNB) {
+      auto Name = KNB->getID();
+      auto Res = Knobs.insert({Name, std::move(KNB)});
       auto Iter = Res.first;
-      auto InsertionOccured = Res.second;
+      bool InsertionOccured = Res.second;
       if (!InsertionOccured) llvm::report_fatal_error("Tried to add knob "
                               "with name that already exists in the set!");
-      return *Iter;
+      return *(Iter->second);
     }
 
     Knob& lookup(std::string const& Name) {

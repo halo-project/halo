@@ -8,6 +8,9 @@
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/Error.h"
+
+#include "halo/KnobSet.h"
+
 #include <memory>
 
 namespace orc = llvm::orc;
@@ -25,7 +28,7 @@ namespace halo {
     CompilationPipeline(llvm::Triple Triple, llvm::StringRef CPU)
       : Triple(Triple), CPUName(CPU) {}
 
-    compile_expected run(llvm::MemoryBuffer &Bitcode, llvm::StringRef TargetFunc) {
+    compile_expected run(llvm::MemoryBuffer &Bitcode, llvm::StringRef TargetFunc, KnobSet Knobs) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
 
       auto MaybeModule = _parseBitcode(Cxt, Bitcode);

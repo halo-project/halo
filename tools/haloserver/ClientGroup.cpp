@@ -92,7 +92,7 @@ namespace halo {
         State.InFlight.emplace_back(Name,
           std::move(Pool.asyncRet([this,Name] () -> CompilationPipeline::compile_expected {
 
-          auto Result = Pipeline.run(*Bitcode, Name);
+          auto Result = Pipeline.run(*Bitcode, Name, Knobs);
 
           llvm::outs() << "Finished Compile!\n";
 

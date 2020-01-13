@@ -13,6 +13,7 @@
 #include "halo/ThreadPool.h"
 #include "halo/SequentialAccess.h"
 #include "halo/Profiler.h"
+#include "halo/KnobSet.h"
 #include "llvm/Support/MemoryBuffer.h"
 
 namespace halo {
@@ -73,6 +74,7 @@ private:
   void end_service_iteration();
 
   ThreadPool &Pool;
+  KnobSet Knobs;
   CompilationPipeline Pipeline;
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;

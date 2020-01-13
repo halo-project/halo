@@ -68,15 +68,21 @@ namespace halo {
   template < typename ValTy >
   class ScalarKnob : public Knob {
   protected:
+    std::string Name;
     ValTy Current;
     ValTy Default;
     ValTy Min;
     ValTy Max;
   public:
-    ScalarKnob(KnobKind kind, ValTy current, ValTy dflt, ValTy min, ValTy max)
-        : Knob(kind), Current(current), Default(dflt), Min(min), Max(max) {}
+    ScalarKnob(KnobKind kind, std::string const& name, ValTy current, ValTy dflt, ValTy min, ValTy max)
+        : Knob(kind), Name(name),
+          Current(current), Default(dflt), Min(min), Max(max) {}
 
     virtual ~ScalarKnob() = default;
+
+    std::string const& getID() const override {
+      return Name;
+    }
 
     // value accessors
     virtual ValTy getVal() const { return Current; }
@@ -102,8 +108,8 @@ namespace halo {
     static constexpr int FALSE = 0;
   public:
     virtual ~FlagKnob() = default;
-    FlagKnob(bool dflt)
-      : ScalarKnob<int>(KK_Flag,
+    FlagKnob(std::string const& Name, bool dflt)
+      : ScalarKnob<int>(KK_Flag, Name,
                         dflt ? TRUE : FALSE, // current
                         dflt ? TRUE : FALSE, // default
                         FALSE /*min*/,  TRUE /*max*/) {}
@@ -124,10 +130,10 @@ namespace halo {
 
 
 
-  class IntKnob : ScalarKnob<int> {
+  class IntKnob : public ScalarKnob<int> {
   public:
-    IntKnob(int current, int dflt, int min, int max) :
-      ScalarKnob<int>(KK_Int, current, dflt, min, max) {}
+    IntKnob(std::string const& Name, int current, int dflt, int min, int max) :
+      ScalarKnob<int>(KK_Int, Name, current, dflt, min, max) {}
 
     static bool classof(const Knob *K) {
       return K->getKind() == KK_Int;
