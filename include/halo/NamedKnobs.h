@@ -2,6 +2,8 @@
 
 #include "halo/Knob.h"
 
+#include <unordered_map>
+
 // These are the names of knobs that will be looked-up by the
 // compilation pipeline, so they should match up with the ones specified
 // in the parameter space configuration file.
@@ -21,6 +23,17 @@ namespace halo {
     static const ty InlineThreshold = {"inline-threshold", Knob::KK_Int};
 
     static const ty OptimizeLevel = {"optimize-pipeline-level", Knob::KK_OptLvl};
+
+
+    static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
+      IPRA,
+      FastISel,
+      GlobalISel,
+      MachineOutline,
+      GuaranteeTCO,
+      InlineThreshold,
+      OptimizeLevel
+    };
 
   } // end namespace named_knob
 } // end namespace halo

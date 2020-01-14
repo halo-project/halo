@@ -32,8 +32,9 @@ namespace halo {
       auto Res = Knobs.insert({Name, std::move(KNB)});
       auto Iter = Res.first;
       bool InsertionOccured = Res.second;
-      if (!InsertionOccured) llvm::report_fatal_error("Tried to add knob "
-                              "with name that already exists in the set!");
+      if (!InsertionOccured) llvm::report_fatal_error(
+                                  "Tried to add knob with name '" + Name +
+                                  "' that already exists in the set!");
       return *(Iter->second);
     }
 

@@ -158,7 +158,7 @@ namespace halo {
       if (Level == "Oz")
         return LevelTy::Oz;
 
-      llvm::report_fatal_error("invalid opt level string");
+      llvm::report_fatal_error("invalid opt level string: " + Level);
     }
 
     static bool classof(const Knob *K) {

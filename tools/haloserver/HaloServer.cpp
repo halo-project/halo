@@ -58,8 +58,13 @@ JSON ReadConfigFile(std::string &Path) {
     llvm::report_fatal_error("exiting due to previous error");
   }
 
-  JSON ServerConfig;
-  file >> ServerConfig;
+  JSON ServerConfig = JSON::parse(file, nullptr, false);
+  if (ServerConfig.is_discarded()) {
+    // would be nice if there was a way to get information about where it is
+    // without using exceptions, but that doesn't seem possible right now.
+    llvm::report_fatal_error("syntax error in JSON file");
+  }
+
   std::cout << "Read the following server config:\n"
             << std::setw(2) << ServerConfig << std::endl;
 
@@ -80,8 +85,8 @@ int main(int argc, char* argv[]) {
   JSON ServerConfig = halo::ReadConfigFile(CL_ConfigPath);
 
   // TODO: remove this, it's just for testing
-  // halo::KnobSet S;
-  // halo::KnobSet::InitializeKnobs(ServerConfig, S);
+  halo::KnobSet S;
+  halo::KnobSet::InitializeKnobs(ServerConfig, S);
 
   // Initialize parts of LLVM related to JIT compilation.
   // See llvm/Support/TargetSelect.h for other items.
