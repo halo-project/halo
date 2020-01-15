@@ -7,12 +7,12 @@ NUM_CLIENTS=$2
 PROG_EXE=$3
 PROG_OUT=$4
 SERV_OUT="$PROG_OUT.out"
-SAVING_OUTPUT=1
+SAVING_CLIENT_OUTPUT=1
 
 if [ "$PROG_OUT" == "" ]; then
   PROG_OUT="/dev/null"
-  SERV_OUT="/dev/null"
-  SAVING_OUTPUT=0
+  SERV_OUT=$(mktemp)
+  SAVING_CLIENT_OUTPUT=0
 fi
 
 if [ "${NUM_CLIENTS}" -ne "${NUM_CLIENTS}" ] || [ "${NUM_CLIENTS}" -eq "0" ]; then
@@ -64,11 +64,15 @@ wait
 
 if [ $FAILURE -eq "1" ]; then
   echo "Some part of the test has failed! See above."
-  if [ $SAVING_OUTPUT -eq "1" ]; then
-    echo -e "\n\n\tSERVER OUTPUT:"
-    cat "$SERV_OUT"
-    echo -e "\n\n\tCLIENT OUTPUT:"
+
+  echo -e "\n\n\tSERVER OUTPUT:"
+  cat "$SERV_OUT"
+
+  if [ $SAVING_CLIENT_OUTPUT -eq "1" ]; then
+    echo -e "\n\n\tONE CLIENT'S OUTPUT:"
     cat "$PROG_OUT"
+  else
+    rm "$SERV_OUT"   # delete the temporary file we generated
   fi
   exit 1
 fi
