@@ -5,6 +5,7 @@
 #include <string>
 #include <cassert>
 #include <atomic>
+#include <cmath>
 
 #include "halo/Utility.h"
 
@@ -170,9 +171,25 @@ namespace halo {
 
 
   class IntKnob : public ScalarKnob<int> {
+  private:
+    bool LogScale;
   public:
-    IntKnob(std::string const& Name, int current, int dflt, int min, int max) :
-      ScalarKnob<int>(KK_Int, Name, current, dflt, min, max) {}
+    IntKnob(std::string const& Name, int current, int dflt, int min, int max, bool logscale) :
+      ScalarKnob<int>(KK_Int, Name, current, dflt, min, max), LogScale(logscale) {}
+
+    // indicates whether the values backing this knob are log_2 of
+    // the actual values.
+    bool isLogScale() const { return LogScale; }
+
+    // Returns the "actual" value that this knob represents,
+    // accounting for any scaling.
+    int getScaledVal() const {
+      if (isLogScale())
+        return std::pow(getVal(), 2);
+
+      return getVal();
+    }
+
 
     static bool classof(const Knob *K) {
       return K->getKind() == KK_Int;

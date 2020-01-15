@@ -114,8 +114,9 @@ void addKnob(JSON const& Spec, KnobSet& Knobs) {
     auto Default = getValue<int>("default", Spec, Name);
     auto Min = getValue<int>("min", Spec, Name);
     auto Max = getValue<int>("max", Spec, Name);
+    auto Scale = getValue<bool>("log_scale", Spec, Name);
 
-    Knobs.insert(std::make_unique<IntKnob>(Name, Default, Default, Min, Max));
+    Knobs.insert(std::make_unique<IntKnob>(Name, Default, Default, Min, Max, Scale));
 
   } else if (Kind == "optlvl") {
     auto Name = checkedName(Spec, Knob::KK_OptLvl);

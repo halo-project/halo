@@ -1,0 +1,44 @@
+{
+  "knobs": [
+    {
+      "kind": "flag",
+      "name": "ipra",
+      "default": false
+    },
+    {
+      "kind": "flag",
+      "name": "fast-isel",
+      "default": false
+    },
+    {
+      "kind": "flag",
+      "name": "global-isel",
+      "default": false
+    },
+    {
+      "kind": "flag",
+      "name": "machine-outline",
+      "default": false
+    },
+    {
+      "kind": "flag",
+      "name": "guarantee-tco",
+      "default": false
+    },
+    {
+      "kind": "int",
+      "name": "inline-threshold",
+      "log_scale": false,
+      "default": 500,
+      "min": -2000,
+      "max": 2000
+    },
+    {
+      "kind": "optlvl",
+      "name": "optimize-pipeline-level",
+      "default": "O2",
+      "min": "O1",
+      "max": "O3"
+    }
+  ]
+}

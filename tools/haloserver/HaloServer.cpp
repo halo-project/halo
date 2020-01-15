@@ -2,6 +2,7 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/FileSystem.h"
 
 #include "halo/nlohmann/json.hpp"
 
@@ -41,7 +42,7 @@ cl::opt<uint32_t> CL_TimeoutSec("timeout",
 
 cl::opt<std::string> CL_ConfigPath("config",
                       cl::desc("Path to the JSON-formatted configuration file."),
-                      cl::init("./server-config.json"));
+                      cl::init(""));
 
 namespace halo {
 
@@ -49,7 +50,7 @@ void service_group(ClientGroup &G) {
     G.start_services();
 }
 
-JSON ReadConfigFile(std::string &Path) {
+JSON ReadConfigFile(const char* Path) {
   // Read the configuration file.
   std::ifstream file(Path);
 
@@ -65,8 +66,8 @@ JSON ReadConfigFile(std::string &Path) {
     llvm::report_fatal_error("syntax error in JSON file");
   }
 
-  std::cout << "Read the following server config:\n"
-            << std::setw(2) << ServerConfig << std::endl;
+  std::cout << "Using the server config: " << Path << "\n";
+            // << std::setw(2) << ServerConfig << std::endl;
 
   return ServerConfig;
 }
@@ -82,11 +83,23 @@ int main(int argc, char* argv[]) {
 
   cl::ParseCommandLineOptions(argc, argv, "Halo Server\n");
 
-  JSON ServerConfig = halo::ReadConfigFile(CL_ConfigPath);
+  llvm::SmallString<256> Path;
 
-  // TODO: remove this, it's just for testing
-  halo::KnobSet S;
-  halo::KnobSet::InitializeKnobs(ServerConfig, S);
+  // if no path is given, look in the directory where the
+  // executable lives for a server-config.json file.
+  if (CL_ConfigPath == "") {
+    // Set path to be the directory where this executable lives.
+    Path = argv[0];
+    Path = Path.substr(0, Path.rfind('/')); // drop the '/haloserver' from end
+
+    // assume the filename.
+    Path += "/server-config.json";
+  } else {
+    // otherwise, just expand tildes before trying to open the given path.
+    llvm::sys::fs::expand_tilde(CL_ConfigPath, Path);
+  }
+
+  JSON ServerConfig = halo::ReadConfigFile(Path.c_str());
 
   // Initialize parts of LLVM related to JIT compilation.
   // See llvm/Support/TargetSelect.h for other items.
