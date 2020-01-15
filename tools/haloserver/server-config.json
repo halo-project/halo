@@ -27,11 +27,56 @@
     },
     {
       "kind": "int",
-      "name": "inline-threshold",
+      "name": "inline-threshold-default",
       "log_scale": false,
-      "default": 500,
-      "min": -2000,
-      "max": 2000
+      "default": 225,
+      "min": -5000,
+      "max": 5000
+    },
+    {
+      "kind": "int",
+      "name": "inline-threshold-hintedfunc",
+      "log_scale": false,
+      "default": 325,
+      "min": -5000,
+      "max": 5000
+    },
+    {
+      "kind": "int",
+      "name": "inline-threshold-coldfunc",
+      "log_scale": false,
+      "default": 45,
+      "min": -5000,
+      "max": 5000
+    },
+    {
+      "kind": "int",
+      "name": "inline-threshold-hotsite",
+      "log_scale": false,
+      "default": 3000,
+      "min": -5000,
+      "max": 5000
+    },
+    {
+      "kind": "int",
+      "name": "inline-threshold-coldsite",
+      "log_scale": false,
+      "default": 45,
+      "min": -5000,
+      "max": 5000
+    },
+    {
+      "kind": "int",
+      "name": "inline-threshold-locallyhotsite",
+      "log_scale": false,
+      "default": 525,
+      "min": -5000,
+      "max": 5000
+    },
+    {
+      "kind": "flag",
+      "name": "inline-computefullcost",
+      "default": true
     },
     {
       "kind": "optlvl",

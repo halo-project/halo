@@ -102,7 +102,41 @@ Error cleanup(Module &Module, StringRef TargetFunc) {
 Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   bool Pr = false; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
-  // PGOOptions PGO; // TODO: would want to use this later.
+
+  /// NOTE: IP.OptSizeThreshold and IP.OptMinSizeThreshold
+  /// are not currently set. If you end up using / not deleting optsize & minsize attributes
+  /// then they may be worth using, though they will have an affect on optimizations other than inlining.
+  InlineParams IP;
+  IP.DefaultThreshold =
+    Knobs.lookup<IntKnob>(named_knob::InlineThreshold).getScaledVal();
+
+  IP.HintThreshold =
+    Knobs.lookup<IntKnob>(named_knob::InlineThresholdHint).getScaledVal();
+
+  IP.ColdThreshold =
+    Knobs.lookup<IntKnob>(named_knob::InlineThresholdCold).getScaledVal();
+
+  IP.HotCallSiteThreshold =
+    Knobs.lookup<IntKnob>(named_knob::InlineThresholdHotSite).getScaledVal();
+
+  IP.LocallyHotCallSiteThreshold =
+    Knobs.lookup<IntKnob>(named_knob::InlineThresholdLocalHotSite).getScaledVal();
+
+  IP.ColdCallSiteThreshold =
+    Knobs.lookup<IntKnob>(named_knob::InlineThresholdColdSite).getScaledVal();
+
+  /// NOTE: It may not even bet worthwhile to tune this? I believe it is just pessimistically
+  /// stopping the cost estimation before it's been fully computed to limit compile time.
+  /// Since the cost analysis essentially simulates what the resulting function will look like
+  /// after inlining + simplification.
+  /// Thus, since compile time doesn't matter for us with such small snippets of code, we may
+  /// want to just fix it to be `true`
+  IP.ComputeFullInlineCost =
+    Knobs.lookup<FlagKnob>(named_knob::InlineFullCost).getFlag();
+
+  PTO.Inlining = IP;
+
+  // PGOOptions PGO; // TODO: would maybe want to use this later.
   SimplePassBuilder PB(&TM, PTO);
 
   auto OptLevel = Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel).getVal();

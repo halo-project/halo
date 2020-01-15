@@ -10,7 +10,11 @@
 
 namespace halo {
 
-  // for sanity, we tag the names with their expected runtime type tag
+  /// For sanity, we tag the names with their expected runtime type tag
+  ///
+  /// NOTE: there is currently no functionality to ensure named knobs are used,
+  /// beyond manually tracking lookups. So make sure to check for references to these
+  /// globals with your IDE or something so nothing is left off!
   namespace named_knob {
     using ty = std::pair<std::string, Knob::KnobKind>;
 
@@ -19,8 +23,14 @@ namespace halo {
     static const ty GlobalISel      = {"global-isel",      Knob::KK_Flag};
     static const ty MachineOutline  = {"machine-outline",  Knob::KK_Flag};
     static const ty GuaranteeTCO    = {"guarantee-tco",    Knob::KK_Flag};
+    static const ty InlineFullCost  = {"inline-computefullcost", Knob::KK_Flag};
 
-    static const ty InlineThreshold = {"inline-threshold", Knob::KK_Int};
+    static const ty InlineThreshold = {"inline-threshold-default", Knob::KK_Int};
+    static const ty InlineThresholdHint = {"inline-threshold-hintedfunc", Knob::KK_Int};
+    static const ty InlineThresholdCold = {"inline-threshold-coldfunc", Knob::KK_Int};
+    static const ty InlineThresholdHotSite = {"inline-threshold-hotsite", Knob::KK_Int};
+    static const ty InlineThresholdColdSite = {"inline-threshold-coldsite", Knob::KK_Int};
+    static const ty InlineThresholdLocalHotSite = {"inline-threshold-locallyhotsite", Knob::KK_Int};
 
     static const ty OptimizeLevel = {"optimize-pipeline-level", Knob::KK_OptLvl};
 
@@ -31,7 +41,15 @@ namespace halo {
       GlobalISel,
       MachineOutline,
       GuaranteeTCO,
+      InlineFullCost,
+
       InlineThreshold,
+      InlineThresholdHint,
+      InlineThresholdCold,
+      InlineThresholdHotSite,
+      InlineThresholdColdSite,
+      InlineThresholdLocalHotSite,
+
       OptimizeLevel
     };
 

@@ -79,7 +79,10 @@ namespace halo {
   public:
     ScalarKnob(KnobKind kind, std::string const& name, ValTy current, ValTy dflt, ValTy min, ValTy max)
         : Knob(kind), Name(name),
-          Current(current), Default(dflt), Min(min), Max(max) {}
+          Current(current), Default(dflt), Min(min), Max(max) {
+            if (!(Min <= Default && Default <= Max))
+              llvm::report_fatal_error("ScalarKnob Ctor -- contract that min <= default <= max violated.");
+          }
 
     virtual ~ScalarKnob() = default;
 
