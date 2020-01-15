@@ -21,8 +21,11 @@ KnobSet::KnobSet(const KnobSet& Other) {
     else if (LoopKnob* K = llvm::dyn_cast<LoopKnob>(Ptr))
       insert(std::make_unique<LoopKnob>(*K));
 
+    else if (OptLvlKnob* K = llvm::dyn_cast<OptLvlKnob>(Ptr))
+      insert(std::make_unique<OptLvlKnob>(*K));
+
     else
-      llvm::report_fatal_error("non-exhaustive match failure");
+      llvm::report_fatal_error("KnobSet::KnobSet copy ctor -- unknown knob kind encountered");
   }
 }
 

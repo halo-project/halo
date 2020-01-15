@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
   // executable lives for a server-config.json file.
   if (CL_ConfigPath == "") {
     // Set path to be the directory where this executable lives.
-    Path = argv[0];
+    Path = llvm::sys::fs::getMainExecutable(argv[0], (void*)&main);
     Path = Path.substr(0, Path.rfind('/')); // drop the '/haloserver' from end
 
     // assume the filename.
