@@ -58,6 +58,23 @@ install(TARGETS ${SERVER_BIN}
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include)
 
+# make the install target aware of the JSON file
+install(FILES server-config.json
+        COMPONENT ${SERVER_BIN}
+        DESTINATION bin)
+
+# also copy the JSON file into build bin dir. we need to tell cmake
+# that the executable depends on the JSON file in the source tree,
+# so that changes to it trigger a re-copy.
+add_custom_target(haloserver-configfile DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/server-config.json)
+add_dependencies(${SERVER_BIN} haloserver-configfile)
+add_custom_command(
+        TARGET haloserver-configfile
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${CMAKE_CURRENT_SOURCE_DIR}/server-config.json
+                ${CMAKE_BINARY_DIR}/bin/server-config.json)
+
+# the install-haloserver target
 add_custom_target(install-${SERVER_BIN}
   DEPENDS ${SERVER_BIN} install-LLVM
   COMMAND
