@@ -4,6 +4,8 @@ install/
 bench-build/
 bench-results/
 
+.vscode
+
 
 # Prerequisites
 *.d
