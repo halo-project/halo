@@ -8,7 +8,7 @@
 
 #include "boost/asio.hpp"
 
-#include "halo/ClientRegistrar.h"
+#include "halo/server/ClientRegistrar.h"
 
 #include <cinttypes>
 #include <fstream>

@@ -25,7 +25,8 @@ find_package(Protobuf 3 REQUIRED)
 
 include_directories(${Protobuf_INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
 add_definitions(${LLVM_DEFINITIONS} -DGOOGLE_PROTOBUF_NO_RTTI -DBOOST_EXCEPTION_DISABLE -DBOOST_NO_RTTI)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -fmax-errors=1")
+# because c++ compiler error messages are insane:  -fmax-errors=1
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${HALO_PROTO_FILES})
 

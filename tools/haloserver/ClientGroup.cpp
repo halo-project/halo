@@ -1,6 +1,7 @@
 
-#include "halo/ClientGroup.h"
-#include "halo/Utility.h"
+#include "halo/server/ClientGroup.h"
+#include "halo/tuner/Utility.h"
+
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Triple.h"
 #include "llvm/IR/Module.h"

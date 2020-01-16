@@ -1,4 +1,4 @@
-#include "halo/CodeRegionInfo.h"
+#include "halo/compiler/CodeRegionInfo.h"
 
 namespace halo {
 

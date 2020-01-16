@@ -2,8 +2,9 @@
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/SHA1.h"
-#include "halo/ClientGroup.h"
-#include "halo/ThreadPool.h"
+
+#include "halo/server/ClientGroup.h"
+#include "halo/server/ThreadPool.h"
 #include "halo/nlohmann/json_fwd.hpp"
 
 #include "Logging.h"

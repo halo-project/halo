@@ -2,8 +2,10 @@
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
-#include "halo/TaskQueueOverlay.h"
-#include "halo/SequentialAccess.h"
+
+#include "halo/server/TaskQueueOverlay.h"
+#include "halo/server/SequentialAccess.h"
+#include "halo/compiler/PerformanceData.h"
 
 #include "boost/asio.hpp"
 
@@ -13,8 +15,6 @@
 #include "Messages.pb.h"
 #include "MessageKind.h"
 #include "Channel.h"
-
-#include "halo/PerformanceData.h"
 
 #include <vector>
 #include <cinttypes>

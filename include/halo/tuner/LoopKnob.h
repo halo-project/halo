@@ -1,7 +1,7 @@
 #pragma once
 
-#include "halo/Knob.h"
-#include "halo/Utility.h"
+#include "halo/tuner/Knob.h"
+#include "halo/tuner/Utility.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/Support/Error.h"

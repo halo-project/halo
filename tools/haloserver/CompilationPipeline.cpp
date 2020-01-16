@@ -1,9 +1,9 @@
 
-#include "halo/CompilationPipeline.h"
-#include "halo/LinkageFixupPass.h"
-#include "halo/LoopNamerPass.h"
-#include "halo/SimplePassBuilder.h"
-#include "halo/NamedKnobs.h"
+#include "halo/compiler/CompilationPipeline.h"
+#include "halo/compiler/LinkageFixupPass.h"
+#include "halo/compiler/LoopNamerPass.h"
+#include "halo/compiler/SimplePassBuilder.h"
+#include "halo/tuner/NamedKnobs.h"
 
 #include "llvm/Transforms/IPO.h"
 #include "llvm/IR/DebugInfo.h"

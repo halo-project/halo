@@ -1,6 +1,7 @@
 #pragma once
 
-#include "halo/MDUtils.h"
+#include "halo/compiler/MDUtils.h"
+
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Transforms/Scalar/LoopPassManager.h"

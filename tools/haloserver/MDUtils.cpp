@@ -1,5 +1,5 @@
 
-#include "halo/MDUtils.h"
+#include "halo/compiler/MDUtils.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/ADT/SetVector.h"
 

@@ -7,13 +7,13 @@
 #include <functional>
 #include <string>
 
-#include "halo/ClientSession.h"
-#include "halo/CompilationPipeline.h"
-#include "halo/TaskQueueOverlay.h"
-#include "halo/ThreadPool.h"
-#include "halo/SequentialAccess.h"
-#include "halo/Profiler.h"
-#include "halo/KnobSet.h"
+#include "halo/server/ClientSession.h"
+#include "halo/server/TaskQueueOverlay.h"
+#include "halo/server/ThreadPool.h"
+#include "halo/server/SequentialAccess.h"
+#include "halo/compiler/CompilationPipeline.h"
+#include "halo/compiler/Profiler.h"
+#include "halo/tuner/KnobSet.h"
 
 #include "llvm/Support/MemoryBuffer.h"
 

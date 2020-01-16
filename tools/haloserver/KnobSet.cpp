@@ -1,5 +1,5 @@
 
-#include "halo/KnobSet.h"
+#include "halo/tuner/KnobSet.h"
 #include "halo/nlohmann/json.hpp"
 
 #include "Logging.h"

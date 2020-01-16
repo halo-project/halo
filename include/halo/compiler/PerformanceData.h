@@ -1,6 +1,6 @@
 #pragma once
 
-#include "halo/CodeRegionInfo.h"
+#include "halo/compiler/CodeRegionInfo.h"
 #include "Messages.pb.h"
 
 #include <vector>

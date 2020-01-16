@@ -7,7 +7,7 @@
 #include <atomic>
 #include <cmath>
 
-#include "halo/Utility.h"
+#include "halo/tuner/Utility.h"
 
 #include "llvm/Support/Casting.h"
 #include "llvm/Passes/PassBuilder.h"

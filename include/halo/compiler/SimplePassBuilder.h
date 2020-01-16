@@ -1,7 +1,7 @@
 #pragma once
 
 // for new PM
-#include "halo/PrintIRPass.h"
+#include "halo/compiler/PrintIRPass.h"
 #include "llvm/Passes/PassBuilder.h"
 
 // for legacy PM

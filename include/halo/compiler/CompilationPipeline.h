@@ -9,7 +9,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/Error.h"
 
-#include "halo/KnobSet.h"
+#include "halo/tuner/KnobSet.h"
 
 #include <memory>
 

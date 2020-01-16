@@ -1,8 +1,8 @@
 #pragma once
 
-#include "halo/Knob.h"
-#include "halo/LoopKnob.h"
-#include "halo/NamedKnobs.h"
+#include "halo/tuner/Knob.h"
+#include "halo/tuner/LoopKnob.h"
+#include "halo/tuner/NamedKnobs.h"
 #include "halo/nlohmann/json_fwd.hpp"
 
 #include <unordered_map>

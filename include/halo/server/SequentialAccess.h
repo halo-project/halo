@@ -1,7 +1,7 @@
 #pragma once
 
-#include "halo/TaskQueueOverlay.h"
-#include "halo/ThreadPool.h"
+#include "halo/server/TaskQueueOverlay.h"
+#include "halo/server/ThreadPool.h"
 
 namespace halo {
 

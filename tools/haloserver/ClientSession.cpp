@@ -1,6 +1,6 @@
 
-#include "halo/ClientSession.h"
-#include "halo/ClientGroup.h"
+#include "halo/server/ClientSession.h"
+#include "halo/server/ClientGroup.h"
 
 
 namespace halo {

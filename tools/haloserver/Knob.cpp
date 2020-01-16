@@ -1,4 +1,4 @@
-#include "halo/Knob.h"
+#include "halo/tuner/Knob.h"
 
 
 namespace halo {

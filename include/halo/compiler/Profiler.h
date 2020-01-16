@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Messages.pb.h"
-#include "halo/ClientGroup.h"
+#include "halo/server/ClientGroup.h"
 
 #include <iostream>
 #include <unordered_map>

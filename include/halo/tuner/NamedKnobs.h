@@ -1,6 +1,6 @@
 #pragma once
 
-#include "halo/Knob.h"
+#include "halo/tuner/Knob.h"
 
 #include <unordered_map>
 
