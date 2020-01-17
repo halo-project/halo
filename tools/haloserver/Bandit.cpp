@@ -8,6 +8,7 @@ namespace halo {
   // NOTE: ideas for tweaking based on existing work include:
   //
   // 1. Have epsilon decrease over time, and start with a higher initial value.
+  // 2. Optimistic initial expected rewards.
   //
 
   template <typename Action>
