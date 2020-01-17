@@ -2,6 +2,7 @@
 
 #include <set>
 #include <map>
+#include <random>
 
 namespace halo {
 
@@ -9,13 +10,11 @@ namespace halo {
 template <typename Action>
 class Bandit {
 public:
-    /// Initialize the bandit with the set of actions allowed
     Bandit() {}
 
-    virtual ~Bandit();
+    virtual ~Bandit() {}
 
     /// Ask the model to take an action.
-    /// TODO: should this be made const?
     virtual Action choose() = 0;
 
     /// Provide the model with a reward for the given action.
@@ -23,8 +22,9 @@ public:
 };
 
 
+
 template <typename Action>
-class RecencyWeightedBandit {
+class RecencyWeightedBandit : public Bandit<Action> {
 public:
     /// @param actions  the options the bandit has to choose among
     ///
@@ -32,8 +32,18 @@ public:
     ///                 the scale biasing towards more recently seen rewards,
     ///                 i.e., our opinion changes more strongly with newer info.
     ///                 If stepSize = 0.0, then recency weighting is disabled
-    ///                 and all past rewards are used for the expectation.
-    RecencyWeightedBandit(std::set<Action> actions, float stepSize);
+    ///                 and all past rewards are used for the expectation, though
+    ///                 this option should be limited only to stationary problems
+    ///                 where convergence is possible.
+    ///
+    ///
+    /// @param epsilon  represents the probability of choosing a random action
+    ///                 instead of being greedy. Normally should be less than 0.1,
+    ///                 meaning 10% chance of exploration instead of exploitation.
+    ///                 Must be in the range [0, 1].
+    ///
+    /// @param seed     sets the internal random number generator's seed.
+    RecencyWeightedBandit(std::set<Action> actions, float stepSize=0.1, float epsilon=0.1, uint32_t seed=475391234);
 
     Action choose() override;
 
@@ -47,9 +57,11 @@ private:
         unsigned NumOccurred = 0; // N(A)
     };
 
-    std::set<Action> Actions;
+    std::vector<Action> Actions;
     float StepSize;
+    float Epsilon;
     std::map<Action, Metadata> ActionValue;
+    std::mt19937 RNG;
 };
 
 } // end namespace

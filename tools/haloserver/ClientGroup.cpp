@@ -1,6 +1,5 @@
 
 #include "halo/server/ClientGroup.h"
-#include "halo/tuner/Bandit.h"
 #include "halo/tuner/Utility.h"
 
 #include "llvm/ADT/StringRef.h"

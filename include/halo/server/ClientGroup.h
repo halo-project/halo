@@ -13,6 +13,8 @@
 #include "halo/server/SequentialAccess.h"
 #include "halo/compiler/CompilationPipeline.h"
 #include "halo/compiler/Profiler.h"
+#include "halo/tuner/Actions.h"
+#include "halo/tuner/Bandit.h"
 #include "halo/tuner/KnobSet.h"
 
 #include "llvm/Support/MemoryBuffer.h"
@@ -27,6 +29,8 @@ struct GroupState {
   using ClientCollection = std::list<std::unique_ptr<ClientSession>>;
 
   ClientCollection Clients;
+  RecencyWeightedBandit<RootAction> Manager {RootActions};
+
   std::list<std::pair<std::string,
                       std::future<CompilationPipeline::compile_expected>
                      >
