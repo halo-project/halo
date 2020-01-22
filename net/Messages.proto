@@ -9,6 +9,7 @@ message FunctionInfo {
   string label = 1;
   uint32 size = 2;
   uint64 start = 3;
+  bool patchable = 4;
 }
 
 message ModuleInfo {

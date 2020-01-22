@@ -25,7 +25,11 @@ class PerformanceData;
 
 
 struct FunctionInfo {
+    // These members are IDENTICAL across all clients
     std::string Name;
+    bool Patchable;
+
+    // These members VARY across clients
     uint64_t AbsAddr = 0;
     std::vector<pb::RawSample> Samples;
 
@@ -34,7 +38,7 @@ struct FunctionInfo {
     // perhaps with attached samples and/or metadata processed from the
     // samples.
 
-    FunctionInfo(std::string name) : Name(name) {}
+    FunctionInfo(std::string name, bool patchable) : Name(name), Patchable(patchable) {}
 };
 
 class CodeRegionInfo {
@@ -63,10 +67,10 @@ public:
   // UnknownFI is returned.
   FunctionInfo* lookup(uint64_t IP) const;
   FunctionInfo* lookup(std::string const& Name) const;
-  void addRegion(std::string Name, uint64_t Start, uint64_t End);
+  void addRegion(std::string Name, uint64_t Start, uint64_t End, bool Patchable);
 
   CodeRegionInfo() {
-    UnknownFI = new FunctionInfo(UnknownFn);
+    UnknownFI = new FunctionInfo(UnknownFn, false);
   }
 
   ~CodeRegionInfo() {

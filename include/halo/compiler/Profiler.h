@@ -13,8 +13,8 @@ public:
   // returns nullptr if no functions matching the critera exists.
   llvm::Optional<llvm::StringRef> getMostSampled(std::list<std::unique_ptr<ClientSession>> &Clients) {
 
-    // for now, the most sampled function across all clients, breaking
-    // ties arbitrarily (by appearance in list). Not a good metric! FIXME
+    // FIXME: for now, the most sampled function across all clients, breaking
+    // ties arbitrarily (by appearance in list). Not a good metric!
     size_t Max = 0;
     llvm::StringRef BestName = "";
     for (auto &CS : Clients) {
@@ -23,7 +23,7 @@ public:
         auto FI = Pair.second;
         auto Name = FI->Name;
 
-        if (Name == "main" || Name == CodeRegionInfo::UnknownFn)
+        if (!FI->Patchable || Name == "main" || Name == CodeRegionInfo::UnknownFn)
           continue;
 
         size_t Num = FI->Samples.size();

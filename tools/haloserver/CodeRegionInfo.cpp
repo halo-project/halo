@@ -18,14 +18,14 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
     uint64_t Start = PFI.start();
     uint64_t End = Start + PFI.size();
     std::string Name = PFI.label();
-    addRegion(Name, Start, End);
+    addRegion(Name, Start, End, PFI.patchable());
   }
 }
 
-void CodeRegionInfo::addRegion(std::string Name, uint64_t Start, uint64_t End) {
+void CodeRegionInfo::addRegion(std::string Name, uint64_t Start, uint64_t End, bool Patchable) {
   auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
 
-  FunctionInfo *FI = new FunctionInfo(Name);
+  FunctionInfo *FI = new FunctionInfo(Name, Patchable);
   FI->AbsAddr = Start;
 
   NameMap[Name] = FI;
