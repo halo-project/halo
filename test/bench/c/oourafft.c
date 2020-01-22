@@ -2,8 +2,6 @@
 // RUN: %testhalo %server 1 %t %t-out.txt
 // RUN: diff -w %t-out.txt %s.expected
 
-// XFAIL: *
-
 #include <math.h>
 #include <memory.h>
 #include <stdio.h>
