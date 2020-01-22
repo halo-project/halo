@@ -49,7 +49,7 @@ namespace halo {
       return;
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(ServiceIterationRate));
     run_service_loop();
   }
 
@@ -197,7 +197,7 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
 
 ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
-      ShouldStop(false), Pool(Pool), BitcodeHash(BitcodeSHA1) {
+      ShouldStop(false), ServiceIterationRate(250), Pool(Pool), BitcodeHash(BitcodeSHA1) {
 
       KnobSet::InitializeKnobs(Config, Knobs);
 

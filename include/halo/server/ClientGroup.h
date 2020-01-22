@@ -51,6 +51,7 @@ public:
   std::atomic<size_t> NumActive;
   std::atomic<bool> ServiceLoopActive;
   std::atomic<bool> ShouldStop;
+  std::atomic<size_t> ServiceIterationRate; // pause-time in milliseconds. lower means faster.
 
   // Construct a singleton client group based on its initial member.
   ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);
