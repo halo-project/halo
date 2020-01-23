@@ -66,7 +66,7 @@ JSON ReadConfigFile(const char* Path) {
     llvm::report_fatal_error("syntax error in JSON file");
   }
 
-  std::cout << "Using the server config: " << Path << "\n";
+  logs() << "Using the server config: " << Path << "\n";
             // << std::setw(2) << ServerConfig << std::endl;
 
   return ServerConfig;
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
 
   std::thread io_thread([&](){ IOService.run(); });
 
-  halo::log() << "Started Halo Server.\nListening on port "
+  halo::logs() << "Started Halo Server.\nListening on port "
             << CL_Port << "\n";
 
   const uint32_t SleepMS = 500; // Lower this to be more aggressive.

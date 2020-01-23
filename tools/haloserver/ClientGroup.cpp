@@ -55,31 +55,39 @@ namespace halo {
 
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
-      auto MaybeName = Profile.getMostSampled(State.Clients);
+      auto MaybeInfo = Profile.getMostSampled(State.Clients);
 
-      if (!MaybeName) {
-        llvm::outs() << "Most-sampled function is unknown\n";
+      if (!MaybeInfo) {
+        logs() << "No sample data available.\n";
         return end_service_iteration();
       }
 
-      llvm::StringRef Name = MaybeName.getValue();
-      llvm::outs() << "Hottest function = " << Name << "\n";
+      auto &Info = MaybeInfo.getValue();
+      llvm::StringRef Name = Info.first;
+      bool Patchable = Info.second;
+      bool HaveBitcode = FuncsWithBitcode.count(Name) != 0;
 
-      if (FuncsWithBitcode.count(Name) == 0) {
-        llvm::outs() << "  <no bitcode available>\n";
+      logs() << "Hottest function = " << Name << "\n";
+
+      if (!Patchable || !HaveBitcode) {
+        logs() << "    <patchable = " << Patchable << ", bitcode = " << HaveBitcode << ">\n";
         return end_service_iteration();
       }
 
       // 2. send a request to client to begin timing the execution of the function.
-      // CS.Measuring = true;
-      // pb::ReqMeasureFunction MF;
-      // MF.set_func_addr(FI->AbsAddr);
-      // CS.Chan.send_proto(msg::ReqMeasureFunction, MF);
+      // for (auto &Client : State.Clients) {
+      //   pb::ReqMeasureFunction MF;
+      //   auto FI = Client->State.Data.CRI.lookup(Name);
+      //   MF.set_func_addr(FI->AbsAddr);
+      //   Client->Chan.send_proto(msg::ReqMeasureFunction, MF);
+      //   // Client.Measuring = true;
+      // }
+      // return end_service_iteration(); // FIXME: temporary
 
-      // For now we're assuming only one compile configuration, so we just
+      // FIXME: For now we're assuming only one compile configuration, so we just
       // check to see if we should queue a new job if a client needs it.
       // It's still wasteful because we don't check if there's an equivalent
-      // one already in flight, but whatever. FIXME
+      // one already in flight, but whatever.
       bool ShouldCompile = false;
       for (auto &Client : State.Clients) {
         if (Client->State.DeployedCode.count(Name))
@@ -95,7 +103,7 @@ namespace halo {
 
           auto Result = Pipeline.run(*Bitcode, Name, Knobs);
 
-          llvm::outs() << "Finished Compile!\n";
+          logs() << "Finished Compile!\n";
 
           return Result;
         })));
@@ -134,13 +142,13 @@ namespace halo {
             auto Error = translateSymbols(Client->State.Data.CRI, CodeMsg);
 
             if (Error)
-              log() << "Error translating symbols: " << Error << "\n";
+              logs() << "Error translating symbols: " << Error << "\n";
 
             Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
             Client->State.DeployedCode.insert(Name);
           }
 
-          llvm::outs() << "Sent code to all clients!\n";
+          logs() << "Sent code to all clients!\n";
 
           break;
         }

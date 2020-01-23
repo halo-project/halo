@@ -5,31 +5,37 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <utility>
 
 namespace halo {
 
 class Profiler {
 public:
-  // returns nullptr if no functions matching the critera exists.
-  llvm::Optional<llvm::StringRef> getMostSampled(std::list<std::unique_ptr<ClientSession>> &Clients) {
+  // returns the name of the most sampled function and whether it is patchable.
+  // patchable functions are prioritized over non-patchable and will always be returned
+  // if sampled.
+  llvm::Optional<std::pair<llvm::StringRef, bool>> getMostSampled(std::list<std::unique_ptr<ClientSession>> &Clients) {
 
     // FIXME: for now, the most sampled function across all clients, breaking
     // ties arbitrarily (by appearance in list). Not a good metric!
     size_t Max = 0;
     llvm::StringRef BestName = "";
+    bool BestPatchable = false;
+
     for (auto &CS : Clients) {
       auto &CRI = CS->State.Data.CRI;
       for (auto &Pair : CRI.NameMap) {
         auto FI = Pair.second;
         auto Name = FI->Name;
 
-        if (!FI->Patchable || Name == "main" || Name == CodeRegionInfo::UnknownFn)
-          continue;
-
         size_t Num = FI->Samples.size();
         if (Num > Max) {
-          BestName = FI->Name;
-          Max = Num;
+          bool ThisPatchability = FI->Patchable;
+          if ((BestPatchable == false && ThisPatchability == true) || BestPatchable == ThisPatchability) {
+            BestName = FI->Name;
+            BestPatchable = ThisPatchability;
+            Max = Num;
+          }
         }
 
         // FIXME: this is an exceptionally awful way to determine "most sampled
@@ -40,7 +46,7 @@ public:
     }
 
     if (Max > 0)
-      return BestName;
+      return std::make_pair(BestName, BestPatchable);
 
     return llvm::None;
 

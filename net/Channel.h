@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MessageHeader.h"
+#include "Logging.h"
 
 #include "boost/asio.hpp"
 
@@ -46,7 +47,7 @@ namespace halo {
             asio::write(Sock, Msg, Err);
 
         if (Err) {
-          std::cerr << "send_proto error: " << Err.message() << "\n";
+          logs() << "send_proto error: " << Err.message() << "\n";
           return true;
         }
         return false;
@@ -68,7 +69,7 @@ namespace halo {
             asio::write(Sock, asio::buffer(&Hdr, sizeof(Hdr)), Err);
 
         if (Err) {
-          std::cerr << "send error: " << Err.message() << "\n";
+          logs() << "send error: " << Err.message() << "\n";
           return true;
         }
         return false;
@@ -149,7 +150,7 @@ namespace halo {
     template<typename T>
     void recv_error(const std::function<void(msg::Kind, std::vector<char>&)> &Callback,
                     T ErrMsg) {
-      std::cerr << "socket event: " << ErrMsg << "\n";
+      clogs() << "socket event: " << ErrMsg << "\n";
       std::vector<char> Empty;
       Callback(msg::Shutdown, Empty);
     }

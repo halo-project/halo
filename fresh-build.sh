@@ -46,7 +46,7 @@ NETWORK_DIR="-DHALO_NET_DIR=$(pwd)/net"
 
 # environment specific build options / overrides
 if [ "${ENV_KIND}" == "docker" ]; then
-  OPTIONS="-DLLVM_PARALLEL_LINK_JOBS=2 -DLLVM_ENABLE_ASSERTIONS=ON" # want to install system-wide, so we omit the old OPTIONS
+  OPTIONS="-DLLVM_PARALLEL_LINK_JOBS=3 -DLLVM_ENABLE_ASSERTIONS=ON" # want to install system-wide, so we omit the old OPTIONS
 
 elif [ "${ENV_KIND}" == "local" ]; then
   # by default, we install locally anyways.
@@ -57,7 +57,8 @@ elif [ "${ENV_KIND}" == "rpi" ]; then
 
 elif [ "${ENV_KIND}" == "kavon" ]; then
   BACKENDS="Native"
-  OPTIONS="${OPTIONS} -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=gold"
+  OPTIONS="${OPTIONS} -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=gold \
+          -DHALOSERVER_VERBOSE=ON -DHALOMON_VERBOSE=ON"
 
 else
   echo "Unknown build kind '${ENV_KIND}'. Options are: $ENV_KIND_OPTIONS"

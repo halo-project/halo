@@ -201,8 +201,8 @@ std::set<std::string>
 
   auto MaybeModule = _parseBitcode(Cxt, Bitcode);
   if (!MaybeModule) {
-    log() << MaybeModule.takeError() << "\n";
-    warning("Error parsing bitcode!\n", true);
+    logs() << MaybeModule.takeError() << "\n";
+    warning("Error parsing bitcode!\n");
     return Provided;
   }
 

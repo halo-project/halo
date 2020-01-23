@@ -5,7 +5,7 @@
 namespace boost {
 
 void throw_exception(std::exception const& ex) {
-  if (halo::LOG) halo::log() << "uncaught exception: " << ex.what() << "\n";
+  halo::logs() << "uncaught exception: " << ex.what() << "\n";
   std::exit(EXIT_FAILURE);
 }
 
@@ -31,19 +31,19 @@ namespace halo {
   const char* WarnTag = "halo warning: ";
   const char* InfoTag = "halo info: ";
 
-  void warning(llvm::Error const& err, bool MustShow) {
-    if (LOG || MustShow) log() << WarnTag << err << "\n";
+  void warning(llvm::Error const& err) {
+    logs() << WarnTag << err << "\n";
   }
 
-  void warning(const std::string &msg, bool MustShow) {
-    if (LOG || MustShow) log() << WarnTag << msg << "\n";
+  void warning(const std::string &msg) {
+    logs() << WarnTag << msg << "\n";
   }
 
-  void info(const char *msg, bool MustShow) {
-    if (LOG || MustShow) log() << InfoTag << msg << "\n";
+  void info(const char *msg) {
+    logs() << InfoTag << msg << "\n";
   }
 
-  void info(const std::string &msg, bool MustShow) {
-    if (LOG || MustShow) log() << InfoTag << msg << "\n";
+  void info(const std::string &msg) {
+    logs() << InfoTag << msg << "\n";
   }
 }

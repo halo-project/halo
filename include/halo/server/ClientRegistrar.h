@@ -117,7 +117,7 @@ private:
     Acceptor.async_accept(Socket,
       [this,CS](boost::system::error_code Err) {
         if(!Err) {
-          info("Received a new connection request.", true);
+          info("Received a new connection request.");
 
           TotalSessions++; UnregisteredSessions++;
           CS->Status = Active;
@@ -163,7 +163,7 @@ private:
           Groups.emplace_back(ServerConfig, Pool, CS, Hash);
         }
 
-        info("Client has successfully registered.", true);
+        info("Client has successfully registered.");
 
         UnregisteredSessions--;
 

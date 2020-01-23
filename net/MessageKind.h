@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include "Logging.h"
 
 #include "google/protobuf/util/json_util.h"
 
@@ -40,7 +41,7 @@ namespace halo {
       proto::util::JsonPrintOptions Opts;
       Opts.add_whitespace = true;
       proto::util::MessageToJsonString(Proto, &AsJSON, Opts);
-      std::cerr << AsJSON << "\n---\n";
+      logs() << AsJSON << "\n---\n";
     }
 
   } // namespace msg

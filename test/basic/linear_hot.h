@@ -1,8 +1,4 @@
-// RUN: %clang -fhalo -O1 %s -o %t
-// RUN: %testhalo %server 4 %t
-
-// RUN: %clang -DSMALL_PROBLEM_SIZE -fhalo -O1 -fpic -fpie %s -o %t
-// RUN: %testhalo %server 4 %t
+#pragma once
 
 //////
 // This test is designed such that it exhibits non-fixed code hotness.
@@ -15,7 +11,9 @@
 // Given enough iterations, the hailstone sequence will dominate the running
 // time both in aggregate and snapshot.
 
-#include <cstdio>
+#include "stdio.h"
+#include "stdlib.h"
+#include "pthread.h"
 
 #define NO_INLINE __attribute__((noinline))
 
@@ -26,6 +24,10 @@
   #define ITERS 4
 #else
   #define ITERS 10
+#endif
+
+#ifndef NUM_THREADS
+  #define NUM_THREADS 4
 #endif
 
 // https://oeis.org/A006577/list
@@ -75,23 +77,49 @@ NO_INLINE long compute_hailstone(long limit) {
   return totalSteps;
 }
 
+NO_INLINE void* workFn(void* unused) {
+  unsigned long ans = 0;
+  unsigned long stoneSteps = 1;
+  int i;
+
+  for (i = -NUM_FIB_ONLY; i < ITERS; i++) {
+    stoneSteps += compute_hailstone(500000 * i);
+    ans += fib(START_FIB);
+  }
+
+  if (ans % i == 0) {
+    return (void*) 0;
+  }
+
+  // return stoneSteps to ensure the computation doesn't get optimized away.
+  return (void*) stoneSteps;
+}
+
+
 int main() //(int argc, const char **argv)
 {
-    unsigned long ans = 0;
-    unsigned long stoneSteps = 0;
-    int i;
 
-    for (i = -NUM_FIB_ONLY; i < ITERS; i++) {
-      stoneSteps += compute_hailstone(500'000 * i);
-      ans += fib(START_FIB);
+  if (NUM_THREADS == 1) {
+    void* retVal = workFn(NULL);
+    return retVal != 0;
+  }
+
+  pthread_t threads[NUM_THREADS];
+
+  for (int i = 0; i < NUM_THREADS; i++) {
+    if (pthread_create(&(threads[i]), NULL, workFn, NULL)) {
+      perror("thread creation failure");
+      exit(2);
     }
+  }
 
-    if (ans % i == 0) {
-      return 0;
+  for (int i = 0; i < NUM_THREADS; i++) {
+    void* returnStatus;
+    if (pthread_join(threads[i], &returnStatus) || returnStatus) {
+      perror("thread join failure / non-zero exit code");
+      exit(3);
     }
+  }
 
-    // to ensure the computation doesn't get optimized away.
-    printf("stoneSteps = %lu\n", stoneSteps);
-
-    return 1;
+  return 0;
 }
