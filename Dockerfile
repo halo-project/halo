@@ -38,4 +38,4 @@ WORKDIR /tmp/halo
 RUN ./fresh-build.sh docker
 
 # when the image is run, start halo server by default.
-CMD haloserver
+ENTRYPOINT ["haloserver"]
