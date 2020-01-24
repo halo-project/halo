@@ -15,8 +15,6 @@
 // CHECK-V3: ans = 14595375066858776825
 // CHECK-V4: ans = 8427354705816047154
 
-// XFAIL: *
-
 // In this test, we launch 1 instance of the server
 // and have multiple __different__ clients connect.
 
