@@ -76,11 +76,14 @@ namespace halo {
 
       // 2. send a request to client to begin timing the execution of the function.
       // for (auto &Client : State.Clients) {
+      //   if (Client->Status == SessionStatus::Measuring)
+      //     continue;
+
       //   pb::ReqMeasureFunction MF;
       //   auto FI = Client->State.Data.CRI.lookup(Name);
       //   MF.set_func_addr(FI->AbsAddr);
       //   Client->Chan.send_proto(msg::ReqMeasureFunction, MF);
-      //   // Client.Measuring = true;
+      //   Client->Status = SessionStatus::Measuring;
       // }
       // return end_service_iteration(); // FIXME: temporary
 
