@@ -14,6 +14,7 @@ struct PerformanceData {
 
   void add(std::vector<pb::RawSample> const& Samples);
   void add(pb::RawSample const& RS);
+  void add(pb::FuncMeasurements const& FM);
 };
 
 }

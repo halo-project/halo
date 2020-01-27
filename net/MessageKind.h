@@ -19,7 +19,9 @@ namespace halo {
       StopSampling = 4,
       Shutdown = 5, // Not actually sent by anybody. it's "recieved" when a connection closes or hit an error.
       CodeReplacement = 6,
-      ReqMeasureFunction = 7
+      StartMeasureFunction = 7,
+      StopMeasureFunction = 8,
+      FunctionMeasurements = 9
 
     } Kind;
 
@@ -31,6 +33,11 @@ namespace halo {
         case RawSample: return "RawSample";
         case StartSampling: return "StartSampling";
         case StopSampling: return "StopSampling";
+        case Shutdown: return "Shutdown";
+        case CodeReplacement: return "CodeReplacement";
+        case StartMeasureFunction: return "StartMeasureFunction";
+        case StopMeasureFunction: return "StopMeasureFunction";
+        case FunctionMeasurements: return "FunctionMeasurements";
         default: return "<unknown>";
       }
     }

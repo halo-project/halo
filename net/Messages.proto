@@ -65,6 +65,17 @@ message RawSample {
   repeated BranchInfo branch = 5;
 }
 
+message XRayEvent {
+  uint64 timestamp = 1;
+  uint64 thread = 2;
+  uint64 func_addr = 3;
+  bool entry = 4; // if its not an entry, its an exit.
+}
+
+message FuncMeasurements {
+  repeated XRayEvent events = 1;
+}
+
 ///////////////////// Server -> Client /////////////////////////
 
 message FunctionSymbol {
@@ -77,6 +88,6 @@ message CodeReplacement {
   bytes objfile = 2;
 }
 
-message ReqMeasureFunction {
+message FunctionAddress {
   uint64 func_addr = 1; // absolute address in client's addr space
 }

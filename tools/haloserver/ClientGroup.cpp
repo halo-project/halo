@@ -79,10 +79,10 @@ namespace halo {
       //   if (Client->Status == SessionStatus::Measuring)
       //     continue;
 
-      //   pb::ReqMeasureFunction MF;
+      //   pb::FunctionAddress FA;
       //   auto FI = Client->State.Data.CRI.lookup(Name);
-      //   MF.set_func_addr(FI->AbsAddr);
-      //   Client->Chan.send_proto(msg::ReqMeasureFunction, MF);
+      //   FA.set_func_addr(FI->AbsAddr);
+      //   Client->Chan.send_proto(msg::StartMeasureFunction, FA);
       //   Client->Status = SessionStatus::Measuring;
       // }
       // return end_service_iteration(); // FIXME: temporary

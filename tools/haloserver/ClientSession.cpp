@@ -44,6 +44,18 @@ void ClientSession::listen()  {
 
         } break;
 
+        case msg::FunctionMeasurements: {
+
+          Parent->withClientState(this, [this,Body](SessionState &State) {
+            pb::FuncMeasurements FM;
+            llvm::StringRef Blob(Body.data(), Body.size());
+            FM.ParseFromString(Blob);
+            // State.Data.add(FM);
+            // msg::print_proto(FM);
+          });
+
+        } break;
+
         case msg::ClientEnroll: {
           std::cerr << "warning: recieved client enroll when already enrolled!\n";
         } break;

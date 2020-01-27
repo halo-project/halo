@@ -1,5 +1,5 @@
 #include "halo/compiler/PerformanceData.h"
-#include "llvm/Support/raw_ostream.h"
+#include "Logging.h"
 
 
 namespace halo {
@@ -18,6 +18,11 @@ namespace halo {
     uint64_t IP = RS.instr_ptr();
     auto Info = CRI.lookup(IP);
     Info->Samples.push_back(RS);
+  }
+
+  void PerformanceData::add(pb::FuncMeasurements const& FM) {
+    // TODO: actually do something here
+    fatal_error("implement PerformanceDAta::add(pb::FuncMeasurements const&)");
   }
 
 }
