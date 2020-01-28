@@ -47,11 +47,11 @@ void ClientSession::listen()  {
         case msg::FunctionMeasurements: {
 
           Parent->withClientState(this, [this,Body](SessionState &State) {
-            pb::FuncMeasurements FM;
+            pb::XRayProfileData PD;
             llvm::StringRef Blob(Body.data(), Body.size());
-            FM.ParseFromString(Blob);
-            // State.Data.add(FM);
-            // msg::print_proto(FM);
+            PD.ParseFromString(Blob);
+            State.Data.add(PD);
+            // msg::print_proto(PD);
           });
 
         } break;

@@ -65,15 +65,30 @@ message RawSample {
   repeated BranchInfo branch = 5;
 }
 
-message XRayEvent {
-  uint64 timestamp = 1;
-  uint64 thread = 2;
-  uint64 func_addr = 3;
-  bool entry = 4; // if its not an entry, its an exit.
+
+message SummaryStats {
+  uint32 samples = 1;
+  double mean = 2;
+  double population_variance = 3;
+  double variance = 4;
+  double deviation = 5;
+  double error_pct = 6;
 }
 
-message FuncMeasurements {
-  repeated XRayEvent events = 1;
+message FunctionData {
+  uint64 calls = 1;
+  SummaryStats call_frequency = 2;
+}
+
+message ThreadData {
+  uint64 total_calls = 1;
+  SummaryStats total_call_frequency = 2;
+  map<uint64, FunctionData> func_data = 3;
+}
+
+message XRayProfileData {
+  uint64 total_events = 1;
+  map<uint64, ThreadData> thread_data = 2;
 }
 
 ///////////////////// Server -> Client /////////////////////////

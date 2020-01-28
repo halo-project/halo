@@ -20,9 +20,9 @@ namespace halo {
     Info->Samples.push_back(RS);
   }
 
-  void PerformanceData::add(pb::FuncMeasurements const& FM) {
+  void PerformanceData::add(pb::XRayProfileData const& FM) {
     // TODO: actually do something here
-    fatal_error("implement PerformanceDAta::add(pb::FuncMeasurements const&)");
+    fatal_error("implement PerformanceDAta::add(pb::XRayProfileData const&)");
   }
 
 }
