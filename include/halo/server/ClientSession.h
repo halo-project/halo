@@ -16,7 +16,6 @@
 #include "MessageKind.h"
 #include "Channel.h"
 
-#include <vector>
 #include <cinttypes>
 #include <set>
 
@@ -39,8 +38,9 @@ namespace halo {
 
   // The client's state accessed in a thread-safe manner.
   struct SessionState {
-    PerformanceData Data;
-    std::set<llvm::StringRef> DeployedCode;
+    CodeRegionInfo CRI;
+    PerformanceData PerfData;
+    std::set<llvm::StringRef> DeployedCode; // TODO: merge this into CRI as a real feature
   };
 
   class GroupOwnedState {

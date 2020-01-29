@@ -25,8 +25,10 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
 void CodeRegionInfo::addRegion(std::string Name, uint64_t Start, uint64_t End, bool Patchable) {
   auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
 
-  FunctionInfo *FI = new FunctionInfo(Name, Patchable);
-  FI->AbsAddr = Start;
+  FunctionInfo *FI = new FunctionInfo(Name, Start, End, Patchable);
+  // FI->dump(logs());
+
+  assert(NameMap.find(Name) == NameMap.end() && "trying to overwrite an existing FunctionInfo!");
 
   NameMap[Name] = FI;
   AddrMap.insert(std::make_pair(FuncRange, FI));

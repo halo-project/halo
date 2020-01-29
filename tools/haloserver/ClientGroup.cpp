@@ -25,7 +25,7 @@ namespace halo {
         return llvm::createStringError(std::errc::not_supported,
             "unable to find function addr for this client.");
 
-      FSym.set_addr(FI->AbsAddr);
+      FSym.set_addr(FI->getStart());
     }
 
     return llvm::Error::success();
@@ -80,8 +80,8 @@ namespace halo {
       //     continue;
 
       //   pb::FunctionAddress FA;
-      //   auto FI = Client->State.Data.CRI.lookup(Name);
-      //   FA.set_func_addr(FI->AbsAddr);
+      //   auto FI = Client->State.CRI.lookup(Name);
+      //   FA.set_func_addr(FI->getStart());
       //   Client->Chan.send_proto(msg::StartMeasureFunction, FA);
       //   Client->Status = SessionStatus::Measuring;
       // }
@@ -142,7 +142,7 @@ namespace halo {
             if (Client->State.DeployedCode.count(Name))
               continue;
 
-            auto Error = translateSymbols(Client->State.Data.CRI, CodeMsg);
+            auto Error = translateSymbols(Client->State.CRI, CodeMsg);
 
             if (Error)
               logs() << "Error translating symbols: " << Error << "\n";

@@ -14,7 +14,7 @@ void ClientSession::start(ClientGroup *CG) {
 
   Parent->withClientState(this, [this](SessionState &State){
     // process this new enrollment
-    State.Data.init(Client);
+    State.CRI.init(Client);
 
     // ask to sample right away for now.
     Chan.send(msg::StartSampling);
@@ -39,7 +39,7 @@ void ClientSession::listen()  {
             pb::RawSample RS;
             llvm::StringRef Blob(Body.data(), Body.size());
             RS.ParseFromString(Blob);
-            State.Data.add(RS);
+            State.PerfData.add(RS);
           });
 
         } break;
@@ -50,8 +50,7 @@ void ClientSession::listen()  {
             pb::XRayProfileData PD;
             llvm::StringRef Blob(Body.data(), Body.size());
             PD.ParseFromString(Blob);
-            State.Data.add(PD);
-            // msg::print_proto(PD);
+            State.PerfData.add(PD);
           });
 
         } break;
