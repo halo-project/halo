@@ -43,6 +43,7 @@ add_executable(${SERVER_BIN}
   KnobSet.cpp
   MDUtils.cpp
   PerformanceData.cpp
+  Profiler.cpp
   ${HALO_NET_DIR}/Logging.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}
