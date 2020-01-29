@@ -55,6 +55,10 @@ namespace halo {
 
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
+
+      // Update the profiler with new PerfData, if any.
+      Profile.consumePerfData(State.Clients);
+
       auto MaybeInfo = Profile.getMostSampled(State.Clients);
 
       if (!MaybeInfo) {

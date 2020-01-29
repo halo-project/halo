@@ -14,6 +14,7 @@ FROM ubuntu:18.04
 RUN apt-get update && apt-get install --no-install-recommends -y \
       g++ \
       libboost-system-dev \
+      libboost-graph-dev \
       libpfm4-dev \
       ninja-build \
       cmake \

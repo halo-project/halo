@@ -18,6 +18,12 @@ public:
   auto& getSamples() { return Samples; }
   auto& getEvents() { return Events; }
 
+  auto const& getSamples() const { return Samples; }
+  auto const& getEvents() const { return Events; }
+
+  // clears all data contained
+  void clear();
+
 private:
   std::list<pb::RawSample> Samples;
   std::list<pb::XRayProfileData> Events;

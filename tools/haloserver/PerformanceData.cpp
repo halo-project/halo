@@ -17,4 +17,9 @@ namespace halo {
     Events.push_back(FM);
   }
 
+  void PerformanceData::clear() {
+    Samples.clear();
+    Events.clear();
+  }
+
 }

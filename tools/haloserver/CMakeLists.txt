@@ -20,7 +20,7 @@ endif()
 #######################
 ### find dependencies
 
-find_package(Boost 1.65 COMPONENTS system REQUIRED)
+find_package(Boost 1.65 COMPONENTS system graph REQUIRED)
 find_package(Protobuf 3 REQUIRED)
 
 include_directories(${Protobuf_INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
@@ -34,6 +34,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 add_executable(${SERVER_BIN}
   Bandit.cpp
+  CallingContextTree.cpp
   ClientGroup.cpp
   ClientSession.cpp
   CodeRegionInfo.cpp

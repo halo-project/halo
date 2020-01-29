@@ -5,8 +5,16 @@
 
 namespace halo {
 
+void Profiler::consumePerfData(ClientList & Clients) {
+  for (auto &CS : Clients) {
+    auto &State = CS->State;
+    CCT.observe(State.CRI, State.PerfData);
+    State.PerfData.clear();
+  }
+}
+
 llvm::Optional<std::pair<std::string, bool>>
-  Profiler::getMostSampled(std::list<std::unique_ptr<ClientSession>> &Clients) {
+  Profiler::getMostSampled(ClientList &Clients) {
 
   // FIXME: for now, the most sampled function across all clients, breaking
   // ties arbitrarily (by appearance in list). Not a good metric!
