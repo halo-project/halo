@@ -37,9 +37,28 @@ void CallingContextTree::observe(CodeRegionInfo const& CRI, PerformanceData cons
            << SampledIP << "\t" << SampledFI->getName() << "\n";
 
     auto CalleeID = getOrAddVertex(SampledFI);
-    // FIXME: does this need to be in reverse order?
-    for (uint64_t IP : Sample.call_context()) {
+    // NOTE: call_context is in already in order from top to bottom of stack.
+
+    // I don't know why the first IP is always a junk value, so we skip it here.
+    auto Start = Sample.call_context().begin();
+    auto End = Sample.call_context().end();
+    if (Start != End && CRI.lookup(*Start) == CRI.UnknownFI)
+      Start++;
+
+    assert(Start != End && SampledFI == CRI.lookup(*Start)
+            && "first context should be the func itself!");
+
+    // we want the starting point to be the caller of the first context
+    Start++;
+
+    for (; Start != End; Start++) {
+      uint64_t IP = *Start;
       auto FI = CRI.lookup(IP);
+
+      // stop at the first unknown function
+      if (FI == CRI.UnknownFI)
+        break;
+
       logs() << IP << "\t" << FI->getName() << "\n";
 
       auto CallerID = getOrAddVertex(FI);
