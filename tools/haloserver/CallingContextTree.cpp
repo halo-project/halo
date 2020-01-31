@@ -5,6 +5,7 @@
 #include "Logging.h"
 
 #include <tuple>
+#include <cmath>
 
 
 namespace halo {
@@ -16,6 +17,12 @@ namespace halo {
   /// This namespace provides basic graph utilities that are
   /// not provided by Boost Graph Library.
   namespace bgl {
+
+    // helps prevent errors with accidentially doing a vertex lookup
+    // and getting a copy instead of a reference when using auto!
+    VertexInfo& get(Graph &Gr, VertexID ID) {
+      return Gr[ID];
+    }
 
     // does the graph have an edge from Src to Tgt?
     bool has_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
@@ -32,7 +39,7 @@ namespace halo {
       auto Range = boost::out_edges(Src, Gr);
       for (auto I = Range.first; I != Range.second; I++) {
         auto TgtID = boost::target(*I, Gr);
-        auto &TgtInfo = Gr[TgtID];
+        auto &TgtInfo = get(Gr, TgtID);
         if (Pred(TgtInfo))
           return TgtID;
       }
@@ -42,7 +49,7 @@ namespace halo {
   }
 
 CallingContextTree::CallingContextTree() {
-  RootVertex = boost::add_vertex(VertexInfo("root"), Gr);
+  RootVertex = boost::add_vertex(VertexInfo("<root>"), Gr);
 }
 
 void CallingContextTree::observe(CodeRegionInfo const& CRI, PerformanceData const& PD) {
@@ -64,21 +71,48 @@ void CallingContextTree::insertSample(CodeRegionInfo const& CRI, pb::RawSample c
   // as if we are calling the sampled function.
 
   auto &CallChain = Sample.call_context();
-  llvm::StringMap<VertexID> Ancestors; // map from name-of-vertex -> id-of-same-vertex
-  auto CurrentVID = RootVertex;
+  auto SampledIP = Sample.instr_ptr();
+  auto SampledFI = CRI.lookup(SampledIP);
+  bool KnownIP = SampledFI != CRI.UnknownFI;
 
-  // TODO: skip / drop the first entry in the chain if it's unknown. this is the case for all call chains i've seen!
+  auto IPI = CallChain.rbegin(); // rbegin = base of call stack
+  auto Top = CallChain.rend(); // rend = top of call stack
 
-  auto IPI = CallChain.rbegin();
-  auto End = CallChain.rend();
+  // it is often the case that the top-most IP is a garbage IP value,
+  // even when the sampled IP is in a known function.
+  // I don't know what causes that, but we look for it and eliminate it here
+  // so that those samples are merged into something logical.
+  if (CallChain.size() > 0) {
+    Top--; // move to topmost element, making it valid
+    auto TopFI = CRI.lookup(*Top);
+    bool KnownTop = TopFI != CRI.UnknownFI;
+
+    if (KnownTop && TopFI == SampledFI)
+      Top++; // keep the top
+    else if (!KnownTop && !KnownIP)
+      Top++; // it's unknown but it makes sense
+    else if (KnownTop && !KnownIP)
+      // it doesn't make sense if the top-most context is known but
+      // we sampled at an unknown ip.
+      fatal_error("inconsistent call chain top");
+
+    // otherwise the topmost element is now
+    // the end iterator, i.e., the one-past-the-end.
+    // thus we drop the topmost callchain IP.
+  }
+
 
   // skip unknown functions at the base of the call chain.
-  while (IPI != End && CRI.lookup(*IPI) == CRI.UnknownFI)
+  while (IPI != Top && CRI.lookup(*IPI) == CRI.UnknownFI)
     IPI++;
 
-  for (; IPI != End; IPI++) {
+
+  // now we actually process the call chain.
+  llvm::StringMap<VertexID> Ancestors; // map from name-of-vertex -> id-of-same-vertex
+  auto CurrentVID = RootVertex;
+  for (; IPI != Top; IPI++) {
     uint64_t IP = *IPI;
-    auto CurrentV = Gr[CurrentVID];
+    auto &CurrentV = bgl::get(Gr, CurrentVID);
 
     // every vertex is an ancestor of itself.
     Ancestors[CurrentV.getFuncName()] = CurrentVID;
@@ -101,7 +135,7 @@ void CallingContextTree::insertSample(CodeRegionInfo const& CRI, pb::RawSample c
       if (Result != Ancestors.end())
         Next = Result->second; // its recursive, we want a back-edge.
       else
-        Next = addVertex(FI); // otherwise we make a new child
+        Next = boost::add_vertex(VertexInfo(FI), Gr); // otherwise we make a new child
 
       // add the edge
       boost::add_edge(CurrentVID, Next, Gr);
@@ -110,53 +144,11 @@ void CallingContextTree::insertSample(CodeRegionInfo const& CRI, pb::RawSample c
     CurrentVID = Next;
   }
 
+  // at this point CurrentVID is the context-sensitive function node's id
+  auto &CurrentV = bgl::get(Gr, CurrentVID);
+  CurrentV.observeSample(Sample);
 
-  // auto SampledIP = Sample.instr_ptr();
-  // auto SampledFI = CRI.lookup(SampledIP);
-
-  // logs() << "====\nsampled at = "
-  //         << SampledIP << "\t" << SampledFI->getName() << "\n";
-
-  // auto CalleeID = getOrAddVertex(SampledFI);
-  // // NOTE: call_context is in already in order from top to bottom of stack.
-
-  // // I don't know why the first IP is always a junk value, so we skip it here.
-  // auto Start = Sample.call_context().begin();
-  // auto End = Sample.call_context().end();
-  // if (Start != End && CRI.lookup(*Start) == CRI.UnknownFI)
-  //   Start++;
-
-  // assert(Start != End && SampledFI == CRI.lookup(*Start)
-  //         && "first context should be the func itself!");
-
-  // // we want the starting point to be the caller of the first context
-  // Start++;
-
-  // for (; Start != End; Start++) {
-  //   uint64_t IP = *Start;
-  //   auto FI = CRI.lookup(IP);
-
-  //   // stop at the first unknown function
-  //   if (FI == CRI.UnknownFI)
-  //     break;
-
-  //   logs() << IP << "\t" << FI->getName() << "\n";
-
-  //   auto CallerID = getOrAddVertex(FI);
-
-  //   if (!bgl::has_edge(CallerID, CalleeID, Gr))
-  //     boost::add_edge(CallerID, CalleeID, Gr);
-
-  //   CalleeID = CallerID;
-  // }
-
-  // logs() << "=====\n";
-}
-
-
-
-VertexID CallingContextTree::addVertex(FunctionInfo const* FI) {
-  return boost::add_vertex(VertexInfo(FI->getName()), Gr);
+  // TODO: add branch misprediction rate.
 }
 
 
@@ -169,19 +161,21 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
   auto VRange = boost::vertices(Gr);
   for (auto I = VRange.first; I != VRange.second; I++) {
     auto Vertex = *I;
-    auto &Info = Gr[Vertex];
+    auto &Info = bgl::get(Gr, Vertex);
 
-    // output vertex label
+    auto Style = Info.isPatchable() ? "solid" : "dashed";
+
+    // output vertex and its metadata
     out << Vertex
-        << " [label=\""
-        << Info.getDOTLabel()
-        << "\"];";
+        << " [label=\"" << Info.getDOTLabel() << "\""
+        << ",style=\""  << Style << "\""
+        << "];";
 
     out << "\n";
   }
 
   // FIXME: for a better visualization, use a DFS iterator and keep track of
-  // already visited vertices. then mark backedges with [style=dotted]
+  // already visited vertices. then mark backedges with [style=dashed]
   auto ERange = boost::edges(Gr);
   for (auto I = ERange.first; I != ERange.second; I++) {
     auto Edge = *I;
@@ -194,6 +188,33 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
   }
 
   out << "}\n---\n";
+}
+
+
+/// VertexInfo definitions
+
+void VertexInfo::observeSample(pb::RawSample const& RS) {
+  const float LIMIT = 100000000.0;
+  const float DISCOUNT = 0.7;
+  auto ThisTime = RS.time();
+
+  auto Diff = ThisTime - LastSampleTime;
+  float Temperature = LIMIT / Diff;
+
+  // Hotness += DISCOUNT * (Temperature - Hotness);
+  Hotness += 1; // Not sure if the time thing will work unless we also track the thread id!
+  LastSampleTime = ThisTime;
+}
+
+void VertexInfo::decay() {
+  fatal_error("implement Decay");
+}
+
+VertexInfo::VertexInfo(FunctionInfo const* FI) :
+  FuncName(FI->getName()), Patchable(FI->isPatchable()) {}
+
+std::string VertexInfo::getDOTLabel() const {
+  return FuncName + " (" + std::to_string(Hotness) + ")";
 }
 
 
