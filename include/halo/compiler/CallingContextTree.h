@@ -9,6 +9,9 @@ namespace halo {
 class CodeRegionInfo;
 class PerformanceData;
 class FunctionInfo;
+namespace pb {
+  class RawSample;
+}
 
 class VertexInfo : public std::string {
 public:
@@ -19,6 +22,11 @@ public:
   // a short name that describes this vertex suitable
   // for dumping to a DOT file as the vertex's label.
   std::string& getDOTLabel() {
+    return *this;
+  }
+
+  // the full name of the function represented by this vertex.
+  std::string const& getFuncName() const {
     return *this;
   }
 };
@@ -40,17 +48,17 @@ public:
   // dumps the graph in DOT format
   void dumpDOT(std::ostream &);
 
+  CallingContextTree();
+
 private:
+  // Creates a fresh, unique vertex based on the given FunctionInfo
+  VertexID addVertex(FunctionInfo const*);
 
-  /// Lookup a vertex by name
-  llvm::Optional<VertexID> lookup(std::string const&);
-
-  // looks up the vertex, and if it is not found, adds one to the graph
-  // using basic information from the FunctionInfo.
-  VertexID getOrAddVertex(FunctionInfo const*);
+  // Inserts the data from this sample into the CCT
+  void insertSample(CodeRegionInfo const&, pb::RawSample const&);
 
   Graph Gr;
-  std::unordered_map<std::string, VertexID> VertexMap;
+  VertexID RootVertex;
 };
 
 } // end namespace halo

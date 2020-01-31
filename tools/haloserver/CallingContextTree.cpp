@@ -1,6 +1,7 @@
 #include "halo/compiler/CallingContextTree.h"
 #include "halo/compiler/CodeRegionInfo.h"
 #include "halo/compiler/PerformanceData.h"
+#include "llvm/ADT/StringMap.h"
 #include "Logging.h"
 
 #include <tuple>
@@ -15,6 +16,8 @@ namespace halo {
   /// This namespace provides basic graph utilities that are
   /// not provided by Boost Graph Library.
   namespace bgl {
+
+    // does the graph have an edge from Src to Tgt?
     bool has_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
       auto Range = boost::out_edges(Src, Gr);
       for (auto I = Range.first; I != Range.second; I++)
@@ -22,54 +25,32 @@ namespace halo {
           return true;
       return false;
     }
+
+    /// Search the given function's out_edge set for first target matching the given predicate,
+    /// returning the matched vertex's ID
+    llvm::Optional<VertexID> find_out_vertex(Graph &Gr, VertexID Src, std::function<bool(VertexInfo const&)> Pred) {
+      auto Range = boost::out_edges(Src, Gr);
+      for (auto I = Range.first; I != Range.second; I++) {
+        auto TgtID = boost::target(*I, Gr);
+        auto &TgtInfo = Gr[TgtID];
+        if (Pred(TgtInfo))
+          return TgtID;
+      }
+      return llvm::None;
+    }
+
   }
+
+CallingContextTree::CallingContextTree() {
+  RootVertex = boost::add_vertex(VertexInfo("root"), Gr);
+}
 
 void CallingContextTree::observe(CodeRegionInfo const& CRI, PerformanceData const& PD) {
   bool SawSample = false; // FIXME: temporary
 
   for (pb::RawSample const& Sample : PD.getSamples()) {
     SawSample = true;
-
-    auto SampledIP = Sample.instr_ptr();
-    auto SampledFI = CRI.lookup(SampledIP);
-
-    logs() << "====\nsampled at = "
-           << SampledIP << "\t" << SampledFI->getName() << "\n";
-
-    auto CalleeID = getOrAddVertex(SampledFI);
-    // NOTE: call_context is in already in order from top to bottom of stack.
-
-    // I don't know why the first IP is always a junk value, so we skip it here.
-    auto Start = Sample.call_context().begin();
-    auto End = Sample.call_context().end();
-    if (Start != End && CRI.lookup(*Start) == CRI.UnknownFI)
-      Start++;
-
-    assert(Start != End && SampledFI == CRI.lookup(*Start)
-            && "first context should be the func itself!");
-
-    // we want the starting point to be the caller of the first context
-    Start++;
-
-    for (; Start != End; Start++) {
-      uint64_t IP = *Start;
-      auto FI = CRI.lookup(IP);
-
-      // stop at the first unknown function
-      if (FI == CRI.UnknownFI)
-        break;
-
-      logs() << IP << "\t" << FI->getName() << "\n";
-
-      auto CallerID = getOrAddVertex(FI);
-
-      if (!bgl::has_edge(CallerID, CalleeID, Gr))
-        boost::add_edge(CallerID, CalleeID, Gr);
-
-      CalleeID = CallerID;
-    }
-
-    logs() << "=====\n";
+    insertSample(CRI, Sample);
   }
 
   if (SawSample) {
@@ -78,27 +59,104 @@ void CallingContextTree::observe(CodeRegionInfo const& CRI, PerformanceData cons
   }
 }
 
+void CallingContextTree::insertSample(CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
+  // we add a sample from root downwards, so we go through the context in reverse
+  // as if we are calling the sampled function.
 
-CallingContextTree::VertexID CallingContextTree::getOrAddVertex(FunctionInfo const* FI) {
-  auto Result = lookup(FI->getName());
+  auto &CallChain = Sample.call_context();
+  llvm::StringMap<VertexID> Ancestors; // map from name-of-vertex -> id-of-same-vertex
+  auto CurrentVID = RootVertex;
 
-  if (!Result.hasValue()) {
+  // TODO: skip / drop the first entry in the chain if it's unknown. this is the case for all call chains i've seen!
+
+  auto IPI = CallChain.rbegin();
+  auto End = CallChain.rend();
+
+  // skip unknown functions at the base of the call chain.
+  while (IPI != End && CRI.lookup(*IPI) == CRI.UnknownFI)
+    IPI++;
+
+  for (; IPI != End; IPI++) {
+    uint64_t IP = *IPI;
+    auto CurrentV = Gr[CurrentVID];
+
+    // every vertex is an ancestor of itself.
+    Ancestors[CurrentV.getFuncName()] = CurrentVID;
+
+    auto FI = CRI.lookup(IP);
     auto Name = FI->getName();
-    VertexInfo VI(Name);
-    auto VID = boost::add_vertex(VI, Gr);
-    VertexMap[Name] = VID;
-    return VID;
+
+    // first, check if this function is a child of CurrentVID
+    auto Pred = [&](VertexInfo const& Info) { return Info.getFuncName() == Name; };
+    auto MaybeChild = bgl::find_out_vertex(Gr, CurrentVID, Pred);
+
+    VertexID Next;
+    if (MaybeChild.hasValue()) {
+      Next = MaybeChild.getValue();
+    } else {
+      // then there's currently no edge from current to a vertex with this name.
+
+      // first, check if this is a recursive call to an ancestor.
+      auto Result = Ancestors.find(Name);
+      if (Result != Ancestors.end())
+        Next = Result->second; // its recursive, we want a back-edge.
+      else
+        Next = addVertex(FI); // otherwise we make a new child
+
+      // add the edge
+      boost::add_edge(CurrentVID, Next, Gr);
+    }
+
+    CurrentVID = Next;
   }
 
-  return Result.getValue();
+
+  // auto SampledIP = Sample.instr_ptr();
+  // auto SampledFI = CRI.lookup(SampledIP);
+
+  // logs() << "====\nsampled at = "
+  //         << SampledIP << "\t" << SampledFI->getName() << "\n";
+
+  // auto CalleeID = getOrAddVertex(SampledFI);
+  // // NOTE: call_context is in already in order from top to bottom of stack.
+
+  // // I don't know why the first IP is always a junk value, so we skip it here.
+  // auto Start = Sample.call_context().begin();
+  // auto End = Sample.call_context().end();
+  // if (Start != End && CRI.lookup(*Start) == CRI.UnknownFI)
+  //   Start++;
+
+  // assert(Start != End && SampledFI == CRI.lookup(*Start)
+  //         && "first context should be the func itself!");
+
+  // // we want the starting point to be the caller of the first context
+  // Start++;
+
+  // for (; Start != End; Start++) {
+  //   uint64_t IP = *Start;
+  //   auto FI = CRI.lookup(IP);
+
+  //   // stop at the first unknown function
+  //   if (FI == CRI.UnknownFI)
+  //     break;
+
+  //   logs() << IP << "\t" << FI->getName() << "\n";
+
+  //   auto CallerID = getOrAddVertex(FI);
+
+  //   if (!bgl::has_edge(CallerID, CalleeID, Gr))
+  //     boost::add_edge(CallerID, CalleeID, Gr);
+
+  //   CalleeID = CallerID;
+  // }
+
+  // logs() << "=====\n";
 }
 
-llvm::Optional<CallingContextTree::VertexID> CallingContextTree::lookup(std::string const& VName) {
-  auto Result = VertexMap.find(VName);
-  if (Result != VertexMap.end())
-    return Result->second;
 
-  return llvm::None;
+
+VertexID CallingContextTree::addVertex(FunctionInfo const* FI) {
+  return boost::add_vertex(VertexInfo(FI->getName()), Gr);
 }
 
 
