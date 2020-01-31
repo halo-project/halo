@@ -21,7 +21,7 @@ trying to profitably **tune the compiler optimizations applied to the code
 while the program is running**.
 This is in contrast to traditional offline tuning where a sample workload and
 hours of time are required to perform the tuning prior to the deployment of the
-software, where the tuning remains fixed.
+software, and afterwards the tuning remains fixed.
 
 
 ## What's Here?
