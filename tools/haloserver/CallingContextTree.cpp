@@ -194,12 +194,12 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
 /// VertexInfo definitions
 
 void VertexInfo::observeSample(pb::RawSample const& RS) {
-  const float LIMIT = 100000000.0;
-  const float DISCOUNT = 0.7;
+  // const float LIMIT = 100000000.0;
+  // const float DISCOUNT = 0.7;
   auto ThisTime = RS.time();
 
-  auto Diff = ThisTime - LastSampleTime;
-  float Temperature = LIMIT / Diff;
+  // auto Diff = ThisTime - LastSampleTime;
+  // float Temperature = LIMIT / Diff;
 
   // Hotness += DISCOUNT * (Temperature - Hotness);
   Hotness += 1; // Not sure if the time thing will work unless we also track the thread id!
