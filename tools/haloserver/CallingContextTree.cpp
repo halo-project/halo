@@ -1,6 +1,7 @@
 #include "halo/compiler/CallingContextTree.h"
 #include "halo/compiler/CodeRegionInfo.h"
 #include "halo/compiler/PerformanceData.h"
+#include "halo/compiler/Util.h"
 #include "llvm/ADT/StringMap.h"
 #include "Logging.h"
 
@@ -52,12 +53,12 @@ CallingContextTree::CallingContextTree() {
   RootVertex = boost::add_vertex(VertexInfo("<root>"), Gr);
 }
 
-void CallingContextTree::observe(CodeRegionInfo const& CRI, PerformanceData const& PD) {
+void CallingContextTree::observe(ClientID ID, CodeRegionInfo const& CRI, PerformanceData const& PD) {
   bool SawSample = false; // FIXME: temporary
 
   for (pb::RawSample const& Sample : PD.getSamples()) {
     SawSample = true;
-    insertSample(CRI, Sample);
+    insertSample(ID, CRI, Sample);
   }
 
   if (SawSample) {
@@ -66,7 +67,7 @@ void CallingContextTree::observe(CodeRegionInfo const& CRI, PerformanceData cons
   }
 }
 
-void CallingContextTree::insertSample(CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
+void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
   // we add a sample from root downwards, so we go through the context in reverse
   // as if we are calling the sampled function.
 
@@ -146,7 +147,7 @@ void CallingContextTree::insertSample(CodeRegionInfo const& CRI, pb::RawSample c
 
   // at this point CurrentVID is the context-sensitive function node's id
   auto &CurrentV = bgl::get(Gr, CurrentVID);
-  CurrentV.observeSample(Sample);
+  CurrentV.observeSample(ID, Sample);
 
   // TODO: add branch misprediction rate.
 }
@@ -190,31 +191,50 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
   out << "}\n---\n";
 }
 
+void CallingContextTree::decay() {
+  auto VRange = boost::vertices(Gr);
+  for (auto I = VRange.first; I != VRange.second; I++) {
+    auto &Info = bgl::get(Gr, *I);
+    Info.decay();
+  }
+}
 
+///////////////////////////////////////////////
 /// VertexInfo definitions
 
-void VertexInfo::observeSample(pb::RawSample const& RS) {
-  // const float LIMIT = 100000000.0;
-  // const float DISCOUNT = 0.7;
+const float VertexInfo::HOTNESS_BASELINE = 100000000.0f;
+const float VertexInfo::HOTNESS_DISCOUNT = 0.7f;
+
+void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS) {
   auto ThisTime = RS.time();
+  auto TID = RS.thread_id();
 
-  // auto Diff = ThisTime - LastSampleTime;
-  // float Temperature = LIMIT / Diff;
+  std::pair<ClientID, uint32_t> Key{ID, TID};
+  auto LastTime = LastSampleTime[Key];
 
-  // Hotness += DISCOUNT * (Temperature - Hotness);
-  Hotness += 1; // Not sure if the time thing will work unless we also track the thread id!
-  LastSampleTime = ThisTime;
+  if (LastTime) {
+    // use a typical incremental update rule (Section 2.4/2.5 in RL book)
+    auto Diff = ThisTime - LastTime;
+    float Temperature = HOTNESS_BASELINE / Diff;
+    Hotness += HOTNESS_DISCOUNT * (Temperature - Hotness);
+  }
+
+  LastSampleTime[Key] = ThisTime;
 }
 
 void VertexInfo::decay() {
-  fatal_error("implement Decay");
+  // take a step in the direction of reaching zero.
+  // another way to think about it is that we pretend we observed
+  // a zero-temperature sample
+  const float ZeroTemp = 0.0f;
+  Hotness += HOTNESS_DISCOUNT * (ZeroTemp - Hotness);
 }
 
 VertexInfo::VertexInfo(FunctionInfo const* FI) :
   FuncName(FI->getName()), Patchable(FI->isPatchable()) {}
 
 std::string VertexInfo::getDOTLabel() const {
-  return FuncName + " (" + std::to_string(Hotness) + ")";
+  return FuncName + " (" + to_formatted_str(Hotness) + ")";
 }
 
 

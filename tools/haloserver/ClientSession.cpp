@@ -15,6 +15,7 @@ void ClientSession::start(ClientGroup *CG) {
   Parent->withClientState(this, [this](SessionState &State){
     // process this new enrollment
     State.CRI.init(Client);
+    State.ID = ID;
 
     // ask to sample right away for now.
     Chan.send(msg::StartSampling);

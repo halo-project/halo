@@ -36,8 +36,11 @@ namespace halo {
     Dead
   };
 
+  using ClientID = size_t;
+
   // The client's state accessed in a thread-safe manner.
   struct SessionState {
+    ClientID ID; // a unique idenifier for the duration of the server process
     CodeRegionInfo CRI;
     PerformanceData PerfData;
     std::set<llvm::StringRef> DeployedCode; // TODO: merge this into CRI as a real feature
@@ -61,6 +64,7 @@ namespace halo {
     // members initialized prior to usage of this object.
     bool Enrolled = false;
     pb::ClientEnroll Client;
+    size_t ID; // a unique identifier for the lifetime of a haloserver process
 
     // thread-safe members
     ip::tcp::socket Socket;

@@ -121,6 +121,7 @@ private:
 
           TotalSessions++; UnregisteredSessions++;
           CS->Status = Active;
+          CS->ID = TotalSessions;
           asio::socket_base::keep_alive option(true);
           CS->Socket.set_option(option);
 

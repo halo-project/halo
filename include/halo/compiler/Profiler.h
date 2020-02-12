@@ -17,6 +17,9 @@ public:
   /// updates the profiler with new performance data found in the clients
   void consumePerfData(ClientList &);
 
+  /// advances the age of the profiler's data by one time-step.
+  void decay();
+
   /// @returns the name of the most sampled function and whether it is patchable.
   /// patchable functions are prioritized over non-patchable and will always be returned if sampled.
   llvm::Optional<std::pair<std::string, bool>> getMostSampled(ClientList &);

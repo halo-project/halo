@@ -59,6 +59,8 @@ namespace halo {
       // Update the profiler with new PerfData, if any.
       Profile.consumePerfData(State.Clients);
 
+      Profile.decay();
+
       auto MaybeInfo = Profile.getMostSampled(State.Clients);
 
       if (!MaybeInfo) {

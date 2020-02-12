@@ -3,6 +3,7 @@
 #include "boost/graph/adjacency_list.hpp"
 #include "llvm/ADT/Optional.h"
 #include <ostream>
+#include <map>
 
 namespace halo {
 
@@ -12,6 +13,8 @@ class FunctionInfo;
 namespace pb {
   class RawSample;
 }
+
+using ClientID = size_t;
 
 /// Each node summarizes context-sensitive profiling information
 /// within a CallingContextTree.
@@ -35,7 +38,7 @@ public:
   /// relevant for this vertex, `observerSample`
   /// will merge the performance metrics from
   /// the sample with existing metrics in this vertex.
-  void observeSample(pb::RawSample const&);
+  void observeSample(ClientID, pb::RawSample const&);
 
   // causes the information in this sample to decay
   void decay();
@@ -49,8 +52,10 @@ private:
   std::string FuncName{"<XXX>"};
   bool Patchable{false};
   float Hotness{0};
-  uint64_t LastSampleTime{0};
+  std::map<std::pair<ClientID, uint32_t>, uint64_t> LastSampleTime; // thread_id -> timestamp
 
+  static const float HOTNESS_BASELINE;
+  static const float HOTNESS_DISCOUNT;
 };
 
 /// A container for context-sensitive profiling data.
@@ -65,7 +70,10 @@ public:
                   VertexInfo>;
   using VertexID = Graph::vertex_descriptor;
 
-  void observe(CodeRegionInfo const&, PerformanceData const&);
+  void observe(ClientID, CodeRegionInfo const&, PerformanceData const&);
+
+  // causes the perf data in this tree to age.
+  void decay();
 
   // dumps the graph in DOT format
   void dumpDOT(std::ostream &);
@@ -75,7 +83,7 @@ public:
 private:
 
   // Inserts the data from this sample into the CCT
-  void insertSample(CodeRegionInfo const&, pb::RawSample const&);
+  void insertSample(ClientID, CodeRegionInfo const&, pb::RawSample const&);
 
   Graph Gr;
   VertexID RootVertex;

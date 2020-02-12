@@ -8,9 +8,13 @@ namespace halo {
 void Profiler::consumePerfData(ClientList & Clients) {
   for (auto &CS : Clients) {
     auto &State = CS->State;
-    CCT.observe(State.CRI, State.PerfData);
+    CCT.observe(State.ID, State.CRI, State.PerfData);
     State.PerfData.clear();
   }
+}
+
+void Profiler::decay() {
+  CCT.decay();
 }
 
 llvm::Optional<std::pair<std::string, bool>>
