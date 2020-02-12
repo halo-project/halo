@@ -5,6 +5,8 @@
 #include "llvm/ADT/StringMap.h"
 #include "Logging.h"
 
+#include "boost/graph/depth_first_search.hpp"
+
 #include <tuple>
 #include <cmath>
 
@@ -152,6 +154,72 @@ void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb
   // TODO: add branch misprediction rate.
 }
 
+template <typename AccTy>
+AccTy CallingContextTree::reduce(std::function<AccTy(VertexID, VertexInfo const&, AccTy)> F, AccTy Initial) {
+  AccTy Result = Initial;
+  auto VRange = boost::vertices(Gr);
+  for (auto I = VRange.first; I != VRange.second; I++)
+    Result = F(*I, bgl::get(Gr, *I), Result);
+
+  return Result;
+}
+
+// instances of reduce. NO ANGLE BRACKETS!
+template VertexID CallingContextTree::reduce(std::function<VertexID(VertexID, VertexInfo const&, VertexID)> F, VertexID Initial);
+
+
+void CallingContextTree::decay() {
+  auto VRange = boost::vertices(Gr);
+  for (auto I = VRange.first; I != VRange.second; I++) {
+    auto &Info = bgl::get(Gr, *I);
+    Info.decay();
+  }
+}
+
+
+std::vector<VertexInfo> CallingContextTree::contextOf(VertexID Current) {
+
+  class ContextSearch : public boost::default_dfs_visitor {
+  public:
+    ContextSearch(VertexID end, std::vector<VertexID>& p) : End(end), Path(p) {}
+
+    // invoked when the vertex is encountered the first time in the DFS.
+    // this is what we want to avoid cycles!
+    void discover_vertex(VertexID u, const Graph& g) {
+      if (Found)
+        return;
+
+      Path.push_back(u);
+
+      Found = (u == End);
+    }
+
+    void finish_vertex(VertexID u, const Graph& g) {
+      if (Found)
+        return;
+
+      Path.pop_back();
+    }
+
+  private:
+    VertexID End;
+    bool Found = false;
+    std::vector<VertexID>& Path;
+  }; // end calss
+
+  std::vector<VertexID> Path;
+  ContextSearch Searcher(Current, Path);
+  boost::depth_first_search(Gr, boost::visitor(Searcher));
+
+  logs() << "search path to " << Current << " = ";
+  for (auto ID : Path)
+    logs() << ID << " -> ";
+  logs() << "\n";
+
+  return {};
+}
+
+
 
 void CallingContextTree::dumpDOT(std::ostream &out) {
   // NOTE: unfortunately we can't use boost::write_graphviz
@@ -189,14 +257,6 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
   }
 
   out << "}\n---\n";
-}
-
-void CallingContextTree::decay() {
-  auto VRange = boost::vertices(Gr);
-  for (auto I = VRange.first; I != VRange.second; I++) {
-    auto &Info = bgl::get(Gr, *I);
-    Info.decay();
-  }
 }
 
 ///////////////////////////////////////////////

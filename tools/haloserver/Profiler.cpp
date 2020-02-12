@@ -17,47 +17,61 @@ void Profiler::decay() {
   CCT.decay();
 }
 
-llvm::Optional<std::pair<std::string, bool>>
-  Profiler::getMostSampled(ClientList &Clients) {
+llvm::Optional<std::vector<VertexInfo>> Profiler::getHottestContext() {
 
-  // FIXME: for now, the most sampled function across all clients, breaking
-  // ties arbitrarily (by appearance in list). Not a good metric!
-  size_t Max = 0;
-  std::string BestName = "";
-  bool BestPatchable = false;
-
-  for (auto &CS : Clients) {
-    auto &CRI = CS->State.CRI;
-    auto &PerfData = CS->State.PerfData;
-    for (auto &Pair : CRI.getNameMap()) {
-      auto FI = Pair.second;
-      auto Name = FI->getName();
-      assert(Pair.first == Name && "inconsistency in the name map");
-
-      // FIXME: kind of an awful metric, and we shouldn't just delete the data!
-      // plus it's n^2 time to compute this hotness!
-      size_t Hotness = 0;
-      for (auto const& Sample : PerfData.getSamples()) {
-        auto SampleInfo = CRI.lookup(Sample.instr_ptr());
-        if (SampleInfo->getName() == Name)
-          Hotness++;
-      }
-
-      if (Hotness > Max) {
-        bool ThisPatchability = FI->isPatchable();
-        if ((BestPatchable == false && ThisPatchability == true) || BestPatchable == ThisPatchability) {
-          BestName = Name;
-          BestPatchable = ThisPatchability;
-          Max = Hotness;
-        }
-      }
+  // find the largest VID
+  using VertexID = CallingContextTree::VertexID;
+  float Max = 0.0f;
+  VertexID MaxVID = CCT.reduce<VertexID>([&](VertexID ID, VertexInfo const& VI, VertexID AccID)  {
+    auto Hotness = VI.getHotness();
+    if (Hotness > Max) {
+      logs() << "Hotness = " << Hotness << " vs " << Max << "\n";
+      Max = Hotness;
+      return ID;
     }
+    return AccID;
+  }, CCT.getRoot());
 
-    PerfData.getSamples().clear(); // FIXME: get rid of this bad way weigh recency
-  }
+  auto Cxt = CCT.contextOf(MaxVID);
 
-  if (Max > 0)
-    return std::make_pair(BestName, BestPatchable);
+  // // FIXME: for now, the most sampled function across all clients, breaking
+  // // ties arbitrarily (by appearance in list). Not a good metric!
+  // size_t Max = 0;
+  // std::string BestName = "";
+  // bool BestPatchable = false;
+
+  // for (auto &CS : Clients) {
+  //   auto &CRI = CS->State.CRI;
+  //   auto &PerfData = CS->State.PerfData;
+  //   for (auto &Pair : CRI.getNameMap()) {
+  //     auto FI = Pair.second;
+  //     auto Name = FI->getName();
+  //     assert(Pair.first == Name && "inconsistency in the name map");
+
+  //     // FIXME: kind of an awful metric, and we shouldn't just delete the data!
+  //     // plus it's n^2 time to compute this hotness!
+  //     size_t Hotness = 0;
+  //     for (auto const& Sample : PerfData.getSamples()) {
+  //       auto SampleInfo = CRI.lookup(Sample.instr_ptr());
+  //       if (SampleInfo->getName() == Name)
+  //         Hotness++;
+  //     }
+
+  //     if (Hotness > Max) {
+  //       bool ThisPatchability = FI->isPatchable();
+  //       if ((BestPatchable == false && ThisPatchability == true) || BestPatchable == ThisPatchability) {
+  //         BestName = Name;
+  //         BestPatchable = ThisPatchability;
+  //         Max = Hotness;
+  //       }
+  //     }
+  //   }
+
+  //   PerfData.getSamples().clear(); // FIXME: get rid of this bad way weigh recency
+  // }
+
+  // if (Max > 0)
+  //   return std::make_pair(BestName, BestPatchable);
 
   return llvm::None;
 }

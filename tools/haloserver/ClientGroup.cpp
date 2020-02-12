@@ -61,7 +61,7 @@ namespace halo {
 
       Profile.decay();
 
-      auto MaybeInfo = Profile.getMostSampled(State.Clients);
+      auto MaybeInfo = Profile.getHottestContext();
 
       if (!MaybeInfo) {
         logs() << "No sample data available.\n";
@@ -69,8 +69,8 @@ namespace halo {
       }
 
       auto &Info = MaybeInfo.getValue();
-      llvm::StringRef Name = Info.first;
-      bool Patchable = Info.second;
+      llvm::StringRef Name = "main"; // FIXME: Info.first;
+      bool Patchable = false; // FIXME: Info.second;
       bool HaveBitcode = FuncsWithBitcode.count(Name) != 0;
 
       logs() << "Hottest function = " << Name << "\n";

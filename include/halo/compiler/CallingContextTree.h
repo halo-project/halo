@@ -70,12 +70,27 @@ public:
                   VertexInfo>;
   using VertexID = Graph::vertex_descriptor;
 
+  /// adds the given profiling data to the tree
   void observe(ClientID, CodeRegionInfo const&, PerformanceData const&);
 
-  // causes the perf data in this tree to age.
+  /// causes the data in this tree to age by one time-step.
   void decay();
 
-  // dumps the graph in DOT format
+  /// a functional-style fold operation applied to vertices
+  /// in an arbitrary order. You'll need to manually instantiate versions
+  /// with your particular AccTy in the .cpp file.
+  template <typename AccTy>
+  AccTy reduce(std::function<AccTy(VertexID, VertexInfo const&, AccTy)>, AccTy Initial);
+
+  /// returns the root vertex's ID
+  VertexID getRoot() { return RootVertex; }
+
+  /// obtains the vertex info for the context represented by the
+  /// vertex. The context is a list of functions ordered from this vertex
+  /// until the root, but not including the root.
+  std::vector<VertexInfo> contextOf(VertexID);
+
+  /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);
 
   CallingContextTree();
