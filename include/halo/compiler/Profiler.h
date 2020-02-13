@@ -13,6 +13,8 @@ class ClientSession;
 class Profiler {
 public:
   using ClientList = std::list<std::unique_ptr<ClientSession>>;
+  using TuningSection = std::pair<std::string, bool>; // FIXME: maybe one patchable function
+                                                      // and a set of reachable funs
 
   /// updates the profiler with new performance data found in the clients
   void consumePerfData(ClientList &);
@@ -20,10 +22,8 @@ public:
   /// advances the age of the profiler's data by one time-step.
   void decay();
 
-  /// @returns the hottest calling context (i.e., a sequence of functions).
-  /// the context is ordered from hottest-function -> caller -> caller -> root
-  /// ties are broken arbitrarily.
-  llvm::Optional<std::vector<VertexInfo>> getHottestContext();
+  /// @returns the 'best' tuning section
+  llvm::Optional<TuningSection> getBestTuningSection();
 
   void dump(llvm::raw_ostream &);
 

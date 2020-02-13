@@ -17,61 +17,26 @@ void Profiler::decay() {
   CCT.decay();
 }
 
-llvm::Optional<std::vector<VertexInfo>> Profiler::getHottestContext() {
-
-  // find the largest VID
+llvm::Optional<Profiler::TuningSection> Profiler::getBestTuningSection() {
+  // find the hottest VID
   using VertexID = CallingContextTree::VertexID;
   float Max = 0.0f;
   VertexID MaxVID = CCT.reduce<VertexID>([&](VertexID ID, VertexInfo const& VI, VertexID AccID)  {
     auto Hotness = VI.getHotness();
     if (Hotness > Max) {
-      logs() << "Hotness = " << Hotness << " vs " << Max << "\n";
       Max = Hotness;
       return ID;
     }
     return AccID;
   }, CCT.getRoot());
 
+  // obtain the context of that VID
   auto Cxt = CCT.contextOf(MaxVID);
 
-  // // FIXME: for now, the most sampled function across all clients, breaking
-  // // ties arbitrarily (by appearance in list). Not a good metric!
-  // size_t Max = 0;
-  // std::string BestName = "";
-  // bool BestPatchable = false;
-
-  // for (auto &CS : Clients) {
-  //   auto &CRI = CS->State.CRI;
-  //   auto &PerfData = CS->State.PerfData;
-  //   for (auto &Pair : CRI.getNameMap()) {
-  //     auto FI = Pair.second;
-  //     auto Name = FI->getName();
-  //     assert(Pair.first == Name && "inconsistency in the name map");
-
-  //     // FIXME: kind of an awful metric, and we shouldn't just delete the data!
-  //     // plus it's n^2 time to compute this hotness!
-  //     size_t Hotness = 0;
-  //     for (auto const& Sample : PerfData.getSamples()) {
-  //       auto SampleInfo = CRI.lookup(Sample.instr_ptr());
-  //       if (SampleInfo->getName() == Name)
-  //         Hotness++;
-  //     }
-
-  //     if (Hotness > Max) {
-  //       bool ThisPatchability = FI->isPatchable();
-  //       if ((BestPatchable == false && ThisPatchability == true) || BestPatchable == ThisPatchability) {
-  //         BestName = Name;
-  //         BestPatchable = ThisPatchability;
-  //         Max = Hotness;
-  //       }
-  //     }
-  //   }
-
-  //   PerfData.getSamples().clear(); // FIXME: get rid of this bad way weigh recency
-  // }
-
-  // if (Max > 0)
-  //   return std::make_pair(BestName, BestPatchable);
+  // for now we just walk backwards towards 'main' and look for the first patchable function.
+  for (auto I = Cxt.rbegin(); I != Cxt.rend(); I++)
+    if (I->isPatchable())
+      return std::make_pair(I->getFuncName(), true);
 
   return llvm::None;
 }
