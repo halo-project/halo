@@ -96,6 +96,17 @@ public:
   FunctionInfo* lookup(std::string const& Name) const;
   void addRegion(std::string Name, uint64_t Start, uint64_t End, bool Patchable);
 
+  /// returns true if the branch from source to target is considered
+  /// a function call. There are are few situations:
+  ///
+  ///   1. Source & Target are in different function bodies
+  ///
+  ///   2. Source originates within function A, and Target is the start of Function A.
+  ///
+  ///   3. The source is NOT an unknown function but the target IS unknown. (& vice versa!)
+  ///
+  bool isCall(uint64_t Source, uint64_t Target) const;
+
   auto const& getNameMap() { return NameMap; }
 
   // initializes an empty and useless CRI. you should use ::init()

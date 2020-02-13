@@ -56,7 +56,28 @@ private:
 
   static const float HOTNESS_BASELINE;
   static const float HOTNESS_DISCOUNT;
-};
+}; // end class
+
+
+/// maintains information about a specific call-edge in the CCT
+class EdgeInfo {
+public:
+  EdgeInfo() {}
+
+  // observes N calls having appeared within a BTB record's history.
+  void observe(size_t N);
+
+  /// returns a score indicating how often this branch / call has
+  /// happened recently
+  auto getFrequency() const { return Frequency; }
+
+  // causes the information in this sample to decay
+  void decay();
+
+  private:
+    float Frequency{0};
+}; // end class
+
 
 /// A container for context-sensitive profiling data.
 ///
@@ -67,8 +88,9 @@ class CallingContextTree {
 public:
   using Graph = boost::adjacency_list<
                   boost::vecS, boost::vecS, boost::bidirectionalS,
-                  VertexInfo>;
+                  VertexInfo, EdgeInfo>;
   using VertexID = Graph::vertex_descriptor;
+  using EdgeID = Graph::edge_descriptor;
 
   /// adds the given profiling data to the tree
   void observe(ClientID, CodeRegionInfo const&, PerformanceData const&);

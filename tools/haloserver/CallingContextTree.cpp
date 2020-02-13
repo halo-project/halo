@@ -14,6 +14,7 @@
 namespace halo {
 
   using VertexID = CallingContextTree::VertexID;
+  using EdgeID = CallingContextTree::EdgeID;
   using Graph = CallingContextTree::Graph;
 
 
@@ -23,8 +24,12 @@ namespace halo {
 
     // helps prevent errors with accidentially doing a vertex lookup
     // and getting a copy instead of a reference when using auto!
-    VertexInfo& get(Graph &Gr, VertexID ID) {
+    inline VertexInfo& get(Graph &Gr, VertexID ID) {
       return Gr[ID];
+    }
+
+    inline EdgeInfo& get(Graph &Gr, EdgeID Edge) {
+      return Gr[Edge];
     }
 
     // does the graph have an edge from Src to Tgt?
@@ -149,9 +154,15 @@ void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb
 
   // at this point CurrentVID is the context-sensitive function node's id
   auto &CurrentV = bgl::get(Gr, CurrentVID);
-  CurrentV.observeSample(ID, Sample);
+  CurrentV.observeSample(ID, Sample); // add the sample to the vertex!
 
-  // TODO: add branch misprediction rate.
+  // TODO:
+  // now we work through the BTB data, looking to update edges in the graph
+  // for (auto &BI : Sample.branch()) {
+  //   if (CRI.isCall(BI.from(), BI.to())) {
+  //     logs() << CRI.lookup(BI.from())->getName() << " ==> " << CRI.lookup(BI.to())->getName() << "\n";
+  //   }
+  // }
 }
 
 template <typename AccTy>
@@ -254,12 +265,14 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
   auto ERange = boost::edges(Gr);
   for (auto I = ERange.first; I != ERange.second; I++) {
     auto Edge = *I;
+    auto &Info = bgl::get(Gr, Edge);
 
     // output edge
     out << boost::source(Edge, Gr)
         << " -> "
         << boost::target(Edge, Gr)
-        << ";\n";
+        << " [label=\"" << to_formatted_str(Info.getFrequency())
+        << "\"];\n";
   }
 
   out << "}\n---\n";
@@ -272,6 +285,8 @@ const float VertexInfo::HOTNESS_BASELINE = 100000000.0f;
 const float VertexInfo::HOTNESS_DISCOUNT = 0.7f;
 
 void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS) {
+  // TODO: add branch mis-prediction rate?
+
   auto ThisTime = RS.time();
   auto TID = RS.thread_id();
 

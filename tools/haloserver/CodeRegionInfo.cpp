@@ -34,6 +34,35 @@ void CodeRegionInfo::addRegion(std::string Name, uint64_t Start, uint64_t End, b
   AddrMap.insert(std::make_pair(FuncRange, FI));
 }
 
+bool CodeRegionInfo::isCall(uint64_t SrcIP, uint64_t TgtIP) const {
+  auto Source = lookup(SrcIP);
+  auto Target = lookup(TgtIP);
+
+  bool SourceUnknown = (Source == UnknownFI);
+  bool TargetUnknown = (Target == UnknownFI);
+
+  if (SourceUnknown && TargetUnknown)
+    return false;
+  else if (SourceUnknown || TargetUnknown)
+    return true;
+
+  // NOTE: in the case of both not unknown, we first check for function name inequality,
+  // NOT function-info pointer inequality since JIT'd code will have different
+  // pointer but represent the same function!
+
+  if (Source->getName() != Target->getName())
+    return true;
+
+  // okay now we know it's a branch within the same function, so we
+  // check to see if the target IP is at the start of its FI.
+  // this would indicate a self-recursive call.
+
+  if (Target->getStart() == TgtIP)
+    return true;
+
+  return false;
+}
+
 FunctionInfo* CodeRegionInfo::lookup(uint64_t IP) const {
   IP -= VMABase;
 
