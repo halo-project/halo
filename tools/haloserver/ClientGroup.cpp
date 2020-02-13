@@ -69,7 +69,7 @@ namespace halo {
       }
 
       auto &Info = MaybeInfo.getValue();
-      llvm::StringRef Name = Info.first;
+      std::string Name = Info.first;
       bool Patchable = Info.second;
       bool HaveBitcode = FuncsWithBitcode.count(Name) != 0;
 
