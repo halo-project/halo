@@ -31,7 +31,7 @@ namespace halo {
     // NOTE: it is important that the KnobSet is passed by value here, since we
     // want to take in a standalone copy of the knobs so as to not create
     // a data race, etc.
-    compile_expected run(llvm::MemoryBuffer &Bitcode, llvm::StringRef TargetFunc, KnobSet Knobs) {
+    compile_expected run(llvm::MemoryBuffer &Bitcode, std::string TargetFunc, KnobSet Knobs) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
 
       auto MaybeModule = _parseBitcode(Cxt, Bitcode);
