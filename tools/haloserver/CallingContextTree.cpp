@@ -32,21 +32,34 @@ namespace halo {
       return Gr[Edge];
     }
 
-    // does the graph have an edge from Src to Tgt?
-    bool has_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
+    // does the graph have an edge from Src --> Tgt? if so, return it.
+    llvm::Optional<EdgeID> get_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
       auto Range = boost::out_edges(Src, Gr);
       for (auto I = Range.first; I != Range.second; I++)
         if (boost::target(*I, Gr) == Tgt)
-          return true;
-      return false;
+          return *I;
+      return llvm::None;
     }
 
-    /// Search the given function's out_edge set for first target matching the given predicate,
+    /// Search the given vertex's OUT_EDGE set for first edge who's TARGET matches the given predicate,
     /// returning the matched vertex's ID
-    llvm::Optional<VertexID> find_out_vertex(Graph &Gr, VertexID Src, std::function<bool(VertexInfo const&)> Pred) {
-      auto Range = boost::out_edges(Src, Gr);
+    llvm::Optional<VertexID> find_out_vertex(Graph &Gr, VertexID Vtex, std::function<bool(VertexInfo const&)> Pred) {
+      auto Range = boost::out_edges(Vtex, Gr);
       for (auto I = Range.first; I != Range.second; I++) {
         auto TgtID = boost::target(*I, Gr);
+        auto &TgtInfo = get(Gr, TgtID);
+        if (Pred(TgtInfo))
+          return TgtID;
+      }
+      return llvm::None;
+    }
+
+    /// Search the given vertex's IN_EDGE set for first edge who's SOURCE matches the given predicate,
+    /// returning the matched vertex's ID
+    llvm::Optional<VertexID> find_in_vertex(Graph &Gr, VertexID Vtex, std::function<bool(VertexInfo const&)> Pred) {
+      auto Range = boost::in_edges(Vtex, Gr);
+      for (auto I = Range.first; I != Range.second; I++) {
+        auto TgtID = boost::source(*I, Gr);
         auto &TgtInfo = get(Gr, TgtID);
         if (Pred(TgtInfo))
           return TgtID;
@@ -156,14 +169,80 @@ void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb
   auto &CurrentV = bgl::get(Gr, CurrentVID);
   CurrentV.observeSample(ID, Sample); // add the sample to the vertex!
 
-  // TODO:
-  // now we work through the BTB data, looking to update edges in the graph
-  // for (auto &BI : Sample.branch()) {
-  //   if (CRI.isCall(BI.from(), BI.to())) {
-  //     logs() << CRI.lookup(BI.from())->getName() << " ==> " << CRI.lookup(BI.to())->getName() << "\n";
-  //   }
-  // }
+  dumpDOT(clogs());
+
+  walkBranchSamples(CurrentVID, CRI, Sample);
 }
+
+/// We walk through the branch history in reverse order (recent to oldest) to identify
+/// call edges that are frequently taken. Recall that both calls and returns are contained
+/// in this history, so we can simply start at the contextually-correct starting point
+/// in the CCT and walk forwards / backwards through the history.
+void CallingContextTree::walkBranchSamples(VertexID Start, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
+
+  // Currently we assume the branch sample list only contains call / return branches,
+  // not conditional ones etc. The reason is that I think it might be a bit tricky to
+  // correctly distinguish a return edge from a local branch in a self-recursive function
+  // without additional information.
+
+  VertexID Cur = Start;
+  for (auto &BI : Sample.branch()) {
+    auto &CurI = bgl::get(Gr, Cur);
+    auto From = CRI.lookup(BI.from());
+    auto To = CRI.lookup(BI.to());
+
+    auto BoostFrequency = [&](VertexID Src, VertexID Tgt) -> void {
+      auto MaybeEdge = bgl::get_edge(Src, Tgt, Gr);
+      if (!MaybeEdge)
+        fatal_error("expected an edge here!");
+
+      auto &EdgeInfo = bgl::get(Gr, MaybeEdge.getValue());
+      EdgeInfo.observe();
+    };
+
+    logs() << "BTB " << From->getName() << " => " << To->getName() << "\n";
+
+    continue;
+
+    if (CurI.getFuncName() == To->getName()) {
+      // we're looking for an edge ?? -> Current, so a call to Current happened.
+      auto Pred = [&](VertexInfo const& Info){ return Info.getFuncName() == From->getName(); };
+      auto MaybeV = bgl::find_in_vertex(Gr, Cur, Pred);
+
+      if (!MaybeV) {
+        logs() << "call warning: edge from " << From->getName() << " -> " << CurI.getFuncName() << " doesn't exist!\n";
+        fatal_error("CALL stopping here for now");
+        continue;
+      }
+
+      auto FromVertex = MaybeV.getValue();
+      BoostFrequency(FromVertex, Cur);
+      Cur = FromVertex; // advance
+
+    } else if (CurI.getFuncName() == From->getName()) {
+      // we're looking for an edge Current -> ??, so a return from Current happened.
+      auto Pred = [&](VertexInfo const& Info){ return Info.getFuncName() == To->getName(); };
+      auto MaybeV = bgl::find_out_vertex(Gr, Cur, Pred);
+
+      if (!MaybeV) {
+        logs() << "ret warning: edge from " << CurI.getFuncName() << " -> " << To->getName() << " doesn't exist!\n";
+        fatal_error("RET stopping here for now");
+        continue;
+      }
+
+      auto ToVertex = MaybeV.getValue();
+      BoostFrequency(Cur, ToVertex);
+      Cur = ToVertex; // advance
+
+    } else {
+      logs() << "neither warning: edge from " << From->getName() << " -> " << To->getName() << " doesn't exist\n";
+    }
+  }
+
+  logs() << "---------\n";
+
+}
+
 
 template <typename AccTy>
 AccTy CallingContextTree::reduce(std::function<AccTy(VertexID, VertexInfo const&, AccTy)> F, AccTy Initial) {
@@ -316,6 +395,14 @@ VertexInfo::VertexInfo(FunctionInfo const* FI) :
 
 std::string VertexInfo::getDOTLabel() const {
   return FuncName + " (" + to_formatted_str(Hotness) + ")";
+}
+
+
+/////////////
+// EdgeInfo implementations
+
+void EdgeInfo::observe() {
+  Frequency += 1.0f;
 }
 
 

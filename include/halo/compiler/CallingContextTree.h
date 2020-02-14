@@ -64,8 +64,8 @@ class EdgeInfo {
 public:
   EdgeInfo() {}
 
-  // observes N calls having appeared within a BTB record's history.
-  void observe(size_t N);
+  // records a call having occurred along this edge.
+  void observe();
 
   /// returns a score indicating how often this branch / call has
   /// happened recently
@@ -122,6 +122,9 @@ private:
 
   // Inserts the data from this sample into the CCT
   void insertSample(ClientID, CodeRegionInfo const&, pb::RawSample const&);
+
+  // Inserts branch-sample data starting at the given vertex into the CCT.
+  void walkBranchSamples(VertexID, CodeRegionInfo const&, pb::RawSample const&);
 
   Graph Gr;
   VertexID RootVertex;
