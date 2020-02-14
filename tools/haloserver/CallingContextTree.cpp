@@ -41,6 +41,16 @@ namespace halo {
       return llvm::None;
     }
 
+    EdgeID get_or_create_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
+      auto MaybeE = get_edge(Src, Tgt, Gr);
+      if (MaybeE)
+        return MaybeE.getValue();
+
+      boost::add_edge(Src, Tgt, Gr);
+
+      return get_or_create_edge(Src, Tgt, Gr); // should never iterate more than once.
+    }
+
     /// Search the given vertex's OUT_EDGE set for first edge who's TARGET matches the given predicate,
     /// returning the matched vertex's ID
     llvm::Optional<VertexID> find_out_vertex(Graph &Gr, VertexID Vtex, std::function<bool(VertexInfo const&)> Pred) {
@@ -174,10 +184,10 @@ void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb
   walkBranchSamples(CurrentVID, CRI, Sample);
 }
 
-/// We walk through the branch history in reverse order (recent to oldest) to identify
-/// call edges that are frequently taken. Recall that both calls and returns are contained
-/// in this history, so we can simply start at the contextually-correct starting point
-/// in the CCT and walk forwards / backwards through the history.
+/// We walk through the branch history in reverse order (recent to oldest & to -> from) to
+/// identify call edges that are frequently taken. Recall that both calls and returns are
+/// contained in this history, so we can simply start at the contextually-correct starting
+/// point in the CCT and walk forwards / backwards through the history.
 void CallingContextTree::walkBranchSamples(VertexID Start, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
 
   // Currently we assume the branch sample list only contains call / return branches,
@@ -185,24 +195,60 @@ void CallingContextTree::walkBranchSamples(VertexID Start, CodeRegionInfo const&
   // correctly distinguish a return edge from a local branch in a self-recursive function
   // without additional information.
 
+  logs() << "walking BTB from " << CRI.lookup(Sample.instr_ptr())->getName() << "\n";
+
+  // function that marks an edge as having seen a call recently
+  auto BoostFrequency = [&](VertexID Src, VertexID Tgt) -> void {
+    auto MaybeEdge = bgl::get_edge(Src, Tgt, Gr);
+    if (!MaybeEdge)
+      fatal_error("expected an edge here!");
+
+    auto &EdgeInfo = bgl::get(Gr, MaybeEdge.getValue());
+    EdgeInfo.observe();
+  };
+
+  // function that checks if the vertex exists, or creates a fresh one.
+  auto getOrCreateVertex = [&](llvm::Optional<VertexID> MaybeV, FunctionInfo *FI) {
+    if (MaybeV)
+      return MaybeV.getValue();
+
+    return boost::add_vertex(VertexInfo(FI), Gr);
+  };
+
   VertexID Cur = Start;
   for (auto &BI : Sample.branch()) {
     auto &CurI = bgl::get(Gr, Cur);
+
     auto From = CRI.lookup(BI.from());
+    auto &FromName = From->getName();
+
+    // predicate function that returns true if the info matches the FromName of this branch.
+    auto Chooser = [&](VertexInfo const& Info) { return Info.getFuncName() == FromName; };
+
     auto To = CRI.lookup(BI.to());
 
-    auto BoostFrequency = [&](VertexID Src, VertexID Tgt) -> void {
-      auto MaybeEdge = bgl::get_edge(Src, Tgt, Gr);
-      if (!MaybeEdge)
-        fatal_error("expected an edge here!");
+    // it's a call if the target is the start of the function.
+    bool isCall = To->getStart() == BI.to();
 
-      auto &EdgeInfo = bgl::get(Gr, MaybeEdge.getValue());
-      EdgeInfo.observe();
-    };
+    logs() << "BTB Entry:\t" << FromName << " => " << To->getName();
 
-    logs() << "BTB " << From->getName() << " => " << To->getName() << "\n";
+    if (To->getName() != CurI.getFuncName()) {
+      logs() << "warning: current = " << CurI.getFuncName() << ", bailing.\n-----\n";
+      return;
+    }
 
-    continue;
+
+    if (isCall) {
+      // looking for an edge From --> Cur
+      auto FromV = getOrCreateVertex(bgl::find_in_vertex(Gr, Cur, Chooser), From);
+      auto Edge = bgl::get_or_create_edge(FromV, Cur, Gr);
+      auto &Info = bgl::get(Gr, Edge);
+      Info.observe();
+      Cur = FromV; // move backwards to From
+
+    } else {
+      fatal_error("todo");
+    }
 
     if (CurI.getFuncName() == To->getName()) {
       // we're looking for an edge ?? -> Current, so a call to Current happened.
