@@ -18,66 +18,172 @@ namespace halo {
   using Graph = CallingContextTree::Graph;
 
 
-  /// This namespace provides basic graph utilities that are
-  /// not provided by Boost Graph Library.
-  namespace bgl {
+// maintains a stack of ancestors for use during CCT modification operations.
+class Ancestors {
+public:
+  using ValTy = std::pair<VertexID, std::string>;
+  using Type = std::vector<ValTy>;
 
-    // helps prevent errors with accidentially doing a vertex lookup
-    // and getting a copy instead of a reference when using auto!
-    inline VertexInfo& get(Graph &Gr, VertexID ID) {
-      return Gr[ID];
-    }
-
-    inline EdgeInfo& get(Graph &Gr, EdgeID Edge) {
-      return Gr[Edge];
-    }
-
-    // does the graph have an edge from Src --> Tgt? if so, return it.
-    llvm::Optional<EdgeID> get_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
-      auto Range = boost::out_edges(Src, Gr);
-      for (auto I = Range.first; I != Range.second; I++)
-        if (boost::target(*I, Gr) == Tgt)
-          return *I;
-      return llvm::None;
-    }
-
-    EdgeID get_or_create_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
-      auto MaybeE = get_edge(Src, Tgt, Gr);
-      if (MaybeE)
-        return MaybeE.getValue();
-
-      boost::add_edge(Src, Tgt, Gr);
-
-      return get_or_create_edge(Src, Tgt, Gr); // should never iterate more than once.
-    }
-
-    /// Search the given vertex's OUT_EDGE set for first edge who's TARGET matches the given predicate,
-    /// returning the matched vertex's ID
-    llvm::Optional<VertexID> find_out_vertex(Graph &Gr, VertexID Vtex, std::function<bool(VertexInfo const&)> Pred) {
-      auto Range = boost::out_edges(Vtex, Gr);
-      for (auto I = Range.first; I != Range.second; I++) {
-        auto TgtID = boost::target(*I, Gr);
-        auto &TgtInfo = get(Gr, TgtID);
-        if (Pred(TgtInfo))
-          return TgtID;
-      }
-      return llvm::None;
-    }
-
-    /// Search the given vertex's IN_EDGE set for first edge who's SOURCE matches the given predicate,
-    /// returning the matched vertex's ID
-    llvm::Optional<VertexID> find_in_vertex(Graph &Gr, VertexID Vtex, std::function<bool(VertexInfo const&)> Pred) {
-      auto Range = boost::in_edges(Vtex, Gr);
-      for (auto I = Range.first; I != Range.second; I++) {
-        auto TgtID = boost::source(*I, Gr);
-        auto &TgtInfo = get(Gr, TgtID);
-        if (Pred(TgtInfo))
-          return TgtID;
-      }
-      return llvm::None;
-    }
-
+  // pushes a new ancestor onto the stack
+  void push(ValTy &&V) {
+    Sequence.push_back(V);
   }
+
+  // blindly removes and returns the top-most ancestor from the stack.
+  // this shrinks the ancestor sequence by 1.
+  ValTy pop() {
+    auto V = Sequence.back();
+    Sequence.pop_back();
+    return V;
+  }
+
+  // removes and returns the top-most ancestor if its name matches the given name.
+  llvm::Optional<ValTy> pop_if_same(std::string const& Name) {
+    auto V = Sequence.back();
+    if (V.second == Name) {
+      Sequence.pop_back();
+      return V;
+    }
+    return llvm::None;
+  }
+
+  // truncates the ancestor list to have N elements.
+  void truncate(size_t N) {
+    assert(N <= Sequence.size() && "why are you trying to grow it like this?");
+    Sequence.resize(N);
+  }
+
+  // shorthand for element access by index.
+  auto& access(size_t Idx) { return Sequence[Idx]; }
+
+  // returns the position in the Ancestors sequence, if found.
+  llvm::Optional<size_t> findByName(std::string const& Name) {
+      size_t Position = Sequence.size()-1;
+      for (auto I = Sequence.rbegin(); I != Sequence.rend(); --Position, ++I)
+        if (I->second == Name)
+          return Position;
+      return llvm::None;
+  };
+
+  friend llvm::raw_ostream& operator<<(llvm::raw_ostream& os, Ancestors const&);
+
+private:
+    Type Sequence;
+
+}; // end class Ancestors
+
+llvm::raw_ostream& operator<<(llvm::raw_ostream& os, Ancestors const& Anscestors) {
+  for (auto const& P : Anscestors.Sequence)
+    os << "id = " << P.first << "; " << P.second << "\n";
+  return os;
+}
+
+
+
+/// This namespace provides basic graph utilities that are
+/// not provided by Boost Graph Library.
+namespace bgl {
+
+  // helps prevent errors with accidentially doing a vertex lookup
+  // and getting a copy instead of a reference when using auto!
+  inline VertexInfo& get(Graph &Gr, VertexID ID) {
+    return Gr[ID];
+  }
+
+  inline EdgeInfo& get(Graph &Gr, EdgeID Edge) {
+    return Gr[Edge];
+  }
+
+  inline VertexInfo const& get(Graph const& Gr, VertexID ID) {
+    return Gr[ID];
+  }
+
+  inline EdgeInfo const& get(Graph const& Gr, EdgeID Edge) {
+    return Gr[Edge];
+  }
+
+  // does the graph have an edge from Src --> Tgt? if so, return it.
+  llvm::Optional<EdgeID> get_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
+    auto OutRange = boost::out_edges(Src, Gr);
+    for (auto I = OutRange.first; I != OutRange.second; I++)
+      if (boost::target(*I, Gr) == Tgt)
+        return *I;
+
+    // FIXME: is this check actually redundant?
+    auto InRange = boost::in_edges(Tgt, Gr);
+    for (auto I = InRange.first; I != InRange.second; I++)
+      if (boost::source(*I, Gr) == Src)
+        return *I;
+
+    return llvm::None;
+  }
+
+  EdgeID get_or_create_edge(VertexID Src, VertexID Tgt, Graph &Gr) {
+    auto MaybeE = get_edge(Src, Tgt, Gr);
+    if (MaybeE)
+      return MaybeE.getValue();
+
+    boost::add_edge(Src, Tgt, Gr);
+
+    return get_or_create_edge(Src, Tgt, Gr); // should never iterate more than once.
+  }
+
+  // Adds a call to the CCT starting from the Src vertex to a node equivalent to Tgt.
+  // This will perform the ancestor check for recursive cases, and should be used to
+  // preserve invariants of the CCT.
+  //
+  // There is an option to disable the ancestor check in case of a call to an unknown function.
+  VertexID add_cct_call(Graph &Gr, Ancestors &Ancestors, VertexID Src, FunctionInfo *Tgt,
+                        bool CheckAncestors=true) {
+    // Step 1: check if the Src already has an out-edge to an equivalent Vertex.
+    auto Range = boost::out_edges(Src, Gr);
+    auto &Name = Tgt->getName();
+    for (auto I = Range.first; I != Range.second; I++) {
+      auto TgtID = boost::target(*I, Gr);
+      if (get(Gr, TgtID).getFuncName() == Name)
+        return TgtID;
+    }
+
+    // Step 2: look in the ancestory for a node, since it might be a recursive call.
+    auto Result = Ancestors.findByName(Name);
+    VertexID TgtV;
+    if (CheckAncestors && Result) {
+      // we're going to make a back-edge to the ancestor
+      size_t Idx = Result.getValue();
+      TgtV = Ancestors.access(Idx).first;
+
+      // since we're moving back up the calling-context, we cut the ancestors sequence down.
+      // if B is the recursive ancestor in [root ... A, B, ... ]
+      // then we cut it down to [root ... A]
+      Ancestors.truncate(Idx);
+    } else {
+      // it's neither an ancestor nor a child, so we make a new child.
+      TgtV = boost::add_vertex(VertexInfo(Tgt), Gr); // otherwise we make a new child
+    }
+
+    // finally, make the edge.
+    boost::add_edge(Src, TgtV, Gr);
+    return TgtV;
+  }
+
+  /// Search the given vertex's IN_EDGE set for first edge who's SOURCE matches the given predicate,
+  /// returning the matched vertex's ID
+  llvm::Optional<VertexID> find_in_vertex(Graph &Gr, VertexID Vtex, std::function<bool(VertexInfo const&)> Pred) {
+    auto Range = boost::in_edges(Vtex, Gr);
+    for (auto I = Range.first; I != Range.second; I++) {
+      auto TgtID = boost::source(*I, Gr);
+      if (Pred(get(Gr, TgtID)))
+        return TgtID;
+    }
+    return llvm::None;
+  }
+
+} // end namespace bgl
+
+
+
+//////
+// CallingContextTree definitions
 
 CallingContextTree::CallingContextTree() {
   RootVertex = boost::add_vertex(VertexInfo("<root>"), Gr);
@@ -133,92 +239,83 @@ void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb
   }
 
 
-  // skip unknown functions at the base of the call chain.
-  while (IPI != Top && CRI.lookup(*IPI) == CRI.UnknownFI)
-    IPI++;
-
-
-  // now we actually process the call chain.
-  llvm::StringMap<VertexID> Ancestors; // map from name-of-vertex -> id-of-same-vertex
+  // maintains current ancestors of the vertex, in order
+  Ancestors Ancestors;
   auto CurrentVID = RootVertex;
-  for (; IPI != Top; IPI++) {
-    uint64_t IP = *IPI;
-    auto &CurrentV = bgl::get(Gr, CurrentVID);
-
+  // now we actually process the call chain.
+  while (true) {
     // every vertex is an ancestor of itself.
-    Ancestors[CurrentV.getFuncName()] = CurrentVID;
+    auto &CurrentV = bgl::get(Gr, CurrentVID);
+    Ancestors.push({CurrentVID, CurrentV.getFuncName()});
 
+    // our iterator is IPI
+    if (IPI == Top)
+      break;
+
+    uint64_t IP = *IPI;
     auto FI = CRI.lookup(IP);
-    auto Name = FI->getName();
-
-    // first, check if this function is a child of CurrentVID
-    auto Pred = [&](VertexInfo const& Info) { return Info.getFuncName() == Name; };
-    auto MaybeChild = bgl::find_out_vertex(Gr, CurrentVID, Pred);
-
-    VertexID Next;
-    if (MaybeChild.hasValue()) {
-      Next = MaybeChild.getValue();
-    } else {
-      // then there's currently no edge from current to a vertex with this name.
-
-      // first, check if this is a recursive call to an ancestor.
-      auto Result = Ancestors.find(Name);
-      if (Result != Ancestors.end())
-        Next = Result->second; // its recursive, we want a back-edge.
-      else
-        Next = boost::add_vertex(VertexInfo(FI), Gr); // otherwise we make a new child
-
-      // add the edge
-      boost::add_edge(CurrentVID, Next, Gr);
-    }
-
-    CurrentVID = Next;
+    CurrentVID = bgl::add_cct_call(Gr, Ancestors, CurrentVID, FI, FI != CRI.UnknownFI);
+    IPI++;
   }
 
   // at this point CurrentVID is the context-sensitive function node's id
   auto &CurrentV = bgl::get(Gr, CurrentVID);
   CurrentV.observeSample(ID, Sample); // add the sample to the vertex!
 
-  dumpDOT(clogs());
+  walkBranchSamples(Ancestors, CurrentVID, CRI, Sample);
 
-  walkBranchSamples(CurrentVID, CRI, Sample);
+  // TODO: maybe only if NDEBUG ?
+  if (isMalformed()) {
+    dumpDOT(clogs());
+    fatal_error("malformed calling-context tree!");
+  }
 }
 
 /// We walk through the branch history in reverse order (recent to oldest & to -> from) to
 /// identify call edges that are frequently taken. Recall that both calls and returns are
 /// contained in this history, so we can simply start at the contextually-correct starting
 /// point in the CCT and walk forwards / backwards through the history.
-void CallingContextTree::walkBranchSamples(VertexID Start, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
+void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
 
   // Currently we assume the branch sample list only contains call / return branches,
   // not conditional ones etc. The reason is that I think it might be a bit tricky to
   // correctly distinguish a return edge from a local branch in a self-recursive function
   // without additional information.
 
+  dumpDOT(clogs());
+
   logs() << "walking BTB from " << CRI.lookup(Sample.instr_ptr())->getName() << "\n";
+  logs() << "in the context of ancestors:\n" << Ancestors << "\n";
 
-  // function that marks an edge as having seen a call recently
-  auto BoostFrequency = [&](VertexID Src, VertexID Tgt) -> void {
-    auto MaybeEdge = bgl::get_edge(Src, Tgt, Gr);
-    if (!MaybeEdge)
-      fatal_error("expected an edge here!");
-
-    auto &EdgeInfo = bgl::get(Gr, MaybeEdge.getValue());
-    EdgeInfo.observe();
-  };
-
-  // function that checks if the vertex exists, or creates a fresh one.
-  auto getOrCreateVertex = [&](llvm::Optional<VertexID> MaybeV, FunctionInfo *FI) {
-    if (MaybeV)
-      return MaybeV.getValue();
-
-    return boost::add_vertex(VertexInfo(FI), Gr);
-  };
+  // NOTE: it's helpful to think of us walking *backwards* through a history of
+  // function transitions from most to least recent.
+  //
+  // Thus, the 'To' part of each individual branch is where we should already be,
+  // and we always move *back* towards the 'From' before inspecting the next branch:
+  //
+  // B => A; call.
+  // |
+  // +----+
+  //      |
+  //      v
+  // C => B; ret.
+  // |
+  // +----+
+  //      |
+  //      v
+  // D => C; ret.
+  // +----+
+  //      |
+  //      v  etc...
+  // E => D; ret.
+  // D => E; call.
+  // C => D; call.
 
   VertexID Cur = Start;
   for (auto &BI : Sample.branch()) {
     auto &CurI = bgl::get(Gr, Cur);
 
+    // this is the vertex we're trying to move to.
     auto From = CRI.lookup(BI.from());
     auto &FromName = From->getName();
 
@@ -230,59 +327,59 @@ void CallingContextTree::walkBranchSamples(VertexID Start, CodeRegionInfo const&
     // it's a call if the target is the start of the function.
     bool isCall = To->getStart() == BI.to();
 
-    logs() << "BTB Entry:\t" << FromName << " => " << To->getName();
+    logs() << "BTB Entry:\t" << FromName << " => " << To->getName()
+           << (isCall ? "; call" : "; ret") << "\n";
 
+
+    // FIXME: sometimes we'll get unmatched call-returns, such as the following:
+    //
+    //  ??? => A; ret
+    //  B   => A; call
+    //
+    // I don't know how this happens. It might be some imprecision in the CPU's performance
+    // counters, or a short-jump that isn't recorded by Perf but performs a function call.
+    // The latter might be caused by our own XRay instrumentation, so it's something
+    // to watch out for in the future.
+    //
+    // TODO: just assume that a call A => ??? happened. So long as the target is the
+    // unknown function it shouldn't mess anything up and will record what's going on
+    // more accurately.
     if (To->getName() != CurI.getFuncName()) {
       logs() << "warning: current = " << CurI.getFuncName() << ", bailing.\n-----\n";
       return;
     }
 
+    if (To == CRI.UnknownFI && From == CRI.UnknownFI)
+      continue;
 
     if (isCall) {
-      // looking for an edge From --> Cur
-      auto FromV = getOrCreateVertex(bgl::find_in_vertex(Gr, Cur, Chooser), From);
+      // adding/updating the edge indicating From -called-> Cur, then moving UP to From.
+      VertexID FromV;
+
+      // FIXME: this makes weird tree knots and outgrowths sometimes.
+      auto Result = bgl::find_in_vertex(Gr, Cur, Chooser);
+      if (Result)
+        FromV = Result.getValue();
+      else
+        FromV = boost::add_vertex(VertexInfo(From), Gr);
+
       auto Edge = bgl::get_or_create_edge(FromV, Cur, Gr);
+
+      // observe this call has having happened recently.
       auto &Info = bgl::get(Gr, Edge);
       Info.observe();
-      Cur = FromV; // move backwards to From
+
+      Ancestors.pop_if_same(CurI.getFuncName()); // TODO: shouldn't we make an edge or soemthing?
+      Cur = FromV;
 
     } else {
-      fatal_error("todo");
+      // the other case, Cur -called-> From (because this branch indicates From returned to Cur).
+      // then we move to From.
+
+      Cur = bgl::add_cct_call(Gr, Ancestors, Cur, From, From != CRI.UnknownFI);
+      Ancestors.push({Cur, FromName});
     }
 
-    if (CurI.getFuncName() == To->getName()) {
-      // we're looking for an edge ?? -> Current, so a call to Current happened.
-      auto Pred = [&](VertexInfo const& Info){ return Info.getFuncName() == From->getName(); };
-      auto MaybeV = bgl::find_in_vertex(Gr, Cur, Pred);
-
-      if (!MaybeV) {
-        logs() << "call warning: edge from " << From->getName() << " -> " << CurI.getFuncName() << " doesn't exist!\n";
-        fatal_error("CALL stopping here for now");
-        continue;
-      }
-
-      auto FromVertex = MaybeV.getValue();
-      BoostFrequency(FromVertex, Cur);
-      Cur = FromVertex; // advance
-
-    } else if (CurI.getFuncName() == From->getName()) {
-      // we're looking for an edge Current -> ??, so a return from Current happened.
-      auto Pred = [&](VertexInfo const& Info){ return Info.getFuncName() == To->getName(); };
-      auto MaybeV = bgl::find_out_vertex(Gr, Cur, Pred);
-
-      if (!MaybeV) {
-        logs() << "ret warning: edge from " << CurI.getFuncName() << " -> " << To->getName() << " doesn't exist!\n";
-        fatal_error("RET stopping here for now");
-        continue;
-      }
-
-      auto ToVertex = MaybeV.getValue();
-      BoostFrequency(Cur, ToVertex);
-      Cur = ToVertex; // advance
-
-    } else {
-      logs() << "neither warning: edge from " << From->getName() << " -> " << To->getName() << " doesn't exist\n";
-    }
   }
 
   logs() << "---------\n";
@@ -291,7 +388,7 @@ void CallingContextTree::walkBranchSamples(VertexID Start, CodeRegionInfo const&
 
 
 template <typename AccTy>
-AccTy CallingContextTree::reduce(std::function<AccTy(VertexID, VertexInfo const&, AccTy)> F, AccTy Initial) {
+AccTy CallingContextTree::reduce(std::function<AccTy(VertexID, VertexInfo const&, AccTy)> F, AccTy Initial) const {
   AccTy Result = Initial;
   auto VRange = boost::vertices(Gr);
   for (auto I = VRange.first; I != VRange.second; I++)
@@ -301,7 +398,8 @@ AccTy CallingContextTree::reduce(std::function<AccTy(VertexID, VertexInfo const&
 }
 
 // instances of reduce. NO ANGLE BRACKETS!
-template VertexID CallingContextTree::reduce(std::function<VertexID(VertexID, VertexInfo const&, VertexID)> F, VertexID Initial);
+template VertexID CallingContextTree::reduce(std::function<VertexID(VertexID, VertexInfo const&, VertexID)> F, VertexID Initial) const;
+template bool CallingContextTree::reduce(std::function<bool(VertexID, VertexInfo const&, bool)> F, bool Initial) const;
 
 
 void CallingContextTree::decay() {
@@ -361,6 +459,54 @@ std::vector<VertexInfo> CallingContextTree::contextOf(VertexID Target) {
   return VI;
 }
 
+
+bool CallingContextTree::isMalformed() const {
+
+  // Goals are to collect information about
+  //
+  // 1. Vertices that are reachable from the Root.
+  //
+  class CorrectnessVisitor : public boost::default_dfs_visitor {
+  public:
+    CorrectnessVisitor(std::unordered_set<VertexID>& visited, VertexID root)
+                                                : Root(root), Visited(visited) {}
+
+    void discover_vertex(VertexID u, const Graph& g) {
+      Stack.push_back(u);
+
+      if (Stack.front() == Root)
+        Visited.insert(u);
+    }
+
+    void finish_vertex(VertexID u, const Graph& g) {
+      Stack.pop_back();
+    }
+
+  private:
+    VertexID Root;
+    std::unordered_set<VertexID>& Visited;
+    std::vector<VertexID> Stack; // internal bookkeeping
+  }; // end class
+
+  std::unordered_set<VertexID> ReachableFromRoot;
+  CorrectnessVisitor CV(ReachableFromRoot, RootVertex);
+  boost::depth_first_search(Gr, boost::visitor(CV));
+
+  // Check that all vertices are reachable from the root
+  bool AllReachable = reduce<bool>([&](VertexID ID, VertexInfo const& VI, bool Acc) -> bool {
+    if (!Acc)
+      return Acc;
+
+    auto Result = ReachableFromRoot.find(ID);
+    if (Result == ReachableFromRoot.end()) {
+      logs() << "isMalformed: id = " << ID << "; " << VI.getFuncName() << " is not reachable from root!\n";
+      return false;
+    }
+    return true; // it's reachable
+  }, true);
+
+  return !AllReachable;
+}
 
 
 void CallingContextTree::dumpDOT(std::ostream &out) {

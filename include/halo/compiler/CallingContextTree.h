@@ -10,6 +10,7 @@ namespace halo {
 class CodeRegionInfo;
 class PerformanceData;
 class FunctionInfo;
+class Ancestors;
 namespace pb {
   class RawSample;
 }
@@ -102,7 +103,7 @@ public:
   /// in an arbitrary order. You'll need to manually instantiate versions
   /// with your particular AccTy in the .cpp file.
   template <typename AccTy>
-  AccTy reduce(std::function<AccTy(VertexID, VertexInfo const&, AccTy)>, AccTy Initial);
+  AccTy reduce(std::function<AccTy(VertexID, VertexInfo const&, AccTy)>, AccTy Initial) const;
 
   /// returns the root vertex's ID
   VertexID getRoot() { return RootVertex; }
@@ -116,6 +117,9 @@ public:
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);
 
+  // returns true iff the context tree is currently malformed.
+  bool isMalformed() const;
+
   CallingContextTree();
 
 private:
@@ -124,7 +128,7 @@ private:
   void insertSample(ClientID, CodeRegionInfo const&, pb::RawSample const&);
 
   // Inserts branch-sample data starting at the given vertex into the CCT.
-  void walkBranchSamples(VertexID, CodeRegionInfo const&, pb::RawSample const&);
+  void walkBranchSamples(Ancestors&, VertexID, CodeRegionInfo const&, pb::RawSample const&);
 
   Graph Gr;
   VertexID RootVertex;
