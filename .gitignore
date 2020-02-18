@@ -39,3 +39,7 @@ bench-results/
 *.exe
 *.out
 *.app
+
+# common artifacts of my testing of halo
+test/bench/c/jfk_1963_0626_berliner.ogg
+test/oggenc

@@ -462,6 +462,16 @@ std::vector<VertexInfo> CallingContextTree::contextOf(VertexID Target) {
 
 bool CallingContextTree::isMalformed() const {
 
+  // TODO: other things we could check for:
+  //
+  // 1. Make sure that all children of a vertex have uniquely-named children.
+  //
+  // 2. Among all unique paths (ignoring back edges), make sure that no
+  //    vertex appears more than once on that path, unless if it's the Unknown function.
+  //
+  // 3. No cross-edges or forward edges in the tree.
+  //
+
   // Goals are to collect information about
   //
   // 1. Vertices that are reachable from the Root.
