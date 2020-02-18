@@ -32,6 +32,7 @@ namespace halo {
   /// (8/29/2019)
   class SimplePassBuilder : public llvm::PassBuilder {
   public:
+    /// @param Dbg indicates whether you want debugging enabled for the analysis passes.
     SimplePassBuilder(bool Dbg)
     : llvm::PassBuilder(nullptr, llvm::PipelineTuningOptions(), llvm::None, nullptr),
     LAM(Dbg), FAM(Dbg), CGAM(Dbg), MAM(Dbg) {
@@ -39,6 +40,7 @@ namespace halo {
       registerAnalyses();
     }
 
+    /// @param Dbg indicates whether you want debugging enabled for the analysis passes.
     SimplePassBuilder(llvm::TargetMachine *TM = nullptr,
                       llvm::PipelineTuningOptions PTO = llvm::PipelineTuningOptions(),
                       llvm::Optional<llvm::PGOOptions> PGOOpt = llvm::None,
@@ -71,7 +73,7 @@ namespace halo {
 
 
 
-namespace pb {
+namespace spb {
   // some independent utilities for dealing with passes, etc.
 
   template <typename PassT>

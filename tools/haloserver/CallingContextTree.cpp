@@ -123,9 +123,7 @@ namespace bgl {
     if (MaybeE)
       return MaybeE.getValue();
 
-    boost::add_edge(Src, Tgt, Gr);
-
-    return get_or_create_edge(Src, Tgt, Gr); // should never iterate more than once.
+    return boost::add_edge(Src, Tgt, Gr).first;
   }
 
   // Adds a call to the CCT starting from the Src vertex to a node equivalent to Tgt.
@@ -509,7 +507,8 @@ bool CallingContextTree::isMalformed() const {
 
     auto Result = ReachableFromRoot.find(ID);
     if (Result == ReachableFromRoot.end()) {
-      logs() << "isMalformed: id = " << ID << "; " << VI.getFuncName() << " is not reachable from root!\n";
+      logs() << "isMalformed: id = " << ID << "; "
+             << VI.getFuncName() << " is not reachable from root!\n";
       return false;
     }
     return true; // it's reachable

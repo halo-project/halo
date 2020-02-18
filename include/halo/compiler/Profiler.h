@@ -2,6 +2,7 @@
 
 #include "llvm/ADT/Optional.h"
 #include "halo/compiler/CallingContextTree.h"
+#include "halo/compiler/CallGraph.h"
 
 #include <utility>
 #include <list>
@@ -25,10 +26,22 @@ public:
   /// @returns the 'best' tuning section
   llvm::Optional<TuningSection> getBestTuningSection();
 
+  /// @returns true iff the profiler knows we have bitcode available
+  ///          for the given function.
+  bool haveBitcode(std::string const& Name) { return FuncsWithBitcode.count(Name) != 0; }
+
+  /// modifies knowledge of whether we have bitcode for the given function.
+  void setBitcodeStatus(std::string const& Name, bool Status);
+
+  // obtains the profiler's static call graph.
+  CallGraph& getCallGraph() { return CG; }
+
   void dump(llvm::raw_ostream &);
 
 private:
   CallingContextTree CCT;
+  CallGraph CG;
+  std::set<std::string> FuncsWithBitcode;
 
 };
 

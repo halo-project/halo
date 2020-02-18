@@ -41,6 +41,13 @@ llvm::Optional<Profiler::TuningSection> Profiler::getBestTuningSection() {
   return llvm::None;
 }
 
+void Profiler::setBitcodeStatus(std::string const& Name, bool Status) {
+  if (Status)
+    FuncsWithBitcode.insert(Name);
+  else
+    FuncsWithBitcode.erase(Name);
+}
+
 void Profiler::dump(llvm::raw_ostream &out) {
   fatal_error("implement Profiler::dump!");
 }

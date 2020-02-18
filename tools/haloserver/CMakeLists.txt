@@ -34,6 +34,7 @@ set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 add_executable(${SERVER_BIN}
   Bandit.cpp
+  CallGraph.cpp
   CallingContextTree.cpp
   ClientGroup.cpp
   ClientSession.cpp
@@ -45,6 +46,7 @@ add_executable(${SERVER_BIN}
   MDUtils.cpp
   PerformanceData.cpp
   Profiler.cpp
+  ProgramInfoPass.cpp
   ${HALO_NET_DIR}/Logging.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}

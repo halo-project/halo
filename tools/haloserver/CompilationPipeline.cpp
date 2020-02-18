@@ -3,6 +3,8 @@
 #include "halo/compiler/LinkageFixupPass.h"
 #include "halo/compiler/LoopNamerPass.h"
 #include "halo/compiler/SimplePassBuilder.h"
+#include "halo/compiler/Profiler.h"
+#include "halo/compiler/ProgramInfoPass.h"
 #include "halo/tuner/NamedKnobs.h"
 
 #include "llvm/Transforms/IPO.h"
@@ -40,7 +42,7 @@ Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, StringRef 
     Work.pop_back();
     Deps.insert(Fn);
 
-    // search each instructino to find uses of functions.
+    // search each instruction in a breadth-first manner to find any uses of functions.
     for (auto &Blk : *Fn)
       for (auto &Inst : Blk)
         for (Value* Op : Inst.operands())
@@ -68,28 +70,31 @@ Error cleanup(Module &Module, StringRef TargetFunc) {
   if (!MaybeDeps)
     return MaybeDeps.takeError();
 
+  // Add the passes (legacy)
+
   { // some passes haven't been updated to use NewPM :(
     legacy::PassManager LegacyPM;
-    pb::legacy::addPrintPass(Pr, LegacyPM, "START of cleanup");
+    spb::legacy::addPrintPass(Pr, LegacyPM, "START of cleanup");
 
     // slim down the module
-    pb::legacy::withPrintAfter(Pr, LegacyPM,
+    spb::legacy::withPrintAfter(Pr, LegacyPM,
             "GVExtract", createGVExtractionPass(MaybeDeps.get()));
 
-    pb::legacy::withPrintAfter(Pr, LegacyPM,
+    spb::legacy::withPrintAfter(Pr, LegacyPM,
             "GlobalDCE", createGlobalDCEPass()); // Delete unreachable globals
 
-    pb::legacy::withPrintAfter(Pr, LegacyPM,
+    spb::legacy::withPrintAfter(Pr, LegacyPM,
             "StripDeadDebug", createStripDeadDebugInfoPass()); // Remove dead debug info
 
-    pb::legacy::withPrintAfter(Pr, LegacyPM,
+    spb::legacy::withPrintAfter(Pr, LegacyPM,
             "StripDeadProto", createStripDeadPrototypesPass()); // Remove dead func decls
 
     LegacyPM.run(Module);
   }
 
-  pb::withPrintAfter(Pr, MPM, LinkageFixupPass(TargetFunc));
-  pb::withPrintAfter(Pr, MPM,
+  // Add the new PM compatible passes.
+  spb::withPrintAfter(Pr, MPM, LinkageFixupPass(TargetFunc));
+  spb::withPrintAfter(Pr, MPM,
       createModuleToFunctionPassAdaptor(
         createFunctionToLoopPassAdaptor(
           LoopNamerPass())));
@@ -145,7 +150,7 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
                                           /*Debug*/ false,
                                           /*LTOPreLink*/ false);
 
-  pb::addPrintPass(Pr, MPM, "after optimization pipeline.");
+  spb::addPrintPass(Pr, MPM, "after optimization pipeline.");
   MPM.run(Module, PB.getAnalyses());
 
   return Error::success();
@@ -194,28 +199,24 @@ llvm::Expected<std::unique_ptr<llvm::Module>>
     return llvm::parseBitcodeFile(Bitcode.getMemBufferRef(), Cxt);
   }
 
-std::set<std::string>
-  CompilationPipeline::providedFns(llvm::MemoryBuffer &Bitcode) {
+void CompilationPipeline::analyzeForProfiling(Profiler &Profile, llvm::MemoryBuffer &Bitcode) {
   llvm::LLVMContext Cxt;
-  std::set<std::string> Provided;
 
+  // Parse the bitcode
   auto MaybeModule = _parseBitcode(Cxt, Bitcode);
   if (!MaybeModule) {
     logs() << MaybeModule.takeError() << "\n";
-    warning("Error parsing bitcode!\n");
-    return Provided;
+    fatal_error("Error parsing bitcode!\n");
   }
 
   auto Module = std::move(MaybeModule.get());
 
-  for (auto &Fn : Module->functions()) {
-    if (Fn.isDeclaration())
-      continue;
+  // Populate the profiler with static program information.
+  SimplePassBuilder PB;
+  ModulePassManager MPM;
 
-    Provided.insert(Fn.getName());
-  }
-
-  return Provided;
+  MPM.addPass(ProgramInfoPass(Profile));
+  MPM.run(*Module, PB.getAnalyses());
 }
 
 } // end namespace

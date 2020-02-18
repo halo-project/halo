@@ -17,6 +17,8 @@ namespace orc = llvm::orc;
 
 namespace halo {
 
+  class Profiler;
+
   // Performs the optimization and compilation of a module
   // given a configuration. Thread-safe.
   class CompilationPipeline {
@@ -58,7 +60,9 @@ namespace halo {
     //     });
     // }
 
-    std::set<std::string> providedFns(llvm::MemoryBuffer &Bitcode);
+    // Initializes the given profiler with static program information
+    // about the LLVM IR bitcode.
+    void analyzeForProfiling(Profiler &, llvm::MemoryBuffer &Bitcode);
 
     llvm::Triple const& getTriple() const { return Triple; }
     llvm::StringRef getCPUName() const { return CPUName; }

@@ -88,7 +88,6 @@ private:
   CompilationPipeline Pipeline;
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
-  std::set<std::string> FuncsWithBitcode;
   Profiler Profile;
   std::array<uint8_t, 20> BitcodeHash;
 

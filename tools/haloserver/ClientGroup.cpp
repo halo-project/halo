@@ -71,7 +71,7 @@ namespace halo {
       auto &Info = MaybeInfo.getValue();
       std::string Name = Info.first;
       bool Patchable = Info.second;
-      bool HaveBitcode = FuncsWithBitcode.count(Name) != 0;
+      bool HaveBitcode = Profile.haveBitcode(Name);
 
       logs() << "Hottest function = " << Name << "\n";
 
@@ -222,7 +222,6 @@ ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS
         llvm::report_fatal_error("was given a non-enrolled client!");
 
       pb::ClientEnroll &Client = CS->Client;
-      // pb::ModuleInfo const& Module = Client.module();
 
       // TODO: parse the build flags and perhaps have client
       // send llvm::sys::getHostCPUFeatures() info for -mattr flags.
@@ -238,7 +237,7 @@ ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS
           llvm::MemoryBuffer::getMemBuffer(llvm::StringRef(*BitcodeStorage))
                          );
 
-      FuncsWithBitcode = Pipeline.providedFns(*Bitcode);
+      Pipeline.analyzeForProfiling(Profile, *Bitcode);
 
       withState([this,CS] (GroupState &State) {
         addSession(this, CS, State);
