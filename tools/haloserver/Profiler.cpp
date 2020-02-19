@@ -8,7 +8,7 @@ namespace halo {
 void Profiler::consumePerfData(ClientList & Clients) {
   for (auto &CS : Clients) {
     auto &State = CS->State;
-    CCT.observe(State.ID, State.CRI, State.PerfData);
+    CCT.observe(CG, State.ID, State.CRI, State.PerfData);
     State.PerfData.clear();
   }
 }

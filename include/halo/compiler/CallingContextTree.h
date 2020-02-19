@@ -11,6 +11,7 @@ class CodeRegionInfo;
 class PerformanceData;
 class FunctionInfo;
 class Ancestors;
+class CallGraph;
 namespace pb {
   class RawSample;
 }
@@ -94,7 +95,7 @@ public:
   using EdgeID = Graph::edge_descriptor;
 
   /// adds the given profiling data to the tree
-  void observe(ClientID, CodeRegionInfo const&, PerformanceData const&);
+  void observe(CallGraph const&, ClientID, CodeRegionInfo const&, PerformanceData const&);
 
   /// causes the data in this tree to age by one time-step.
   void decay();
@@ -114,6 +115,19 @@ public:
   /// returned sequence since it is not a "real" vertex.
   std::vector<VertexInfo> contextOf(VertexID);
 
+  /// If Tgt is reachable from Src, then all paths connecting them
+  /// is returned.
+  ///
+  /// A "path" is a sequence of distinct vertices to visit when starting from Start.
+  /// For example, if the graph is
+  ///
+  ///     A -> B
+  ///     B -> B
+  ///     B -> C
+  ///
+  /// then a path from A to C is: [B, C]
+  std::list<std::list<VertexID>> allPaths(VertexID Start, FunctionInfo const* Tgt) const;
+
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);
 
@@ -125,7 +139,7 @@ public:
 private:
 
   // Inserts the data from this sample into the CCT
-  void insertSample(ClientID, CodeRegionInfo const&, pb::RawSample const&);
+  void insertSample(CallGraph const&, ClientID, CodeRegionInfo const&, pb::RawSample const&);
 
   // Inserts branch-sample data starting at the given vertex into the CCT.
   void walkBranchSamples(Ancestors&, VertexID, CodeRegionInfo const&, pb::RawSample const&);

@@ -23,13 +23,17 @@ public:
   /// Returns the vertex representing an "unknown"
   /// or "external" function that the analysis was
   /// unable to determine.
-  Vertex const& getUnknown() { return Gr[UnknownID]; }
+  Vertex const& getUnknown() const { return Gr[UnknownID]; }
 
   // Records the existence of a call-site
   // within the function Src that calls Tgt.
   void addCall(Vertex Src, Vertex Tgt);
 
-  void dumpDOT(std::ostream &out);
+  /// query the call graph for the existence of an edge.
+  /// @return true iff Src contains a call-site to Tgt.
+  bool hasCall(Vertex Src, Vertex Tgt) const;
+
+  void dumpDOT(std::ostream &out) const;
 
   CallGraph();
 

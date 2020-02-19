@@ -1,3 +1,4 @@
+#include "halo/compiler/CallGraph.h"
 #include "halo/compiler/CallingContextTree.h"
 #include "halo/compiler/CodeRegionInfo.h"
 #include "halo/compiler/PerformanceData.h"
@@ -9,6 +10,7 @@
 
 #include <tuple>
 #include <cmath>
+#include <list>
 
 
 namespace halo {
@@ -187,12 +189,12 @@ CallingContextTree::CallingContextTree() {
   RootVertex = boost::add_vertex(VertexInfo("<root>"), Gr);
 }
 
-void CallingContextTree::observe(ClientID ID, CodeRegionInfo const& CRI, PerformanceData const& PD) {
+void CallingContextTree::observe(CallGraph const& CG, ClientID ID, CodeRegionInfo const& CRI, PerformanceData const& PD) {
   bool SawSample = false; // FIXME: temporary
 
   for (pb::RawSample const& Sample : PD.getSamples()) {
     SawSample = true;
-    insertSample(ID, CRI, Sample);
+    insertSample(CG, ID, CRI, Sample);
   }
 
   if (SawSample) {
@@ -201,7 +203,7 @@ void CallingContextTree::observe(ClientID ID, CodeRegionInfo const& CRI, Perform
   }
 }
 
-void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
+void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
   // we add a sample from root downwards, so we go through the context in reverse
   // as if we are calling the sampled function.
 
@@ -240,6 +242,9 @@ void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb
   // maintains current ancestors of the vertex, in order
   Ancestors Ancestors;
   auto CurrentVID = RootVertex;
+  auto CurrentFI = CRI.UnknownFI;
+  std::list<VertexID> IntermediateFns;
+
   // now we actually process the call chain.
   while (true) {
     // every vertex is an ancestor of itself.
@@ -251,9 +256,56 @@ void CallingContextTree::insertSample(ClientID ID, CodeRegionInfo const& CRI, pb
       break;
 
     uint64_t IP = *IPI;
-    auto FI = CRI.lookup(IP);
-    CurrentVID = bgl::add_cct_call(Gr, Ancestors, CurrentVID, FI, FI != CRI.UnknownFI);
-    IPI++;
+
+retryCalleeLookup:
+    FunctionInfo *Callee = nullptr;
+    if (IntermediateFns.size() > 0) {
+      // the calling context has some missing calls in the stack,
+      // so we fill in some entries based on what we learned from
+      // the call graph.
+      auto VID = IntermediateFns.front();
+      IntermediateFns.pop_front();
+      Callee = CRI.lookup(bgl::get(Gr, VID).getFuncName());
+    } else {
+      // lookup the current entry in the calling context
+      Callee = CRI.lookup(IP);
+      IPI++;
+    }
+
+    bool ImaginaryCall = CurrentFI == CRI.UnknownFI || Callee == CRI.UnknownFI;
+    bool DirectlyCalled = CG.hasCall(CurrentV.getFuncName(), Callee->getName());
+    bool HasIndirectCallee = CG.hasCall(CurrentV.getFuncName(), CG.getUnknown());
+
+    logs() << "Calling context contains " << CurrentV.getFuncName() << " -> " << Callee->getName()
+           << "\n\tand DirectlyCalled = " << DirectlyCalled
+           << ", HasIndirectCallee = " << HasIndirectCallee
+           << ", ImaginaryCall = " << ImaginaryCall
+           << "\n";
+
+    if (!ImaginaryCall && !DirectlyCalled && !HasIndirectCallee) {
+      // Then the calling context data from perf is incorrect, because
+      // it's not possible for the current function to have called the next one
+      // according to the call graph.
+      //
+      // To avoid throwing out this data, we will check the CCT for paths from Current -> Callee.
+      // If more than one exists, we choose the shortest one, breaking ties via maximal hotness.
+
+      auto AllPaths = allPaths(CurrentVID, Callee);
+      auto ChosenPath = AllPaths.front(); // FIXME: obviously we may have no paths! if so then we should skip this sample!
+
+      // push the path onto the front, while preserving order onto the front.
+      assert(bgl::get(Gr, ChosenPath.back()).getFuncName() == CRI.lookup(IP)->getName()
+              && "last func in the path should be the callee that originally wasn't reachable!");
+
+      for (auto VIDI = ChosenPath.rbegin(); VIDI != ChosenPath.rend(); VIDI++)
+        IntermediateFns.push_front(*VIDI);
+
+      assert(IntermediateFns.size() > 0);
+      goto retryCalleeLookup;
+    }
+
+    CurrentVID = bgl::add_cct_call(Gr, Ancestors, CurrentVID, Callee, Callee != CRI.UnknownFI);
+    CurrentFI = Callee;
   }
 
   // at this point CurrentVID is the context-sensitive function node's id
@@ -515,6 +567,12 @@ bool CallingContextTree::isMalformed() const {
   }, true);
 
   return !AllReachable;
+}
+
+
+std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, FunctionInfo const* Tgt) const {
+  fatal_error("implement allPaths!");
+  return {};
 }
 
 
