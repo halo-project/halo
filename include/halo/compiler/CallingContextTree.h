@@ -118,15 +118,25 @@ public:
   /// If Tgt is reachable from Src, then all paths connecting them
   /// is returned.
   ///
-  /// A "path" is a sequence of distinct vertices to visit when starting from Start.
+  /// A "path" is a sequence of distinct vertices to visit, starting from Start.
   /// For example, if the graph is
   ///
   ///     A -> B
   ///     B -> B
   ///     B -> C
   ///
-  /// then a path from A to C is: [B, C]
+  /// then a path from A to C is: [A, B, C]
   std::list<std::list<VertexID>> allPaths(VertexID Start, FunctionInfo const* Tgt) const;
+
+  /// Returns a shortest path from Start to a vertex matching Tgt.
+  /// Ties are broken by summing the hotness of all vertices in each
+  /// path and choosing the path with more hotness.
+  /// If two equally short paths have equal hotness, then an arbitrary path is chosen.
+  ///
+  /// A "path" is a sequence of distinct vertices to visit, starting from Start.
+  ///
+  /// @returns llvm::None if no path exists. Otherwise a path [Start .. Tgt]
+  llvm::Optional<std::list<VertexID>> shortestPath(VertexID Start, FunctionInfo const* Tgt) const;
 
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);

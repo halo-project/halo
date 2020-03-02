@@ -11,6 +11,7 @@
 #include <tuple>
 #include <cmath>
 #include <list>
+#include <numeric>
 
 
 namespace halo {
@@ -39,19 +40,9 @@ public:
     return V;
   }
 
-  // removes and returns the top-most ancestor if its name matches the given name.
-  llvm::Optional<ValTy> pop_if_same(std::string const& Name) {
-    auto V = Sequence.back();
-    if (V.second == Name) {
-      Sequence.pop_back();
-      return V;
-    }
-    return llvm::None;
-  }
-
   // truncates the ancestor list to have N elements.
   void truncate(size_t N) {
-    assert(N <= Sequence.size() && "why are you trying to grow it like this?");
+    assert(N <= Sequence.size() && "why are you trying to grow it in this method?");
     Sequence.resize(N);
   }
 
@@ -59,13 +50,14 @@ public:
   auto& access(size_t Idx) { return Sequence[Idx]; }
 
   // returns the position in the Ancestors sequence, if found.
+  // the search is performed from top to back.
   llvm::Optional<size_t> findByName(std::string const& Name) {
       size_t Position = Sequence.size()-1;
       for (auto I = Sequence.rbegin(); I != Sequence.rend(); --Position, ++I)
         if (I->second == Name)
           return Position;
       return llvm::None;
-  };
+  }
 
   friend llvm::raw_ostream& operator<<(llvm::raw_ostream& os, Ancestors const&);
 
@@ -252,22 +244,21 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
     Ancestors.push({CurrentVID, CurrentV.getFuncName()});
 
     // our iterator is IPI
-    if (IPI == Top)
+    if (IPI == Top) {
+      logs() << "done with BTB.\n";
       break;
+    }
 
-    uint64_t IP = *IPI;
-
-retryCalleeLookup:
     FunctionInfo *Callee = nullptr;
     if (IntermediateFns.size() > 0) {
       // the calling context has some missing calls in the stack,
-      // so we fill in some entries based on what we learned from
-      // the call graph.
+      // so we process those functions first before the IPI's function.
       auto VID = IntermediateFns.front();
       IntermediateFns.pop_front();
       Callee = CRI.lookup(bgl::get(Gr, VID).getFuncName());
     } else {
       // lookup the current entry in the calling context
+      uint64_t IP = *IPI;
       Callee = CRI.lookup(IP);
       IPI++;
     }
@@ -287,23 +278,57 @@ retryCalleeLookup:
       // it's not possible for the current function to have called the next one
       // according to the call graph.
       //
-      // To avoid throwing out this data, we will check the CCT for paths from Current -> Callee.
-      // If more than one exists, we choose the shortest one, breaking ties via maximal hotness.
+      // To avoid throwing out this data, we will check the CCT for existing paths from Current -> Callee.
 
-      auto AllPaths = allPaths(CurrentVID, Callee);
-      auto ChosenPath = AllPaths.front(); // FIXME: obviously we may have no paths! if so then we should skip this sample!
+      assert(IntermediateFns.size() == 0
+          && "an intermediate function failed the call-graph test... CCT was bogus from the start?");
 
-      // push the path onto the front, while preserving order onto the front.
-      assert(bgl::get(Gr, ChosenPath.back()).getFuncName() == CRI.lookup(IP)->getName()
+      logs() << "\t\tNeed path from " << CurrentV.getFuncName() << " [" << CurrentVID << "] --> " << Callee->getName() << "\n";
+
+      auto MaybePath = shortestPath(CurrentVID, Callee);
+      if (!MaybePath) {
+        logs() << "warning: no path found. skipping sample.\n";
+        return;
+      }
+
+      auto ChosenPath = MaybePath.getValue();
+
+      logs() << "\t\tUsing path: ";
+      for (auto ID : ChosenPath) {
+        auto &Info = bgl::get(Gr, ID);
+        logs() << Info.getFuncName() << " [" << ID << "]" << " -> ";
+      }
+      logs() << "\n";
+
+      assert(ChosenPath.size() >= 3 && "no intermediate node should have been needed?");
+
+      // the first vertex should be the Current vertex.
+      assert(bgl::get(Gr, ChosenPath.front()).getFuncName() == CurrentV.getFuncName()
+          && "path must start with the current vertex!");
+      ChosenPath.pop_front(); // drop it
+
+      // similarly, the last should be the callee
+      assert(bgl::get(Gr, ChosenPath.back()).getFuncName() == Callee->getName()
               && "last func in the path should be the callee that originally wasn't reachable!");
+      ChosenPath.pop_back(); // drop it too
 
-      for (auto VIDI = ChosenPath.rbegin(); VIDI != ChosenPath.rend(); VIDI++)
-        IntermediateFns.push_front(*VIDI);
+      // Now we're left with the missing functions we needed to process
+      // before we continue processing the BTB.
+      IntermediateFns = ChosenPath;
 
       assert(IntermediateFns.size() > 0);
-      goto retryCalleeLookup;
+
+      // now we handle the first callee in the intermediate fns, to preserve
+      // the progress of the loop.
+      auto VID = IntermediateFns.front();
+      IntermediateFns.pop_front();
+      Callee = CRI.lookup(bgl::get(Gr, VID).getFuncName());
+
+      // un-bump the iterator since we didn't 'consume' that callee yet and went with a different one!
+      IPI--;
     }
 
+    logs() << "Adding CCT call " << bgl::get(Gr, CurrentVID).getFuncName() << " -> " << Callee->getName() << "\n";
     CurrentVID = bgl::add_cct_call(Gr, Ancestors, CurrentVID, Callee, Callee != CRI.UnknownFI);
     CurrentFI = Callee;
   }
@@ -395,7 +420,7 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start,
     // unknown function it shouldn't mess anything up and will record what's going on
     // more accurately.
     if (To->getName() != CurI.getFuncName()) {
-      logs() << "warning: current = " << CurI.getFuncName() << ", bailing.\n-----\n";
+      logs() << "warning: BTB current = " << CurI.getFuncName() << "; unmatched call-return. bailing.\n-----\n";
       return;
     }
 
@@ -404,23 +429,45 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start,
 
     if (isCall) {
       // adding/updating the edge indicating From -called-> Cur, then moving UP to From.
-      VertexID FromV;
 
-      // FIXME: this makes weird tree knots and outgrowths sometimes.
-      auto Result = bgl::find_in_vertex(Gr, Cur, Chooser);
-      if (Result)
-        FromV = Result.getValue();
-      else
-        FromV = boost::add_vertex(VertexInfo(From), Gr);
+      // searches and adjusts the ancestors to determine an appropriate "from" vertex.
+      auto DetermineFromVertex = [&]() -> llvm::Optional<VertexID> {
+        // FIXME: we would need to do some more advanced analysis of the current Ancestors
+        // to return something smarter than the below.
+        //
+        // A few situations where this gets tricky:
+        //
+        //  - Ancestors = [A, B, ???] and we're dealing with B -called-> C
+        //    If the call-graph says B could call C, we could optimistically create a new
+        //    C and an edge B -> C and jump over to that context.
+        //
+        //  - A more tricky situation is Ancestors = [A, B] and we're dealing with C -called-> D.
+        //    If the call-graph says B could call C, then we could just generate C and place edges
+        //    B -> C -> D.
+        //    However, what if the next BTB entry is E -> C?
+        //
 
+        // TODO: this is wrong. instead we should be checking the immediate ancestor
+        // of the current vertex. Since the Ancestors invariant is that we have
+        // [ Others ... ImmediateParent, Current] we should check the top two and if
+        // it doesn't match, we bail.
+
+        return bgl::find_in_vertex(Gr, Cur, Chooser);
+      }; // end lambda
+
+      auto MaybeFromV = DetermineFromVertex();
+      if (!MaybeFromV) {
+        logs() << "warning: BTB has a call from a func not encountered by the current CCT node. bailing.\n-----\n";
+        return;
+      }
+
+      VertexID FromV = MaybeFromV.getValue();
       auto Edge = bgl::get_or_create_edge(FromV, Cur, Gr);
 
       // observe this call has having happened recently.
       auto &Info = bgl::get(Gr, Edge);
       Info.observe();
-
-      Ancestors.pop_if_same(CurI.getFuncName()); // TODO: shouldn't we make an edge or soemthing?
-      Cur = FromV;
+      Cur = FromV; // move to From
 
     } else {
       // the other case, Cur -called-> From (because this branch indicates From returned to Cur).
@@ -519,7 +566,8 @@ bool CallingContextTree::isMalformed() const {
   // 2. Among all unique paths (ignoring back edges), make sure that no
   //    vertex appears more than once on that path, unless if it's the Unknown function.
   //
-  // 3. No cross-edges or forward edges in the tree.
+  // 3. No cross-edges or forward edges in the tree. Thus, ignoring back-edges,
+  //    all nodes in tree should have exactly one parent.
   //
 
   // Goals are to collect information about
@@ -569,10 +617,72 @@ bool CallingContextTree::isMalformed() const {
   return !AllReachable;
 }
 
+llvm::Optional<std::list<VertexID>> CallingContextTree::shortestPath(VertexID Start, FunctionInfo const* Tgt) const {
+  auto AllPaths = allPaths(Start, Tgt);
+  if (AllPaths.empty())
+    return llvm::None;
+
+  auto AddHotness = [&](double const& Acc, VertexID const& VID) -> double {
+    return Acc + bgl::get(Gr, VID).getHotness();
+  }; // end lambda
+
+  // find the shortest path, breaking ties by maximal hotness
+  double PathHotness = std::numeric_limits<double>::min();
+  size_t PathLength = std::numeric_limits<size_t>::max();
+  std::list<VertexID> ChosenPath{};
+  for (auto &Path : AllPaths) {
+    size_t Length = Path.size();
+    if (Length <= PathLength) {
+      double Hotness = std::accumulate(Path.begin(), Path.end(), 0.0, AddHotness);
+      if (Length < PathLength || Hotness > PathHotness) {
+        PathHotness = Hotness;
+        PathLength = Length;
+        ChosenPath = Path;
+      }
+    }
+  }
+
+  assert(!ChosenPath.empty() && "path shouldn't be empty!");
+  return ChosenPath;
+}
+
 
 std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, FunctionInfo const* Tgt) const {
-  fatal_error("implement allPaths!");
-  return {};
+  class PathSearch : public boost::default_dfs_visitor {
+  public:
+    PathSearch(VertexID src, FunctionInfo const* tgt, std::list<std::list<VertexID>>& p) : Source(src), Target(tgt), Paths(p) {}
+
+    // invoked on each vertex at the start of DFS-VISIT
+    void discover_vertex(VertexID u, const Graph& g) {
+      CurPath.push_back(u);
+
+      auto &Info = bgl::get(g, u);
+      if (CurPath.front() == Source && Target->getName() == Info.getFuncName()) {
+        // we've found a new path.
+        Paths.push_back(CurPath);
+      }
+    }
+
+    void finish_vertex(VertexID u, const Graph& g) {
+      CurPath.pop_back();
+    }
+
+  private:
+    VertexID Source;
+    FunctionInfo const* Target;
+    std::list<std::list<VertexID>>& Paths;
+    std::list<VertexID> CurPath;
+  }; // end class
+
+  std::list<std::list<VertexID>> Paths;
+  PathSearch Searcher(Start, Tgt, Paths);
+  // We have to make a ColorMap because we want the DFS to start at a specific
+  // vertex and the API is poorly designed for this case!
+  auto IndexMap = boost::get(boost::vertex_index, Gr);
+  auto ColorMap = boost::make_vector_property_map<boost::default_color_type>(IndexMap);
+  boost::depth_first_search(Gr, Searcher, ColorMap, Start);
+
+  return Paths;
 }
 
 
