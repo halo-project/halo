@@ -5,7 +5,7 @@ set -ex
 # first arg is the build environment nickname
 ENV_KIND=$1
 
-ENV_KIND_OPTIONS="local, docker, rpi, kavon"
+ENV_KIND_OPTIONS="local, docker, docker-debug, rpi, kavon"
 
 if (( $# != 1 )); then
     echo "Must provide a build kind as first arg: $ENV_KIND_OPTIONS"
@@ -46,7 +46,13 @@ NETWORK_DIR="-DHALO_NET_DIR=$(pwd)/net"
 
 # environment specific build options / overrides
 if [ "${ENV_KIND}" == "docker" ]; then
-  OPTIONS="-DLLVM_PARALLEL_LINK_JOBS=3 -DLLVM_ENABLE_ASSERTIONS=ON" # want to install system-wide, so we omit the old OPTIONS
+  # want to install system-wide, so we overwrite the existing OPTIONS
+  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=4 -DLLVM_CCACHE_BUILD=ON \
+           -DLLVM_ENABLE_ASSERTIONS=ON"
+
+elif [ "${ENV_KIND}" == "docker-debug" ]; then
+  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=4 -DLLVM_CCACHE_BUILD=ON \
+           -DLLVM_ENABLE_ASSERTIONS=ON -DHALOSERVER_VERBOSE=ON -DHALOMON_VERBOSE=ON"
 
 elif [ "${ENV_KIND}" == "local" ]; then
   # by default, we install locally anyways.
@@ -57,7 +63,7 @@ elif [ "${ENV_KIND}" == "rpi" ]; then
 
 elif [ "${ENV_KIND}" == "kavon" ]; then
   BACKENDS="Native"
-  OPTIONS="${OPTIONS} -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON -DLLVM_USE_LINKER=gold \
+  OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=gold -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON \
           -DHALOSERVER_VERBOSE=ON -DHALOMON_VERBOSE=ON"
 
 else

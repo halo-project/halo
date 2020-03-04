@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       libpfm4-dev \
       ninja-build \
       cmake \
+      ccache \
       git \
       python2.7 \
       python-pip \
