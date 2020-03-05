@@ -248,16 +248,17 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
 
   // maintains current ancestors of the vertex, in order
   Ancestors Ancestors;
-  auto CurrentVID = RootVertex;
-  auto CurrentFI = CRI.getUnknown();
+  auto CallerVID = RootVertex;
+  auto CallerFI = CRI.getUnknown();
   std::list<VertexID> IntermediateFns;
 
   // now we actually process the call chain.
   while (true) {
     // every vertex is an ancestor of itself.
-    auto &CurrentV = bgl::get(Gr, CurrentVID);
-    Ancestors.push({CurrentVID, CurrentV.getFuncName()});
+    auto &CallerV = bgl::get(Gr, CallerVID);
+    Ancestors.push({CallerVID, CallerV.getFuncName()});
 
+skipThisCallee:
     // our iterator is IPI
     if (IPI == Top) {
       logs() << "done with BTB.\n";
@@ -278,17 +279,24 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
       IPI++;
     }
 
-    bool ImaginaryCall = CurrentFI->isUnknown() || Callee->isUnknown();
-    bool DirectlyCalled = CG.hasCall(CurrentV.getFuncName(), Callee->getName());
-    bool HasIndirectCallee = CG.hasCall(CurrentV.getFuncName(), CG.getUnknown());
+    bool ImaginaryCaller = CallerFI->isUnknown();
+    bool ImaginaryCallee = Callee->isUnknown();
+    bool DirectlyCalled = Callee->isKnown() && CG.hasCall(CallerV.getFuncName(), Callee->getName());
+    bool HasIndirectCallee = CG.hasCall(CallerV.getFuncName(), CG.getUnknown());
 
-    logs() << "Calling context contains " << CurrentV.getFuncName() << " -> " << Callee->getName()
+    logs() << "Calling context contains " << CallerV.getFuncName() << " -> " << Callee->getName()
            << "\n\tand DirectlyCalled = " << DirectlyCalled
            << ", HasIndirectCallee = " << HasIndirectCallee
-           << ", ImaginaryCall = " << ImaginaryCall
+           << ", ImaginaryCaller = " << ImaginaryCaller
+           << ", ImaginaryCallee = " << ImaginaryCallee
            << "\n";
 
-    if (!ImaginaryCall && !DirectlyCalled && !HasIndirectCallee) {
+    // It's pointless to create an edge from ??? -> ???, or from root -> ???
+    // so we skip the callee and remain in-place in the CCT.
+    if (ImaginaryCaller && ImaginaryCallee)
+      goto skipThisCallee;
+
+    if (!ImaginaryCaller && !DirectlyCalled && !HasIndirectCallee) {
       // Then the calling context data from perf is incorrect, because
       // it's not possible for the current function to have called the next one
       // according to the call graph.
@@ -298,9 +306,9 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
       assert(IntermediateFns.size() == 0
           && "an intermediate function failed the call-graph test... CCT was bogus from the start?");
 
-      logs() << "\t\tNeed path from " << CurrentV.getFuncName() << " [" << CurrentVID << "] --> " << Callee->getName() << "\n";
+      logs() << "\t\tNeed path from " << CallerV.getFuncName() << " [" << CallerVID << "] --> " << Callee->getName() << "\n";
 
-      auto MaybePath = shortestPath(CurrentVID, Callee);
+      auto MaybePath = shortestPath(CallerVID, Callee);
       if (!MaybePath) {
         logs() << "warning: no path found. skipping sample.\n";
         return;
@@ -318,7 +326,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
       assert(ChosenPath.size() >= 3 && "no intermediate node should have been needed?");
 
       // the first vertex should be the Current vertex.
-      assert(bgl::get(Gr, ChosenPath.front()).getFuncName() == CurrentV.getFuncName()
+      assert(bgl::get(Gr, ChosenPath.front()).getFuncName() == CallerV.getFuncName()
           && "path must start with the current vertex!");
       ChosenPath.pop_front(); // drop it
 
@@ -343,16 +351,16 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
       IPI--;
     }
 
-    logs() << "Adding CCT call " << bgl::get(Gr, CurrentVID).getFuncName() << " -> " << Callee->getName() << "\n";
-    CurrentVID = bgl::add_cct_call(Gr, Ancestors, CurrentVID, Callee, Callee->isKnown());
-    CurrentFI = Callee;
+    logs() << "Adding CCT call " << bgl::get(Gr, CallerVID).getFuncName() << " -> " << Callee->getName() << "\n";
+    CallerVID = bgl::add_cct_call(Gr, Ancestors, CallerVID, Callee, Callee->isKnown());
+    CallerFI = Callee;
   }
 
-  // at this point CurrentVID is the context-sensitive function node's id
-  auto &CurrentV = bgl::get(Gr, CurrentVID);
+  // at this point CallerVID is the context-sensitive function node's id
+  auto &CurrentV = bgl::get(Gr, CallerVID);
   CurrentV.observeSample(ID, Sample); // add the sample to the vertex!
 
-  walkBranchSamples(Ancestors, CG, CurrentVID, CRI, Sample);
+  walkBranchSamples(Ancestors, CG, CallerVID, CRI, Sample);
 
   // TODO: maybe only if NDEBUG ?
   if (isMalformed()) {
@@ -438,11 +446,16 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
     }
 
     // It's some other branch or one that goes between two unknown functions.
+
+    // TODO: we should add a small amount of hotness to functions with recently-taken
+    // internal branches that appeared in the BTB! That means more time is being spent there
+    // than just the point at which we sampled, which may be biased towards landing on a
+    // slow instruction in some other function!
     if (!isCall && !isRet)
       continue;
 
     if (isCall) {
-      // adding/updating the edge indicating From -called-> Cur, then moving UP to From.
+      // adding/updating the edge indicating From -called-> Cur/To, then moving UP to From.
 
       // searches and adjusts the ancestors to determine an appropriate "from" vertex.
       auto DetermineFromVertex = [&]() -> llvm::Optional<VertexID> {
@@ -493,11 +506,22 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
 
 
     } else {
-      // the other case, Cur -called-> From (because this branch indicates From returned to Cur).
+      // the other case, Cur/To -called-> From (because this branch indicates From returned to Cur).
       // then we move to From.
 
-      if (To->isKnown() && CG.isLeaf(CurI.getFuncName())) {
-        logs() << "warning: BTB claims " << CurI.getFuncName() << " makes a call but that func is a leaf! skipping\n----\n";
+      bool ImaginaryCaller = From->isUnknown();
+      bool ImaginaryCallee = To->isUnknown();
+      bool DirectlyCalled = From->isKnown() && CG.hasCall(CurI.getFuncName(), From->getName());
+      bool HasIndirectCallee = CG.hasCall(CurI.getFuncName(), CG.getUnknown());
+
+      // Skip ??? -> ??? edges
+      if (ImaginaryCaller && ImaginaryCallee)
+        continue;
+
+      // avoid creating 'impossible' edges in the CCT
+      if (!DirectlyCalled && !HasIndirectCallee) {
+        logs() << "warning: BTB claims " << CurI.getFuncName() << " called " << From->getName()
+               << " but call-graph disagrees! skipping\n----\n";
         return;
       }
 
