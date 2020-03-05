@@ -10,6 +10,7 @@ using VertexID = CallGraph::VertexID;
 using EdgeID = CallGraph::EdgeID;
 
 
+// NOTE: this is an O(V) operation right now!
 llvm::Optional<VertexID> findVertex(Vertex Vtex, Graph const& Gr) {
   auto Range = boost::vertices(Gr);
   for (auto I = Range.first; I != Range.second; I++)
@@ -19,7 +20,7 @@ llvm::Optional<VertexID> findVertex(Vertex Vtex, Graph const& Gr) {
   return llvm::None;
 }
 
-
+// NOTE: this is an O(E) operation right now!
 llvm::Optional<EdgeID> findEdge(VertexID Src, VertexID Tgt, Graph const& Gr) {
   auto Range = boost::out_edges(Src, Gr);
   for (auto I = Range.first; I != Range.second; I++)
@@ -53,6 +54,20 @@ bool CallGraph::hasCall(Vertex Src, Vertex Tgt) const {
 
   auto MaybeEdge = findEdge(MaybeSrc.getValue(), MaybeTgt.getValue(), Gr);
   return MaybeEdge.hasValue();
+}
+
+bool CallGraph::isLeaf(Vertex Func) const {
+  auto MaybeFunc = findVertex(Func, Gr);
+  if (!MaybeFunc)
+    return false;
+
+  auto Range = boost::out_edges(MaybeFunc.getValue(), Gr);
+  return Range.first == Range.second;
+}
+
+
+bool CallGraph::contains(Vertex Func) const {
+  return findVertex(Func, Gr).hasValue();
 }
 
 

@@ -152,7 +152,7 @@ private:
   void insertSample(CallGraph const&, ClientID, CodeRegionInfo const&, pb::RawSample const&);
 
   // Inserts branch-sample data starting at the given vertex into the CCT.
-  void walkBranchSamples(Ancestors&, VertexID, CodeRegionInfo const&, pb::RawSample const&);
+  void walkBranchSamples(Ancestors&, CallGraph const&, VertexID, CodeRegionInfo const&, pb::RawSample const&);
 
   Graph Gr;
   VertexID RootVertex;

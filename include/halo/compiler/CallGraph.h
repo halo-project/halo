@@ -30,8 +30,15 @@ public:
   void addCall(Vertex Src, Vertex Tgt);
 
   /// query the call graph for the existence of an edge.
-  /// @return true iff Src contains a call-site to Tgt.
+  /// @return true iff Src exists and contains a call-site to Tgt.
   bool hasCall(Vertex Src, Vertex Tgt) const;
+
+  // returns true iff the given function is contained in the CG and
+  // makes no calls i.e., its out-edge set in the CG is empty.
+  bool isLeaf(Vertex Func) const;
+
+  // returns true iff the call-graph has a node for the given function
+  bool contains(Vertex Func) const;
 
   void dumpDOT(std::ostream &out) const;
 

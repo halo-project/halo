@@ -40,6 +40,21 @@ public:
     return V;
   }
 
+  // retrieves the top-most member of the hierarchy, if one exists.
+  llvm::Optional<ValTy> current() const {
+    if (Sequence.size() > 0)
+      return Sequence.back();
+    return llvm::None;
+  }
+
+  // returns the parent of the current top-most member.
+  llvm::Optional<ValTy> parent() const {
+    auto Sz = Sequence.size();
+    if (Sz > 1)
+      return Sequence[Sz-2];
+    return llvm::None;
+  }
+
   // truncates the ancestor list to have N elements.
   void truncate(size_t N) {
     assert(N <= Sequence.size() && "why are you trying to grow it in this method?");
@@ -52,11 +67,11 @@ public:
   // returns the position in the Ancestors sequence, if found.
   // the search is performed from top to back.
   llvm::Optional<size_t> findByName(std::string const& Name) {
-      size_t Position = Sequence.size()-1;
-      for (auto I = Sequence.rbegin(); I != Sequence.rend(); --Position, ++I)
-        if (I->second == Name)
-          return Position;
-      return llvm::None;
+    size_t Position = Sequence.size()-1;
+    for (auto I = Sequence.rbegin(); I != Sequence.rend(); --Position, ++I)
+      if (I->second == Name)
+        return Position;
+    return llvm::None;
   }
 
   friend llvm::raw_ostream& operator<<(llvm::raw_ostream& os, Ancestors const&);
@@ -337,7 +352,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
   auto &CurrentV = bgl::get(Gr, CurrentVID);
   CurrentV.observeSample(ID, Sample); // add the sample to the vertex!
 
-  walkBranchSamples(Ancestors, CurrentVID, CRI, Sample);
+  walkBranchSamples(Ancestors, CG, CurrentVID, CRI, Sample);
 
   // TODO: maybe only if NDEBUG ?
   if (isMalformed()) {
@@ -346,16 +361,16 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
   }
 }
 
-/// We walk through the branch history in reverse order (recent to oldest & to -> from) to
-/// identify call edges that are frequently taken. Recall that both calls and returns are
+/// We walk through the branch history in reverse order (recent to oldest; and to -> from) to
+/// identify call edges that are frequently taken. Recall that the most recent N branches
 /// contained in this history, so we can simply start at the contextually-correct starting
 /// point in the CCT and walk forwards / backwards through the history.
-void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
+void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const& CG, VertexID Start, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
 
-  // Currently we assume the branch sample list only contains call / return branches,
-  // not conditional ones etc. The reason is that I think it might be a bit tricky to
-  // correctly distinguish a return edge from a local branch in a self-recursive function
-  // without additional information.
+  // Currently we assume the branch sample list may contain all sorts of branches,
+  // This makes it a bit tricky bit tricky to correctly distinguish a return edge from a
+  // local branch in a self-recursive function without additional information.
+  // For now, in such cases we simply give up.
 
   dumpDOT(clogs());
 
@@ -394,19 +409,17 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start,
     auto From = CRI.lookup(BI.from());
     auto &FromName = From->getName();
 
-    // predicate function that returns true if the info matches the FromName of this branch.
-    auto Chooser = [&](VertexInfo const& Info) { return Info.getFuncName() == FromName; };
-
     auto To = CRI.lookup(BI.to());
 
-    // it's a call if the target is the start of the function.
-    bool isCall = To->getStart() == BI.to();
+    bool isCall = To->getStart() == BI.to(); // it's a call if the target is the start of the function.
+    bool isRet = !isCall && To->getName() != From->getName(); // it's a return otherwise if it's in different functions.
 
     logs() << "BTB Entry:\t" << FromName << " => " << To->getName()
-           << (isCall ? "; call" : "; ret") << "\n";
+           << (isCall ? "; call" :
+               (isRet ? "; ret" : "; other")) << "\n";
 
 
-    // FIXME: sometimes we'll get unmatched call-returns, such as the following:
+    // Sometimes we'll get unmatched call-returns, such as the following:
     //
     //  ??? => A; ret
     //  B   => A; call
@@ -424,7 +437,8 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start,
       return;
     }
 
-    if (To == CRI.UnknownFI && From == CRI.UnknownFI)
+    // It's some other branch or one that goes between two unknown functions.
+    if (!isCall && !isRet)
       continue;
 
     if (isCall) {
@@ -432,7 +446,7 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start,
 
       // searches and adjusts the ancestors to determine an appropriate "from" vertex.
       auto DetermineFromVertex = [&]() -> llvm::Optional<VertexID> {
-        // FIXME: we would need to do some more advanced analysis of the current Ancestors
+        // We would need to do some more advanced analysis of the current Ancestors
         // to return something smarter than the below.
         //
         // A few situations where this gets tricky:
@@ -446,13 +460,20 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start,
         //    B -> C -> D.
         //    However, what if the next BTB entry is E -> C?
         //
+        //
+        // Instead, we just check the parent of the current vertex.
+        // The Ancestors invariant is that we have [ Others ... Parent, Current]
 
-        // TODO: this is wrong. instead we should be checking the immediate ancestor
-        // of the current vertex. Since the Ancestors invariant is that we have
-        // [ Others ... ImmediateParent, Current] we should check the top two and if
-        // it doesn't match, we bail.
+        auto MaybeParent = Ancestors.parent();
+        if (MaybeParent) {
+          auto Parent = MaybeParent.getValue();
+          if (Parent.second == FromName) {
+            Ancestors.pop(); // move up the hierarchy
+            return Parent.first;
+          }
+        }
 
-        return bgl::find_in_vertex(Gr, Cur, Chooser);
+        return llvm::None;
       }; // end lambda
 
       auto MaybeFromV = DetermineFromVertex();
@@ -469,15 +490,27 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, VertexID Start,
       Info.observe();
       Cur = FromV; // move to From
 
+
+
     } else {
       // the other case, Cur -called-> From (because this branch indicates From returned to Cur).
       // then we move to From.
 
+      if (To != CRI.UnknownFI && CG.isLeaf(CurI.getFuncName())) {
+        logs() << "warning: BTB claims " << CurI.getFuncName() << " makes a call but that func is a leaf! skipping\n----\n";
+        return;
+      }
+
       Cur = bgl::add_cct_call(Gr, Ancestors, Cur, From, From != CRI.UnknownFI);
       Ancestors.push({Cur, FromName});
+
     }
 
   }
+
+  logs() << "\nAncestors are now:\n" << Ancestors << "\n";
+
+  dumpDOT(clogs());
 
   logs() << "---------\n";
 
