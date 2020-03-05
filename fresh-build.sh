@@ -5,7 +5,7 @@ set -ex
 # first arg is the build environment nickname
 ENV_KIND=$1
 
-ENV_KIND_OPTIONS="local, docker, docker-debug, rpi, kavon"
+ENV_KIND_OPTIONS="local, docker, docker-debug, rpi, kavon, kavon-debug"
 
 if (( $# != 1 )); then
     echo "Must provide a build kind as first arg: $ENV_KIND_OPTIONS"
@@ -47,11 +47,11 @@ NETWORK_DIR="-DHALO_NET_DIR=$(pwd)/net"
 # environment specific build options / overrides
 if [ "${ENV_KIND}" == "docker" ]; then
   # want to install system-wide, so we overwrite the existing OPTIONS
-  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=4 -DLLVM_CCACHE_BUILD=ON \
+  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=3 -DLLVM_CCACHE_BUILD=ON \
            -DLLVM_ENABLE_ASSERTIONS=ON"
 
 elif [ "${ENV_KIND}" == "docker-debug" ]; then
-  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=4 -DLLVM_CCACHE_BUILD=ON \
+  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=3 -DLLVM_CCACHE_BUILD=ON \
            -DLLVM_ENABLE_ASSERTIONS=ON -DHALOSERVER_VERBOSE=ON -DHALOMON_VERBOSE=ON"
 
 elif [ "${ENV_KIND}" == "local" ]; then
@@ -61,10 +61,15 @@ elif [ "${ENV_KIND}" == "rpi" ]; then
   BACKENDS="Native"
   OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=lld -DLLVM_PARALLEL_LINK_JOBS=1 -DLLVM_PARALLEL_COMPILE_JOBS=2"
 
-elif [ "${ENV_KIND}" == "kavon" ]; then
+elif [ "${ENV_KIND}" == "kavon-debug" ]; then
   BACKENDS="Native"
   OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=gold -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON \
           -DHALOSERVER_VERBOSE=ON -DHALOMON_VERBOSE=ON"
+
+elif [ "${ENV_KIND}" == "kavon" ]; then
+  BACKENDS="Native"
+  OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=gold -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON \
+          -DHALOSERVER_VERBOSE=ON"
 
 else
   echo "Unknown build kind '${ENV_KIND}'. Options are: $ENV_KIND_OPTIONS"
