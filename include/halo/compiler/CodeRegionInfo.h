@@ -25,8 +25,8 @@ class PerformanceData;
 
 class FunctionInfo {
 public:
-  FunctionInfo(std::string name, uint64_t start, uint64_t end, bool patchable)
-    : Name(name), Patchable(patchable), Start(start), End(end) {}
+  FunctionInfo(std::string name, uint64_t start, uint64_t end, bool patchable, bool unknown=false)
+    : Name(name), Patchable(patchable), Start(start), End(end), Unknown(unknown) {}
 
   // the function's label / name.
   // generally the same across all clients
@@ -41,6 +41,9 @@ public:
 
   // real ending address in the process
   uint64_t getEnd() const { return End; }
+
+  bool isUnknown() const { return Unknown; }
+  bool isKnown() const { return !Unknown; }
 
   void dump(llvm::raw_ostream &out) const {
     out << "name = " << getName()
@@ -58,6 +61,7 @@ private:
   // These members always VARY across clients
   uint64_t Start;
   uint64_t End;
+  bool Unknown;
 };
 
 
@@ -79,16 +83,19 @@ private:
   std::unordered_map<std::string, FunctionInfo*> NameMap;
   uint64_t VMABase;
 
-public:
   // fixed name for the unknown function
   static const std::string UnknownFn;
 
-  // A special category for unknown functions. The FunctionInfo for this
+  // A special representation of unknown functions. The FunctionInfo for this
   // "function" is returned on lookup failure.
   FunctionInfo *UnknownFI;
 
+public:
   // performs the actual initialization of the CRI based on the client enrollment
   void init(pb::ClientEnroll const& CE);
+
+  // returns the unknown function's info
+  FunctionInfo* getUnknown() const { return UnknownFI; }
 
   // Upon failure to lookup information for the given IP or Name, the
   // UnknownFI is returned.
@@ -111,7 +118,7 @@ public:
 
   // initializes an empty and useless CRI. you should use ::init()
   CodeRegionInfo() {
-    UnknownFI = new FunctionInfo(UnknownFn, 0, 0, false);
+    UnknownFI = new FunctionInfo(UnknownFn, 0, 0, false, /*unknown=*/true);
   }
 
   ~CodeRegionInfo() {

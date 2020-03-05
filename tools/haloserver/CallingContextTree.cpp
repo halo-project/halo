@@ -217,7 +217,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
   auto &CallChain = Sample.call_context();
   auto SampledIP = Sample.instr_ptr();
   auto SampledFI = CRI.lookup(SampledIP);
-  bool KnownIP = SampledFI != CRI.UnknownFI;
+  bool KnownIP = SampledFI->isKnown();
 
   auto IPI = CallChain.rbegin(); // rbegin = base of call stack
   auto Top = CallChain.rend(); // rend = top of call stack
@@ -229,7 +229,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
   if (CallChain.size() > 0) {
     Top--; // move to topmost element, making it valid
     auto TopFI = CRI.lookup(*Top);
-    bool KnownTop = TopFI != CRI.UnknownFI;
+    bool KnownTop = TopFI->isKnown();
 
     if (KnownTop && TopFI == SampledFI)
       Top++; // keep the top
@@ -249,7 +249,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
   // maintains current ancestors of the vertex, in order
   Ancestors Ancestors;
   auto CurrentVID = RootVertex;
-  auto CurrentFI = CRI.UnknownFI;
+  auto CurrentFI = CRI.getUnknown();
   std::list<VertexID> IntermediateFns;
 
   // now we actually process the call chain.
@@ -278,7 +278,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
       IPI++;
     }
 
-    bool ImaginaryCall = CurrentFI == CRI.UnknownFI || Callee == CRI.UnknownFI;
+    bool ImaginaryCall = CurrentFI->isUnknown() || Callee->isUnknown();
     bool DirectlyCalled = CG.hasCall(CurrentV.getFuncName(), Callee->getName());
     bool HasIndirectCallee = CG.hasCall(CurrentV.getFuncName(), CG.getUnknown());
 
@@ -344,7 +344,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
     }
 
     logs() << "Adding CCT call " << bgl::get(Gr, CurrentVID).getFuncName() << " -> " << Callee->getName() << "\n";
-    CurrentVID = bgl::add_cct_call(Gr, Ancestors, CurrentVID, Callee, Callee != CRI.UnknownFI);
+    CurrentVID = bgl::add_cct_call(Gr, Ancestors, CurrentVID, Callee, Callee->isKnown());
     CurrentFI = Callee;
   }
 
@@ -496,12 +496,12 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
       // the other case, Cur -called-> From (because this branch indicates From returned to Cur).
       // then we move to From.
 
-      if (To != CRI.UnknownFI && CG.isLeaf(CurI.getFuncName())) {
+      if (To->isKnown() && CG.isLeaf(CurI.getFuncName())) {
         logs() << "warning: BTB claims " << CurI.getFuncName() << " makes a call but that func is a leaf! skipping\n----\n";
         return;
       }
 
-      Cur = bgl::add_cct_call(Gr, Ancestors, Cur, From, From != CRI.UnknownFI);
+      Cur = bgl::add_cct_call(Gr, Ancestors, Cur, From, From->isKnown());
       Ancestors.push({Cur, FromName});
 
     }
