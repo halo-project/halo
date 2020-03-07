@@ -16,6 +16,14 @@ namespace pb {
   class RawSample;
 }
 
+// carries some metadata about the last sample seen by a vertex.
+class LastSampleInfo {
+  public:
+    uint64_t Timestamp = 0;
+    bool Initial = false;
+    float Increment = 0.0f;
+};
+
 using ClientID = size_t;
 
 /// Each node summarizes context-sensitive profiling information
@@ -37,10 +45,17 @@ public:
   }
 
   /// Assuming the given sample is contextually
-  /// relevant for this vertex, `observerSample`
+  /// relevant for this vertex, `observerSampleedIP`
   /// will merge the performance metrics from
   /// the sample with existing metrics in this vertex.
-  void observeSample(ClientID, pb::RawSample const&);
+  /// It should be used when the sampled IP was observed
+  /// at this function context
+  void observeSampledIP(ClientID, pb::RawSample const&);
+
+  /// Should be used to indicate that this function context
+  /// was recently active in the given RawSample, but NOT as
+  /// the sampled IP.
+  void observeRecentlyActive(ClientID, pb::RawSample const&);
 
   // causes the information in this sample to decay
   void decay();
@@ -54,10 +69,14 @@ private:
   std::string FuncName{"<XXX>"};
   bool Patchable{false};
   float Hotness{0};
-  std::map<std::pair<ClientID, uint32_t>, uint64_t> LastSampleTime; // thread_id -> timestamp
+  std::map<std::pair<ClientID, uint32_t>, LastSampleInfo> LastSample;
 
   static const float HOTNESS_BASELINE;
   static const float HOTNESS_DISCOUNT;
+  static const float HOTNESS_INITIAL;
+  static const float HOTNESS_BOOST;
+
+  void observeSample(ClientID ID, pb::RawSample const& RS, float Discount, float Initial);
 }; // end class
 
 
@@ -152,7 +171,7 @@ private:
   void insertSample(CallGraph const&, ClientID, CodeRegionInfo const&, pb::RawSample const&);
 
   // Inserts branch-sample data starting at the given vertex into the CCT.
-  void walkBranchSamples(Ancestors&, CallGraph const&, VertexID, CodeRegionInfo const&, pb::RawSample const&);
+  void walkBranchSamples(ClientID, Ancestors&, CallGraph const&, VertexID, CodeRegionInfo const&, pb::RawSample const&);
 
   Graph Gr;
   VertexID RootVertex;

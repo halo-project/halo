@@ -358,9 +358,9 @@ skipThisCallee:
 
   // at this point CallerVID is the context-sensitive function node's id
   auto &CurrentV = bgl::get(Gr, CallerVID);
-  CurrentV.observeSample(ID, Sample); // add the sample to the vertex!
+  CurrentV.observeSampledIP(ID, Sample); // add the sample to the vertex!
 
-  walkBranchSamples(Ancestors, CG, CallerVID, CRI, Sample);
+  walkBranchSamples(ID, Ancestors, CG, CallerVID, CRI, Sample);
 
   // TODO: maybe only if NDEBUG ?
   if (isMalformed()) {
@@ -373,7 +373,8 @@ skipThisCallee:
 /// identify call edges that are frequently taken. Recall that the most recent N branches
 /// contained in this history, so we can simply start at the contextually-correct starting
 /// point in the CCT and walk forwards / backwards through the history.
-void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const& CG, VertexID Start, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
+void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, CallGraph const& CG,
+                                           VertexID Start, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
 
   // Currently we assume the branch sample list may contain all sorts of branches,
   // This makes it a bit tricky bit tricky to correctly distinguish a return edge from a
@@ -386,7 +387,7 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
   logs() << "in the context of ancestors:\n" << Ancestors << "\n";
 
   // NOTE: it's helpful to think of us walking *backwards* through a history of
-  // function transitions from most to least recent.
+  // possible function transitions from most to least recent.
   //
   // Thus, the 'To' part of each individual branch is where we should already be,
   // and we always move *back* towards the 'From' before inspecting the next branch:
@@ -413,16 +414,13 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
   for (auto &BI : Sample.branch()) {
     auto &CurI = bgl::get(Gr, Cur);
 
-    // this is the vertex we're trying to move to.
-    auto From = CRI.lookup(BI.from());
-    auto &FromName = From->getName();
-
-    auto To = CRI.lookup(BI.to());
+    auto From = CRI.lookup(BI.from()); // this is the function we're trying to move to.
+    auto To = CRI.lookup(BI.to()); // this is the function we're current at.
 
     bool isCall = To->getStart() == BI.to(); // it's a call if the target is the start of the function.
-    bool isRet = !isCall && To->getName() != From->getName(); // it's a return otherwise if it's in different functions.
+    bool isRet = !isCall && To != From; // it's a return otherwise if it's in different functions.
 
-    logs() << "BTB Entry:\t" << FromName << " => " << To->getName()
+    logs() << "BTB Entry:\t" << From->getName() << " => " << To->getName()
            << (isCall ? "; call" :
                (isRet ? "; ret" : "; other")) << "\n";
 
@@ -445,14 +443,10 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
       return;
     }
 
-    // It's some other branch or one that goes between two unknown functions.
+    // mark this vertex as being warm
+    CurI.observeRecentlyActive(ID, Sample);
 
-    // TODO: we should add a small amount of hotness to functions with recently-taken
-    // internal branches that appeared in the BTB! That means more time is being spent there
-    // than just the point at which we sampled, which may be biased towards landing on a
-    // slow instruction in some other function!
-    if (!isCall && !isRet)
-      continue;
+    // actually process this BTB entry:
 
     if (isCall) {
       // adding/updating the edge indicating From -called-> Cur/To, then moving UP to From.
@@ -480,7 +474,7 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
         auto MaybeParent = Ancestors.parent();
         if (MaybeParent) {
           auto Parent = MaybeParent.getValue();
-          if (Parent.second == FromName) {
+          if (Parent.second == From->getName()) {
             Ancestors.pop(); // move up the hierarchy
             return Parent.first;
           }
@@ -505,7 +499,7 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
 
 
 
-    } else {
+    } else if (isRet) {
       // the other case, Cur/To -called-> From (because this branch indicates From returned to Cur).
       // then we move to From.
 
@@ -526,7 +520,7 @@ void CallingContextTree::walkBranchSamples(Ancestors &Ancestors, CallGraph const
       }
 
       Cur = bgl::add_cct_call(Gr, Ancestors, Cur, From, From->isKnown());
-      Ancestors.push({Cur, FromName});
+      Ancestors.push({Cur, From->getName()});
 
     }
 
@@ -786,26 +780,73 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
 ///////////////////////////////////////////////
 /// VertexInfo definitions
 
+// in nanoseconds I believe
 const float VertexInfo::HOTNESS_BASELINE = 100000000.0f;
+
+// (0, 1), learning rate / incremental update factor "alpha"
 const float VertexInfo::HOTNESS_DISCOUNT = 0.7f;
 
-void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS) {
+// conceptually, this should be related to the value:
+//    HOTNESS_BASELINE / NanoSecondsSinceLastObservation
+const float VertexInfo::HOTNESS_INITIAL = 2.0f;
+
+const float VertexInfo::HOTNESS_BOOST = 0.1f;
+
+void VertexInfo::observeSampledIP(ClientID ID, pb::RawSample const& RS) {
+  observeSample(ID, RS, HOTNESS_DISCOUNT, HOTNESS_INITIAL);
+}
+
+void VertexInfo::observeRecentlyActive(ClientID ID, pb::RawSample const& RS) {
+  // we discount the 'hotness' of a sample at this vertex.
+  float Disc = HOTNESS_DISCOUNT * HOTNESS_DISCOUNT;
+  float Initial = HOTNESS_INITIAL * HOTNESS_DISCOUNT;
+  observeSample(ID, RS, Disc, Initial);
+}
+
+void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, float Discount, float Initial) {
   // TODO: add branch mis-prediction rate?
 
   auto ThisTime = RS.time();
   auto TID = RS.thread_id();
 
   std::pair<ClientID, uint32_t> Key{ID, TID};
-  auto LastTime = LastSampleTime[Key];
+  auto LastTime = LastSample[Key];
 
-  if (LastTime) {
+  float Increment;
+  if (LastTime.Timestamp != 0) {
     // use a typical incremental update rule (Section 2.4/2.5 in RL book)
-    auto Diff = ThisTime - LastTime;
-    float Temperature = HOTNESS_BASELINE / Diff;
-    Hotness += HOTNESS_DISCOUNT * (Temperature - Hotness);
+    assert(ThisTime >= LastTime.Timestamp && "time went backwards");
+    auto Diff = ThisTime - LastTime.Timestamp;
+
+    // how 'hot' this ONE sample is
+    float SampleTemp;
+    if (Diff == 0) {
+      // we've already seen this sample, but we want to further
+      // emphasize movement in the direction the last sample took
+      // us.
+      float Nudge = LastTime.Increment * HOTNESS_BOOST;
+      SampleTemp = Hotness + Nudge;
+
+    } else {
+     SampleTemp = HOTNESS_BASELINE / Diff;
+    }
+
+    // the movement to make for the general hotness of the vertex.
+    Increment = Discount * (SampleTemp - Hotness);
+    LastTime.Initial = false;
+
+  } else {
+    Increment = Initial;
+    LastTime.Initial = true;
   }
 
-  LastSampleTime[Key] = ThisTime;
+  // actually perform the update.
+  Hotness += Increment;
+
+  LastTime.Increment = Increment;
+  LastTime.Timestamp = ThisTime;
+
+  LastSample[Key] = LastTime;
 }
 
 void VertexInfo::decay() {
