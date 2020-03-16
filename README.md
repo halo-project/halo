@@ -45,9 +45,8 @@ produce Halo-enabled binaries. This is in the usual place `llvm-project/clang`.
 
 ## Building
 
-We offer Docker images with Halo pre-installed, so "building" amounts
-generally should amount to downloading the image. This is the reccomended way to obtain
-Halo:
+We offer Docker images with Halo pre-installed, so "building"
+generally should amount to downloading the image:
 
 ```bash
 $ docker pull registry.gitlab.com/kavon1/halo:latest
@@ -102,7 +101,7 @@ I do not currently have a build setup in that script for real usage.
 
 Please keep in mind that this project is still in an early-development phase.
 Currently, Halo acts as a simple tiered JIT compilation system with sampling-based
-profiling and compilation that happens on a server.https://github.com/halo-project/halo
+profiling and compilation that happens on a server.
 
 To produce a Halo-enabled executable, simply add `-fhalo` to your invocation of Halo's `clang`:
 
