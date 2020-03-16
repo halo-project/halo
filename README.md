@@ -23,7 +23,7 @@ This is in contrast to traditional offline tuning where a sample workload and
 hours of time are required to perform the tuning prior to the deployment of the
 software, and afterwards the tuning remains fixed.
 
-For more details of our rationale, related work and overall plan, [see our design document](docs/proposal.pdf).
+For more details of our rationale, related work, and overall plan, [please see our design document](docs/proposal.pdf).
 
 
 ## What's Here?
