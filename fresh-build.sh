@@ -83,7 +83,8 @@ mkdir build install
 cd ./build || exit 1
 cmake -G "$GENERATOR" ${OURSELVES} ${NETWORK_DIR} -DLLVM_BUILD_LLVM_DYLIB=ON -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} -DCMAKE_BUILD_TYPE=${TYPE} ../llvm-project/llvm
 
-if [ "${ENV_KIND}" == "kavon" ]; then
+if [ "${ENV_KIND}" == "kavon" ] || [ "${ENV_KIND}" == "kavon-debug" ]; then
+  echo "CMake configuration complete. Invoke build targets yourself in build dir."
   exit 0  # only want to configure
 fi
 
