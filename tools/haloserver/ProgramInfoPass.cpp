@@ -36,8 +36,9 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
     }
   }
 
-  halo::logs() << "Dumping static call graph:\n";
-  CallGraph.dumpDOT(halo::clogs());
+  const auto LC = halo::LC_ProgramInfoPass;
+  halo::logs(LC) << "Dumping static call graph:\n";
+  CallGraph.dumpDOT(halo::clogs(LC));
 
   return PreservedAnalyses::all();
 }

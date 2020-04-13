@@ -57,11 +57,11 @@ void ClientSession::listen()  {
         } break;
 
         case msg::ClientEnroll: {
-          std::cerr << "warning: recieved client enroll when already enrolled!\n";
+          fatal_error("recieved client enrollment when already enrolled!");
         } break;
 
         default: {
-          std::cerr << "Recieved unknown message ID: "
+          logs() << "Recieved unknown message ID: "
             << (uint32_t)Kind << "\n";
         } break;
       };

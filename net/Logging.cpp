@@ -46,4 +46,8 @@ namespace halo {
   void info(const std::string &msg) {
     logs() << InfoTag << msg << "\n";
   }
+
+  namespace __logging {
+    DiscardingStream discardOut;
+  }
 }

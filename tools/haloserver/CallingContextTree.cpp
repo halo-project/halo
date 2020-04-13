@@ -205,7 +205,7 @@ void CallingContextTree::observe(CallGraph const& CG, ClientID ID, CodeRegionInf
   }
 
   if (SawSample) {
-    dumpDOT(clogs());
+    dumpDOT(clogs(LC_CCT));
     // fatal_error("todo: implement CCT observe");
   }
 }
@@ -261,7 +261,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
 skipThisCallee:
     // our iterator is IPI
     if (IPI == Top) {
-      logs() << "done with BTB.\n";
+      logs(LC_CCT) << "done with BTB.\n";
       break;
     }
 
@@ -284,7 +284,7 @@ skipThisCallee:
     bool DirectlyCalled = Callee->isKnown() && CG.hasCall(CallerV.getFuncName(), Callee->getName());
     bool HasIndirectCallee = CG.hasCall(CallerV.getFuncName(), CG.getUnknown());
 
-    logs() << "Calling context contains " << CallerV.getFuncName() << " -> " << Callee->getName()
+    logs(LC_CCT) << "Calling context contains " << CallerV.getFuncName() << " -> " << Callee->getName()
            << "\n\tand DirectlyCalled = " << DirectlyCalled
            << ", HasIndirectCallee = " << HasIndirectCallee
            << ", ImaginaryCaller = " << ImaginaryCaller
@@ -306,22 +306,22 @@ skipThisCallee:
       assert(IntermediateFns.size() == 0
           && "an intermediate function failed the call-graph test... CCT was bogus from the start?");
 
-      logs() << "\t\tNeed path from " << CallerV.getFuncName() << " [" << CallerVID << "] --> " << Callee->getName() << "\n";
+      logs(LC_CCT) << "\t\tNeed path from " << CallerV.getFuncName() << " [" << CallerVID << "] --> " << Callee->getName() << "\n";
 
       auto MaybePath = shortestPath(CallerVID, Callee);
       if (!MaybePath) {
-        logs() << "warning: no path found. skipping sample.\n";
+        logs(LC_CCT) << "warning: no path found. skipping sample.\n";
         return;
       }
 
       auto ChosenPath = MaybePath.getValue();
 
-      logs() << "\t\tUsing path: ";
+      logs(LC_CCT) << "\t\tUsing path: ";
       for (auto ID : ChosenPath) {
         auto &Info = bgl::get(Gr, ID);
-        logs() << Info.getFuncName() << " [" << ID << "]" << " -> ";
+        logs(LC_CCT) << Info.getFuncName() << " [" << ID << "]" << " -> ";
       }
-      logs() << "\n";
+      logs(LC_CCT) << "\n";
 
       assert(ChosenPath.size() >= 3 && "no intermediate node should have been needed?");
 
@@ -351,7 +351,7 @@ skipThisCallee:
       IPI--;
     }
 
-    logs() << "Adding CCT call " << bgl::get(Gr, CallerVID).getFuncName() << " -> " << Callee->getName() << "\n";
+    logs(LC_CCT) << "Adding CCT call " << bgl::get(Gr, CallerVID).getFuncName() << " -> " << Callee->getName() << "\n";
     CallerVID = bgl::add_cct_call(Gr, Ancestors, CallerVID, Callee, Callee->isKnown());
     CallerFI = Callee;
   }
@@ -364,7 +364,7 @@ skipThisCallee:
 
   // TODO: maybe only if NDEBUG ?
   if (isMalformed()) {
-    dumpDOT(clogs());
+    dumpDOT(clogs(LC_CCT));
     fatal_error("malformed calling-context tree!");
   }
 }
@@ -381,10 +381,10 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
   // local branch in a self-recursive function without additional information.
   // For now, in such cases we simply give up.
 
-  dumpDOT(clogs());
+  dumpDOT(clogs(LC_CCT));
 
-  logs() << "walking BTB from " << CRI.lookup(Sample.instr_ptr())->getName() << "\n";
-  logs() << "in the context of ancestors:\n" << Ancestors << "\n";
+  logs(LC_CCT) << "walking BTB from " << CRI.lookup(Sample.instr_ptr())->getName() << "\n";
+  logs(LC_CCT) << "in the context of ancestors:\n" << Ancestors << "\n";
 
   // NOTE: it's helpful to think of us walking *backwards* through a history of
   // possible function transitions from most to least recent.
@@ -420,7 +420,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
     bool isCall = To->getStart() == BI.to(); // it's a call if the target is the start of the function.
     bool isRet = !isCall && To != From; // it's a return otherwise if it's in different functions.
 
-    logs() << "BTB Entry:\t" << From->getName() << " => " << To->getName()
+    logs(LC_CCT) << "BTB Entry:\t" << From->getName() << " => " << To->getName()
            << (isCall ? "; call" :
                (isRet ? "; ret" : "; other")) << "\n";
 
@@ -439,7 +439,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
     // unknown function it shouldn't mess anything up and will record what's going on
     // more accurately.
     if (To->getName() != CurI.getFuncName()) {
-      logs() << "warning: BTB current = " << CurI.getFuncName() << "; unmatched call-return. bailing.\n-----\n";
+      logs(LC_CCT) << "warning: BTB current = " << CurI.getFuncName() << "; unmatched call-return. bailing.\n-----\n";
       return;
     }
 
@@ -485,7 +485,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
 
       auto MaybeFromV = DetermineFromVertex();
       if (!MaybeFromV) {
-        logs() << "warning: BTB has a call from a func not encountered by the current CCT node. bailing.\n-----\n";
+        logs(LC_CCT) << "warning: BTB has a call from a func not encountered by the current CCT node. bailing.\n-----\n";
         return;
       }
 
@@ -514,7 +514,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
 
       // avoid creating 'impossible' edges in the CCT
       if (!DirectlyCalled && !HasIndirectCallee) {
-        logs() << "warning: BTB claims " << CurI.getFuncName() << " called " << From->getName()
+        logs(LC_CCT) << "warning: BTB claims " << CurI.getFuncName() << " called " << From->getName()
                << " but call-graph disagrees! skipping\n----\n";
         return;
       }
@@ -526,11 +526,11 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
 
   }
 
-  logs() << "\nAncestors are now:\n" << Ancestors << "\n";
+  logs(LC_CCT) << "\nAncestors are now:\n" << Ancestors << "\n";
 
-  dumpDOT(clogs());
+  dumpDOT(clogs(LC_CCT));
 
-  logs() << "---------\n";
+  logs(LC_CCT) << "---------\n";
 
 }
 
@@ -658,7 +658,7 @@ bool CallingContextTree::isMalformed() const {
 
     auto Result = ReachableFromRoot.find(ID);
     if (Result == ReachableFromRoot.end()) {
-      logs() << "isMalformed: id = " << ID << "; "
+      logs(LC_CCT) << "isMalformed: id = " << ID << "; "
              << VI.getFuncName() << " is not reachable from root!\n";
       return false;
     }
