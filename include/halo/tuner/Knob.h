@@ -156,12 +156,6 @@ namespace halo {
       if (Level == "O3")
         return LevelTy::O3;
 
-      if (Level == "Os")
-        return LevelTy::Os;
-
-      if (Level == "Oz")
-        return LevelTy::Oz;
-
       llvm::report_fatal_error("invalid opt level string: " + Level);
     }
 
@@ -170,6 +164,8 @@ namespace halo {
     }
 
   }; // end class OptLvlKnob
+
+bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
 
 
 

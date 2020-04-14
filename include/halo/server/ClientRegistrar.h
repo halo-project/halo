@@ -145,7 +145,7 @@ private:
       } else if (Kind == msg::ClientEnroll) {
         llvm::StringRef Blob(Body.data(), Body.size());
 
-        CS->Client.ParseFromString(Blob);
+        CS->Client.ParseFromString(Blob.str());
         CS->Enrolled = true;
 
         llvm::StringRef Bitcode(CS->Client.module().bitcode());

@@ -15,7 +15,7 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
   for (auto const& Func : M.functions()) {
     // record whether we have bitcode for the function
     if (!Func.isDeclaration())
-      Profiler.setBitcodeStatus(Func.getName(), true);
+      Profiler.setBitcodeStatus(Func.getName().str(), true);
 
     // check the function's call-sites to populate the call-graph.
     CallGraphNode *CGNode = CGR[&Func];
@@ -30,9 +30,9 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
       Function* Callee = CalleeNode->getFunction();
 
       if (Callee)
-        CallGraph.addCall(Func.getName(), Callee->getName());
+        CallGraph.addCall(Func.getName().str(), Callee->getName().str());
       else
-        CallGraph.addCall(Func.getName(), CallGraph.getUnknown());
+        CallGraph.addCall(Func.getName().str(), CallGraph.getUnknown());
     }
   }
 

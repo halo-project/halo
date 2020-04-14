@@ -39,7 +39,7 @@ void ClientSession::listen()  {
           Parent->withClientState(this, [this,Body](SessionState &State) {
             pb::RawSample RS;
             llvm::StringRef Blob(Body.data(), Body.size());
-            RS.ParseFromString(Blob);
+            RS.ParseFromString(Blob.str());
             State.PerfData.add(RS);
           });
 
@@ -50,7 +50,7 @@ void ClientSession::listen()  {
           Parent->withClientState(this, [this,Body](SessionState &State) {
             pb::XRayProfileData PD;
             llvm::StringRef Blob(Body.data(), Body.size());
-            PD.ParseFromString(Blob);
+            PD.ParseFromString(Blob.str());
             State.PerfData.add(PD);
           });
 
