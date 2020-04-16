@@ -813,9 +813,14 @@ void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, float Disco
   auto LastTime = LastSample[Key];
 
   float Increment;
-  if (LastTime.Timestamp != 0) {
+  if (LastTime.Timestamp == 0) {
+    // the very first sample
+    Increment = Initial;
+    LastTime.Initial = true;
+
+  } else if (ThisTime >= LastTime.Timestamp) {
+    // then this sample is ordered properly.
     // use a typical incremental update rule (Section 2.4/2.5 in RL book)
-    assert(ThisTime >= LastTime.Timestamp && "time went backwards");
     auto Diff = ThisTime - LastTime.Timestamp;
 
     // how 'hot' this ONE sample is
@@ -836,8 +841,12 @@ void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, float Disco
     LastTime.Initial = false;
 
   } else {
-    Increment = Initial;
-    LastTime.Initial = true;
+    // otherwise this sample is out-of-order, so we skip it because
+    // we expect this case to be rare!
+    assert(ThisTime < LastTime.Timestamp && "expected out-of-order sample");
+    logs(LC_CCT) << "out-of-order perf sample. skipping hotness increment.\n";
+    Increment = 0.0f;
+    ThisTime = LastTime.Timestamp;
   }
 
   // actually perform the update.
