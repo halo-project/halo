@@ -6,9 +6,10 @@ set -ex
 
 KIND=$1
 
-# TODO: currently check-xray doesn't depend on llvm-xray, but it requires it. this might get fixed upstream.
 pushd build
-cmake --build . -- llvm-xray check-xray test-halo
+cmake --build . -- llvm-xray # TODO: currently check-xray doesn't depend on llvm-xray, but it requires it. this might get fixed upstream.
+cmake --build . -- check-xray
+cmake --build . -- test-halo
 popd
 
 ##### run benchmark suite
