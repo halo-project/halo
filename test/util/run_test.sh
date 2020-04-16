@@ -63,16 +63,16 @@ fi
 wait
 
 if [ $FAILURE -eq "1" ]; then
-  echo "Some part of the test has failed! See above."
+  >&2 echo "Some part of the test has failed! See above."
 
-  echo -e "\n\n\tSERVER OUTPUT:"
-  cat "$SERV_OUT"
+  >&2 echo -e "\n\n\tSERVER OUTPUT (partial) in file $SERV_OUT"
+  >&2 tail -n 50 "$SERV_OUT"
 
   if [ $SAVING_CLIENT_OUTPUT -eq "1" ]; then
-    echo -e "\n\n\tONE CLIENT'S OUTPUT:"
-    cat "$PROG_OUT"
-  else
-    rm "$SERV_OUT"   # delete the temporary file we generated
+    >&2 echo -e "\n\n\tONE CLIENT'S OUTPUT (partial) from file $PROG_OUT"
+    >&2 tail -n 50 "$PROG_OUT"
   fi
   exit 1
+else
+  rm "$SERV_OUT"   # delete the temporary file we generated
 fi
