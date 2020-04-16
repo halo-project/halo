@@ -55,7 +55,7 @@ public:
         bool OneActive = false;
         for (auto &Group : Groups) {
           size_t Active = Group.NumActive;
-          // std::cerr << "Group has " << Active << " active.\n";
+          // clogs() << "Group has " << Active << " active.\n";
           if (Active > 0) {
             OneActive = true;
             break;

@@ -82,7 +82,7 @@ namespace spb {
     MPM.addPass(std::forward<PassT>(Pass));
 
     if (shouldPrint) {
-      MPM.addPass(PrintIRPass(llvm::errs(), "After", Name));
+      MPM.addPass(PrintIRPass(logs(), "After", Name));
     }
   }
 
@@ -92,13 +92,13 @@ namespace spb {
     MPM.addPass(Pass);
 
     if (shouldPrint) {
-      MPM.addPass(PrintIRPass(llvm::errs(), "After", Name));
+      MPM.addPass(PrintIRPass(logs(), "After", Name));
     }
   }
 
   inline void addPrintPass(bool shouldPrint, llvm::ModulePassManager &MPM, llvm::StringRef Msg) {
     if (shouldPrint) {
-      MPM.addPass(PrintIRPass(llvm::errs(), "At", Msg));
+      MPM.addPass(PrintIRPass(logs(), "At", Msg));
     }
   }
 
@@ -109,14 +109,14 @@ namespace spb {
 
       if (shouldPrint) {
         Name = "\n\n;;;;;; IR Dump After " + Name + " ;;;;;;\n";
-        LegacyPM.add(llvm::createPrintModulePass(llvm::errs(), Name));
+        LegacyPM.add(llvm::createPrintModulePass(logs(), Name));
       }
     }
 
     inline void addPrintPass(bool shouldPrint, llvm::legacy::PassManager &LegacyPM, std::string Msg) {
       if (shouldPrint) {
         Msg = "\n\n;;;;;; IR Dump At " + Msg + " ;;;;;;\n";
-        LegacyPM.add(llvm::createPrintModulePass(llvm::errs(), Msg));
+        LegacyPM.add(llvm::createPrintModulePass(logs(), Msg));
       }
     }
   } // end namespace legacy

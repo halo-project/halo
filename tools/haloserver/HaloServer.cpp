@@ -55,7 +55,7 @@ JSON ReadConfigFile(const char* Path) {
   std::ifstream file(Path);
 
   if (!file.is_open()) {
-    std::cerr << "Unable to open server config file: " << Path << std::endl;
+    clogs() << "Unable to open server config file: " << Path << std::endl;
     llvm::report_fatal_error("exiting due to previous error");
   }
 

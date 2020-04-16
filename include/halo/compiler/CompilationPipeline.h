@@ -11,6 +11,8 @@
 
 #include "halo/tuner/KnobSet.h"
 
+#include "Logging.h"
+
 #include <memory>
 
 namespace orc = llvm::orc;
@@ -38,7 +40,7 @@ namespace halo {
 
       auto MaybeModule = _parseBitcode(Cxt, Bitcode);
       if (!MaybeModule) {
-        llvm::outs() << "Compilation Error: " << MaybeModule.takeError() << "\n";
+        logs() << "Compilation Error: " << MaybeModule.takeError() << "\n";
         return llvm::None;
       }
 
@@ -48,7 +50,7 @@ namespace halo {
       if (Result)
         return std::move(Result.get());
 
-      llvm::outs() << "Compilation Error: " << Result.takeError() << "\n";
+      logs() << "Compilation Error: " << Result.takeError() << "\n";
 
       return llvm::None;
     }

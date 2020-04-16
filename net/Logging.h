@@ -4,7 +4,7 @@
 #include <iostream>
 #include <unordered_set>
 #include "llvm/Support/Error.h"
-#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/raw_os_ostream.h"
 #include "llvm/ADT/Twine.h"
 
 namespace halo {
@@ -27,6 +27,7 @@ namespace halo {
     }
 
     extern DiscardingStream discardOut;
+    extern llvm::raw_os_ostream cerr_raw_ostream;
 
   } // ena namespace __logging
 
@@ -56,7 +57,7 @@ namespace halo {
   // the output logging stream (LLVM raw ostream)
   inline llvm::raw_ostream& logs(LoggingContext LC = LC_Anywhere) {
     // This function exists b/c in the future we'd like to log to a file instead.
-    return loggingEnabled(LC) ? llvm::errs() : llvm::nulls();
+    return loggingEnabled(LC) ? __logging::cerr_raw_ostream : llvm::nulls();
   }
 
   // an alternative logging stream based on std::ostream

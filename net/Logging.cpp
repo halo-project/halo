@@ -5,7 +5,7 @@
 namespace boost {
 
 void throw_exception(std::exception const& ex) {
-  halo::logs() << "uncaught exception: " << ex.what() << "\n";
+  halo::clogs() << "uncaught exception: " << ex.what() << "\n";
   std::exit(EXIT_FAILURE);
 }
 
@@ -36,18 +36,19 @@ namespace halo {
   }
 
   void warning(const std::string &msg) {
-    logs() << WarnTag << msg << "\n";
+    clogs() << WarnTag << msg << "\n";
   }
 
   void info(const char *msg) {
-    logs() << InfoTag << msg << "\n";
+    clogs() << InfoTag << msg << "\n";
   }
 
   void info(const std::string &msg) {
-    logs() << InfoTag << msg << "\n";
+    clogs() << InfoTag << msg << "\n";
   }
 
   namespace __logging {
     DiscardingStream discardOut;
+    llvm::raw_os_ostream cerr_raw_ostream(std::cerr);
   }
 }

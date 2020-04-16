@@ -10,7 +10,7 @@ void ClientSession::start(ClientGroup *CG) {
 
   // We expect that the registrar has taken care of client enrollment.
   if (!Enrolled)
-    std::cerr << "WARNING: client is not enrolled before starting!\n";
+    clogs() << "WARNING: client is not enrolled before starting!\n";
 
   Parent->withClientState(this, [this](SessionState &State){
     // process this new enrollment
@@ -27,7 +27,7 @@ void ClientSession::start(ClientGroup *CG) {
 
 void ClientSession::listen()  {
   Chan.async_recv([this](msg::Kind Kind, std::vector<char>& Body) {
-    // std::cerr << "got msg ID " << (uint32_t) Kind << "\n";
+    // clogs() << "got msg ID " << (uint32_t) Kind << "\n";
 
       switch(Kind) {
         case msg::Shutdown: {

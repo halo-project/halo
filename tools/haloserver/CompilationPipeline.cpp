@@ -188,7 +188,7 @@ Expected<CompilationPipeline::compile_result>
   if (OptErr)
     return OptErr;
 
-  // Module.print(outs(), nullptr);
+  // Module.print(logs(), nullptr);
 
   return compile(*TM, Module);
 }
