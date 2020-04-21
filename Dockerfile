@@ -26,8 +26,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       libprotobuf-dev \
       protobuf-compiler \
       libtinfo-dev \
+  # TODO: I'm not sure if pip is needed anymore since we use in-tree lit now.
   && python -m pip install --no-cache --upgrade pip setuptools wheel \
-  && python -m pip install --no-cache lit \
   && rm -rf /var/lib/apt/lists/*
 
 # copy over source code to the image

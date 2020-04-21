@@ -2,6 +2,10 @@
 # THIS FILE IS AUTO-GENERATED. ONLY EDIT lit.cfg.in !! #
 ########################################################
 
+# NOTE: Currently cmake only generates lit.cfg during configure,
+# so you must rerun cmake from scratch if you change anything
+# in this file!
+
 import lit.formats
 import lit.util
 import os
