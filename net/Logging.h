@@ -22,12 +22,23 @@ namespace halo {
     };
 
     template <class T>
-    inline const DiscardingStream& operator << (DiscardingStream &&os, const T &ignored) {
+    inline const DiscardingStream& operator<<(DiscardingStream &&os, const T &ignored) {
       return os;
     }
 
+
+    extern std::ostream& outputStream; // where all of the logged stuff actually ends up, if enabled!
     extern DiscardingStream discardOut;
-    extern llvm::raw_os_ostream cerr_raw_ostream;
+
+    // These have to be thread local, because the internal bookkeeping used in raw_ostream
+    // classes are not completely thread-safe. Even the null stream has some bookkeeping
+    // that can be invalidated when asserts are enabled.
+    extern thread_local llvm::raw_os_ostream ts_raw_os_ostream;
+    extern thread_local llvm::raw_null_ostream ts_null_raw_ostream;
+
+    inline llvm::raw_ostream& nulls() {
+      return ts_null_raw_ostream;
+    }
 
   } // ena namespace __logging
 
@@ -54,16 +65,14 @@ namespace halo {
     return false; // DISABLED
   }
 
-  // the output logging stream (LLVM raw ostream)
+  // the output logging stream (LLVM raw ostream), which is not thread-safe!
   inline llvm::raw_ostream& logs(LoggingContext LC = LC_Anywhere) {
-    // This function exists b/c in the future we'd like to log to a file instead.
-    return loggingEnabled(LC) ? __logging::cerr_raw_ostream : llvm::nulls();
+    return loggingEnabled(LC) ? __logging::ts_raw_os_ostream : __logging::nulls();
   }
 
   // an alternative logging stream based on std::ostream
   inline std::ostream& clogs(LoggingContext LC = LC_Anywhere) {
-    // FIXME: offer a /dev/null or dummy ostream when not logging!
-    return loggingEnabled(LC) ? std::cerr : __logging::discardOut;
+    return loggingEnabled(LC) ? __logging::outputStream : __logging::discardOut;
   }
 
   llvm::Error makeError(const char* msg);

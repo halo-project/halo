@@ -48,7 +48,9 @@ namespace halo {
   }
 
   namespace __logging {
+    std::ostream& outputStream(std::cerr);
     DiscardingStream discardOut;
-    llvm::raw_os_ostream cerr_raw_ostream(std::cerr);
+    thread_local llvm::raw_os_ostream  ts_raw_os_ostream(outputStream);
+    thread_local llvm::raw_null_ostream ts_null_raw_ostream;
   }
 }
