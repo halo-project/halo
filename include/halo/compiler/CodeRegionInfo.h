@@ -23,45 +23,117 @@ namespace halo {
 
 class PerformanceData;
 
-class FunctionInfo {
-public:
-  FunctionInfo(std::string name, uint64_t start, uint64_t end, bool patchable, bool unknown=false)
-    : Name(name), Patchable(patchable), Start(start), End(end), Unknown(unknown) {}
+struct FunctionDefinition {
+  std::string Name;
+  bool Patchable;
+  uint64_t Start;
+  uint64_t End;
 
-  // the function's label / name.
-  // generally the same across all clients
-  std::string const& getName() const { return Name; }
+  FunctionDefinition(std::string name, bool patchable, uint64_t start, uint64_t end)
+    : Name(name), Patchable(patchable), Start(start), End(end) {}
 
-  // whether this client can patch this function.
-  // this fact is generally the same across all clients.
-  bool isPatchable() const { return Patchable; }
-
-  // real starting address in the process
-  uint64_t getStart() const { return Start; }
-
-  // real ending address in the process
-  uint64_t getEnd() const { return End; }
-
-  bool isUnknown() const { return Unknown; }
-  bool isKnown() const { return !Unknown; }
+  bool isKnown() const { return Start != 0; }
+  bool isUnknown() const { return !(isKnown()); }
 
   void dump(llvm::raw_ostream &out) const {
-    out << "name = " << getName()
-        << ", patchable = " << isPatchable()
-        << ", start = " << getStart()
-        << ", end = " << getEnd()
-        << "\n";
+    out << "{name = " << Name
+        << ", patchable = " << Patchable
+        << ", start = " << Start
+        << ", end = " << End << "}\n";
+  }
+};
+
+class FunctionInfo {
+public:
+  FunctionInfo(FunctionDefinition const& Def) {
+    addDefinition(Def);
+  }
+
+  /// the function's canonical label / name.
+  /// This name is the one that appears first defined first in the FunctionInfo.
+  /// It's generally not sufficient or useful for comparisons because it's arbitrary
+  /// what name appears first!
+  std::string const& getCanonicalName() const {
+    assert(!FD.empty() && "did not expect an empty definition list!");
+    return FD[0].Name;
+  }
+
+  /// @returns true iff the given function name matches one of the names
+  /// this function is known by.
+  bool knownAs(std::string const& other) const {
+    for (auto const& D : FD)
+      if (D.Name == other)
+        return true;
+
+    return false;
+  }
+
+  /// @returns true iff a name within this FunctionInfo appears
+  /// in the given FunctionInfo.
+  bool matchingName(FunctionInfo const* Other) {
+    // Ugh, O(n^2) b/c matchesName is O(n)
+    for (auto const& D : FD)
+      if (Other->knownAs(D.Name))
+        return true;
+
+    return false;
+  }
+
+  // whether this client can patch this function
+  // at all of the definitions currently in the process.
+  bool isPatchable() const {
+    assert(!FD.empty() && "did not expect an empty definition list!");
+
+    for (auto const& D : FD)
+      if (D.Patchable == false)
+        return false;
+
+    return true;
+  }
+
+  /// @returns true iff the given IP is equal to one of
+  /// the starting addresses for a definition of this function.
+  bool hasStart(uint64_t IP) const {
+    for (auto const& D : FD)
+      if (D.Start == IP)
+        return true;
+
+    return false;
+  }
+
+  /// @returns all of the definitions available for this function.
+  /// this collection is empty if the function is unknown.
+  std::vector<FunctionDefinition> const& getDefinitions() const {
+    return FD;
+  }
+
+  void addDefinition(FunctionDefinition const& D) {
+    FD.push_back(D);
+  }
+
+  /// @returns true iff the function has zero known definitions.
+  bool isUnknown() const {
+    for (auto const& D : FD)
+      if (D.isKnown())
+        return false;
+
+    return true;
+  }
+  bool isKnown() const { return !(isUnknown()); }
+
+  void dump(llvm::raw_ostream &out) const {
+    out << "FunctionInfo = [";
+
+    for (auto const& D : FD) {
+      D.dump(out);
+      out << ", ";
+    }
+
+    out << "]\n";
   }
 
 private:
-  // These members are generally IDENTICAL across all clients
-  std::string Name;
-  bool Patchable;
-
-  // These members always VARY across clients
-  uint64_t Start;
-  uint64_t End;
-  bool Unknown;
+  std::vector<FunctionDefinition> FD;
 };
 
 
@@ -83,7 +155,8 @@ private:
   std::unordered_map<std::string, FunctionInfo*> NameMap;
   uint64_t VMABase;
 
-  // fixed name for the unknown function
+  // fixed name for the unknown function, which should be impossible
+  // for a function name to ever be.
   static const std::string UnknownFn;
 
   // A special representation of unknown functions. The FunctionInfo for this
@@ -101,7 +174,7 @@ public:
   // UnknownFI is returned.
   FunctionInfo* lookup(uint64_t IP) const;
   FunctionInfo* lookup(std::string const& Name) const;
-  void addRegion(std::string Name, uint64_t Start, uint64_t End, bool Patchable);
+  void addRegion(FunctionDefinition const&);
 
   /// returns true if the branch from source to target is considered
   /// a function call. There are are few situations:
@@ -116,19 +189,35 @@ public:
 
   auto const& getNameMap() { return NameMap; }
 
-  // initializes an empty and useless CRI. you should use ::init()
+  /// initializes an empty and useless CRI object.
+  // you need to call CodeRegionInfo::init()
   CodeRegionInfo() {
-    UnknownFI = new FunctionInfo(UnknownFn, 0, 0, false, /*unknown=*/true);
+    UnknownFI = new FunctionInfo(FunctionDefinition(UnknownFn, false, 0, 0));
   }
 
   ~CodeRegionInfo() {
     // All function infos _except_ the unknown FI are in the AddrMap, since it
     // has no addr.
-    for (auto Pair : AddrMap) {
-      FunctionInfo *FI = Pair.second;
-      delete FI;
-    }
-    delete UnknownFI;
+
+    // FIXME: an AddrMap can now have two intervals that point to the
+    // same FunctionInfo, so this will cause a double-free.
+    // two solutions come to mind:
+    //
+    // 1. (ugly) separately track which FunctionInfos we've already freed
+    // and/or allocated to avoid double-freeing.
+    //
+    // 2. Use shared_ptr everywhere as much as possible. I know that ICL
+    // can't handle shared_ptr, so in that case we can just grab the raw
+    // pointer and pass it into the interval map.
+    // the destructor for the interval map can safely ignore the shared_ptr
+    // ctor. Anywhere we return a FunctionInfo*, we need to change it to a shared_ptr
+    // outside of this interface.
+
+    // for (auto Pair : AddrMap) {
+    //   FunctionInfo *FI = Pair.second;
+    //   delete FI;
+    // }
+    // delete UnknownFI;
   }
 };
 

@@ -65,12 +65,12 @@ namespace halo {
     return false; // DISABLED
   }
 
-  // the output logging stream (LLVM raw ostream), which is not thread-safe!
+  // the output logging stream as an LLVM raw_ostream
   inline llvm::raw_ostream& logs(LoggingContext LC = LC_Anywhere) {
     return loggingEnabled(LC) ? __logging::ts_raw_os_ostream : __logging::nulls();
   }
 
-  // an alternative logging stream based on std::ostream
+  // the output logging stream
   inline std::ostream& clogs(LoggingContext LC = LC_Anywhere) {
     return loggingEnabled(LC) ? __logging::outputStream : __logging::discardOut;
   }

@@ -64,12 +64,13 @@ public:
   // shorthand for element access by index.
   auto& access(size_t Idx) { return Sequence[Idx]; }
 
-  // returns the position in the Ancestors sequence, if found.
+  // returns the position in the Ancestors sequence, if an ancestor
+  // name matches one of the names of the given function info.
   // the search is performed from top to back.
-  llvm::Optional<size_t> findByName(std::string const& Name) {
+  llvm::Optional<size_t> findByName(FunctionInfo const* FI) {
     size_t Position = Sequence.size()-1;
     for (auto I = Sequence.rbegin(); I != Sequence.rend(); --Position, ++I)
-      if (I->second == Name)
+      if (FI->knownAs(I->second))
         return Position;
     return llvm::None;
   }
@@ -144,15 +145,14 @@ namespace bgl {
                         bool CheckAncestors=true) {
     // Step 1: check if the Src already has an out-edge to an equivalent Vertex.
     auto Range = boost::out_edges(Src, Gr);
-    auto &Name = Tgt->getName();
     for (auto I = Range.first; I != Range.second; I++) {
       auto TgtID = boost::target(*I, Gr);
-      if (get(Gr, TgtID).getFuncName() == Name)
+      if (Tgt->knownAs(get(Gr, TgtID).getFuncName()))
         return TgtID;
     }
 
     // Step 2: look in the ancestory for a node, since it might be a recursive call.
-    auto Result = Ancestors.findByName(Name);
+    auto Result = Ancestors.findByName(Tgt);
     VertexID TgtV;
     if (CheckAncestors && Result) {
       // we're going to make a back-edge to the ancestor
@@ -279,12 +279,15 @@ skipThisCallee:
       IPI++;
     }
 
+    // FIXME: the call-graph doesn't account for FunctionInfo that has multiple
+    // aliases (and new dynamic aliases)!
+
     bool ImaginaryCaller = CallerFI->isUnknown();
     bool ImaginaryCallee = Callee->isUnknown();
-    bool DirectlyCalled = Callee->isKnown() && CG.hasCall(CallerV.getFuncName(), Callee->getName());
+    bool DirectlyCalled = Callee->isKnown() && CG.hasCall(CallerV.getFuncName(), Callee->getCanonicalName());
     bool HasIndirectCallee = CG.hasCall(CallerV.getFuncName(), CG.getUnknown());
 
-    logs(LC_CCT) << "Calling context contains " << CallerV.getFuncName() << " -> " << Callee->getName()
+    logs(LC_CCT) << "Calling context contains " << CallerV.getFuncName() << " -> " << Callee->getCanonicalName()
            << "\n\tand DirectlyCalled = " << DirectlyCalled
            << ", HasIndirectCallee = " << HasIndirectCallee
            << ", ImaginaryCaller = " << ImaginaryCaller
@@ -306,7 +309,7 @@ skipThisCallee:
       assert(IntermediateFns.size() == 0
           && "an intermediate function failed the call-graph test... CCT was bogus from the start?");
 
-      logs(LC_CCT) << "\t\tNeed path from " << CallerV.getFuncName() << " [" << CallerVID << "] --> " << Callee->getName() << "\n";
+      logs(LC_CCT) << "\t\tNeed path from " << CallerV.getFuncName() << " [" << CallerVID << "] --> " << Callee->getCanonicalName() << "\n";
 
       auto MaybePath = shortestPath(CallerVID, Callee);
       if (!MaybePath) {
@@ -331,7 +334,7 @@ skipThisCallee:
       ChosenPath.pop_front(); // drop it
 
       // similarly, the last should be the callee
-      assert(bgl::get(Gr, ChosenPath.back()).getFuncName() == Callee->getName()
+      assert(bgl::get(Gr, ChosenPath.back()).getFuncName() == Callee->getCanonicalName()
               && "last func in the path should be the callee that originally wasn't reachable!");
       ChosenPath.pop_back(); // drop it too
 
@@ -351,7 +354,7 @@ skipThisCallee:
       IPI--;
     }
 
-    logs(LC_CCT) << "Adding CCT call " << bgl::get(Gr, CallerVID).getFuncName() << " -> " << Callee->getName() << "\n";
+    logs(LC_CCT) << "Adding CCT call " << bgl::get(Gr, CallerVID).getFuncName() << " -> " << Callee->getCanonicalName() << "\n";
     CallerVID = bgl::add_cct_call(Gr, Ancestors, CallerVID, Callee, Callee->isKnown());
     CallerFI = Callee;
   }
@@ -383,7 +386,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
 
   dumpDOT(clogs(LC_CCT));
 
-  logs(LC_CCT) << "walking BTB from " << CRI.lookup(Sample.instr_ptr())->getName() << "\n";
+  logs(LC_CCT) << "walking BTB from " << CRI.lookup(Sample.instr_ptr())->getCanonicalName() << "\n";
   logs(LC_CCT) << "in the context of ancestors:\n" << Ancestors << "\n";
 
   // NOTE: it's helpful to think of us walking *backwards* through a history of
@@ -417,10 +420,10 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
     auto From = CRI.lookup(BI.from()); // this is the function we're trying to move to.
     auto To = CRI.lookup(BI.to()); // this is the function we're current at.
 
-    bool isCall = To->getStart() == BI.to(); // it's a call if the target is the start of the function.
+    bool isCall = To->hasStart(BI.to()); // it's a call if the target is the start of the function.
     bool isRet = !isCall && To != From; // it's a return otherwise if it's in different functions.
 
-    logs(LC_CCT) << "BTB Entry:\t" << From->getName() << " => " << To->getName()
+    logs(LC_CCT) << "BTB Entry:\t" << From->getCanonicalName() << " => " << To->getCanonicalName()
            << (isCall ? "; call" :
                (isRet ? "; ret" : "; other")) << "\n";
 
@@ -438,7 +441,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
     // TODO: just assume that a call A => ??? happened. So long as the target is the
     // unknown function it shouldn't mess anything up and will record what's going on
     // more accurately.
-    if (To->getName() != CurI.getFuncName()) {
+    if (!To->knownAs(CurI.getFuncName())) {
       logs(LC_CCT) << "warning: BTB current = " << CurI.getFuncName() << "; unmatched call-return. bailing.\n-----\n";
       return;
     }
@@ -474,7 +477,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
         auto MaybeParent = Ancestors.parent();
         if (MaybeParent) {
           auto Parent = MaybeParent.getValue();
-          if (Parent.second == From->getName()) {
+          if (From->knownAs(Parent.second)) {
             Ancestors.pop(); // move up the hierarchy
             return Parent.first;
           }
@@ -505,7 +508,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
 
       bool ImaginaryCaller = From->isUnknown();
       bool ImaginaryCallee = To->isUnknown();
-      bool DirectlyCalled = From->isKnown() && CG.hasCall(CurI.getFuncName(), From->getName());
+      bool DirectlyCalled = From->isKnown() && CG.hasCall(CurI.getFuncName(), From->getCanonicalName());
       bool HasIndirectCallee = CG.hasCall(CurI.getFuncName(), CG.getUnknown());
 
       // Skip ??? -> ??? edges
@@ -514,13 +517,13 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
 
       // avoid creating 'impossible' edges in the CCT
       if (!DirectlyCalled && !HasIndirectCallee) {
-        logs(LC_CCT) << "warning: BTB claims " << CurI.getFuncName() << " called " << From->getName()
+        logs(LC_CCT) << "warning: BTB claims " << CurI.getFuncName() << " called " << From->getCanonicalName()
                << " but call-graph disagrees! skipping\n----\n";
         return;
       }
 
       Cur = bgl::add_cct_call(Gr, Ancestors, Cur, From, From->isKnown());
-      Ancestors.push({Cur, From->getName()});
+      Ancestors.push({Cur, From->getCanonicalName()});
 
     }
 
@@ -708,7 +711,7 @@ std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, Func
       CurPath.push_back(u);
 
       auto &Info = bgl::get(g, u);
-      if (CurPath.front() == Source && Target->getName() == Info.getFuncName()) {
+      if (CurPath.front() == Source && Target->knownAs(Info.getFuncName())) {
         // we've found a new path.
         Paths.push_back(CurPath);
       }
@@ -866,8 +869,11 @@ void VertexInfo::decay() {
   Hotness += HOTNESS_DISCOUNT * (ZeroTemp - Hotness);
 }
 
+// FIXME: there's an arugment to be made that VertexInfo should hold onto
+// the FunctionInfo pointer, since the FI info is going to be dynamic and
+// the info here could become outdated.
 VertexInfo::VertexInfo(FunctionInfo const* FI) :
-  FuncName(FI->getName()), Patchable(FI->isPatchable()) {}
+  FuncName(FI->getCanonicalName()), Patchable(FI->isPatchable()) {}
 
 std::string VertexInfo::getDOTLabel() const {
   return FuncName + " (" + to_formatted_str(Hotness) + ")";

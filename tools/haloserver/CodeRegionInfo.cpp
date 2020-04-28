@@ -15,22 +15,59 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
 
   // process the address-space mapping
   for (pb::FunctionInfo const& PFI: MI.funcs()) {
-    uint64_t Start = PFI.start();
-    uint64_t End = Start + PFI.size();
-    std::string Name = PFI.label();
-    addRegion(Name, Start, End, PFI.patchable());
+    auto Start = PFI.start();
+    auto End = Start + PFI.size();
+    FunctionDefinition Def(PFI.label(), PFI.patchable(), Start, End);
+    addRegion(Def);
   }
 }
 
-void CodeRegionInfo::addRegion(std::string Name, uint64_t Start, uint64_t End, bool Patchable) {
-  auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
+void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
 
-  FunctionInfo *FI = new FunctionInfo(Name, Start, End, Patchable);
-  // FI->dump(logs());
+  auto FuncRange = icl::right_open_interval<uint64_t>(Def.Start, Def.End);
 
-  assert(NameMap.find(Name) == NameMap.end() && "trying to overwrite an existing FunctionInfo!");
+  FunctionInfo *FI = nullptr;
 
-  NameMap[Name] = FI;
+  // first, check if this definition's code in memory overlaps with an existing function.
+  auto AddrResult = AddrMap.find(FuncRange);
+
+  if (AddrResult != AddrMap.end()) {
+    // it overlaps!
+    auto Lower = AddrResult->first.lower();
+    auto Upper = AddrResult->first.upper();
+
+    assert(Lower == Def.Start && Upper == Def.End && "function overlap is not exact?");
+
+    // then this definition is a name alias with an existing FunctionInfo at the
+    // same place in memory!
+    FI = AddrResult->second;
+    FI->addDefinition(Def);
+
+    // clogs() << "NOTE: function region "
+    //         << Def.Name               << " @ [" << Def.Start << ", " << Def.End << ") "
+    //         << "\noverlaps with existing region\n "
+    //         << FI->getCanonicalName() << " @ [" << Lower     << ", " << Upper << ")"
+    //         << ". adding as an alias.\n";
+
+    return;
+  }
+
+  // Otherwise, it's possible to have multiple definitions of a function with
+  // the same name but they are disjoint in memory. Thus, there are multiple implementations.
+  auto NameResult = NameMap.find(Def.Name);
+
+  if (NameResult != NameMap.end()) {
+    // then it's a disjoint implementation of a function with the same name.
+    FI = NameResult->second;
+    FI->addDefinition(Def);
+  } else {
+    // have not seen this function definition at all, so make a fresh FunctionInfo
+    FI = new FunctionInfo(Def);
+    NameMap[Def.Name] = FI;
+  }
+
+  assert(FI != nullptr);
+  // finally, add to the addr map the range it spans.
   AddrMap.insert(std::make_pair(FuncRange, FI));
 }
 
@@ -47,17 +84,17 @@ bool CodeRegionInfo::isCall(uint64_t SrcIP, uint64_t TgtIP) const {
     return true;
 
   // NOTE: in the case of both not unknown, we first check for function name inequality,
-  // NOT function-info pointer inequality since JIT'd code will have different
+  // NOT function-info pointer inequality since JIT'd may have different
   // pointer but represent the same function!
 
-  if (Source->getName() != Target->getName())
+  if (!(Source->matchingName(Target)))
     return true;
 
   // okay now we know it's a branch within the same function, so we
   // check to see if the target IP is at the start of its FI.
   // this would indicate a self-recursive call.
 
-  if (Target->getStart() == TgtIP)
+  if (Target->hasStart(TgtIP))
     return true;
 
   return false;

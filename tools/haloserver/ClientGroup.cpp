@@ -22,10 +22,18 @@ namespace halo {
       auto *FI = CRI.lookup(FSym.label());
 
       if (FI == nullptr)
-        return llvm::createStringError(std::errc::not_supported,
-            "unable to find function addr for this client.");
+        return makeError("unable to find function addr for this client.");
 
-      FSym.set_addr(FI->getStart());
+      auto const& Defs = FI->getDefinitions();
+
+      if (Defs.size() != 1)
+        return makeError("expected exactly one definition of the function.");
+
+      auto& Def = Defs[0];
+      if (!Def.Patchable)
+        return makeError("single function definition expected to be patchable!");
+
+      FSym.set_addr(Def.Start);
     }
 
     return llvm::Error::success();
