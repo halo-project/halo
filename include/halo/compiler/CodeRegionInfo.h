@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 #include "llvm/ADT/Optional.h"
 
@@ -70,7 +71,7 @@ public:
 
   /// @returns true iff a name within this FunctionInfo appears
   /// in the given FunctionInfo.
-  bool matchingName(FunctionInfo const* Other) {
+  bool matchingName(std::shared_ptr<FunctionInfo> const& Other) {
     // Ugh, O(n^2) b/c matchesName is O(n)
     for (auto const& D : FD)
       if (Other->knownAs(D.Name))
@@ -93,12 +94,30 @@ public:
 
   /// @returns true iff the given IP is equal to one of
   /// the starting addresses for a definition of this function.
-  bool hasStart(uint64_t IP) const {
+  bool hasStart(uint64_t IP, bool NormalizeIP = true) const {
+    if (NormalizeIP) {
+      // FIXME: we need to subtract the VMA base first!!
+    }
+
     for (auto const& D : FD)
       if (D.Start == IP)
         return true;
 
     return false;
+  }
+
+  /// @returns the function definition where the given IP is in [Def.Start, Def.End)
+  /// if the value is not found, then None is returned.
+  llvm::Optional<FunctionDefinition> getDefinition(uint64_t IP, bool NormalizeIP = true) const {
+    if (NormalizeIP) {
+      // FIXME: we need to subtract the VMA base first!!
+    }
+
+    for (auto const& D : FD)
+      if (D.Start <= IP && IP < D.End)
+        return D;
+
+    return llvm::None;
   }
 
   /// @returns all of the definitions available for this function.
@@ -145,6 +164,9 @@ private:
 // libs with bitcode). That's not currently a priority.
 class CodeRegionInfo {
 private:
+  // In Boost 1.65, I had trouble putting a shared_ptr in the interval_map,
+  // so I had to use a bare pointer. Since the CodeMap and NameMap contain the exact
+  // same FunctionInfos, this should be fine to prevent misuse.
   using CodeMap = icl::interval_map<uint64_t, FunctionInfo*,
                                     icl::partial_enricher>;
 
@@ -152,7 +174,7 @@ private:
   //
   // The NameMap includes UnknownFn for convenience, but the AddrMap does _not_.
   CodeMap AddrMap;
-  std::unordered_map<std::string, FunctionInfo*> NameMap;
+  std::unordered_map<std::string, std::shared_ptr<FunctionInfo>> NameMap;
   uint64_t VMABase;
 
   // fixed name for the unknown function, which should be impossible
@@ -161,19 +183,19 @@ private:
 
   // A special representation of unknown functions. The FunctionInfo for this
   // "function" is returned on lookup failure.
-  FunctionInfo *UnknownFI;
+  std::shared_ptr<FunctionInfo> UnknownFI;
 
 public:
   // performs the actual initialization of the CRI based on the client enrollment
   void init(pb::ClientEnroll const& CE);
 
   // returns the unknown function's info
-  FunctionInfo* getUnknown() const { return UnknownFI; }
+  std::shared_ptr<FunctionInfo> const& getUnknown() const { return UnknownFI; }
 
   // Upon failure to lookup information for the given IP or Name, the
   // UnknownFI is returned.
-  FunctionInfo* lookup(uint64_t IP) const;
-  FunctionInfo* lookup(std::string const& Name) const;
+  std::shared_ptr<FunctionInfo> lookup(uint64_t IP) const;
+  std::shared_ptr<FunctionInfo> lookup(std::string const& Name) const;
   void addRegion(FunctionDefinition const&);
 
   /// returns true if the branch from source to target is considered
@@ -185,40 +207,17 @@ public:
   ///
   ///   3. The source is NOT an unknown function but the target IS unknown. (& vice versa!)
   ///
-  bool isCall(uint64_t Source, uint64_t Target) const;
+  bool isCall(uint64_t SourceIP, uint64_t TargetIP) const;
 
   auto const& getNameMap() { return NameMap; }
 
   /// initializes an empty and useless CRI object.
   // you need to call CodeRegionInfo::init()
   CodeRegionInfo() {
-    UnknownFI = new FunctionInfo(FunctionDefinition(UnknownFn, false, 0, 0));
+    UnknownFI = std::make_shared<FunctionInfo>(FunctionDefinition(UnknownFn, false, 0, 0));
   }
 
-  ~CodeRegionInfo() {
-    // All function infos _except_ the unknown FI are in the AddrMap, since it
-    // has no addr.
-
-    // FIXME: an AddrMap can now have two intervals that point to the
-    // same FunctionInfo, so this will cause a double-free.
-    // two solutions come to mind:
-    //
-    // 1. (ugly) separately track which FunctionInfos we've already freed
-    // and/or allocated to avoid double-freeing.
-    //
-    // 2. Use shared_ptr everywhere as much as possible. I know that ICL
-    // can't handle shared_ptr, so in that case we can just grab the raw
-    // pointer and pass it into the interval map.
-    // the destructor for the interval map can safely ignore the shared_ptr
-    // ctor. Anywhere we return a FunctionInfo*, we need to change it to a shared_ptr
-    // outside of this interface.
-
-    // for (auto Pair : AddrMap) {
-    //   FunctionInfo *FI = Pair.second;
-    //   delete FI;
-    // }
-    // delete UnknownFI;
-  }
+  ~CodeRegionInfo() {}
 };
 
 } // end halo namespace

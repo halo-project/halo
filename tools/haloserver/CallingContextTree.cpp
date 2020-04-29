@@ -67,7 +67,7 @@ public:
   // returns the position in the Ancestors sequence, if an ancestor
   // name matches one of the names of the given function info.
   // the search is performed from top to back.
-  llvm::Optional<size_t> findByName(FunctionInfo const* FI) {
+  llvm::Optional<size_t> findByName(std::shared_ptr<FunctionInfo> const& FI) {
     size_t Position = Sequence.size()-1;
     for (auto I = Sequence.rbegin(); I != Sequence.rend(); --Position, ++I)
       if (FI->knownAs(I->second))
@@ -141,7 +141,7 @@ namespace bgl {
   // preserve invariants of the CCT.
   //
   // There is an option to disable the ancestor check in case of a call to an unknown function.
-  VertexID add_cct_call(Graph &Gr, Ancestors &Ancestors, VertexID Src, FunctionInfo *Tgt,
+  VertexID add_cct_call(Graph &Gr, Ancestors &Ancestors, VertexID Src, std::shared_ptr<FunctionInfo> Tgt,
                         bool CheckAncestors=true) {
     // Step 1: check if the Src already has an out-edge to an equivalent Vertex.
     auto Range = boost::out_edges(Src, Gr);
@@ -265,7 +265,7 @@ skipThisCallee:
       break;
     }
 
-    FunctionInfo *Callee = nullptr;
+    std::shared_ptr<FunctionInfo> Callee = nullptr;
     if (IntermediateFns.size() > 0) {
       // the calling context has some missing calls in the stack,
       // so we process those functions first before the IPI's function.
@@ -671,7 +671,7 @@ bool CallingContextTree::isMalformed() const {
   return !AllReachable;
 }
 
-llvm::Optional<std::list<VertexID>> CallingContextTree::shortestPath(VertexID Start, FunctionInfo const* Tgt) const {
+llvm::Optional<std::list<VertexID>> CallingContextTree::shortestPath(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const {
   auto AllPaths = allPaths(Start, Tgt);
   if (AllPaths.empty())
     return llvm::None;
@@ -701,10 +701,10 @@ llvm::Optional<std::list<VertexID>> CallingContextTree::shortestPath(VertexID St
 }
 
 
-std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, FunctionInfo const* Tgt) const {
+std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const {
   class PathSearch : public boost::default_dfs_visitor {
   public:
-    PathSearch(VertexID src, FunctionInfo const* tgt, std::list<std::list<VertexID>>& p) : Source(src), Target(tgt), Paths(p) {}
+    PathSearch(VertexID src, std::shared_ptr<FunctionInfo> const& tgt, std::list<std::list<VertexID>>& p) : Source(src), Target(tgt), Paths(p) {}
 
     // invoked on each vertex at the start of DFS-VISIT
     void discover_vertex(VertexID u, const Graph& g) {
@@ -723,7 +723,7 @@ std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, Func
 
   private:
     VertexID Source;
-    FunctionInfo const* Target;
+    std::shared_ptr<FunctionInfo> const& Target;
     std::list<std::list<VertexID>>& Paths;
     std::list<VertexID> CurPath;
   }; // end class
@@ -872,7 +872,7 @@ void VertexInfo::decay() {
 // FIXME: there's an arugment to be made that VertexInfo should hold onto
 // the FunctionInfo pointer, since the FI info is going to be dynamic and
 // the info here could become outdated.
-VertexInfo::VertexInfo(FunctionInfo const* FI) :
+VertexInfo::VertexInfo(std::shared_ptr<FunctionInfo> FI) :
   FuncName(FI->getCanonicalName()), Patchable(FI->isPatchable()) {}
 
 std::string VertexInfo::getDOTLabel() const {

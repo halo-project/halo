@@ -33,7 +33,7 @@ public:
 
   VertexInfo() {}
   VertexInfo(std::string const& name) : FuncName(name) {}
-  VertexInfo(FunctionInfo const*);
+  VertexInfo(std::shared_ptr<FunctionInfo>);
 
   // a short name that describes this vertex suitable
   // for dumping to a DOT file as the vertex's label.
@@ -145,7 +145,7 @@ public:
   ///     B -> C
   ///
   /// then a path from A to C is: [A, B, C]
-  std::list<std::list<VertexID>> allPaths(VertexID Start, FunctionInfo const* Tgt) const;
+  std::list<std::list<VertexID>> allPaths(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const;
 
   /// Returns a shortest path from Start to a vertex matching Tgt.
   /// Ties are broken by summing the hotness of all vertices in each
@@ -155,7 +155,7 @@ public:
   /// A "path" is a sequence of distinct vertices to visit, starting from Start.
   ///
   /// @returns llvm::None if no path exists. Otherwise a path [Start .. Tgt]
-  llvm::Optional<std::list<VertexID>> shortestPath(VertexID Start, FunctionInfo const* Tgt) const;
+  llvm::Optional<std::list<VertexID>> shortestPath(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const;
 
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);

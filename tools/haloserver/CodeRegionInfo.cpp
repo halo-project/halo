@@ -26,7 +26,7 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
 
   auto FuncRange = icl::right_open_interval<uint64_t>(Def.Start, Def.End);
 
-  FunctionInfo *FI = nullptr;
+  std::shared_ptr<FunctionInfo> FI = nullptr;
 
   // first, check if this definition's code in memory overlaps with an existing function.
   auto AddrResult = AddrMap.find(FuncRange);
@@ -40,8 +40,8 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
 
     // then this definition is a name alias with an existing FunctionInfo at the
     // same place in memory!
-    FI = AddrResult->second;
-    FI->addDefinition(Def);
+    FunctionInfo *BareFI = AddrResult->second;
+    BareFI->addDefinition(Def);
 
     // clogs() << "NOTE: function region "
     //         << Def.Name               << " @ [" << Def.Start << ", " << Def.End << ") "
@@ -62,13 +62,13 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
     FI->addDefinition(Def);
   } else {
     // have not seen this function definition at all, so make a fresh FunctionInfo
-    FI = new FunctionInfo(Def);
+    FI = std::make_shared<FunctionInfo>(Def);
     NameMap[Def.Name] = FI;
   }
 
   assert(FI != nullptr);
   // finally, add to the addr map the range it spans.
-  AddrMap.insert(std::make_pair(FuncRange, FI));
+  AddrMap.insert(std::make_pair(FuncRange, FI.get()));
 }
 
 bool CodeRegionInfo::isCall(uint64_t SrcIP, uint64_t TgtIP) const {
@@ -100,22 +100,31 @@ bool CodeRegionInfo::isCall(uint64_t SrcIP, uint64_t TgtIP) const {
   return false;
 }
 
-FunctionInfo* CodeRegionInfo::lookup(uint64_t IP) const {
+std::shared_ptr<FunctionInfo> CodeRegionInfo::lookup(uint64_t IP) const {
   IP -= VMABase;
 
-  auto FI = AddrMap.find(IP);
-  if (FI == AddrMap.end())
+  auto Result = AddrMap.find(IP);
+  if (Result == AddrMap.end())
     return lookup(UnknownFn);
 
-  return FI->second;
+  FunctionInfo *BareFI = Result->second;
+
+  // we need to return the shared_ptr, and since the interval map can't handle
+  // shared ptrs, we do a lookup via the name corresponding to the particular
+  // definition of the returned function corresponding
+  auto MaybeDef = BareFI->getDefinition(IP, false);
+  if (!MaybeDef.hasValue())
+      fatal_error("inconsistency between addr map and definitions in function info.");
+
+  return lookup(MaybeDef.getValue().Name);
 }
 
-FunctionInfo* CodeRegionInfo::lookup(std::string const& Name) const {
-  auto FI = NameMap.find(Name);
-  if (FI == NameMap.end())
+std::shared_ptr<FunctionInfo> CodeRegionInfo::lookup(std::string const& Name) const {
+  auto Result = NameMap.find(Name);
+  if (Result == NameMap.end())
     return lookup(UnknownFn);
 
-  return FI->second;
+  return Result->second;
 }
 
 } // end namespace halo

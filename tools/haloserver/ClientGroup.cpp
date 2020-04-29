@@ -19,7 +19,7 @@ namespace halo {
 
     proto::RepeatedPtrField<pb::FunctionSymbol> *Syms = CR.mutable_symbols();
     for (pb::FunctionSymbol &FSym : *Syms) {
-      auto *FI = CRI.lookup(FSym.label());
+      auto FI = CRI.lookup(FSym.label());
 
       if (FI == nullptr)
         return makeError("unable to find function addr for this client.");
