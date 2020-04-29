@@ -2,6 +2,96 @@
 
 namespace halo {
 
+
+FunctionInfo::FunctionInfo(uint64_t vmaBase, FunctionDefinition const& Def) : VMABase(vmaBase) {
+  addDefinition(Def);
+}
+
+std::string const& FunctionInfo::getCanonicalName() const {
+  assert(!FD.empty() && "did not expect an empty definition list!");
+  return FD[0].Name;
+}
+
+bool FunctionInfo::knownAs(std::string const& other) const {
+  for (auto const& D : FD)
+    if (D.Name == other)
+      return true;
+
+  return false;
+}
+
+bool FunctionInfo::matchingName(std::shared_ptr<FunctionInfo> const& Other) const {
+  // Ugh, O(n^2) b/c matchesName is O(n)
+  for (auto const& D : FD)
+    if (Other->knownAs(D.Name))
+      return true;
+
+  return false;
+}
+
+bool FunctionInfo::isPatchable() const {
+  assert(!FD.empty() && "did not expect an empty definition list!");
+
+  for (auto const& D : FD)
+    if (D.Patchable == false)
+      return false;
+
+  return true;
+}
+
+bool FunctionInfo::hasStart(uint64_t IP, bool NormalizeIP) const {
+  if (NormalizeIP)
+    IP -= VMABase;
+
+  for (auto const& D : FD)
+    if (D.Start == IP)
+      return true;
+
+  return false;
+}
+
+llvm::Optional<FunctionDefinition> FunctionInfo::getDefinition(uint64_t IP, bool NormalizeIP) const {
+  if (NormalizeIP)
+    IP -= VMABase;
+
+  for (auto const& D : FD)
+    if (D.Start <= IP && IP < D.End)
+      return D;
+
+  return llvm::None;
+}
+
+std::vector<FunctionDefinition> const& FunctionInfo::getDefinitions() const {
+  return FD;
+}
+
+void FunctionInfo::addDefinition(FunctionDefinition const& D) {
+  FD.push_back(D);
+}
+
+bool FunctionInfo::isUnknown() const {
+  for (auto const& D : FD)
+    if (D.isKnown())
+      return false;
+
+  return true;
+}
+
+bool FunctionInfo::isKnown() const { return !(isUnknown()); }
+
+void FunctionInfo::dump(llvm::raw_ostream &out) const {
+  out << "FunctionInfo = [";
+
+  for (auto const& D : FD) {
+    D.dump(out);
+    out << ", ";
+  }
+
+  out << "]\n";
+}
+
+
+
 const std::string CodeRegionInfo::UnknownFn = "???";
 
 void CodeRegionInfo::init(pb::ClientEnroll const& CE) {

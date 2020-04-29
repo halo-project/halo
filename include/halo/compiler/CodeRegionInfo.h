@@ -46,108 +46,46 @@ struct FunctionDefinition {
 
 class FunctionInfo {
 public:
-  FunctionInfo(uint64_t vmaBase, FunctionDefinition const& Def) : VMABase(vmaBase) {
-    addDefinition(Def);
-  }
+  FunctionInfo(uint64_t vmaBase, FunctionDefinition const& Def);
 
   /// the function's canonical label / name.
   /// This name is the one that appears first defined first in the FunctionInfo.
   /// It's generally not sufficient or useful for comparisons because it's arbitrary
   /// what name appears first!
-  std::string const& getCanonicalName() const {
-    assert(!FD.empty() && "did not expect an empty definition list!");
-    return FD[0].Name;
-  }
+  std::string const& getCanonicalName() const;
 
   /// @returns true iff the given function name matches one of the names
   /// this function is known by.
-  bool knownAs(std::string const& other) const {
-    for (auto const& D : FD)
-      if (D.Name == other)
-        return true;
-
-    return false;
-  }
+  bool knownAs(std::string const& other) const;
 
   /// @returns true iff a name within this FunctionInfo appears
   /// in the given FunctionInfo.
-  bool matchingName(std::shared_ptr<FunctionInfo> const& Other) {
-    // Ugh, O(n^2) b/c matchesName is O(n)
-    for (auto const& D : FD)
-      if (Other->knownAs(D.Name))
-        return true;
-
-    return false;
-  }
+  bool matchingName(std::shared_ptr<FunctionInfo> const& Other) const;
 
   // whether this client can patch this function
   // at all of the definitions currently in the process.
-  bool isPatchable() const {
-    assert(!FD.empty() && "did not expect an empty definition list!");
-
-    for (auto const& D : FD)
-      if (D.Patchable == false)
-        return false;
-
-    return true;
-  }
+  bool isPatchable() const;
 
   /// @returns true iff the given IP is equal to one of
   /// the starting addresses for a definition of this function.
-  bool hasStart(uint64_t IP, bool NormalizeIP = true) const {
-    if (NormalizeIP)
-      IP -= VMABase;
-
-    for (auto const& D : FD)
-      if (D.Start == IP)
-        return true;
-
-    return false;
-  }
+  bool hasStart(uint64_t IP, bool NormalizeIP = true) const;
 
   /// @returns the function definition where the given IP is in [Def.Start, Def.End)
   /// if the value is not found, then None is returned.
-  llvm::Optional<FunctionDefinition> getDefinition(uint64_t IP, bool NormalizeIP = true) const {
-    if (NormalizeIP)
-      IP -= VMABase;
-
-    for (auto const& D : FD)
-      if (D.Start <= IP && IP < D.End)
-        return D;
-
-    return llvm::None;
-  }
+  llvm::Optional<FunctionDefinition> getDefinition(uint64_t IP, bool NormalizeIP = true) const;
 
   /// @returns all of the definitions available for this function.
   /// this collection is empty if the function is unknown.
-  std::vector<FunctionDefinition> const& getDefinitions() const {
-    return FD;
-  }
+  std::vector<FunctionDefinition> const& getDefinitions() const;
 
-  void addDefinition(FunctionDefinition const& D) {
-    FD.push_back(D);
-  }
+  void addDefinition(FunctionDefinition const& D);
 
   /// @returns true iff the function has zero known definitions.
-  bool isUnknown() const {
-    for (auto const& D : FD)
-      if (D.isKnown())
-        return false;
+  bool isUnknown() const;
 
-    return true;
-  }
-  bool isKnown() const { return !(isUnknown()); }
+  bool isKnown() const;
 
-  void dump(llvm::raw_ostream &out) const {
-    out << "FunctionInfo = [";
-
-    for (auto const& D : FD) {
-      D.dump(out);
-      out << ", ";
-    }
-
-    out << "]\n";
-  }
+  void dump(llvm::raw_ostream &out) const;
 
 private:
   std::vector<FunctionDefinition> FD;
