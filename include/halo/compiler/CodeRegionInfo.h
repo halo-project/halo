@@ -46,7 +46,7 @@ struct FunctionDefinition {
 
 class FunctionInfo {
 public:
-  FunctionInfo(FunctionDefinition const& Def) {
+  FunctionInfo(uint64_t vmaBase, FunctionDefinition const& Def) : VMABase(vmaBase) {
     addDefinition(Def);
   }
 
@@ -95,9 +95,8 @@ public:
   /// @returns true iff the given IP is equal to one of
   /// the starting addresses for a definition of this function.
   bool hasStart(uint64_t IP, bool NormalizeIP = true) const {
-    if (NormalizeIP) {
-      // FIXME: we need to subtract the VMA base first!!
-    }
+    if (NormalizeIP)
+      IP -= VMABase;
 
     for (auto const& D : FD)
       if (D.Start == IP)
@@ -109,9 +108,8 @@ public:
   /// @returns the function definition where the given IP is in [Def.Start, Def.End)
   /// if the value is not found, then None is returned.
   llvm::Optional<FunctionDefinition> getDefinition(uint64_t IP, bool NormalizeIP = true) const {
-    if (NormalizeIP) {
-      // FIXME: we need to subtract the VMA base first!!
-    }
+    if (NormalizeIP)
+      IP -= VMABase;
 
     for (auto const& D : FD)
       if (D.Start <= IP && IP < D.End)
@@ -153,6 +151,7 @@ public:
 
 private:
   std::vector<FunctionDefinition> FD;
+  uint64_t VMABase;
 };
 
 
@@ -214,7 +213,7 @@ public:
   /// initializes an empty and useless CRI object.
   // you need to call CodeRegionInfo::init()
   CodeRegionInfo() {
-    UnknownFI = std::make_shared<FunctionInfo>(FunctionDefinition(UnknownFn, false, 0, 0));
+    UnknownFI = std::make_shared<FunctionInfo>(0, FunctionDefinition(UnknownFn, false, 0, 0));
   }
 
   ~CodeRegionInfo() {}

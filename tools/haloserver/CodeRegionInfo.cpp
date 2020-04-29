@@ -62,7 +62,7 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
     FI->addDefinition(Def);
   } else {
     // have not seen this function definition at all, so make a fresh FunctionInfo
-    FI = std::make_shared<FunctionInfo>(Def);
+    FI = std::make_shared<FunctionInfo>(VMABase, Def);
     NameMap[Def.Name] = FI;
   }
 
@@ -72,6 +72,9 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
 }
 
 bool CodeRegionInfo::isCall(uint64_t SrcIP, uint64_t TgtIP) const {
+  // NOTE: we don't need to normalize the IPs here since we utilize other
+  // functions that handle that for us.
+
   auto Source = lookup(SrcIP);
   auto Target = lookup(TgtIP);
 
