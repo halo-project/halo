@@ -7,9 +7,21 @@ set -ex
 KIND=$1
 
 pushd build
-cmake --build . -- llvm-xray # TODO: currently check-xray doesn't depend on llvm-xray, but it requires it. this might get fixed upstream.
+
+# make sure relevant parts of LLVM are okay
+cmake --build . -- check-llvm-transforms
+cmake --build . -- check-llvm-codegen-x86
 cmake --build . -- check-xray
+cmake --build . -- check-clang
+
+####
+# FIXME: this fails on most tests with lli saying
+#     lli: error: error creating EE: Unable to find target for this triple (no targets are registered)
+# cmake --build . -- check-llvm-executionengine
+
+# test halo
 cmake --build . -- test-halo
+
 popd
 
 ##### run benchmark suite
