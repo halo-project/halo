@@ -5,12 +5,12 @@ stages:
   - release
 
 variables:
-  GIT_SUBMODULE_STRATEGY: normal  # no need to download benchmarks here.
+  GIT_SUBMODULE_STRATEGY: normal  # no need to download benchmarks here, otherwise we'd go recursive.
   CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
 
 before_script:
-  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  - echo $CI_REGISTRY_PASSWORD | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   - git submodule sync llvm-project
   - git submodule update --init llvm-project
 
@@ -25,9 +25,6 @@ test:
   script:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run --cap-add sys_admin -w /tmp/halo $CONTAINER_TEST_IMAGE ./test.sh docker
-        # TODO: figure out how we can delete /tmp/halo after tests.
-        # I believe we have to make another dockerfile that uses $CONTAINER_TEST_IMAGE
-        # as the base and then deletes the dir, then push that image.
 
 release-image:
   stage: release
