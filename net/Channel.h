@@ -21,8 +21,8 @@ namespace halo {
   public:
       Channel(ip::tcp::socket &Socket) : Sock(Socket) {}
 
-      // synchronous send operation for a given proto buffer.
-      // Returns true if there was an error.
+      /// synchronous send operation for a given proto buffer.
+      /// @returns true if there was an error.
       template<typename T>
       bool send_proto(msg::Kind Kind, T& ProtoBuf) {
         if(!Sock.is_open())
@@ -43,18 +43,22 @@ namespace halo {
         Msg.push_back(asio::buffer(Blob));
 
         boost::system::error_code Err;
-        // size_t BytesWritten =
+        size_t BytesWritten =
             asio::write(Sock, Msg, Err);
 
         if (Err) {
-          logs() << "send_proto error: " << Err.message() << "\n";
+          logs(LC_Channel) << "socket event (send_proto):: " << Err.message() << "\n";
+          Sock.close();
           return true;
         }
+
+        assert(BytesWritten > 0 && "no data written?");
         return false;
       }
 
-      // send a message with no payload
-      // returns True if there was an error.
+
+      /// synchronous send operation of a message with no payload
+      /// @returns true if there was an error.
       bool send(msg::Kind Kind) {
         if(!Sock.is_open())
           return true;
@@ -65,34 +69,42 @@ namespace halo {
         msg::encode(Hdr);
 
         boost::system::error_code Err;
-        // size_t BytesWritten =
+        size_t BytesWritten =
             asio::write(Sock, asio::buffer(&Hdr, sizeof(Hdr)), Err);
 
         if (Err) {
-          logs() << "send error: " << Err.message() << "\n";
+          logs(LC_Channel) << "socket event (send):: " << Err.message() << "\n";
+          Sock.close();
           return true;
         }
+
+        assert(BytesWritten > 0 && "no data written?");
         return false;
       }
 
-      // synchronously recieve an arbitrary message
-      void recv(std::function<void(msg::Kind, std::vector<char>&)> Callback) {
+
+      /// synchronously recieve an arbitrary message
+      /// @returns true if there was an error
+      bool recv(std::function<void(msg::Kind, std::vector<char>&)> Callback) {
+        if(!Sock.is_open())
+          return recv_error(Callback, "socket is closed");
+
         msg::Header Hdr;
         boost::system::error_code Err1;
 
-        /* size_t BytesRead = */
+        size_t BytesRead =
           asio::read(Sock, asio::buffer(&Hdr, sizeof(msg::Header)), Err1);
 
-        if (Err1) {
-          recv_error(Callback, Err1.message());
-          return;
-        }
+        if (Err1)
+          return recv_error(Callback, Err1.message());
 
-        recv_body(Hdr, Callback);
+        assert(BytesRead > 0 && "no bytes read?");
+        return recv_body(Hdr, Callback);
       }
 
-      // asynchronously recieve an arbitrary message. To poll / query, you
-      // need to run the IOService associated with this Socket.
+
+      /// asynchronously recieve an arbitrary message. To poll / query, you
+      /// need to run the IOService associated with this Socket.
       void async_recv(std::function<void(msg::Kind, std::vector<char>&)> Callback) {
         // since it's async, we need to worry about lifetimes. could be
         // multiple enqueued reads.
@@ -118,14 +130,10 @@ namespace halo {
         return Sock.available() > 0;
       }
 
-      asio::io_service& get_io_service() {
-        return Sock.get_io_service();
-      }
-
   private:
     ip::tcp::socket &Sock;
 
-    void recv_body(msg::Header Hdr, std::function<void(msg::Kind, std::vector<char>&)> Callback) {
+    bool recv_body(msg::Header Hdr, std::function<void(msg::Kind, std::vector<char>&)> Callback) {
       msg::decode(Hdr);
       msg::Kind Kind = msg::getMessageKind(Hdr);
       uint32_t PayloadSz = msg::getPayloadSize(Hdr);
@@ -136,23 +144,25 @@ namespace halo {
       // This one is synchronous since the body should already be here.
       Body.resize(PayloadSz);
       boost::system::error_code Err2;
-      // size_t BytesRead =
+      size_t BytesRead =
         asio::read(Sock, asio::buffer(Body), Err2);
 
-      if (Err2) {
-        recv_error(Callback, Err2);
-        return;
-      }
+      if (Err2)
+        return recv_error(Callback, Err2);
 
+      assert(BytesRead > 0 && "no bytes read?");
       Callback(Kind, Body);
+      return false; // no error
     }
 
     template<typename T>
-    void recv_error(const std::function<void(msg::Kind, std::vector<char>&)> &Callback,
+    bool recv_error(const std::function<void(msg::Kind, std::vector<char>&)> &Callback,
                     T ErrMsg) {
-      clogs() << "socket event: " << ErrMsg << "\n";
+      clogs(LC_Channel) << "socket event (recv): " << ErrMsg << "\n";
+      Sock.close();
       std::vector<char> Empty;
       Callback(msg::Shutdown, Empty);
+      return true; // yes error
     }
 
   };

@@ -46,7 +46,8 @@ namespace halo {
     LC_Anywhere,
     LC_CCT,      // calling context tree
     LC_ProgramInfoPass,
-    LC_MonitorState
+    LC_MonitorState,
+    LC_Channel
   };
 
   // master controller of what type of logging output you desire.
@@ -57,6 +58,7 @@ namespace halo {
       // case LC_CCT:
       // case LC_ProgramInfoPass:
       // case LC_MonitorState:
+      case LC_Channel:
         return __logging::NOISY;
 
       default:
