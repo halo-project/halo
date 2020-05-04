@@ -1,8 +1,3 @@
-
-include(Python)
-
-find_python_module(lit REQUIRED)
-
 set(TEST_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
 # NOTE: if you want to shuffle the tests, add --shuffle
