@@ -17,7 +17,7 @@ implementations**.
 This project differs from the usual application of runtime systems employing JIT
 compilation in that we are trying to optimize programs even if they already have
 very little interpretive overhead, e.g., no dynamic types. Thus, our focus is on
-trying to profitably **tune the compiler optimizations applied to the code 
+trying to profitably **tune the compiler optimizations applied to the code
 while the program is running**.
 This is in contrast to traditional offline tuning where a sample workload and
 hours of time are required to perform the tuning prior to the deployment of the
@@ -32,7 +32,7 @@ There are three major components to the Halo project:
 
 1. `halomon`, aka the Halo Monitor, which is a library that is linked into your
 executable to create a Halo-enabled binary. This component lives under
-`llvm-project/compiler-rt/lib/halomon`. This component mainly performs profiling 
+`llvm-project/compiler-rt/lib/halomon`. This component mainly performs profiling
 (currently **Linux only**) and live code patching.
 
 2. `haloserver`, aka the Halo Optimization Server, to which the halo-enabled
@@ -56,8 +56,21 @@ Please note that by using the pre-built Docker image, you'll be required to have
 Linux kernel version 4.15 or newer, because our continuous integration machine has
 that version (see [Issue #5](https://github.com/halo-project/halo/issues/5)).
 
-If you end up building from source (or building the Docker image locally), 
-then only Linux kernel version 3.4 or newer is required.
+If you end up building from source (or building the Docker image locally),
+then only Linux kernel version 3.4 or newer is required. However, you must
+also ensure that you have `perf` properly installed and available for use,
+ideally without requiring sudo. On Ubuntu this process looks like:
+
+```
+# install perf
+$ sudo apt install linux-tools-generic linux-tools-common
+
+# allow perf for regular users
+$ sudo echo "kernel.perf_event_paranoid=1" >> /etc/sysctl.conf
+
+# to reload the sysctl.conf settings without rebooting
+$ sysctl --system
+```
 
 
 ### Docker
