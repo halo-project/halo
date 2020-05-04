@@ -52,7 +52,7 @@ namespace halo {
           return true;
         }
 
-        assert(BytesWritten > 0 && "no data written?");
+        assert(BytesWritten > 0 && "no data written?"); // TODO: this could be strenghened if we calculated the expected message size
         return false;
       }
 
@@ -98,7 +98,7 @@ namespace halo {
         if (Err1)
           return recv_error(Callback, Err1.message());
 
-        assert(BytesRead > 0 && "no bytes read?");
+        assert(BytesRead == sizeof(msg::Header) && "incomplete message header read");
         return recv_body(Hdr, Callback);
       }
 
@@ -150,7 +150,7 @@ namespace halo {
       if (Err2)
         return recv_error(Callback, Err2);
 
-      assert(BytesRead > 0 && "no bytes read?");
+      assert(BytesRead == PayloadSz && "incomplete read of message body");
       Callback(Kind, Body);
       return false; // no error
     }
