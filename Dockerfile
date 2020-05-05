@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 ### NOTES
 # 1. In order to fully test the build, you must run the image
@@ -10,6 +10,9 @@ FROM ubuntu:18.04
 # 2. For self: https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
 #    for tips on writing a good docker file.
 
+# tell tzdata we can't answer its questions about time zones!
+ARG DEBIAN_FRONTEND=noninteractive
+
 # install dependencies.
 RUN apt-get update && apt-get install --no-install-recommends -y \
       g++ \
@@ -19,15 +22,18 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       ninja-build \
       cmake \
       ccache \
+      \
+      # for our gitlab ci script
       git \
-      python2.7 \
-      python-pip \
+      \
+      # for lit
+      python2 \
+      python-is-python2 \
+      \
       zlib1g \
       libprotobuf-dev \
       protobuf-compiler \
       libtinfo-dev \
-  # TODO: I'm not sure if pip is needed anymore since we use in-tree lit now.
-  && python -m pip install --no-cache --upgrade pip setuptools wheel \
   && rm -rf /var/lib/apt/lists/*
 
 # copy over source code to the image
