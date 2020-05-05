@@ -145,10 +145,12 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   SimplePassBuilder PB(&TM, PTO);
 
   auto OptLevel = Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel).getVal();
-  ModulePassManager MPM =
-        PB.buildPerModuleDefaultPipeline(OptLevel,
-                                          /*Debug*/ false,
-                                          /*LTOPreLink*/ false);
+
+  ModulePassManager MPM;
+  if (OptLevel != PassBuilder::OptimizationLevel::O0) {
+    // we don't run any optimization passes if O0 is requested.
+    MPM = PB.buildPerModuleDefaultPipeline(OptLevel, /*Debug*/ false, /*LTOPreLink*/ false);
+  }
 
   spb::addPrintPass(Pr, MPM, "after optimization pipeline.");
   MPM.run(Module, PB.getAnalyses());
