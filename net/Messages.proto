@@ -4,7 +4,7 @@ package halo.pb;
 
 ///////////////////// Data definitions ///////////////////////
 
-// Ideally this would also contain information about blocks in the function.
+// Process-side information about a function in memory.
 message FunctionInfo {
   string label = 1;
   uint32 size = 2;
@@ -12,6 +12,8 @@ message FunctionInfo {
   bool patchable = 4;
 }
 
+// information about the AOT-compiled binary executable
+// corresponding to the client process.
 message ModuleInfo {
   string obj_path = 1;
   uint64 vma_start = 2;
@@ -19,20 +21,37 @@ message ModuleInfo {
   uint64 vma_delta = 4;
   repeated string build_flags = 5;
   repeated FunctionInfo funcs = 6;
+
+  // TODO: a SHA hash of the bitcode would be nice. This way
+  // the server can ask for the bitcode if it doesn't already have it.
   bytes bitcode = 7;
 }
 
-message ProcessInfo {
-  bytes bitcode = 1;
-}
-
-
-
+// branch-target buffer info from perf
 message BranchInfo {
   uint64 from = 1;
   uint64 to = 2;
   bool mispred = 3;
   bool predicted = 4;
+}
+
+// summary statistics for some metric / measure
+message SummaryStats {
+  uint32 samples = 1;
+  double mean = 2;
+  double population_variance = 3;
+  double variance = 4;
+  double deviation = 5;
+  double error_pct = 6;
+}
+
+message FunctionAddress {
+  uint64 func_addr = 1; // absolute address in client's addr space
+}
+
+message FunctionSymbol {
+  string label = 1;
+  uint64 addr = 2;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -50,9 +69,6 @@ message BranchInfo {
 message ClientEnroll {
   string process_triple = 1;
   string host_cpu = 2;
-
-  // TODO: some sort of SHA hash of the object file. This way clients running
-  // identical code don't have to send bitcode if the server already has it?
   ModuleInfo module = 3;
 }
 
@@ -64,16 +80,6 @@ message RawSample {
   uint64 weight = 4;
   repeated uint64 call_context = 5;
   repeated BranchInfo branch = 6;
-}
-
-
-message SummaryStats {
-  uint32 samples = 1;
-  double mean = 2;
-  double population_variance = 3;
-  double variance = 4;
-  double deviation = 5;
-  double error_pct = 6;
 }
 
 message FunctionData {
@@ -94,16 +100,7 @@ message XRayProfileData {
 
 ///////////////////// Server -> Client /////////////////////////
 
-message FunctionSymbol {
-  string label = 1;
-  uint64 addr = 2;
-}
-
 message CodeReplacement {
   repeated FunctionSymbol symbols = 1;
   bytes objfile = 2;
-}
-
-message FunctionAddress {
-  uint64 func_addr = 1; // absolute address in client's addr space
 }
