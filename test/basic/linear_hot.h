@@ -27,7 +27,7 @@
 #endif
 
 #ifndef NUM_THREADS
-  #define NUM_THREADS 4
+  #define NUM_THREADS 1
 #endif
 
 // https://oeis.org/A006577/list
@@ -99,11 +99,12 @@ NO_INLINE void* workFn(void* unused) {
 int main() //(int argc, const char **argv)
 {
 
-  if (NUM_THREADS == 1) {
-    void* retVal = workFn(NULL);
-    return retVal != 0;
-  }
+#if (NUM_THREADS == 1)
 
+  void* retVal = workFn(NULL);
+  return retVal != 0;
+
+#else
   pthread_t threads[NUM_THREADS];
 
   for (int i = 0; i < NUM_THREADS; i++) {
@@ -120,6 +121,7 @@ int main() //(int argc, const char **argv)
       exit(3);
     }
   }
+#endif
 
   return 0;
 }
