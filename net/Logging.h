@@ -4,7 +4,6 @@
 #include <iostream>
 #include <unordered_set>
 #include "llvm/Support/Error.h"
-#include "llvm/Support/raw_os_ostream.h"
 #include "llvm/ADT/Twine.h"
 
 namespace halo {
@@ -27,13 +26,13 @@ namespace halo {
     }
 
 
-    extern std::ostream& outputStream; // where all of the logged stuff actually ends up, if enabled!
+    extern std::ostream& outputStream;
     extern DiscardingStream discardOut;
 
     // These have to be thread local, because the internal bookkeeping used in raw_ostream
     // classes are not completely thread-safe. Even the null stream has some bookkeeping
     // that can be invalidated when asserts are enabled.
-    extern thread_local llvm::raw_os_ostream ts_raw_os_ostream;
+    extern thread_local llvm::raw_fd_ostream ts_output_raw_ostream;
     extern thread_local llvm::raw_null_ostream ts_null_raw_ostream;
 
     inline llvm::raw_ostream& nulls() {
@@ -69,7 +68,7 @@ namespace halo {
 
   // the output logging stream as an LLVM raw_ostream
   inline llvm::raw_ostream& logs(LoggingContext LC = LC_Anywhere) {
-    return loggingEnabled(LC) ? __logging::ts_raw_os_ostream : __logging::nulls();
+    return loggingEnabled(LC) ? __logging::ts_output_raw_ostream : __logging::nulls();
   }
 
   // the output logging stream

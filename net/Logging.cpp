@@ -1,6 +1,7 @@
 
 #include "Logging.h"
 #include <cstdlib>
+#include <unistd.h>
 
 namespace boost {
 
@@ -48,9 +49,13 @@ namespace halo {
   }
 
   namespace __logging {
+    // NOTE: if you ever want to log to a single file, make sure you
+    // sync up these outputs to go to the same file descriptor!
     std::ostream& outputStream(std::cerr);
+    thread_local llvm::raw_fd_ostream ts_output_raw_ostream(STDERR_FILENO,
+                                            /*shouldClose*/ false, /*unbuffered*/ true);
+
     DiscardingStream discardOut;
-    thread_local llvm::raw_os_ostream  ts_raw_os_ostream(outputStream);
     thread_local llvm::raw_null_ostream ts_null_raw_ostream;
   }
 }
