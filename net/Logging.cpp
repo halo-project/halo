@@ -29,6 +29,10 @@ namespace halo {
     llvm::report_fatal_error(makeError(msg));
   }
 
+  void fatal_error(llvm::Error &&Error) {
+    llvm::report_fatal_error(std::forward<llvm::Error>(Error));
+  }
+
   const char* WarnTag = "halo warning: ";
   const char* InfoTag = "halo info: ";
 

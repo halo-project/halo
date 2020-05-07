@@ -18,10 +18,11 @@ namespace halo {
       StartSampling = 3,
       StopSampling = 4,
       Shutdown = 5, // Not actually sent by anybody. it's "recieved" when a connection closes or hit an error.
-      CodeReplacement = 6,
+      LoadDyLib = 6,
       StartMeasureFunction = 7,
       StopMeasureFunction = 8,
-      FunctionMeasurements = 9
+      FunctionMeasurements = 9,
+      DyLibInfo = 10
 
     } Kind;
 
@@ -34,10 +35,11 @@ namespace halo {
         case StartSampling: return "StartSampling";
         case StopSampling: return "StopSampling";
         case Shutdown: return "Shutdown";
-        case CodeReplacement: return "CodeReplacement";
+        case LoadDyLib: return "LoadDyLib";
         case StartMeasureFunction: return "StartMeasureFunction";
         case StopMeasureFunction: return "StopMeasureFunction";
         case FunctionMeasurements: return "FunctionMeasurements";
+        case DyLibInfo: return "DyLibInfo";
         default: return "<unknown>";
       }
     }

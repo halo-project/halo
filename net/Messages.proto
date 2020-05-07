@@ -49,9 +49,10 @@ message FunctionAddress {
   uint64 func_addr = 1; // absolute address in client's addr space
 }
 
-message FunctionSymbol {
+// for a symbol within an unlinked dylib
+message LibFunctionSymbol {
   string label = 1;
-  uint64 addr = 2;
+  bool externally_visible = 2; // TODO: is this actually needed / used?
 }
 
 ////////////////////////////////////////////////////////////////
@@ -71,7 +72,6 @@ message ClientEnroll {
   string host_cpu = 2;
   ModuleInfo module = 3;
 }
-
 
 message RawSample {
   uint64 instr_ptr = 1;
@@ -98,9 +98,19 @@ message XRayProfileData {
   map<uint64, ThreadData> thread_data = 2;
 }
 
+message DyLibInfo {
+  string name = 1;
+  map<string,FunctionInfo> funcs = 2;
+}
+
+
+
 ///////////////////// Server -> Client /////////////////////////
 
-message CodeReplacement {
-  repeated FunctionSymbol symbols = 1;
-  bytes objfile = 2;
+// tells the client to load this dylib into memory.
+// the symbols
+message LoadDyLib {
+  string name = 1;
+  repeated LibFunctionSymbol symbols = 2;
+  bytes objfile = 3;
 }

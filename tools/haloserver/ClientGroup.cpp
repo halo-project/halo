@@ -12,32 +12,32 @@
 
 namespace halo {
 
-  llvm::Error translateSymbols(CodeRegionInfo const& CRI, pb::CodeReplacement &CR) {
-    // The translation here is to fill in the function addresses
-    // for a specific memory layout. Note that this mutates CR,
-    // but for fields we expect to be overwritten.
+  // llvm::Error translateSymbols(CodeRegionInfo const& CRI, pb::CodeReplacement &CR) {
+  //   // The translation here is to fill in the function addresses
+  //   // for a specific memory layout. Note that this mutates CR,
+  //   // but for fields we expect to be overwritten.
 
-    proto::RepeatedPtrField<pb::FunctionSymbol> *Syms = CR.mutable_symbols();
-    for (pb::FunctionSymbol &FSym : *Syms) {
-      auto FI = CRI.lookup(FSym.label());
+  //   proto::RepeatedPtrField<pb::FunctionSymbol> *Syms = CR.mutable_symbols();
+  //   for (pb::FunctionSymbol &FSym : *Syms) {
+  //     auto FI = CRI.lookup(FSym.label());
 
-      if (FI == nullptr)
-        return makeError("unable to find function addr for this client.");
+  //     if (FI == nullptr)
+  //       return makeError("unable to find function addr for this client.");
 
-      auto const& Defs = FI->getDefinitions();
+  //     auto const& Defs = FI->getDefinitions();
 
-      if (Defs.size() != 1)
-        return makeError("expected exactly one definition of the function.");
+  //     if (Defs.size() != 1)
+  //       return makeError("expected exactly one definition of the function.");
 
-      auto& Def = Defs[0];
-      if (!Def.Patchable)
-        return makeError("single function definition expected to be patchable!");
+  //     auto& Def = Defs[0];
+  //     if (!Def.Patchable)
+  //       return makeError("single function definition expected to be patchable!");
 
-      FSym.set_addr(Def.Start);
-    }
+  //     FSym.set_addr(Def.Start);
+  //   }
 
-    return llvm::Error::success();
-  }
+  //   return llvm::Error::success();
+  // }
 
   // kicks off a continuous service loop for this group.
   void ClientGroup::start_services() {
@@ -142,26 +142,27 @@ namespace halo {
 
           std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.getValue());
 
-          pb::CodeReplacement CodeMsg;
-          CodeMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
+          // tell all clients to load this object file into memory.
+          pb::LoadDyLib DylibMsg;
+          DylibMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
 
-          // Add the function symbols we request to replace on the client with
-          // the ones contained in the object file.
-          pb::FunctionSymbol *FS = CodeMsg.add_symbols();
+          // Add all function symbols in the dylib
+          // TODO: add all symbols from the dylib!
+          pb::LibFunctionSymbol *FS = DylibMsg.add_symbols();
           FS->set_label(Name);
+          FS->set_externally_visible(true);
 
-          // For now. send to all clients who don't already have a JIT'd version
+          // FIXME: For now. send to all clients who don't already have a JIT'd version
           for (auto &Client : State.Clients) {
 
             if (Client->State.DeployedCode.count(Name))
               continue;
 
-            auto Error = translateSymbols(Client->State.CRI, CodeMsg);
+            // auto Error = translateSymbols(Client->State.CRI, CodeMsg);
+            // if (Error)
+            //   logs() << "Error translating symbols: " << Error << "\n";
 
-            if (Error)
-              logs() << "Error translating symbols: " << Error << "\n";
-
-            Client->Chan.send_proto(msg::CodeReplacement, CodeMsg);
+            Client->Chan.send_proto(msg::LoadDyLib, DylibMsg);
             Client->State.DeployedCode.insert(Name);
           }
 

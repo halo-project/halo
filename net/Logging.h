@@ -86,5 +86,6 @@ namespace halo {
   void warning(llvm::Error const& Error);
   void warning(const std::string &msg);
 
+  void fatal_error(llvm::Error &&Error);
   void fatal_error(const std::string &msg);
 }
