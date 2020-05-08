@@ -93,6 +93,7 @@ void FunctionInfo::dump(llvm::raw_ostream &out) const {
 
 
 const std::string CodeRegionInfo::UnknownFn = "???";
+const std::string CodeRegionInfo::OriginalLib = "<original>";
 
 void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
   AddrMap = CodeMap();
@@ -104,15 +105,37 @@ void CodeRegionInfo::init(pb::ClientEnroll const& CE) {
   VMABase = MI.vma_delta();
 
   // process the address-space mapping
-  for (pb::FunctionInfo const& PFI: MI.funcs()) {
-    auto Start = PFI.start();
-    auto End = Start + PFI.size();
-    FunctionDefinition Def(PFI.label(), PFI.patchable(), Start, End);
-    addRegion(Def);
+  for (pb::FunctionInfo const& PFI: MI.funcs())
+    addRegion(PFI, OriginalLib, false); // client enrollment gives addresses relative to VMABase
+}
+
+
+void CodeRegionInfo::addRegion(pb::DyLibInfo const& DLI, bool Absolute) {
+  std::string const& DylibName = DLI.name();
+  for (auto const& Entry : DLI.funcs()) {
+    auto const& PFI = Entry.second;
+    addRegion(PFI, DylibName, Absolute);
   }
 }
 
-void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
+
+void CodeRegionInfo::addRegion(pb::FunctionInfo const& PFI, std::string LibName, bool Absolute) {
+  auto Start = PFI.start();
+  auto End = Start + PFI.size();
+
+  if (Absolute) {
+    // translate to be relative to VMABase, which is what we use internally
+    Start -= VMABase;
+    End -= VMABase;
+  }
+
+  FunctionDefinition Def(LibName, PFI.label(), PFI.patchable(), Start, End);
+  addRegion(Def);
+}
+
+
+void CodeRegionInfo::addRegion(FunctionDefinition const& Def, bool Absolute) {
+  assert(!Absolute && "this overload assumes the function's start/end is relative to VMABase");
 
   auto FuncRange = icl::right_open_interval<uint64_t>(Def.Start, Def.End);
 
@@ -140,7 +163,7 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
     //         << ". adding as an alias.\n";
 
     return;
-  }
+  } // end overlap test
 
   // Otherwise, it's possible to have multiple definitions of a function with
   // the same name but they are disjoint in memory. Thus, there are multiple implementations.
@@ -160,6 +183,8 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def) {
   // finally, add to the addr map the range it spans.
   AddrMap.insert(std::make_pair(FuncRange, FI.get()));
 }
+
+
 
 bool CodeRegionInfo::isCall(uint64_t SrcIP, uint64_t TgtIP) const {
   // NOTE: we don't need to normalize the IPs here since we utilize other

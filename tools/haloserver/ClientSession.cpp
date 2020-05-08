@@ -56,6 +56,18 @@ void ClientSession::listen()  {
 
         } break;
 
+        case msg::DyLibInfo: {
+
+          Parent->withClientState(this, [this,Body](SessionState &State) {
+            pb::DyLibInfo DLI;
+            llvm::StringRef Blob(Body.data(), Body.size());
+            DLI.ParseFromString(Blob.str());
+            // msg::print_proto(DLI);
+            State.CRI.addRegion(DLI, true); // assuming DyLibInfo messages are always absolute addrs
+          });
+
+        } break;
+
         case msg::ClientEnroll: {
           fatal_error("recieved client enrollment when already enrolled!");
         } break;

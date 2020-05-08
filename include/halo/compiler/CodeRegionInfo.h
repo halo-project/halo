@@ -25,19 +25,22 @@ namespace halo {
 class PerformanceData;
 
 struct FunctionDefinition {
+  std::string Library;
   std::string Name;
   bool Patchable;
   uint64_t Start;
   uint64_t End;
 
-  FunctionDefinition(std::string name, bool patchable, uint64_t start, uint64_t end)
-    : Name(name), Patchable(patchable), Start(start), End(end) {}
+  FunctionDefinition(std::string lib, std::string name,
+                     bool patchable, uint64_t start, uint64_t end)
+    : Library(lib), Name(name), Patchable(patchable), Start(start), End(end) {}
 
   bool isKnown() const { return Start != 0; }
   bool isUnknown() const { return !(isKnown()); }
 
   void dump(llvm::raw_ostream &out) const {
-    out << "{name = " << Name
+    out << "{lib = " << Library
+        << ", name = " << Name
         << ", patchable = " << Patchable
         << ", start = " << Start
         << ", end = " << End << "}\n";
@@ -118,9 +121,14 @@ private:
   // for a function name to ever be.
   static const std::string UnknownFn;
 
+  // fixed name for the "library" corresponding to the original code in the client's executable.
+  static const std::string OriginalLib;
+
   // A special representation of unknown functions. The FunctionInfo for this
   // "function" is returned on lookup failure.
   std::shared_ptr<FunctionInfo> UnknownFI;
+
+  void addRegion(FunctionDefinition const&, bool Absolute=false);
 
 public:
   // performs the actual initialization of the CRI based on the client enrollment
@@ -133,7 +141,11 @@ public:
   // UnknownFI is returned.
   std::shared_ptr<FunctionInfo> lookup(uint64_t IP) const;
   std::shared_ptr<FunctionInfo> lookup(std::string const& Name) const;
-  void addRegion(FunctionDefinition const&);
+
+  // add new code regions. Absolute indicates whether the provided function ranges are
+  // absolute addresses are not.
+  void addRegion(pb::DyLibInfo const&, bool Absolute);
+  void addRegion(pb::FunctionInfo const& PFI, std::string LibName, bool Absolute);
 
   /// returns true if the branch from source to target is considered
   /// a function call. There are are few situations:
@@ -151,7 +163,7 @@ public:
   /// initializes an empty and useless CRI object.
   // you need to call CodeRegionInfo::init()
   CodeRegionInfo() {
-    UnknownFI = std::make_shared<FunctionInfo>(0, FunctionDefinition(UnknownFn, false, 0, 0));
+    UnknownFI = std::make_shared<FunctionInfo>(0, FunctionDefinition(OriginalLib, UnknownFn, false, 0, 0));
   }
 
   ~CodeRegionInfo() {}
