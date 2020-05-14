@@ -19,8 +19,8 @@ namespace halo {
       StopSampling = 4,
       Shutdown = 5, // Not actually sent by anybody. it's "recieved" when a connection closes or hit an error.
       LoadDyLib = 6,
-      StartMeasureFunction = 7,
-      StopMeasureFunction = 8,
+      BakeoffResult = 7,
+      ModifyFunction = 8,
       FunctionMeasurements = 9,
       DyLibInfo = 10
 
@@ -36,8 +36,8 @@ namespace halo {
         case StopSampling: return "StopSampling";
         case Shutdown: return "Shutdown";
         case LoadDyLib: return "LoadDyLib";
-        case StartMeasureFunction: return "StartMeasureFunction";
-        case StopMeasureFunction: return "StopMeasureFunction";
+        case BakeoffResult: return "BakeoffResult";
+        case ModifyFunction: return "ModifyFunction";
         case FunctionMeasurements: return "FunctionMeasurements";
         case DyLibInfo: return "DyLibInfo";
         default: return "<unknown>";

@@ -4,6 +4,12 @@ package halo.pb;
 
 ///////////////////// Data definitions ///////////////////////
 
+enum FunctionState {
+  UNPATCHED = 0;
+  REDIRECTED = 1;
+  BAKEOFF = 2;
+}
+
 // Process-side information about a function in memory.
 message FunctionInfo {
   string label = 1;
@@ -103,14 +109,31 @@ message DyLibInfo {
   map<string,FunctionInfo> funcs = 2;
 }
 
-
+message BakeoffResult {
+  string name = 1;
+  uint64 addr = 2;
+  uint64 winner = 3;
+}
 
 ///////////////////// Server -> Client /////////////////////////
 
 // tells the client to load this dylib into memory.
-// the symbols
+// no changes to the program execution occurrs otherwise.
 message LoadDyLib {
   string name = 1;
   repeated LibFunctionSymbol symbols = 2;
   bytes objfile = 3;
+}
+
+// tells the client that the status of the provided function's
+// redirection should be changed to the provided state.
+message ModifyFunction {
+  string name = 1;
+  uint64 addr = 2;
+  FunctionState desired_state = 3;
+
+  // if the function should be redirected or participate in a bake-off, which
+  // other function should be used?
+  // An address 0 redirection indicates that it should still execute the original code.
+  uint64 other_addr = 4;
 }
