@@ -1,4 +1,5 @@
 
+#include "halo/compiler/ReadELF.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/tuner/Utility.h"
 
@@ -60,6 +61,7 @@ namespace halo {
     std::this_thread::sleep_for(std::chrono::milliseconds(ServiceIterationRate));
     run_service_loop();
   }
+
 
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
@@ -146,11 +148,10 @@ namespace halo {
           pb::LoadDyLib DylibMsg;
           DylibMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
 
-          // Add all function symbols in the dylib
-          // TODO: add all symbols from the dylib!
-          pb::LibFunctionSymbol *FS = DylibMsg.add_symbols();
-          FS->set_label(Name);
-          FS->set_externally_visible(true);
+          // Find all function symbols in the dylib
+          auto ELFReadError = readSymbolInfo(Buf->getMemBufferRef(), DylibMsg);
+          if (ELFReadError)
+            fatal_error(std::move(ELFReadError));
 
           // FIXME: For now. send to all clients who don't already have a JIT'd version
           for (auto &Client : State.Clients) {

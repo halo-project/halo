@@ -62,7 +62,7 @@ void ClientSession::listen()  {
             pb::DyLibInfo DLI;
             llvm::StringRef Blob(Body.data(), Body.size());
             DLI.ParseFromString(Blob.str());
-            // msg::print_proto(DLI);
+            msg::print_proto(DLI);
             State.CRI.addRegion(DLI, true); // assuming DyLibInfo messages are always absolute addrs
           });
 
