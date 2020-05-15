@@ -1,6 +1,9 @@
 #pragma once
 
 #include "llvm/Object/ELFObjectFile.h"
+
+#include <elf.h>
+
 #include "Messages.pb.h"
 #include "Logging.h"
 
@@ -31,9 +34,14 @@ namespace halo {
 
       auto Name = MaybeName.get();
 
+      auto ELFBinding = Symb.getBinding();
+      bool Visible = (ELFBinding == STB_GLOBAL) || (ELFBinding == STB_WEAK);
+
+      logs() << "Symb: " << Symb.getELFTypeName() << ", " << Name << ", visible = " << Visible << "\n";
+
       FS = Msg.add_symbols();
       FS->set_label(Name.str());
-      FS->set_externally_visible(true);
+      FS->set_externally_visible(Visible);
     }
     return llvm::Error::success();
   }

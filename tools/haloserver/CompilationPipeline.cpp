@@ -1,5 +1,6 @@
 
 #include "halo/compiler/CompilationPipeline.h"
+#include "halo/compiler/ExposeSymbolTablePass.h"
 #include "halo/compiler/LinkageFixupPass.h"
 #include "halo/compiler/LoopNamerPass.h"
 #include "halo/compiler/SimplePassBuilder.h"
@@ -24,6 +25,7 @@ Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
 }
 
 // obtain the transitive closure of all functions needed by the given function.
+// TODO: make this take a Module const& because it doesn't mutate the module.
 Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, StringRef Name) {
   Function* RootFn = Module.getFunction(Name);
   if (RootFn == nullptr)
@@ -158,6 +160,19 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   return Error::success();
 }
 
+// run after optimization to fix-up module before compilation.
+Error finalize(Module &Module) {
+  bool Pr = false; // printing?
+  SimplePassBuilder PB(/*DebugAnalyses*/ false);
+  ModulePassManager MPM;
+
+  spb::withPrintAfter(Pr, MPM, ExposeSymbolTablePass());
+
+  MPM.run(Module, PB.getAnalyses());
+
+  return Error::success();
+}
+
 // The complete pipeline
 Expected<CompilationPipeline::compile_result>
   CompilationPipeline::_run(Module &Module, StringRef TargetFunc, KnobSet const& Knobs) {
@@ -189,6 +204,10 @@ Expected<CompilationPipeline::compile_result>
   auto OptErr = optimize(Module, *TM, Knobs);
   if (OptErr)
     return OptErr;
+
+  auto FinalErr = finalize(Module);
+  if (FinalErr)
+    return FinalErr;
 
   // Module.print(logs(), nullptr);
 
