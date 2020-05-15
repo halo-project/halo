@@ -149,7 +149,7 @@ namespace halo {
           DylibMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
 
           // Find all function symbols in the dylib
-          auto ELFReadError = readSymbolInfo(Buf->getMemBufferRef(), DylibMsg);
+          auto ELFReadError = readSymbolInfo(Buf->getMemBufferRef(), DylibMsg, Name);
           if (ELFReadError)
             fatal_error(std::move(ELFReadError));
 

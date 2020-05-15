@@ -58,7 +58,7 @@ message FunctionAddress {
 // for a symbol within an unlinked dylib
 message LibFunctionSymbol {
   string label = 1;
-  bool externally_visible = 2; // TODO: is this actually needed / used?
+  bool externally_visible = 2; // indicates JIT-visibility of the symbol; not ELF.
 }
 
 ////////////////////////////////////////////////////////////////

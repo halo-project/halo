@@ -9,7 +9,8 @@
 
 namespace halo {
 
-  llvm::Error readSymbolInfo(llvm::MemoryBufferRef MBR, pb::LoadDyLib &Msg) {
+  /// reads symbol information from the generated dylib prior to sending it to clients.
+  llvm::Error readSymbolInfo(llvm::MemoryBufferRef MBR, pb::LoadDyLib &Msg, std::string const& ExternalFn) {
     auto ExpectedObj = llvm::object::ObjectFile::createELFObjectFile(MBR);
     if (!ExpectedObj)
       return ExpectedObj.takeError();
@@ -35,13 +36,32 @@ namespace halo {
       auto Name = MaybeName.get();
 
       auto ELFBinding = Symb.getBinding();
-      bool Visible = (ELFBinding == STB_GLOBAL) || (ELFBinding == STB_WEAK);
+      bool ELFVisible = (ELFBinding == STB_GLOBAL) || (ELFBinding == STB_WEAK);
 
-      logs() << "Symb: " << Symb.getELFTypeName() << ", " << Name << ", visible = " << Visible << "\n";
+      // All function symbols in the ELF are expected to be externally visible.
+      // This is needed because the JIT dynamic linker respects the visibility of
+      // the object file. However, we need to know where in memory the linker has
+      // placed all functions, whether it's private or not, for profiling purposes.
+      // We can only get the address of symbols that are global from the dynamic linker.
+      //
+      // Thus, the only way get around that in the Halo monitor is to mark (after optimization)
+      // all function symbols as external visibility, but continue treating the symbol like it's private
+      // by not patching such functions, etc. That's what ExposeSymbolTablePass does.
+      //
+      // So, jit-visible means it's got a standard calling convention and can participate in code patching.
+      //
+      assert(ELFVisible && "Did you run ExposeSymbolTablePass prior to compiling?");
+
+      bool JITVisible = (Name == ExternalFn);
+
+      // logs() << "Symb: " << Symb.getELFTypeName()
+      //       << ", " << Name
+      //       << ", elf-visible = " << ELFVisible
+      //       << ", jit-visible = " << JITVisible << "\n";
 
       FS = Msg.add_symbols();
       FS->set_label(Name.str());
-      FS->set_externally_visible(Visible);
+      FS->set_externally_visible(JITVisible);
     }
     return llvm::Error::success();
   }

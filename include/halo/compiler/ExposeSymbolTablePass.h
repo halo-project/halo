@@ -1,7 +1,7 @@
 //===----------------------------------------------------------------------===//
 /// \file
-/// This file defines a pass to change 'private' functions to have 'internal'
-/// visibility.
+/// This file defines a pass to change 'private' functions to have the appropriate
+/// linkage visibility for Halo.
 //===----------------------------------------------------------------------===//
 
 #pragma once
@@ -11,8 +11,13 @@
 
 namespace llvm {
 
-  // Converts 'private' functions to 'internal' so that their symbols appear in the
-  // ELF object file's symbol table, but are otherwise treated like a private symbol.
+  /// Converts 'private' functions to 'external' so that their symbols appear in the
+  /// ELF object file's symbol table and we can determine the function's precise address
+  /// by looking up the symbol in the DyLib.
+  ///
+  /// However, these changed functions should _still treated like they are private_
+  /// because we are making this visibility change without care for its calling convention,
+  /// which may be non-standard.
   class ExposeSymbolTablePass : public PassInfoMixin<ExposeSymbolTablePass> {
   public:
     ExposeSymbolTablePass() {}
@@ -22,10 +27,11 @@ namespace llvm {
         if (F.isDeclaration())
           continue;
 
-        if (F.hasPrivateLinkage())
-          F.setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
+        if (F.hasPrivateLinkage()) {
+          F.setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
+          F.setDSOLocal(true);
+        }
       }
-
       return llvm::PreservedAnalyses::none(); // to be safe
     }
   };

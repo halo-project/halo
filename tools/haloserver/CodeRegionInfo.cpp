@@ -137,7 +137,10 @@ void CodeRegionInfo::addRegion(pb::FunctionInfo const& PFI, std::string LibName,
 void CodeRegionInfo::addRegion(FunctionDefinition const& Def, bool Absolute) {
   assert(!Absolute && "this overload assumes the function's start/end is relative to VMABase");
 
-  auto FuncRange = icl::right_open_interval<uint64_t>(Def.Start, Def.End);
+  uint64_t Start = Def.Start;
+  uint64_t End = Def.End;
+
+  auto FuncRange = icl::right_open_interval<uint64_t>(Start, End);
 
   std::shared_ptr<FunctionInfo> FI = nullptr;
 
@@ -149,7 +152,10 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def, bool Absolute) {
     auto Lower = AddrResult->first.lower();
     auto Upper = AddrResult->first.upper();
 
-    assert(Lower == Def.Start && Upper == Def.End && "function overlap is not exact?");
+    // clogs() << Def.Name << " @ [" << Start << ", " << End << ")" << "\n intersects with \n"
+    //         << "existing func @ [" << Lower << ", " << Upper << ")\n----\n";
+
+    assert(Lower == Start && Upper == End && "function overlap is not exact?");
 
     // then this definition is a name alias with an existing FunctionInfo at the
     // same place in memory!
