@@ -127,13 +127,16 @@ message LoadDyLib {
 
 // tells the client that the status of the provided function's
 // redirection should be changed to the provided state.
+//
+// an empty or "<original>" library name refers to the original process's version
+// of the function specified by the addr.
 message ModifyFunction {
-  string name = 1;    // not sure what we want to use this field for. perhaps name of request?
-  uint64 addr = 2;
+  string name = 1;  // optional. name of the function being modified, for debugging
+  uint64 addr = 2;  // address of the original function in-process to be modified.
   FunctionState desired_state = 3;
 
   // if the function should be redirected or participate in a bake-off, which
   // other function should be used?
-  // An address 0 redirection indicates that it should still execute the original code.
-  uint64 other_addr = 4;
+  string other_lib = 4;
+  string other_name = 5;
 }
