@@ -1,12 +1,11 @@
 #pragma once
 
 #include <memory>
-#include <list>
-#include <utility>
-#include <future>
 #include <functional>
 #include <string>
+#include <utility>
 
+#include "halo/server/CodeManager.h"
 #include "halo/server/ClientSession.h"
 #include "halo/server/TaskQueueOverlay.h"
 #include "halo/server/ThreadPool.h"
@@ -30,11 +29,6 @@ struct GroupState {
 
   ClientCollection Clients;
   RecencyWeightedBandit<RootAction> Manager {RootActions};
-
-  std::list<std::pair<std::string,
-                      std::future<CompilationPipeline::compile_expected>
-                     >
-           > InFlight;
 };
 
 
@@ -86,9 +80,11 @@ private:
   ThreadPool &Pool;
   KnobSet Knobs;
   CompilationPipeline Pipeline;
+  Profiler Profile;
+  CompilationManager Compiler;
+
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
-  Profiler Profile;
   std::array<uint8_t, 20> BitcodeHash;
 
 };

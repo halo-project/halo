@@ -117,61 +117,45 @@ namespace halo {
 
       // 3. queue up a new version. TODO: stop doing this blindly
       if (ShouldCompile) {
-        State.InFlight.emplace_back(Name,
-          std::move(Pool.asyncRet([this,Name] () -> CompilationPipeline::compile_expected {
-
-          auto Result = Pipeline.run(*Bitcode, Name, Knobs);
-
-          logs() << "Finished Compile!\n";
-
-          return Result;
-        })));
+        Compiler.enqueueCompilation(*Bitcode, Info, Knobs);
       }
 
       // 4. check if any versions are done, and send the first one that's done
       //    to all clients.
+      auto CodeResult = Compiler.dequeueCompilation();
+      if (!CodeResult)
+        return end_service_iteration(); // nothing's ready right now.
 
-      // TODO: this needs to also remove the future from the list!
-      for (auto &Pair : State.InFlight) {
-        auto &Name = Pair.first;
-        auto &Future = Pair.second;
+      auto MaybeBuf = std::move(CodeResult.getValue().second);
+      if (!MaybeBuf)
+        return end_service_iteration(); // an error etc happened and was logged elsewhere
 
-        if (Future.valid() && get_status(Future) == std::future_status::ready) {
-          auto MaybeBuf = std::move(Future.get());
+      std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.getValue());
 
-          if (!MaybeBuf)
-            continue; // an error etc happened and was logged elsewhere
+      // tell all clients to load this object file into memory.
+      pb::LoadDyLib DylibMsg;
+      DylibMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
 
-          std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.getValue());
+      // Find all function symbols in the dylib
+      auto ELFReadError = readSymbolInfo(Buf->getMemBufferRef(), DylibMsg, Name);
+      if (ELFReadError)
+        fatal_error(std::move(ELFReadError));
 
-          // tell all clients to load this object file into memory.
-          pb::LoadDyLib DylibMsg;
-          DylibMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
+      // FIXME: For now. send to all clients who don't already have a JIT'd version
+      for (auto &Client : State.Clients) {
 
-          // Find all function symbols in the dylib
-          auto ELFReadError = readSymbolInfo(Buf->getMemBufferRef(), DylibMsg, Name);
-          if (ELFReadError)
-            fatal_error(std::move(ELFReadError));
+        if (Client->State.DeployedCode.count(Name))
+          continue;
 
-          // FIXME: For now. send to all clients who don't already have a JIT'd version
-          for (auto &Client : State.Clients) {
+        // auto Error = translateSymbols(Client->State.CRI, CodeMsg);
+        // if (Error)
+        //   logs() << "Error translating symbols: " << Error << "\n";
 
-            if (Client->State.DeployedCode.count(Name))
-              continue;
-
-            // auto Error = translateSymbols(Client->State.CRI, CodeMsg);
-            // if (Error)
-            //   logs() << "Error translating symbols: " << Error << "\n";
-
-            Client->Chan.send_proto(msg::LoadDyLib, DylibMsg);
-            Client->State.DeployedCode.insert(Name);
-          }
-
-          logs() << "Sent code to all clients!\n";
-
-          break;
-        }
+        Client->Chan.send_proto(msg::LoadDyLib, DylibMsg);
+        Client->State.DeployedCode.insert(Name);
       }
+
+      logs() << "Sent code to all clients!\n";
 
       return end_service_iteration();
     }); // end of lambda
@@ -224,7 +208,7 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
 
 ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
-      ShouldStop(false), ServiceIterationRate(250), Pool(Pool), BitcodeHash(BitcodeSHA1) {
+      ShouldStop(false), ServiceIterationRate(250), Pool(Pool), Compiler(Pool), BitcodeHash(BitcodeSHA1) {
 
       KnobSet::InitializeKnobs(Config, Knobs);
 
@@ -238,6 +222,8 @@ ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS
       Pipeline = CompilationPipeline(
                     llvm::Triple(Client.process_triple()),
                     Client.host_cpu());
+
+      Compiler.setCompilationPipeline(&Pipeline);
 
 
       // take ownership of the bitcode, and maintain a MemoryBuffer view of it.
