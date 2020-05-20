@@ -61,6 +61,14 @@ llvm::Optional<FunctionDefinition> FunctionInfo::getDefinition(uint64_t IP, bool
   return llvm::None;
 }
 
+llvm::Optional<FunctionDefinition> FunctionInfo::getDefinition(std::string const& Lib) const {
+  for (auto const& D : FD) {
+    if (D.Library == Lib)
+      return D;
+  }
+  return llvm::None;
+}
+
 std::vector<FunctionDefinition> const& FunctionInfo::getDefinitions() const {
   return FD;
 }
@@ -249,6 +257,11 @@ std::shared_ptr<FunctionInfo> CodeRegionInfo::lookup(std::string const& Name) co
     return lookup(UnknownFn);
 
   return Result->second;
+}
+
+llvm::Optional<FunctionDefinition> CodeRegionInfo::lookup(std::string const& Lib, std::string const& Func) const {
+  auto FuncInfo = lookup(Func);
+  return FuncInfo->getDefinition(Lib);
 }
 
 } // end namespace halo

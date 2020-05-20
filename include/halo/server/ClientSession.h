@@ -43,7 +43,7 @@ namespace halo {
     ClientID ID; // a unique idenifier for the duration of the server process
     CodeRegionInfo CRI;
     PerformanceData PerfData;
-    std::set<llvm::StringRef> DeployedCode; // TODO: merge this into CRI as a real feature
+    std::set<std::string> DeployedCode; // TODO: merge this into CRI as a real feature
   };
 
   class GroupOwnedState {

@@ -23,6 +23,7 @@ namespace halo {
       return makeError("Only ELF object files are currently supported by Halo Monitor.");
 
     pb::LibFunctionSymbol *FS = nullptr;
+    bool OneJITVisible = false;
     for (const llvm::object::ELFSymbolRef &Symb : ELF->symbols()) {
       auto MaybeType = Symb.getType();
 
@@ -53,6 +54,7 @@ namespace halo {
       assert(ELFVisible && "Did you run ExposeSymbolTablePass prior to compiling?");
 
       bool JITVisible = (Name == ExternalFn);
+      OneJITVisible = OneJITVisible || JITVisible;
 
       // logs() << "Symb: " << Symb.getELFTypeName()
       //       << ", " << Name
@@ -63,6 +65,10 @@ namespace halo {
       FS->set_label(Name.str());
       FS->set_externally_visible(JITVisible);
     }
+
+    if (!OneJITVisible)
+      return makeError("no symbols were marked as JIT-visible in this LoadDylib message.");
+
     return llvm::Error::success();
   }
 

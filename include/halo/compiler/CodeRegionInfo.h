@@ -77,6 +77,9 @@ public:
   /// if the value is not found, then None is returned.
   llvm::Optional<FunctionDefinition> getDefinition(uint64_t IP, bool NormalizeIP = true) const;
 
+  /// @returns the function definition corresponding to the given library name
+  llvm::Optional<FunctionDefinition> getDefinition(std::string const& Library) const;
+
   /// @returns all of the definitions available for this function.
   /// this collection is empty if the function is unknown.
   std::vector<FunctionDefinition> const& getDefinitions() const;
@@ -121,9 +124,6 @@ private:
   // for a function name to ever be.
   static const std::string UnknownFn;
 
-  // fixed name for the "library" corresponding to the original code in the client's executable.
-  static const std::string OriginalLib;
-
   // A special representation of unknown functions. The FunctionInfo for this
   // "function" is returned on lookup failure.
   std::shared_ptr<FunctionInfo> UnknownFI;
@@ -142,6 +142,9 @@ public:
   std::shared_ptr<FunctionInfo> lookup(uint64_t IP) const;
   std::shared_ptr<FunctionInfo> lookup(std::string const& Name) const;
 
+  // lookup a specific function definition based on the library name.
+  llvm::Optional<FunctionDefinition> lookup(std::string const& Lib, std::string const& Func) const;
+
   // add new code regions. Absolute indicates whether the provided function ranges are
   // absolute addresses are not.
   void addRegion(pb::DyLibInfo const&, bool Absolute);
@@ -159,6 +162,9 @@ public:
   bool isCall(uint64_t SourceIP, uint64_t TargetIP) const;
 
   auto const& getNameMap() { return NameMap; }
+
+  // fixed name for the "library" corresponding to the original code in the client's executable.
+  static const std::string OriginalLib;
 
   /// initializes an empty and useless CRI object.
   // you need to call CodeRegionInfo::init()

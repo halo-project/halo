@@ -5,7 +5,7 @@
 #include <string>
 #include <utility>
 
-#include "halo/server/CodeManager.h"
+#include "halo/server/CompilationManager.h"
 #include "halo/server/ClientSession.h"
 #include "halo/server/TaskQueueOverlay.h"
 #include "halo/server/ThreadPool.h"

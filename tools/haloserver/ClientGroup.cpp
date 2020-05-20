@@ -79,11 +79,11 @@ namespace halo {
       }
 
       auto &Info = MaybeInfo.getValue();
-      std::string Name = Info.first;
+      std::string HotFuncName = Info.first;
       bool Patchable = Info.second;
-      bool HaveBitcode = Profile.haveBitcode(Name);
+      bool HaveBitcode = Profile.haveBitcode(HotFuncName);
 
-      logs() << "Hottest function = " << Name << "\n";
+      logs() << "Hottest function = " << HotFuncName << "\n";
 
       if (!Patchable || !HaveBitcode) {
         logs() << "    <patchable = " << Patchable << ", bitcode = " << HaveBitcode << ">\n";
@@ -96,7 +96,7 @@ namespace halo {
       //     continue;
 
       //   pb::FunctionAddress FA;
-      //   auto FI = Client->State.CRI.lookup(Name);
+      //   auto FI = Client->State.CRI.lookup(FuncName);
       //   FA.set_func_addr(FI->getStart());
       //   Client->Chan.send_proto(msg::StartMeasureFunction, FA);
       //   Client->Status = SessionStatus::Measuring;
@@ -109,7 +109,7 @@ namespace halo {
       // one already in flight, but whatever.
       bool ShouldCompile = false;
       for (auto &Client : State.Clients) {
-        if (Client->State.DeployedCode.count(Name))
+        if (Client->State.DeployedCode.count(HotFuncName))
           continue;
         ShouldCompile = true;
         break;
@@ -126,33 +126,52 @@ namespace halo {
       if (!CodeResult)
         return end_service_iteration(); // nothing's ready right now.
 
-      auto MaybeBuf = std::move(CodeResult.getValue().second);
+      auto CompileOut = std::move(CodeResult.getValue());
+
+      auto MaybeBuf = std::move(CompileOut.Result);
       if (!MaybeBuf)
         return end_service_iteration(); // an error etc happened and was logged elsewhere
 
       std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.getValue());
+      std::string LibName = CompileOut.UniqueJobName;
+      std::string FuncName = CompileOut.TS.first;
 
       // tell all clients to load this object file into memory.
       pb::LoadDyLib DylibMsg;
+      DylibMsg.set_name(LibName);
       DylibMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
 
       // Find all function symbols in the dylib
-      auto ELFReadError = readSymbolInfo(Buf->getMemBufferRef(), DylibMsg, Name);
+      auto ELFReadError = readSymbolInfo(Buf->getMemBufferRef(), DylibMsg, FuncName);
       if (ELFReadError)
         fatal_error(std::move(ELFReadError));
 
-      // FIXME: For now. send to all clients who don't already have a JIT'd version
+      // For now. send to all clients who don't already have a JIT'd version
       for (auto &Client : State.Clients) {
 
-        if (Client->State.DeployedCode.count(Name))
+        if (Client->State.DeployedCode.count(FuncName))
           continue;
+
+        auto MaybeDef = Client->State.CRI.lookup(CodeRegionInfo::OriginalLib, FuncName);
+        if (!MaybeDef)
+          fatal_error("client is missing CRI info for an original lib function: " + FuncName);
+        auto OriginalDef = MaybeDef.getValue();
+
+        pb::ModifyFunction MF;
+        MF.set_name(FuncName);
+        MF.set_addr(OriginalDef.Start);
+        MF.set_desired_state(pb::FunctionState::REDIRECTED);
+        MF.set_other_lib(LibName);
+        MF.set_other_name(FuncName);
 
         // auto Error = translateSymbols(Client->State.CRI, CodeMsg);
         // if (Error)
         //   logs() << "Error translating symbols: " << Error << "\n";
 
         Client->Chan.send_proto(msg::LoadDyLib, DylibMsg);
-        Client->State.DeployedCode.insert(Name);
+        Client->Chan.send_proto(msg::ModifyFunction, MF);
+
+        Client->State.DeployedCode.insert(FuncName);
       }
 
       logs() << "Sent code to all clients!\n";
