@@ -9,6 +9,8 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "rl.hpp"
+
 #include "Logging.h"
 
 namespace halo {

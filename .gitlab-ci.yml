@@ -13,6 +13,8 @@ before_script:
   - echo $CI_REGISTRY_PASSWORD | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   - git submodule sync llvm-project
   - git submodule update --init llvm-project
+  - git submodule sync rllib
+  - git submodule update --init rllib
 
 build:
   stage: build

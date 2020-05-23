@@ -4,3 +4,6 @@
 [submodule "benchmark"]
 	path = benchmark
 	url = https://github.com/halo-project/benchmark.git
+[submodule "rllib"]
+	path = rllib
+	url = https://github.com/halo-project/RLlib.git
