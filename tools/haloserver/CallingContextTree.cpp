@@ -554,8 +554,15 @@ template bool CallingContextTree::reduce(std::function<bool(VertexID, VertexInfo
 
 
 void CallingContextTree::decay() {
+  // decay vertices
   auto VRange = boost::vertices(Gr);
   for (auto I = VRange.first; I != VRange.second; I++) {
+    auto &Info = bgl::get(Gr, *I);
+    Info.decay();
+  }
+  // decay edges
+  auto ERange = boost::edges(Gr);
+  for (auto I = ERange.first; I != ERange.second; I++) {
     auto &Info = bgl::get(Gr, *I);
     Info.decay();
   }
@@ -883,8 +890,17 @@ std::string VertexInfo::getDOTLabel() const {
 /////////////
 // EdgeInfo implementations
 
+// (0, 1), learning rate / incremental update factor "alpha"
+const float EdgeInfo::FREQUENCY_DISCOUNT = 0.7f;
+
 void EdgeInfo::observe() {
   Frequency += 1.0f;
+}
+
+void EdgeInfo::decay() {
+  // take a step in the direction of reaching zero.
+  const float ZeroTemp = 0.0f;
+  Frequency += FREQUENCY_DISCOUNT * (ZeroTemp - Frequency);
 }
 
 

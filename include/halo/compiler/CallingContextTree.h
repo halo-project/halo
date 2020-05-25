@@ -96,6 +96,7 @@ public:
   void decay();
 
   private:
+    static const float FREQUENCY_DISCOUNT;
     float Frequency{0};
 }; // end class
 
