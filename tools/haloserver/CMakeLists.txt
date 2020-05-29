@@ -54,6 +54,7 @@ add_executable(${SERVER_BIN}
   PerformanceData.cpp
   Profiler.cpp
   ProgramInfoPass.cpp
+  TuningSection.cpp
   ${HALO_NET_DIR}/Logging.cpp
   ${PROTO_SRCS}
   ${PROTO_HDRS}

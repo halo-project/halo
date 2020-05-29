@@ -19,27 +19,23 @@ namespace halo {
 class CompilationManager {
   public:
     using compile_expected = CompilationPipeline::compile_expected;
-    using tuning_section = Profiler::TuningSection;
 
     struct FinishedJob {
-      FinishedJob(std::string n, tuning_section ts, compile_expected res)
-        : UniqueJobName(n), TS(ts), Result(std::move(res)) {}
+      FinishedJob(std::string n, compile_expected res)
+        : UniqueJobName(n), Result(std::move(res)) {}
       std::string UniqueJobName;
-      tuning_section TS;
       compile_expected Result;
     };
 
-    CompilationManager(ThreadPool &pool) : Pool(pool) {}
-    void setCompilationPipeline(CompilationPipeline *cp) { Pipeline = cp; }
+    CompilationManager(ThreadPool &pool, CompilationPipeline &pipeline) : Pool(pool), Pipeline(pipeline)  {}
 
     void enqueueCompilation(llvm::MemoryBuffer& Bitcode,
-                            tuning_section TS, KnobSet Knobs) {
-      InFlight.emplace_back(genName(), TS,
-          std::move(Pool.asyncRet([this,TS,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
-            std::string Name = TS.first;
-            auto Result = Pipeline->run(Bitcode, Name, Knobs);
+                            std::string FuncName, KnobSet Knobs) {
+      InFlight.emplace_back(genName(),
+          std::move(Pool.asyncRet([this,FuncName,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
+            auto Result = Pipeline.run(Bitcode, FuncName, Knobs);
 
-            logs() << "Finished Compile!\n";
+            // logs() << "Finished Compile!\n";
 
             return Result;
         })));
@@ -52,7 +48,7 @@ class CompilationManager {
       auto &Front = InFlight.front();
       auto &Future = Front.Promise;
       if (Future.valid() && get_status(Future) == std::future_status::ready) {
-        FinishedJob Result(Front.UniqueName, Front.TS, std::move(Future.get()));
+        FinishedJob Result(Front.UniqueName, std::move(Future.get()));
         InFlight.pop_front();
         return Result;
       }
@@ -63,22 +59,20 @@ class CompilationManager {
   private:
 
     std::string genName() {
-      auto Num = JobTicker++;
+      auto Num = Pool.genTicket();
       return "<lib_" + std::to_string(Num) + ">";
     }
 
     struct PromisedJob {
-      PromisedJob(std::string n, tuning_section ts, std::future<compile_expected> fut)
-        : UniqueName(n), TS(ts), Promise(std::move(fut)) {}
+      PromisedJob(std::string n, std::future<compile_expected> fut)
+        : UniqueName(n), Promise(std::move(fut)) {}
       std::string UniqueName;
-      tuning_section TS;
       std::future<compile_expected> Promise;
     };
 
     ThreadPool &Pool;
-    CompilationPipeline *Pipeline;
+    CompilationPipeline &Pipeline;
     std::list<PromisedJob> InFlight;
-    uint64_t JobTicker = 0;
 };
 
 } // end namespace

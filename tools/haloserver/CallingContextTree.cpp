@@ -568,8 +568,11 @@ void CallingContextTree::decay() {
   }
 }
 
+VertexInfo CallingContextTree::getInfo(VertexID ID) const {
+  return bgl::get(Gr, ID);
+}
 
-std::vector<VertexInfo> CallingContextTree::contextOf(VertexID Target) {
+std::vector<VertexID> CallingContextTree::contextOf(VertexID Target) {
 
   class ContextSearch : public boost::default_dfs_visitor {
   public:
@@ -609,12 +612,10 @@ std::vector<VertexInfo> CallingContextTree::contextOf(VertexID Target) {
   if (Path[Path.size()-1] != Target)
     fatal_error("path does not end at the target!");
 
-  std::vector<VertexInfo> VI;
-  // add all but the root vertex to the returned info.
-  for (auto I = Path.begin()+1; I != Path.end(); I++)
-    VI.push_back(bgl::get(Gr, *I));
+  // drop the root vertex from the front of the path
+  Path.erase(Path.begin());
 
-  return VI;
+  return Path;
 }
 
 

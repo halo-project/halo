@@ -5,16 +5,13 @@
 #include <string>
 #include <utility>
 
-#include "halo/server/CompilationManager.h"
 #include "halo/server/ClientSession.h"
 #include "halo/server/TaskQueueOverlay.h"
 #include "halo/server/ThreadPool.h"
 #include "halo/server/SequentialAccess.h"
 #include "halo/compiler/CompilationPipeline.h"
 #include "halo/compiler/Profiler.h"
-#include "halo/tuner/Actions.h"
-#include "halo/tuner/Bandit.h"
-#include "halo/tuner/KnobSet.h"
+#include "halo/tuner/TuningSection.h"
 
 #include "llvm/Support/MemoryBuffer.h"
 
@@ -24,11 +21,17 @@ using JSON = nlohmann::json;
 
 namespace halo {
 
-struct GroupState {
+/// You should never retain a reference to the group state that outlives
+/// the sequential access call-back!
+class GroupState {
+public:
   using ClientCollection = std::list<std::unique_ptr<ClientSession>>;
 
+  GroupState() {}
+  GroupState(GroupState const&) = delete;
+  GroupState& operator=(GroupState const&) = delete;
+
   ClientCollection Clients;
-  RecencyWeightedBandit<RootAction> Manager {RootActions};
 };
 
 
@@ -78,10 +81,10 @@ private:
   void end_service_iteration();
 
   ThreadPool &Pool;
-  KnobSet Knobs;
+  JSON const& Config;
   CompilationPipeline Pipeline;
   Profiler Profile;
-  CompilationManager Compiler;
+  std::unique_ptr<TuningSection> TS;
 
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;

@@ -1,5 +1,4 @@
 
-#include "halo/compiler/ReadELF.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/tuner/Utility.h"
 
@@ -14,33 +13,6 @@
 #include "Logging.h"
 
 namespace halo {
-
-  // llvm::Error translateSymbols(CodeRegionInfo const& CRI, pb::CodeReplacement &CR) {
-  //   // The translation here is to fill in the function addresses
-  //   // for a specific memory layout. Note that this mutates CR,
-  //   // but for fields we expect to be overwritten.
-
-  //   proto::RepeatedPtrField<pb::FunctionSymbol> *Syms = CR.mutable_symbols();
-  //   for (pb::FunctionSymbol &FSym : *Syms) {
-  //     auto FI = CRI.lookup(FSym.label());
-
-  //     if (FI == nullptr)
-  //       return makeError("unable to find function addr for this client.");
-
-  //     auto const& Defs = FI->getDefinitions();
-
-  //     if (Defs.size() != 1)
-  //       return makeError("expected exactly one definition of the function.");
-
-  //     auto& Def = Defs[0];
-  //     if (!Def.Patchable)
-  //       return makeError("single function definition expected to be patchable!");
-
-  //     FSym.set_addr(Def.Start);
-  //   }
-
-  //   return llvm::Error::success();
-  // }
 
   // kicks off a continuous service loop for this group.
   void ClientGroup::start_services() {
@@ -71,116 +43,30 @@ namespace halo {
       // Update the profiler with new PerfData, if any.
       Profile.consumePerfData(State.Clients);
 
+      // age the data
       Profile.decay();
 
-      auto MaybeInfo = Profile.getBestTuningSection();
+      // Do we need to create a tuning section?
+      if (TS == nullptr) {
 
-      if (!MaybeInfo) {
-        logs() << "No sample data available.\n";
-        return end_service_iteration();
+        if (Profile.samplesConsumed() < 100)
+          return end_service_iteration(); // not enough samples to create a TS
+
+        auto MaybeTS = TuningSection::Create(Config, Pool, Pipeline, Profile, *Bitcode);
+        if (!MaybeTS)
+          return end_service_iteration(); // no suitable tuning section... nothing to do
+
+        TS = std::move(MaybeTS.getValue());
       }
 
-      auto &Info = MaybeInfo.getValue();
-      std::string HotFuncName = Info.first;
-      bool Patchable = Info.second;
-      bool HaveBitcode = Profile.haveBitcode(HotFuncName);
+      TS->take_step(State);
 
-      logs() << "Hottest function = " << HotFuncName << "\n";
-
-      if (!Patchable || !HaveBitcode) {
-        logs() << "    <patchable = " << Patchable << ", bitcode = " << HaveBitcode << ">\n";
-        return end_service_iteration();
-      }
-
-      // 2. send a request to client to begin timing the execution of the function.
-      // for (auto &Client : State.Clients) {
-      //   if (Client->Status == SessionStatus::Measuring)
-      //     continue;
-
-      //   pb::FunctionAddress FA;
-      //   auto FI = Client->State.CRI.lookup(FuncName);
-      //   FA.set_func_addr(FI->getStart());
-      //   Client->Chan.send_proto(msg::StartMeasureFunction, FA);
-      //   Client->Status = SessionStatus::Measuring;
-      // }
-      // return end_service_iteration(); // FIXME: temporary
-
-      // FIXME: For now we're assuming only one compile configuration, so we just
-      // check to see if we should queue a new job if a client needs it.
-      // It's still wasteful because we don't check if there's an equivalent
-      // one already in flight, but whatever.
-      bool ShouldCompile = false;
-      for (auto &Client : State.Clients) {
-        if (Client->State.DeployedCode.count(HotFuncName))
-          continue;
-        ShouldCompile = true;
-        break;
-      }
-
-      // 3. queue up a new version. TODO: stop doing this blindly
-      if (ShouldCompile) {
-        Compiler.enqueueCompilation(*Bitcode, Info, Knobs);
-      }
-
-      // 4. check if any versions are done, and send the first one that's done
-      //    to all clients.
-      auto CodeResult = Compiler.dequeueCompilation();
-      if (!CodeResult)
-        return end_service_iteration(); // nothing's ready right now.
-
-      auto CompileOut = std::move(CodeResult.getValue());
-
-      auto MaybeBuf = std::move(CompileOut.Result);
-      if (!MaybeBuf)
-        return end_service_iteration(); // an error etc happened and was logged elsewhere
-
-      std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.getValue());
-      std::string LibName = CompileOut.UniqueJobName;
-      std::string FuncName = CompileOut.TS.first;
-
-      // tell all clients to load this object file into memory.
-      pb::LoadDyLib DylibMsg;
-      DylibMsg.set_name(LibName);
-      DylibMsg.set_objfile(Buf->getBufferStart(), Buf->getBufferSize());
-
-      // Find all function symbols in the dylib
-      auto ELFReadError = readSymbolInfo(Buf->getMemBufferRef(), DylibMsg, FuncName);
-      if (ELFReadError)
-        fatal_error(std::move(ELFReadError));
-
-      // For now. send to all clients who don't already have a JIT'd version
-      for (auto &Client : State.Clients) {
-
-        if (Client->State.DeployedCode.count(FuncName))
-          continue;
-
-        auto MaybeDef = Client->State.CRI.lookup(CodeRegionInfo::OriginalLib, FuncName);
-        if (!MaybeDef)
-          fatal_error("client is missing CRI info for an original lib function: " + FuncName);
-        auto OriginalDef = MaybeDef.getValue();
-
-        pb::ModifyFunction MF;
-        MF.set_name(FuncName);
-        MF.set_addr(OriginalDef.Start);
-        MF.set_desired_state(pb::FunctionState::REDIRECTED);
-        MF.set_other_lib(LibName);
-        MF.set_other_name(FuncName);
-
-        // auto Error = translateSymbols(Client->State.CRI, CodeMsg);
-        // if (Error)
-        //   logs() << "Error translating symbols: " << Error << "\n";
-
-        Client->Chan.send_proto(msg::LoadDyLib, DylibMsg);
-        Client->Chan.send_proto(msg::ModifyFunction, MF);
-
-        Client->State.DeployedCode.insert(FuncName);
-      }
-
-      logs() << "Sent code to all clients!\n";
+      TS->dump();
 
       return end_service_iteration();
     }); // end of lambda
   }
+
 
 
 void ClientGroup::cleanup_async() {
@@ -229,9 +115,7 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
 
 ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
-      ShouldStop(false), ServiceIterationRate(250), Pool(Pool), Compiler(Pool), BitcodeHash(BitcodeSHA1) {
-
-      KnobSet::InitializeKnobs(Config, Knobs);
+      ShouldStop(false), ServiceIterationRate(250), Pool(Pool), Config(Config), BitcodeHash(BitcodeSHA1) {
 
       if (!CS->Enrolled)
         llvm::report_fatal_error("was given a non-enrolled client!");
@@ -243,8 +127,6 @@ ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS
       Pipeline = CompilationPipeline(
                     llvm::Triple(Client.process_triple()),
                     Client.host_cpu());
-
-      Compiler.setCompilationPipeline(&Pipeline);
 
 
       // take ownership of the bitcode, and maintain a MemoryBuffer view of it.

@@ -6,6 +6,7 @@
 #include <functional>
 #include <utility>
 #include <memory>
+#include <atomic>
 
 namespace halo {
 
@@ -48,7 +49,12 @@ class ThreadPool : public llvm::ThreadPool {
     }
   };
 
+  std::atomic<uint64_t> Ticket{0};
+
 public:
+
+  /// @returns a thread-safe way to generate a per-ThreadPool unique integer.
+  uint64_t genTicket() { return Ticket.fetch_add(1);}
 
   template <typename Callable>
   inline std::future<typename std::result_of<Callable()>::type> asyncRet(Callable &&Fun) {

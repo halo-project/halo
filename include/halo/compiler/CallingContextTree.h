@@ -133,7 +133,9 @@ public:
   /// vertex. The context is a sequence of functions from the root
   /// to the given vertex, but the root is _not_ included in the
   /// returned sequence since it is not a "real" vertex.
-  std::vector<VertexInfo> contextOf(VertexID);
+  std::vector<VertexID> contextOf(VertexID);
+
+  VertexInfo getInfo(VertexID) const;
 
   /// If Tgt is reachable from Src, then all paths connecting them
   /// is returned.

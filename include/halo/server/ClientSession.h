@@ -43,7 +43,7 @@ namespace halo {
     ClientID ID; // a unique idenifier for the duration of the server process
     CodeRegionInfo CRI;
     PerformanceData PerfData;
-    std::set<std::string> DeployedCode; // TODO: merge this into CRI as a real feature
+    std::set<std::string> DeployedLibs;
   };
 
   class GroupOwnedState {
@@ -54,7 +54,8 @@ namespace halo {
   // Parent->withClientState(this, ...).
   private:
     friend class ClientGroup;
-    friend class Profiler; // A profiler is owned by the group
+      friend class Profiler; // A profiler is owned by the group
+      friend class TuningSection; // a tuning section is owned by the group
 
     SessionState State;
   };

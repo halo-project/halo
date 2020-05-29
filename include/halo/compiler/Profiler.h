@@ -11,20 +11,28 @@ namespace halo {
 
 class ClientSession;
 
+/// Tracks all profiling information.
 class Profiler {
 public:
   using ClientList = std::list<std::unique_ptr<ClientSession>>;
-  using TuningSection = std::pair<std::string, bool>; // FIXME: maybe one patchable function
-                                                      // and a set of reachable funs
+  using CCTNode = CallingContextTree::VertexID;
 
   /// updates the profiler with new performance data found in the clients
   void consumePerfData(ClientList &);
 
+  // returns a count of the total number of samples consumed so far.
+  size_t samplesConsumed() const { return SamplesSeen; }
+
+  // returns the 'hottest' CCT node known to the profiler currently.
+  llvm::Optional<CCTNode> hottestNode();
+
+  /// At the given CCTNode, it climbs the calling context towards the root
+  /// until it finds the first patchable function, and returns that function's name.
+  /// Note that a function is considered an ancestor of itself.
+  llvm::Optional<std::string> getFirstPatchableInContext(Profiler::CCTNode);
+
   /// advances the age of the profiler's data by one time-step.
   void decay();
-
-  /// @returns the 'best' tuning section
-  llvm::Optional<TuningSection> getBestTuningSection();
 
   /// @returns true iff the profiler knows we have bitcode available
   ///          for the given function.
@@ -41,6 +49,7 @@ public:
 private:
   CallingContextTree CCT;
   CallGraph CG;
+  size_t SamplesSeen{0};
   std::set<std::string> FuncsWithBitcode;
 
 };
