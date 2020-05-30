@@ -5,7 +5,7 @@
 namespace halo {
 
 
-void TuningSection::take_step(GroupState &State) {
+void AggressiveTuningSection::take_step(GroupState &State) {
   // NOTE: temporary implementation
   if (ShouldCompile) {
     Compiler.enqueueCompilation(Bitcode, RootFunc, Knobs);
@@ -18,6 +18,20 @@ void TuningSection::take_step(GroupState &State) {
       logs() << "sent JIT'd code for " << RootFunc << "\n";
   }
 }
+
+
+void AggressiveTuningSection::dump() const {
+  clogs() << "TuningSection for " << RootFunc << " {\n";
+
+  clogs() << "ShouldCompile = " << ShouldCompile
+          << "\nCodeSent = " << CodeSent
+          << "\n";
+
+
+  clogs() << "}\n\n";
+}
+
+
 
 bool TuningSection::trySendCode(GroupState &State) {
   auto CodeResult = Compiler.dequeueCompilation();
@@ -71,31 +85,30 @@ bool TuningSection::trySendCode(GroupState &State) {
   return true;
 }
 
-void TuningSection::dump() const {
-  clogs() << "TuningSection for " << RootFunc << " {\n";
-
-  clogs() << "ShouldCompile = " << ShouldCompile
-          << "\nCodeSent = " << CodeSent
-          << "\n";
 
 
-  clogs() << "}\n\n";
-}
-
-llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(
-        JSON const& Config, ThreadPool &Pool, CompilationPipeline &Pipeline, Profiler &Profile, llvm::MemoryBuffer &Bitcode) {
-  auto MaybeHotNode = Profile.hottestNode();
+llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(Strategy Strat, TuningSectionInitializer TSI) {
+  auto MaybeHotNode = TSI.Profile.hottestNode();
   if (!MaybeHotNode) return llvm::None;
 
-  auto MaybeAncestor = Profile.getFirstPatchableInContext(MaybeHotNode.getValue());
+  auto MaybeAncestor = TSI.Profile.getFirstPatchableInContext(MaybeHotNode.getValue());
   if (!MaybeAncestor) return llvm::None;
 
   std::string PatchableAncestorName = MaybeAncestor.getValue();
 
-  if (!Profile.haveBitcode(PatchableAncestorName))
+  if (!TSI.Profile.haveBitcode(PatchableAncestorName))
     return llvm::None;
 
-  return std::unique_ptr<TuningSection>(new TuningSection(Config, Pool, Pipeline, Profile, Bitcode, PatchableAncestorName));
+  TuningSection *TS = nullptr;
+  switch (Strat) {
+    case Strategy::Aggressive:
+      TS = new AggressiveTuningSection(TSI);
+  };
+
+  if (TS == nullptr)
+    fatal_error("unknown / unrecognized TuningSection strategy.");
+
+  return std::unique_ptr<TuningSection>(TS);
 }
 
 } // end namespace

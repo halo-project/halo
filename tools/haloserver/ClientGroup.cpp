@@ -52,7 +52,8 @@ namespace halo {
         if (Profile.samplesConsumed() < 100)
           return end_service_iteration(); // not enough samples to create a TS
 
-        auto MaybeTS = TuningSection::Create(Config, Pool, Pipeline, Profile, *Bitcode);
+        auto MaybeTS = TuningSection::Create(TuningSection::Strategy::Aggressive,
+                                              {Config, Pool, Pipeline, Profile, *Bitcode});
         if (!MaybeTS)
           return end_service_iteration(); // no suitable tuning section... nothing to do
 
