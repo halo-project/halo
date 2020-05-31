@@ -5,6 +5,8 @@
 #include "halo/tuner/NamedKnobs.h"
 #include "halo/nlohmann/json_fwd.hpp"
 
+#include "Logging.h"
+
 #include <unordered_map>
 
 using JSON = nlohmann::json;
@@ -32,7 +34,7 @@ namespace halo {
       auto Res = Knobs.insert({Name, std::move(KNB)});
       auto Iter = Res.first;
       bool InsertionOccured = Res.second;
-      if (!InsertionOccured) llvm::report_fatal_error(
+      if (!InsertionOccured) fatal_error(
                                   "Tried to add knob with name '" + Name +
                                   "' that already exists in the set!");
       return *(Iter->second);
@@ -45,7 +47,6 @@ namespace halo {
 
     // Performs a lookup for the given knob name having the specified type,
     // crashing if either one fails.
-    // FIXME: make it return an option type instead.
     template <typename T>
     T& lookup(std::string const& Name) const {
       auto Search = Knobs.find(Name);
@@ -55,10 +56,10 @@ namespace halo {
         if (T* Derived = llvm::dyn_cast<T>(Ptr))
           return *Derived;
         else
-          llvm::report_fatal_error("unexpected type for knob during lookup");
+          fatal_error("unexpected type for knob during lookup");
       }
 
-      llvm::report_fatal_error("unknown knob name requested");
+      fatal_error("unknown knob name requested");
     }
 
     auto begin() noexcept { return Knobs.begin(); }

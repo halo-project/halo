@@ -102,7 +102,8 @@ llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(Strategy St
   TuningSection *TS = nullptr;
   switch (Strat) {
     case Strategy::Aggressive:
-      TS = new AggressiveTuningSection(TSI);
+      TS = new AggressiveTuningSection(TSI, PatchableAncestorName);
+      break;
   };
 
   if (TS == nullptr)

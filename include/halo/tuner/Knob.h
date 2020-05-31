@@ -12,6 +12,8 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Passes/PassBuilder.h"
 
+#include "Logging.h"
+
 namespace halo {
 
   // LLVM-style RTTI is used for subtyping:
@@ -143,7 +145,6 @@ namespace halo {
           parseLevel(current), parseLevel(dflt), parseLevel(min), parseLevel(max)) {}
 
     static LevelTy parseLevel(std::string const& Level) {
-
       if (Level == "O0")
         return LevelTy::O0;
 
@@ -156,7 +157,39 @@ namespace halo {
       if (Level == "O3")
         return LevelTy::O3;
 
-      llvm::report_fatal_error("invalid opt level string: " + Level);
+      fatal_error("invalid opt level string: " + Level);
+    }
+
+    static LevelTy parseLevel(unsigned Level) {
+      if (Level == 0)
+        return LevelTy::O0;
+
+      if (Level == 1)
+        return LevelTy::O1;
+
+      if (Level == 2)
+        return LevelTy::O2;
+
+      if (Level == 3)
+        return LevelTy::O3;
+
+      fatal_error("invalid opt level int: " + std::to_string(Level));
+    }
+
+    static unsigned asInt(LevelTy Level) {
+      if (Level == LevelTy::O0)
+        return 0;
+
+      if (Level == LevelTy::O1)
+        return 1;
+
+      if (Level == LevelTy::O2)
+        return 2;
+
+      if (Level == LevelTy::O3)
+        return 3;
+
+      fatal_error("invalid opt level given in asInt");
     }
 
     static bool classof(const Knob *K) {

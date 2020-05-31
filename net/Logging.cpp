@@ -25,11 +25,11 @@ namespace halo {
     return makeError(msg.str());
   }
 
-  void fatal_error(const std::string &msg) {
+  [[ noreturn ]] void fatal_error(const std::string &msg) {
     llvm::report_fatal_error(makeError(msg));
   }
 
-  void fatal_error(llvm::Error &&Error) {
+  [[ noreturn ]] void fatal_error(llvm::Error &&Error) {
     llvm::report_fatal_error(std::forward<llvm::Error>(Error));
   }
 

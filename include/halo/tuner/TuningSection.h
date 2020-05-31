@@ -4,13 +4,12 @@
 #include "halo/compiler/CompilationPipeline.h"
 #include "halo/tuner/Actions.h"
 #include "halo/tuner/KnobSet.h"
+#include "halo/tuner/RandomTuner.h"
 #include "halo/server/ThreadPool.h"
 #include "halo/server/CompilationManager.h"
+#include "halo/nlohmann/json_fwd.hpp"
 
 #include "Logging.h"
-
-
-#include "halo/nlohmann/json_fwd.hpp"
 
 using JSON = nlohmann::json;
 
@@ -25,7 +24,6 @@ struct TuningSectionInitializer {
   CompilationPipeline &Pipeline;
   Profiler &Profile;
   llvm::MemoryBuffer &Bitcode;
-  std::string RootFunc;
 };
 
 
@@ -49,8 +47,8 @@ public:
   };
 
 protected:
-  TuningSection(TuningSectionInitializer TSI)
-    : RootFunc(TSI.RootFunc), Compiler(TSI.Pool, TSI.Pipeline), Bitcode(TSI.Bitcode), Profile(TSI.Profile) {
+  TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
+    : RootFunc(RootFunc), Compiler(TSI.Pool, TSI.Pipeline), Bitcode(TSI.Bitcode), Profile(TSI.Profile) {
     KnobSet::InitializeKnobs(TSI.Config, Knobs);
   }
 
@@ -68,7 +66,8 @@ protected:
 /// haven't decided on what this should do yet.
 class AggressiveTuningSection : public TuningSection {
 public:
-  AggressiveTuningSection(TuningSectionInitializer TSI) : TuningSection(TSI) {}
+  AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
+            : TuningSection(TSI, RootFunc) {}
   void take_step(GroupState &) override;
   void dump() const override;
 
