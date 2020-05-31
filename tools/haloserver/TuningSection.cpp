@@ -6,25 +6,28 @@ namespace halo {
 
 
 void AggressiveTuningSection::take_step(GroupState &State) {
-  // NOTE: temporary implementation
-  if (ShouldCompile) {
-    Compiler.enqueueCompilation(Bitcode, RootFunc, Knobs);
-    ShouldCompile = false;
+
+  if (Waiting && trySendCode(State)) {
+    logs() << "sent JIT'd code for " << RootFunc << "\n";
+    Waiting = false;
+    return;
   }
 
-  if (!CodeSent) {
-    CodeSent = trySendCode(State);
-    if (CodeSent)
-      logs() << "sent JIT'd code for " << RootFunc << "\n";
+  if ((Steps % 10) == 0) {
+    // randomlyChange(Knobs, gen); // TODO: fix the server config that's got an invalid parameter space
+    Compiler.enqueueCompilation(Bitcode, RootFunc, Knobs);
+    Waiting = true;
   }
+
+  Steps++;
 }
 
 
 void AggressiveTuningSection::dump() const {
   clogs() << "TuningSection for " << RootFunc << " {\n";
 
-  clogs() << "ShouldCompile = " << ShouldCompile
-          << "\nCodeSent = " << CodeSent
+  clogs() << "Steps = " << Steps
+          << "\nWaiting = " << Waiting
           << "\n";
 
 

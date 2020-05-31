@@ -67,13 +67,15 @@ protected:
 class AggressiveTuningSection : public TuningSection {
 public:
   AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
-            : TuningSection(TSI, RootFunc) {}
+            : TuningSection(TSI, RootFunc), gen(rd()) {}
   void take_step(GroupState &) override;
   void dump() const override;
 
 private:
-  bool ShouldCompile{true};
-  bool CodeSent{false};
+  std::random_device rd;
+  std::mt19937_64 gen;
+  uint64_t Steps{0};
+  bool Waiting{false};
 };
 
 } // end namespace
