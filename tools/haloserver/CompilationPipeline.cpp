@@ -188,7 +188,10 @@ Expected<CompilationPipeline::compile_result>
   TO.EnableIPRA = Knobs.lookup<FlagKnob>(named_knob::IPRA).getFlag();
 
   TO.EnableFastISel = Knobs.lookup<FlagKnob>(named_knob::FastISel).getFlag();
-  TO.EnableGlobalISel = Knobs.lookup<FlagKnob>(named_knob::GlobalISel).getFlag();
+
+  // NOTE: global isel doesn't seem to be ready for use yet; it creates malformed call instructions sometimes.
+  // TO.EnableGlobalISel = Knobs.lookup<FlagKnob>(named_knob::GlobalISel).getFlag();
+  TO.EnableGlobalISel = false;
 
   TO.EnableMachineOutliner = Knobs.lookup<FlagKnob>(named_knob::MachineOutline).getFlag();
   TO.GuaranteedTailCallOpt = Knobs.lookup<FlagKnob>(named_knob::GuaranteeTCO).getFlag();

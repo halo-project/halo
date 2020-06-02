@@ -54,6 +54,9 @@ namespace halo {
 
     KnobKind getKind() const { return kind_; }
 
+    // the knob's current value as a string (for debugging).
+    virtual std::string dump() const { return "?"; }
+
     // members related to exporting to a flat array
 
     virtual size_t size() const { return 1; } // num values to be flattened
@@ -134,6 +137,10 @@ namespace halo {
       return K->getKind() == KK_Flag;
     }
 
+    std::string dump() const override {
+      return getFlag() ? "true" : "false";
+    }
+
   }; // end class FlagKnob
 
   class OptLvlKnob : public ScalarKnob<llvm::PassBuilder::OptimizationLevel> {
@@ -143,6 +150,10 @@ namespace halo {
                std::string const& dflt, std::string const& min, std::string const& max)
       : ScalarKnob<LevelTy>(KK_OptLvl, Name,
           parseLevel(current), parseLevel(dflt), parseLevel(min), parseLevel(max)) {}
+
+    std::string dump() const override {
+      return std::to_string(OptLvlKnob::asInt(getVal()));
+    }
 
     static LevelTy parseLevel(std::string const& Level) {
       if (Level == "O0")
@@ -222,6 +233,9 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
       return getVal();
     }
 
+    std::string dump() const override {
+      return std::to_string(getScaledVal());
+    }
 
     static bool classof(const Knob *K) {
       return K->getKind() == KK_Int;

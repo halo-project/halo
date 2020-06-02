@@ -14,7 +14,8 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   }
 
   if ((Steps % 10) == 0) {
-    // randomlyChange(Knobs, gen); // TODO: fix the server config that's got an invalid parameter space
+    randomlyChange(Knobs, gen);
+    Knobs.dump();
     Compiler.enqueueCompilation(Bitcode, RootFunc, Knobs);
     Waiting = true;
   }

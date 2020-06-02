@@ -150,4 +150,14 @@ void addKnob(JSON const& Spec, KnobSet& Knobs) {
 
  }
 
+ void KnobSet::dump() const {
+  logs() << "KnobSet: {\n";
+
+  for (auto const& Entry : *this)
+    logs() << "\t" << Entry.first << " = " << Entry.second->dump() << "\n";
+
+  logs() << "}\n";
+ }
+
+
 } // end namespace halo

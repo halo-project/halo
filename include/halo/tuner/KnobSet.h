@@ -56,10 +56,10 @@ namespace halo {
         if (T* Derived = llvm::dyn_cast<T>(Ptr))
           return *Derived;
         else
-          fatal_error("unexpected type for knob during lookup");
+          fatal_error("unexpected type for knob " + Name + " during lookup");
       }
 
-      fatal_error("unknown knob name requested");
+      fatal_error("unknown knob name requested: " + Name);
     }
 
     auto begin() noexcept { return Knobs.begin(); }
@@ -69,6 +69,8 @@ namespace halo {
     auto end() const noexcept { return Knobs.end(); }
 
     size_t size() const;
+
+    void dump() const;
 
     static void InitializeKnobs(JSON const&, KnobSet&);
 
