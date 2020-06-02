@@ -13,9 +13,8 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
   halo::CallGraph &CallGraph = Profiler.getCallGraph();
 
   for (auto const& Func : M.functions()) {
-    // record whether we have bitcode for the function
-    if (!Func.isDeclaration())
-      Profiler.setBitcodeStatus(Func.getName().str(), true);
+    // record whether we have bitcode for the function, which is if it's not a decl.
+    Profiler.setBitcodeStatus(Func.getName().str(), !Func.isDeclaration());
 
     // check the function's call-sites to populate the call-graph.
     CallGraphNode *CGNode = CGR[&Func];

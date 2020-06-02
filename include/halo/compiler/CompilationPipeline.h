@@ -14,6 +14,7 @@
 #include "Logging.h"
 
 #include <memory>
+#include <unordered_set>
 
 namespace orc = llvm::orc;
 
@@ -32,11 +33,12 @@ namespace halo {
     CompilationPipeline(llvm::Triple Triple, llvm::StringRef CPU)
       : Triple(Triple), CPUName(CPU) {}
 
-    // NOTE: it is important that the KnobSet is passed by value here, since we
-    // want to take in a standalone copy of the knobs so as to not create
-    // a data race, etc.
-    compile_expected run(llvm::MemoryBuffer &Bitcode, std::string TargetFunc, KnobSet Knobs) {
+    // It is crucial that everything passed in here is done by-value, or is a referece to something that is totally immutable.
+    // The pipeline is often run in another thread, and we don't want concurrent mutations.
+    compile_expected run(llvm::MemoryBuffer &Bitcode, std::string RootFunc, std::unordered_set<std::string> TunedFuncs, KnobSet Knobs) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
+
+      assert(TunedFuncs.find(RootFunc) != TunedFuncs.end() && "root must be in the tuned funcs set!");
 
       auto MaybeModule = _parseBitcode(Cxt, Bitcode);
       if (!MaybeModule) {
@@ -46,7 +48,7 @@ namespace halo {
 
       std::unique_ptr<llvm::Module> Module = std::move(MaybeModule.get());
 
-      auto Result = _run(*Module, TargetFunc, Knobs);
+      auto Result = _run(*Module, RootFunc, TunedFuncs, Knobs);
       if (Result)
         return std::move(Result.get());
 
@@ -70,7 +72,7 @@ namespace halo {
     llvm::StringRef getCPUName() const { return CPUName; }
 
   private:
-    llvm::Expected<compile_result> _run(llvm::Module&, llvm::StringRef, KnobSet const&);
+    llvm::Expected<compile_result> _run(llvm::Module&, std::string const&, std::unordered_set<std::string> const&, KnobSet const&);
     llvm::Expected<std::unique_ptr<llvm::Module>> _parseBitcode(llvm::LLVMContext&, llvm::MemoryBuffer&);
 
     llvm::Triple Triple;

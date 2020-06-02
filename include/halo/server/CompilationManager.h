@@ -30,14 +30,10 @@ class CompilationManager {
     CompilationManager(ThreadPool &pool, CompilationPipeline &pipeline) : Pool(pool), Pipeline(pipeline)  {}
 
     void enqueueCompilation(llvm::MemoryBuffer& Bitcode,
-                            std::string FuncName, KnobSet Knobs) {
+                            std::string RootFunc, std::unordered_set<std::string> AllFuncs, KnobSet Knobs) {
       InFlight.emplace_back(genName(),
-          std::move(Pool.asyncRet([this,FuncName,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
-            auto Result = Pipeline.run(Bitcode, FuncName, Knobs);
-
-            // logs() << "Finished Compile!\n";
-
-            return Result;
+          std::move(Pool.asyncRet([this,RootFunc,AllFuncs,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
+            return Pipeline.run(Bitcode, RootFunc, AllFuncs, Knobs);
         })));
     }
 
@@ -60,7 +56,7 @@ class CompilationManager {
 
     std::string genName() {
       auto Num = Pool.genTicket();
-      return "<lib_" + std::to_string(Num) + ">";
+      return "#lib_" + std::to_string(Num) + "#";
     }
 
     struct PromisedJob {

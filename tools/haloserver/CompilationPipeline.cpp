@@ -24,21 +24,28 @@ Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
   return C(M);
 }
 
-// obtain the transitive closure of all functions needed by the given function.
 // TODO: make this take a Module const& because it doesn't mutate the module.
-Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, StringRef Name) {
-  Function* RootFn = Module.getFunction(Name);
-  if (RootFn == nullptr)
-    return makeError("target function " + Name + " is not in module!");
+Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, std::unordered_set<std::string> const& TunedFuncs) {
+  SetVector<Function*> Work;
 
-  if (RootFn->isDeclaration())
-    return makeError("target global " + Name + " is not a defined function.");
+  // add tuned funcs to work queue
+  for (auto const& Name : TunedFuncs) {
+    Function* Fn = Module.getFunction(Name);
+    if (Fn == nullptr)
+      return makeError("target function " + Name + " is not in module!");
 
-  // determine the transitive closure of dependencies
+    if (Fn->isDeclaration())
+      return makeError("target global " + Name + " is not a defined function.");
+
+    Work.insert(Fn);
+  }
+
+  // determine the transitive closure of dependencies by checking
+  // the body of all functions for _any_ uses of _any_ function.
+  // This catches dependencies that are missed by call-graph analysis
+  // in order to satisfy the dynamic linker. The biggest culprit of functions
+  // missed by the analysis are function pointers that are used as a value.
   SetVector<GlobalValue*> Deps;
-  std::vector<Function*> Work;
-  Work.push_back(RootFn);
-
   while (!Work.empty()) {
     Function *Fn = &*Work.back();
     Work.pop_back();
@@ -50,14 +57,18 @@ Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, StringRef 
         for (Value* Op : Inst.operands())
           if (User* OpUse = dyn_cast_or_null<User>(Op))
             if (Function* NewFn = dyn_cast_or_null<Function>(OpUse))
-              if (Deps.count(NewFn) == 0)
-                  Work.push_back(NewFn);
+              if (Deps.count(NewFn) == 0 && Work.count(NewFn) == 0) {
+                  auto const& Name = NewFn->getName();
+                  if (TunedFuncs.count(Name.str()) == 0)
+                    logs() << "findRequiredFuncs missing dependency: " << Name << "\n"; // just a note; nothing bad about this!
+                  Work.insert(NewFn);
+              }
   }
 
   return Deps.takeVector();
 }
 
-Error cleanup(Module &Module, StringRef TargetFunc) {
+Error cleanup(Module &Module, std::string const& RootFunc, std::unordered_set<std::string> const& TunedFuncs) {
   bool Pr = false; // printing?
   SimplePassBuilder PB(/*DebugAnalyses*/ false);
   ModulePassManager MPM;
@@ -68,7 +79,7 @@ Error cleanup(Module &Module, StringRef TargetFunc) {
   // the process of cleaning up the module in prep for JIT compilation is
   // very similar to what happens in the llvm-extract tool.
 
-  auto MaybeDeps = findRequiredFuncs(Module, TargetFunc);
+  auto MaybeDeps = findRequiredFuncs(Module, TunedFuncs);
   if (!MaybeDeps)
     return MaybeDeps.takeError();
 
@@ -95,7 +106,7 @@ Error cleanup(Module &Module, StringRef TargetFunc) {
   }
 
   // Add the new PM compatible passes.
-  spb::withPrintAfter(Pr, MPM, LinkageFixupPass(TargetFunc));
+  spb::withPrintAfter(Pr, MPM, LinkageFixupPass(RootFunc));
   spb::withPrintAfter(Pr, MPM,
       createModuleToFunctionPassAdaptor(
         createFunctionToLoopPassAdaptor(
@@ -175,7 +186,7 @@ Error finalize(Module &Module) {
 
 // The complete pipeline
 Expected<CompilationPipeline::compile_result>
-  CompilationPipeline::_run(Module &Module, StringRef TargetFunc, KnobSet const& Knobs) {
+  CompilationPipeline::_run(Module &Module, std::string const& RootFunc, std::unordered_set<std::string> const& TunedFuncs, KnobSet const& Knobs) {
 
   llvm::orc::JITTargetMachineBuilder JTMB(Triple);
   auto MaybeTM = JTMB.createTargetMachine();
@@ -199,7 +210,7 @@ Expected<CompilationPipeline::compile_result>
   TM->Options = TO; // save the options
 
 
-  auto CleanupErr = cleanup(Module, TargetFunc);
+  auto CleanupErr = cleanup(Module, RootFunc, TunedFuncs);
   if (CleanupErr)
     return CleanupErr;
 

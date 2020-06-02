@@ -16,7 +16,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   if ((Steps % 10) == 0) {
     randomlyChange(Knobs, gen);
     Knobs.dump();
-    Compiler.enqueueCompilation(Bitcode, RootFunc, Knobs);
+    Compiler.enqueueCompilation(Bitcode, RootFunc, AllFuncs, Knobs);
     Waiting = true;
   }
 
@@ -25,10 +25,14 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
 
 void AggressiveTuningSection::dump() const {
-  clogs() << "TuningSection for " << RootFunc << " {\n";
+  clogs() << "TuningSection for " << RootFunc << " {\n"
+          << "\tAllFuncs = ";
 
-  clogs() << "Steps = " << Steps
-          << "\nWaiting = " << Waiting
+  for (auto const& Func : AllFuncs)
+    clogs() << Func << ", ";
+
+  clogs() << "\n\tSteps = " << Steps
+          << "\n\tWaiting = " << Waiting
           << "\n";
 
 

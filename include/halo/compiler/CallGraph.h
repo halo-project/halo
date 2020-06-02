@@ -1,6 +1,7 @@
 #pragma once
 
 #include "boost/graph/adjacency_list.hpp"
+#include <unordered_set>
 
 namespace halo {
 
@@ -36,6 +37,13 @@ public:
   // returns true iff the given function is contained in the CG and
   // makes no calls i.e., its out-edge set in the CG is empty.
   bool isLeaf(Vertex Func) const;
+
+  /// returns the set of all vertices reachable from the given vertex,
+  /// i.e., all functions that can be called, starting from Src.
+  ///
+  /// The set will always at least contain the Src itself, unless if
+  /// the Src is not in the graph!
+  std::unordered_set<Vertex> allReachable(Vertex src);
 
   // returns true iff the call-graph has a node for the given function
   bool contains(Vertex Func) const;

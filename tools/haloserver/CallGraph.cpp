@@ -1,6 +1,8 @@
 #include "halo/compiler/CallGraph.h"
 #include "llvm/ADT/Optional.h"
 
+#include "boost/graph/depth_first_search.hpp"
+
 namespace halo {
 
 using Vertex = CallGraph::Vertex;
@@ -86,6 +88,56 @@ EdgeID CallGraph::getEdgeID(VertexID Src, VertexID Tgt) {
     return Result.getValue();
 
   return boost::add_edge(Src, Tgt, Gr).first;
+}
+
+std::unordered_set<Vertex> CallGraph::allReachable(Vertex Root) {
+  // Boost graph visitor.
+  class ReachableVisitor : public boost::default_dfs_visitor {
+  public:
+    ReachableVisitor(std::unordered_set<VertexID>& visited, VertexID root)
+                                                : Root(root), Visited(visited) {}
+
+    void start_vertex(VertexID u, const Graph& g) {
+      if (Root == u)
+        InSubtree = true;
+    }
+
+    void discover_vertex(VertexID u, const Graph& g) {
+      if (InSubtree)
+        Visited.insert(u);
+    }
+
+    void finish_vertex(VertexID u, const Graph& g) {
+      if (Root == u)
+        InSubtree = false;
+    }
+
+  private:
+    VertexID Root;
+    std::unordered_set<VertexID>& Visited;
+    bool InSubtree{false};
+  }; // end class
+
+
+  std::unordered_set<Vertex> Reachable;
+
+  if (!contains(Root))
+    return Reachable;
+
+  Reachable.insert(Root); // can always reach self, since it's in the graph.
+
+  // perform the search
+  VertexID RootID = getVertexID(Root);
+  std::unordered_set<VertexID> ReachableIDs;
+  ReachableVisitor CV(ReachableIDs, RootID);
+  // https://www.boost.org/doc/libs/1_73_0/libs/graph/doc/bgl_named_params.html
+  boost::depth_first_search(Gr, boost::visitor(CV).root_vertex(RootID));
+
+  // convert id -> vertex
+  for (auto ID : ReachableIDs)
+    Reachable.insert(Gr[ID]);
+
+  return Reachable;
 }
 
 
