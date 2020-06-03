@@ -87,8 +87,15 @@ void ClientGroup::cleanup_async() {
 }
 
 
-void addSession (ClientGroup *Group, ClientSession *CS, GroupState &State) {
-  CS->start(Group);
+void ClientGroup::addSession(ClientSession *CS, GroupState &State) {
+  CS->start(this);
+
+  // turn on sampling right away
+  pb::SamplePeriod SP;
+  SP.set_period(Profile.getSamplePeriod());
+  CS->Chan.send_proto(msg::SetSamplingPeriod, SP);
+  CS->Chan.send(msg::StartSampling);
+
   State.Clients.push_back(std::unique_ptr<ClientSession>(CS));
 }
 
@@ -107,7 +114,7 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
 
   NumActive++; // do this in the caller's thread eagarly.
   withState([this,CS] (GroupState &State) {
-    addSession(this, CS, State);
+    addSession(CS, State);
   });
 
   return true;
@@ -140,7 +147,7 @@ ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS
       Pipeline.analyzeForProfiling(Profile, *Bitcode);
 
       withState([this,CS] (GroupState &State) {
-        addSession(this, CS, State);
+        addSession(CS, State);
       });
     }
 

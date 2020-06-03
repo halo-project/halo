@@ -31,8 +31,6 @@ namespace halo {
   enum SessionStatus {
     Fresh,
     Active,
-    Sampling,
-    Measuring,
     Dead
   };
 

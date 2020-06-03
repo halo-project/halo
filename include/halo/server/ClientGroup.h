@@ -77,6 +77,8 @@ public:
 
 private:
 
+  void addSession(ClientSession *CS, GroupState &State);
+
   void run_service_loop();
   void end_service_iteration();
 

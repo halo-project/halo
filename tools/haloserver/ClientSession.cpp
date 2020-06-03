@@ -16,10 +16,6 @@ void ClientSession::start(ClientGroup *CG) {
     // process this new enrollment
     State.CRI.init(Client);
     State.ID = ID;
-
-    // ask to sample right away for now.
-    Chan.send(msg::StartSampling);
-    Status = Sampling;
   });
 
   listen();

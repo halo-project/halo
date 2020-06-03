@@ -17,12 +17,13 @@ namespace halo {
       RawSample = 2,
       StartSampling = 3,
       StopSampling = 4,
-      Shutdown = 5, // Not actually sent by anybody. it's "recieved" when a connection closes or hit an error.
-      LoadDyLib = 6,
-      BakeoffResult = 7,
-      ModifyFunction = 8,
-      FunctionMeasurements = 9,
-      DyLibInfo = 10
+      SetSamplingPeriod = 5,
+      Shutdown = 6, // Not actually sent by anybody. it's "recieved" when a connection closes or hit an error.
+      LoadDyLib = 7,
+      BakeoffResult = 8,
+      ModifyFunction = 9,
+      FunctionMeasurements = 10,
+      DyLibInfo = 11
 
     } Kind;
 
@@ -34,6 +35,7 @@ namespace halo {
         case RawSample: return "RawSample";
         case StartSampling: return "StartSampling";
         case StopSampling: return "StopSampling";
+        case SetSamplingPeriod: return "SetSamplingPeriod";
         case Shutdown: return "Shutdown";
         case LoadDyLib: return "LoadDyLib";
         case BakeoffResult: return "BakeoffResult";
