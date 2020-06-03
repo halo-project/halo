@@ -43,7 +43,8 @@ namespace halo {
 
   enum LoggingContext {
     LC_Anywhere,
-    LC_CCT,      // calling context tree
+    LC_CCT,      // calling context tree (debugging)
+    LC_CCT_DUMP, // calling context tree (pretty dumps of current state)
     LC_ProgramInfoPass,
     LC_MonitorState,
     LC_Channel
@@ -54,6 +55,7 @@ namespace halo {
     switch(LC) {
       // EXPLICITLY ENABLED CONTEXTS
       case LC_Anywhere:
+      case LC_CCT_DUMP:
       // case LC_CCT:
       // case LC_ProgramInfoPass:
       // case LC_MonitorState:

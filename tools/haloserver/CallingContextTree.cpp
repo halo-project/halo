@@ -205,7 +205,7 @@ void CallingContextTree::observe(CallGraph const& CG, ClientID ID, CodeRegionInf
   }
 
   if (SawSample) {
-    dumpDOT(clogs(LC_CCT));
+    dumpDOT(clogs(LC_CCT_DUMP));
     // fatal_error("todo: implement CCT observe");
   }
 }
