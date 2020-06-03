@@ -17,11 +17,13 @@ public:
   using ClientList = std::list<std::unique_ptr<ClientSession>>;
   using CCTNode = CallingContextTree::VertexID;
 
+  Profiler() : CCT(getSamplePeriod()) {}
+
   /// updates the profiler with new performance data found in the clients
   void consumePerfData(ClientList &);
 
   /// in terms of number of instructions per sample
-  uint64_t getSamplePeriod() {
+  uint64_t getSamplePeriod() const {
     // Here are some large prime numbers to help deter periodicity:
     //
     //   https://primes.utm.edu/lists/small/millions/

@@ -192,7 +192,7 @@ namespace bgl {
 //////
 // CallingContextTree definitions
 
-CallingContextTree::CallingContextTree() {
+CallingContextTree::CallingContextTree(uint64_t samplePeriod) : SamplePeriod(samplePeriod) {
   RootVertex = boost::add_vertex(VertexInfo("<root>"), Gr);
 }
 
@@ -361,7 +361,7 @@ skipThisCallee:
 
   // at this point CallerVID is the context-sensitive function node's id
   auto &CurrentV = bgl::get(Gr, CallerVID);
-  CurrentV.observeSampledIP(ID, Sample); // add the sample to the vertex!
+  CurrentV.observeSampledIP(ID, Sample, SamplePeriod); // add the sample to the vertex!
 
   walkBranchSamples(ID, Ancestors, CG, CallerVID, CRI, Sample);
 
@@ -447,7 +447,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
     }
 
     // mark this vertex as being warm
-    CurI.observeRecentlyActive(ID, Sample);
+    CurI.observeRecentlyActive(ID, Sample, SamplePeriod);
 
     // actually process this BTB entry:
 
@@ -791,30 +791,23 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
 ///////////////////////////////////////////////
 /// VertexInfo definitions
 
-// in nanoseconds I believe
-const float VertexInfo::HOTNESS_BASELINE = 100000000.0f;
-
 // (0, 1), learning rate / incremental update factor "alpha"
+const float VertexInfo::IPC_DISCOUNT = 0.7f;
 const float VertexInfo::HOTNESS_DISCOUNT = 0.7f;
 
-// conceptually, this should be related to the value:
-//    HOTNESS_BASELINE / NanoSecondsSinceLastObservation
-const float VertexInfo::HOTNESS_INITIAL = 2.0f;
+const float VertexInfo::HOTNESS_SAMPLED_IP = 1.0f;
+const float VertexInfo::HOTNESS_BOOST = 0.05f;
 
-const float VertexInfo::HOTNESS_BOOST = 0.1f;
-
-void VertexInfo::observeSampledIP(ClientID ID, pb::RawSample const& RS) {
-  observeSample(ID, RS, HOTNESS_DISCOUNT, HOTNESS_INITIAL);
+void VertexInfo::observeSampledIP(ClientID ID, pb::RawSample const& RS, uint64_t Period) {
+  observeSample(ID, RS, Period, HOTNESS_SAMPLED_IP);
 }
 
-void VertexInfo::observeRecentlyActive(ClientID ID, pb::RawSample const& RS) {
+void VertexInfo::observeRecentlyActive(ClientID ID, pb::RawSample const& RS, uint64_t Period) {
   // we discount the 'hotness' of a sample at this vertex.
-  float Disc = HOTNESS_DISCOUNT * HOTNESS_DISCOUNT;
-  float Initial = HOTNESS_INITIAL * HOTNESS_DISCOUNT;
-  observeSample(ID, RS, Disc, Initial);
+  observeSample(ID, RS, Period, HOTNESS_BOOST);
 }
 
-void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, float Discount, float Initial) {
+void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, uint64_t Period, float HotnessNudge) {
   // TODO: add branch mis-prediction rate?
 
   auto ThisTime = RS.time();
@@ -823,32 +816,30 @@ void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, float Disco
   std::pair<ClientID, uint32_t> Key{ID, TID};
   auto LastTime = LastSample[Key];
 
-  float Increment;
+  // boost hotness by the nudge amount.
+  Hotness += HotnessNudge;
+
+  ////
+  // determine how to update the IPC
+  float IPCIncrement;
   if (LastTime.Timestamp == 0) {
     // the very first sample
-    Increment = Initial;
+    IPCIncrement = 0.0f;
     LastTime.Initial = true;
 
   } else if (ThisTime >= LastTime.Timestamp) {
     // then this sample is ordered properly.
     // use a typical incremental update rule (Section 2.4/2.5 in RL book)
-    auto Diff = ThisTime - LastTime.Timestamp;
+    auto ElapsedTime = ThisTime - LastTime.Timestamp;
 
-    // how 'hot' this ONE sample is
-    float SampleTemp;
-    if (Diff == 0) {
-      // we've already seen this sample, but we want to further
-      // emphasize movement in the direction the last sample took
-      // us.
-      float Nudge = LastTime.Increment * HOTNESS_BOOST;
-      SampleTemp = Hotness + Nudge;
+    // we've seen this sample already (could be re-observing as recently active)
+    if (ElapsedTime == 0)
+      return;
 
-    } else {
-     SampleTemp = HOTNESS_BASELINE / Diff;
-    }
+    // calculcate the movement to make for the average running IPC
 
-    // the movement to make for the general hotness of the vertex.
-    Increment = Discount * (SampleTemp - Hotness);
+    float SampleIPC = static_cast<float>(Period) / ElapsedTime; // IPC for this sample
+    IPCIncrement = IPC_DISCOUNT * (SampleIPC - IPC);  // movement of the average
     LastTime.Initial = false;
 
   } else {
@@ -856,14 +847,14 @@ void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, float Disco
     // we expect this case to be rare!
     assert(ThisTime < LastTime.Timestamp && "expected out-of-order sample");
     logs(LC_CCT) << "out-of-order perf sample. skipping hotness increment.\n";
-    Increment = 0.0f;
+    IPCIncrement = 0.0f;
     ThisTime = LastTime.Timestamp;
   }
 
   // actually perform the update.
-  Hotness += Increment;
+  IPC += IPCIncrement;
 
-  LastTime.Increment = Increment;
+  LastTime.Increment = IPCIncrement; // TODO: i don't think this is used anymore
   LastTime.Timestamp = ThisTime;
 
   LastSample[Key] = LastTime;
@@ -884,7 +875,7 @@ VertexInfo::VertexInfo(std::shared_ptr<FunctionInfo> FI) :
   FuncName(FI->getCanonicalName()), Patchable(FI->isPatchable()) {}
 
 std::string VertexInfo::getDOTLabel() const {
-  return FuncName + " (" + to_formatted_str(Hotness) + ")";
+  return FuncName + " (hot=" + to_formatted_str(getHotness()) + ";ipc=" + to_formatted_str(getIPC()) + ")";
 }
 
 

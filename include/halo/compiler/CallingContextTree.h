@@ -50,12 +50,12 @@ public:
   /// the sample with existing metrics in this vertex.
   /// It should be used when the sampled IP was observed
   /// at this function context
-  void observeSampledIP(ClientID, pb::RawSample const&);
+  void observeSampledIP(ClientID, pb::RawSample const&, uint64_t SamplePeriod);
 
   /// Should be used to indicate that this function context
   /// was recently active in the given RawSample, but NOT as
   /// the sampled IP.
-  void observeRecentlyActive(ClientID, pb::RawSample const&);
+  void observeRecentlyActive(ClientID, pb::RawSample const&, uint64_t SamplePeriod);
 
   // causes the information in this sample to decay
   void decay();
@@ -63,20 +63,25 @@ public:
   // a measure of how often samples appeared in this function.
   auto getHotness() const { return Hotness; }
 
+  // a measure of the instructions-per-cycle in this function
+  auto getIPC() const { return IPC; }
+
   bool isPatchable() const { return Patchable; }
 
 private:
   std::string FuncName{"<XXX>"};
   bool Patchable{false};
   float Hotness{0};
+  float IPC{0};
   std::map<std::pair<ClientID, uint32_t>, LastSampleInfo> LastSample;
 
-  static const float HOTNESS_BASELINE;
+  static const float IPC_DISCOUNT;
   static const float HOTNESS_DISCOUNT;
-  static const float HOTNESS_INITIAL;
+
+  static const float HOTNESS_SAMPLED_IP;
   static const float HOTNESS_BOOST;
 
-  void observeSample(ClientID ID, pb::RawSample const& RS, float Discount, float Initial);
+  void observeSample(ClientID ID, pb::RawSample const& RS, uint64_t Period, float HotnessNudge);
 }; // end class
 
 
@@ -166,7 +171,7 @@ public:
   // returns true iff the context tree is currently malformed.
   bool isMalformed() const;
 
-  CallingContextTree();
+  CallingContextTree(uint64_t samplePeriod);
 
 private:
 
@@ -178,6 +183,7 @@ private:
 
   Graph Gr;
   VertexID RootVertex;
+  uint64_t SamplePeriod;
 };
 
 } // end namespace halo
