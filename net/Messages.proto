@@ -83,7 +83,7 @@ message RawSample {
   uint64 instr_ptr = 1;
   uint32 thread_id = 2;
   uint64 time = 3;
-  uint64 weight = 4;
+  uint64 weight = 4;    // PERF_SAMPLE_WEIGHT
   repeated uint64 call_context = 5;
   repeated BranchInfo branch = 6;
 }
