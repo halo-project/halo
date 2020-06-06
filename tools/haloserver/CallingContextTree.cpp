@@ -845,6 +845,10 @@ void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, uint64_t Pe
   } else {
     // otherwise this sample is out-of-order, so we skip it because
     // we expect this case to be rare!
+
+    // TODO: perform a sorting operation so that this is even more rare for each batch of
+    // samples we get. between batches there could be an out-of-order though!
+
     assert(ThisTime < LastTime.Timestamp && "expected out-of-order sample");
     logs(LC_CCT) << "out-of-order perf sample. skipping hotness increment.\n";
     IPCIncrement = 0.0f;
