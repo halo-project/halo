@@ -56,14 +56,14 @@ JSON ReadConfigFile(const char* Path) {
 
   if (!file.is_open()) {
     clogs() << "Unable to open server config file: " << Path << std::endl;
-    llvm::report_fatal_error("exiting due to previous error");
+    halo::fatal_error("exiting due to previous error");
   }
 
   JSON ServerConfig = JSON::parse(file, nullptr, false);
   if (ServerConfig.is_discarded()) {
     // would be nice if there was a way to get information about where it is
     // without using exceptions, but that doesn't seem possible right now.
-    llvm::report_fatal_error("syntax error in JSON file");
+    halo::fatal_error("syntax error in JSON file");
   }
 
   logs() << "Using the server config: " << Path << "\n";
