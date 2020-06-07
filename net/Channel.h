@@ -25,7 +25,7 @@ namespace halo {
       /// @returns true if there was an error.
       template<typename T>
       bool send_proto(msg::Kind Kind, T& ProtoBuf) {
-        if(!Sock.is_open())
+        if(SeenError || !Sock.is_open())
           return true;
 
         std::vector<asio::const_buffer> Msg;
@@ -47,8 +47,8 @@ namespace halo {
             asio::write(Sock, Msg, Err);
 
         if (Err) {
-          logs(LC_Channel) << "socket event (send_proto):: " << Err.message() << "\n";
-          Sock.close();
+          logs(LC_Channel) << "socket event (send_proto): " << Err.message() << "\n";
+          SeenError = true;
           return true;
         }
 
@@ -60,7 +60,7 @@ namespace halo {
       /// synchronous send operation of a message with no payload
       /// @returns true if there was an error.
       bool send(msg::Kind Kind) {
-        if(!Sock.is_open())
+        if(SeenError || !Sock.is_open())
           return true;
 
         msg::Header Hdr;
@@ -73,8 +73,8 @@ namespace halo {
             asio::write(Sock, asio::buffer(&Hdr, sizeof(Hdr)), Err);
 
         if (Err) {
-          logs(LC_Channel) << "socket event (send):: " << Err.message() << "\n";
-          Sock.close();
+          logs(LC_Channel) << "socket event (send): " << Err.message() << "\n";
+          SeenError = true;
           return true;
         }
 
@@ -86,7 +86,7 @@ namespace halo {
       /// synchronously recieve an arbitrary message
       /// @returns true if there was an error
       bool recv(std::function<void(msg::Kind, std::vector<char>&)> Callback) {
-        if(!Sock.is_open())
+        if(SeenError || !Sock.is_open())
           return recv_error(Callback, "socket is closed");
 
         msg::Header Hdr;
@@ -127,11 +127,12 @@ namespace halo {
 
       // returns true if the socket has bytes available for reading.
       bool has_data() {
-        return Sock.available() > 0;
+        return !SeenError && Sock.is_open() && Sock.available() > 0;
       }
 
   private:
     ip::tcp::socket &Sock;
+    bool SeenError{false};
 
     bool recv_body(msg::Header Hdr, std::function<void(msg::Kind, std::vector<char>&)> Callback) {
       msg::decode(Hdr);
@@ -159,7 +160,7 @@ namespace halo {
     bool recv_error(const std::function<void(msg::Kind, std::vector<char>&)> &Callback,
                     T ErrMsg) {
       clogs(LC_Channel) << "socket event (recv): " << ErrMsg << "\n";
-      Sock.close();
+      SeenError = true;
       std::vector<char> Empty;
       Callback(msg::Shutdown, Empty);
       return true; // yes error

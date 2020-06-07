@@ -138,6 +138,7 @@ private:
     Chan.async_recv([this,CS](msg::Kind Kind, std::vector<char>& Body) {
       if (Kind == msg::Shutdown) {
         // It never made it into a group, so we clean it up.
+        info("Client shutdown before finishing registration.\n");
         CS->shutdown();
         delete CS;
         UnregisteredSessions--;
