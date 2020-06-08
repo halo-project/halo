@@ -42,18 +42,38 @@ llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {
   return MaxVID;
 }
 
-llvm::Optional<std::string> Profiler::getFirstPatchableInContext(Profiler::CCTNode MaxVID) {
+llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode MaxVID) {
   // obtain the context of that VID
   auto CxtIDs = CCT.contextOf(MaxVID);
 
-  // walk backwards towards 'main' and look for the first patchable function.
+  // Walk backwards towards 'main' and look first for the very-first first patchable function
+  // that can reach the given vertex.
+  //
+  // Then we consider expanding the scope of the tuning section if the next parent
+  // both patchable & hot enough.
+  //
+  // TODO: For now we only expand the scope one level, to the parent. We should possibly expand further??
+  //
+  // The reasoning here is that if a parent is cold but its child is hot,
+  // then it must not be calling the child often enough to be a suitable tuning root.
+  // Otherwise, if the parent is hot then there must be some call-return happening
+  // and we can expand the scope.
+
+  const double MINIMUM_HOTNESS = 2.0;
+  llvm::Optional<std::string> Suitable = llvm::None;
   for (auto IDI = CxtIDs.rbegin(); IDI != CxtIDs.rend(); IDI++) {
     auto VI = CCT.getInfo(*IDI);
-    if (VI.isPatchable())
-      return VI.getFuncName();
+    if (!Suitable.hasValue() && VI.isPatchable()) {
+      Suitable = VI.getFuncName();
+    } else {
+      // an ancestor of the first suitable.
+      if (VI.getHotness() >= MINIMUM_HOTNESS)
+        return VI.getFuncName();
+      return Suitable;
+    }
   }
 
-  return llvm::None;
+  return Suitable;
 }
 
 void Profiler::setBitcodeStatus(std::string const& Name, bool Status) {

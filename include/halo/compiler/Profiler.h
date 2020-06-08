@@ -48,9 +48,10 @@ public:
   llvm::Optional<CCTNode> hottestNode();
 
   /// At the given CCTNode, it climbs the calling context towards the root
-  /// until it finds the first patchable function, and returns that function's name.
+  /// until it finds a good candidate for a tuning section, based on hotness and patchability.
   /// Note that a function is considered an ancestor of itself.
-  llvm::Optional<std::string> getFirstPatchableInContext(Profiler::CCTNode);
+  /// @returns the chosen function's name, if one was found
+  llvm::Optional<std::string> findSuitableTuningRoot(Profiler::CCTNode);
 
   /// advances the age of the profiler's data by one time-step.
   void decay();

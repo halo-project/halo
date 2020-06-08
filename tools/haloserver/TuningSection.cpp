@@ -101,7 +101,7 @@ llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(Strategy St
   auto MaybeHotNode = TSI.Profile.hottestNode();
   if (!MaybeHotNode) return llvm::None;
 
-  auto MaybeAncestor = TSI.Profile.getFirstPatchableInContext(MaybeHotNode.getValue());
+  auto MaybeAncestor = TSI.Profile.findSuitableTuningRoot(MaybeHotNode.getValue());
   if (!MaybeAncestor) return llvm::None;
 
   std::string PatchableAncestorName = MaybeAncestor.getValue();
