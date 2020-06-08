@@ -18,6 +18,10 @@ void Profiler::decay() {
   CCT.decay();
 }
 
+double Profiler::determineIPC(FunctionGroup const& FnGroup) {
+  return CCT.determineIPC(FnGroup);
+}
+
 llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {
   // find the hottest VID
   using VertexID = CCTNode;

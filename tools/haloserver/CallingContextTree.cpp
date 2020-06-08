@@ -2,6 +2,7 @@
 #include "halo/compiler/CallingContextTree.h"
 #include "halo/compiler/CodeRegionInfo.h"
 #include "halo/compiler/PerformanceData.h"
+#include "halo/compiler/ReachableVisitor.h"
 #include "halo/compiler/Util.h"
 #include "llvm/ADT/StringMap.h"
 #include "Logging.h"
@@ -746,6 +747,59 @@ std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, std:
 
   return Paths;
 }
+
+
+///////////////////////////////
+// implementation of determineIPC
+
+struct CCTPerfInfo {
+  double Hotness;
+  double IPC;
+};
+
+double CallingContextTree::determineIPC(FunctionGroup const& FnGroup) {
+  // First, we need to collect all of the starting context vertex IDs.
+  // Specifically, we find all vertices in the CCT that match the root fn.
+  std::vector<VertexID> RootContexts;
+  {
+    auto Range = boost::vertices(Gr);
+    for (auto I = Range.first; I != Range.second; I++)
+      if (Gr[*I].getFuncName() == FnGroup.Root)
+        RootContexts.push_back(*I);
+  }
+
+  // Next, we get the vertex IDs of each function group.
+  std::vector<std::unordered_set<VertexID>> Groups;
+  for (auto RootID : RootContexts) {
+    std::unordered_set<VertexID> &Group = Groups.emplace_back();
+
+    // We only want to include reachable vertices that are part of the specified group.
+    std::function<bool(VertexID, Graph const&)> Filter = [&FnGroup](VertexID u, Graph const& g) {
+      return FnGroup.AllFuncs.count(g[u].getFuncName()) != 0;
+    };
+
+    ReachableVisitor<Graph> Visitor(Group, RootID, Filter);
+    // https://www.boost.org/doc/libs/1_73_0/libs/graph/doc/bgl_named_params.html
+    boost::depth_first_search(Gr, boost::visitor(Visitor).root_vertex(RootID));
+  }
+
+  clogs() << "Function groups in CCT:\n";
+  for (auto const& Group : Groups) {
+    clogs() << "{\n";
+    for (VertexID Member : Group) {
+      clogs() << Member << " -> " << Gr[Member].getDOTLabel() << "\n";
+    }
+    clogs() << "}\n";
+  }
+  clogs() << "--------\n";
+
+
+  return 0.0; // TODO:
+}
+
+
+/////////////////////////////////
+
 
 
 void CallingContextTree::dumpDOT(std::ostream &out) {

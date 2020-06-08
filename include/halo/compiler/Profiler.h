@@ -19,6 +19,10 @@ public:
 
   Profiler() : CCT(getSamplePeriod()) {}
 
+  /// given a set of functions that form sub-trees of the CCT,
+  /// returns an IPC rating for the entire group.
+  double determineIPC(FunctionGroup const&);
+
   /// updates the profiler with new performance data found in the clients
   void consumePerfData(ClientList &);
 

@@ -7,8 +7,10 @@ namespace halo {
 
 void AggressiveTuningSection::take_step(GroupState &State) {
 
+  clogs() << "Current Group IPC: " << Profile.determineIPC(FnGroup) << "\n";
+
   if (Waiting && trySendCode(State)) {
-    logs() << "sent JIT'd code for " << RootFunc << "\n";
+    clogs() << "sent JIT'd code for " << FnGroup.Root << "\n";
     Waiting = false;
     return;
   }
@@ -16,7 +18,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   if ((Steps % 10) == 0) {
     randomlyChange(Knobs, gen);
     Knobs.dump();
-    Compiler.enqueueCompilation(Bitcode, RootFunc, AllFuncs, Knobs);
+    Compiler.enqueueCompilation(Bitcode, FnGroup.Root, FnGroup.AllFuncs, Knobs);
     Waiting = true;
   }
 
@@ -25,10 +27,10 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
 
 void AggressiveTuningSection::dump() const {
-  clogs() << "TuningSection for " << RootFunc << " {\n"
+  clogs() << "TuningSection for " << FnGroup.Root << " {\n"
           << "\tAllFuncs = ";
 
-  for (auto const& Func : AllFuncs)
+  for (auto const& Func : FnGroup.AllFuncs)
     clogs() << Func << ", ";
 
   clogs() << "\n\tSteps = " << Steps
@@ -54,7 +56,7 @@ bool TuningSection::trySendCode(GroupState &State) {
 
   std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.getValue());
   std::string LibName = CompileOut.UniqueJobName;
-  std::string FuncName = RootFunc;
+  std::string FuncName = FnGroup.Root;
 
   // tell all clients to load this object file into memory.
   pb::LoadDyLib DylibMsg;

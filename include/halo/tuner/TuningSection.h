@@ -50,7 +50,7 @@ public:
 
 protected:
   TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
-    : RootFunc(RootFunc), Compiler(TSI.Pool, TSI.Pipeline), Bitcode(TSI.Bitcode), Profile(TSI.Profile) {
+    : FnGroup(RootFunc), Compiler(TSI.Pool, TSI.Pipeline), Bitcode(TSI.Bitcode), Profile(TSI.Profile) {
     KnobSet::InitializeKnobs(TSI.Config, Knobs);
 
     ////////////
@@ -62,14 +62,13 @@ protected:
     // filter down that set to just those for which we have bitcode
     for (auto const& Func : Reachable)
       if (Profile.haveBitcode(Func))
-        AllFuncs.insert(Func);
+        FnGroup.AllFuncs.insert(Func);
   }
 
   // TODO: needs a better interface.
   bool trySendCode(GroupState &);
 
-  std::string RootFunc; // the name of a patchable function serving as the root of this tuning section.
-  std::unordered_set<std::string> AllFuncs; // all functions that make up the tuning section, including the root.
+  FunctionGroup FnGroup;
   KnobSet Knobs;
   CompilationManager Compiler;
   llvm::MemoryBuffer& Bitcode;

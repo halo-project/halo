@@ -16,6 +16,19 @@ namespace pb {
   class RawSample;
 }
 
+/// A set of functions with a distinguished "root" function.
+/// All functions in the group are reachable from the root, according
+/// to the edges in the original program's call graph.
+struct FunctionGroup {
+  std::string Root; // the name of a patchable function serving as the root of this tuning section.
+  std::unordered_set<std::string> AllFuncs; // all functions that make up the tuning section, including the root.
+
+  FunctionGroup(std::string RootFunc) : Root(RootFunc) {
+    AllFuncs.insert(RootFunc);
+  }
+};
+
+
 // carries some metadata about the last sample seen by a vertex.
 class LastSampleInfo {
   public:
@@ -164,6 +177,9 @@ public:
   ///
   /// @returns llvm::None if no path exists. Otherwise a path [Start .. Tgt]
   llvm::Optional<std::list<VertexID>> shortestPath(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const;
+
+  /// TODO: comment.
+  double determineIPC(FunctionGroup const& FuncGroup);
 
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);
