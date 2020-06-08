@@ -752,10 +752,52 @@ std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, std:
 ///////////////////////////////
 // implementation of determineIPC
 
-struct CCTPerfInfo {
-  double Hotness;
-  double IPC;
+struct AttrPair {
+  double Hotness{0};
+  double IPC{0};
 };
+
+std::vector<AttrPair> toVector(CallingContextTree::Graph const& Gr, std::unordered_set<CallingContextTree::VertexID> const& Group) {
+  std::vector<AttrPair> Vec;
+  for (auto Vtex : Group) {
+    auto const& Info = Gr[Vtex];
+    Vec.push_back({Info.getHotness(), Info.getIPC()});
+  }
+  return Vec;
+}
+
+
+/// a hotness-weighted norm function.
+AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
+  // First, we need to apply a hotness-weighting to the raw IPCs,
+  // so that an IPC for a function that's not being called / used
+  // does not contribute to its rating in the vector
+
+  std::vector<double> Weight;
+  double TotalWeight = 0;
+  for (auto const& Component : Vector) {
+    double Heat = Component.Hotness;
+    TotalWeight += Heat;
+    Weight.push_back(Heat);
+  }
+
+  // calculate each _function_'s weight.
+  for (unsigned i = 0; i < Weight.size(); i++)
+    Weight[i] /= TotalWeight;
+
+  int i = 0;
+  AttrPair Result;
+  for (auto const& Component : Vector) {
+    Result.Hotness += std::pow(Component.Hotness, 2);
+    Result.IPC += std::pow(Weight[i] * Component.IPC, 2);
+    i++;
+  }
+
+  Result.Hotness = std::sqrt(Result.Hotness);
+  Result.IPC = std::sqrt(Result.IPC);
+
+  return Result;
+}
 
 double CallingContextTree::determineIPC(FunctionGroup const& FnGroup) {
   // First, we need to collect all of the starting context vertex IDs.
@@ -783,6 +825,20 @@ double CallingContextTree::determineIPC(FunctionGroup const& FnGroup) {
     boost::depth_first_search(Gr, boost::visitor(Visitor).root_vertex(RootID));
   }
 
+  // Next, we consider each _function_ within a group to be a dimension
+  // in some high-dimensional space of that makes up its attributes.
+  // For example, the IPC of one group is the norm of the vector that
+  // is made up of the group's individual IPCs. Same goes for hotness.
+  std::vector<AttrPair> AllNorms;
+  for (auto const& Group : Groups)
+    AllNorms.push_back(euclideanNorm(toVector(Gr, Group)));
+
+  // Finally, we consider each group to be again another vector in
+  // another space, and take the norm of _that_.
+  // NOTE: we ignore the hotness from this final norm.
+  AttrPair TotalNorm = euclideanNorm(AllNorms);
+
+
   clogs() << "Function groups in CCT:\n";
   for (auto const& Group : Groups) {
     clogs() << "{\n";
@@ -791,10 +847,12 @@ double CallingContextTree::determineIPC(FunctionGroup const& FnGroup) {
     }
     clogs() << "}\n";
   }
-  clogs() << "--------\n";
+  clogs() << "Total IPC = " << TotalNorm.IPC
+          << "\nTotal Hotness = " << TotalNorm.Hotness;
+  clogs() << "\n--------\n";
 
 
-  return 0.0; // TODO:
+  return TotalNorm.IPC;
 }
 
 

@@ -7,7 +7,7 @@ namespace halo {
 
 void AggressiveTuningSection::take_step(GroupState &State) {
 
-  clogs() << "Current Group IPC: " << Profile.determineIPC(FnGroup) << "\n";
+  Profile.determineIPC(FnGroup);
 
   if (Waiting && trySendCode(State)) {
     clogs() << "sent JIT'd code for " << FnGroup.Root << "\n";
