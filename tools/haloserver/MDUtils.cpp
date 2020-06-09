@@ -12,63 +12,12 @@ namespace halo {
 
   char const* TAG = "llvm.loop.id";
 
-  char const* TRANSFORM_ATTR = "looptransform";
-
   Metadata* mkMDInt(IntegerType* Ty, uint64_t Val, bool isSigned) {
     auto ConstInt = ConstantInt::get(Ty, Val, isSigned);
     return ValueAsMetadata::get(ConstInt);
   }
 
-  // return val indicates whether the module was changed
-  // NOTE the transform metadata structure should follow
-  // the work in Kruse's pragma branches
-  bool addLoopTransformGroup(Function* F, std::list<MDNode*> &newXForms) {
-    if (newXForms.empty())
-      return false;
-
-    SmallVector<Metadata*, 8> AllTransforms;
-    auto &Ctx = F->getContext();
-
-    // collect the existing transforms, if any
-    auto FuncMD = F->getMetadata(TRANSFORM_ATTR);
-    if (FuncMD)
-      for (auto &X : FuncMD->operands())
-        AllTransforms.push_back(X.get());
-
-    // add new transforms to the group
-    for (auto X : newXForms)
-      AllTransforms.push_back(X);
-
-    auto AllTransformsMD = MDNode::get(Ctx, AllTransforms);
-    F->setMetadata(TRANSFORM_ATTR, AllTransformsMD);
-    return true;
-  }
-
-  MDNode* createTilingMD(LLVMContext& Cxt, const char* XFORM_NAME, std::vector<std::pair<unsigned, uint16_t>> Dims) {
-    IntegerType* i64 = IntegerType::get(Cxt, 64);
-
-    SmallVector<Metadata*, 8> Names;
-    SmallVector<Metadata*, 8> Sizes;
-
-    for (auto Dim : Dims) {
-      Names.push_back(MDString::get(Cxt, std::to_string(Dim.first)));
-      Sizes.push_back(mkMDInt(i64, Dim.second));
-    }
-
-    // build the arguments to the transform
-    Metadata* NameList = MDNode::get(Cxt, Names);
-    Metadata* SizeList = MDNode::get(Cxt, Sizes);
-
-    // build the transform node itself
-    Metadata* XFormName = MDString::get(Cxt, XFORM_NAME);
-    MDNode* Transform = MDNode::get(Cxt, {XFormName, NameList, SizeList});
-
-    return Transform;
-  }
-
-
   MDNode* createLoopName(LLVMContext& Context, unsigned LoopID) {
-    // build a Polly-compatible ID for the loop
     MDString *Tag = MDString::get(Context, TAG);
     MDString* Val = MDString::get(Context, std::to_string(LoopID));
 
@@ -76,8 +25,7 @@ namespace halo {
     return KnobTag;
   }
 
-  // parse the LoopMD, looking for the tag added by createLoopName
-  unsigned getLoopName(MDNode* LoopMD) {
+  unsigned getLoopID(MDNode* LoopMD) {
     for (const MDOperand& Op : LoopMD->operands()) {
       MDNode *Entry = dyn_cast<MDNode>(Op.get());
       if (!Entry || Entry->getNumOperands() != 2)

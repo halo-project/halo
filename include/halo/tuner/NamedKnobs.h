@@ -77,5 +77,11 @@ namespace halo {
       LoopRuntimeUnrollDisable
     };
 
+    static const std::vector<ty> LoopOptions = {
+      LoopUnrollCount,
+      LoopUnrollEnable,
+      LoopRuntimeUnrollDisable
+    };
+
   } // end namespace named_knob
 } // end namespace halo

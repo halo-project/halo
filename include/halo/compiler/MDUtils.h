@@ -7,24 +7,13 @@
 namespace halo {
   extern char const* TAG;
 
-  extern char const* TRANSFORM_ATTR;
-
   llvm::Metadata* mkMDInt(llvm::IntegerType* Ty, uint64_t Val, bool isSigned = false);
 
-  // return val indicates whether the module was changed
-  // NOTE the transform metadata structure should follow
-  // the work in Kruse's pragma branches
-  bool addLoopTransformGroup(llvm::Function* F, std::list<llvm::MDNode*> &newXForms);
-
-  llvm::MDNode* createTilingMD(llvm::LLVMContext& Cxt, const char* XFORM_NAME,
-                              std::vector<std::pair<unsigned, uint16_t>> Dims);
-
+  // given the loop ID, generates an LLVM IR metadata node that is equivalent to it.
   llvm::MDNode* createLoopName(llvm::LLVMContext& Context, unsigned LoopID);
 
   // parse the LoopMD, looking for the tag added by createLoopName
-  unsigned getLoopName(llvm::MDNode* LoopMD);
-
-  bool matchesLoopOption(llvm::Metadata *MD, llvm::StringRef &Key);
+  unsigned getLoopID(llvm::MDNode* LoopMD);
 
   // a functional-style insertion with replacement that preserves all
   // non-matching operands of the llvm::MDNode, and returns a valid LoopMD.

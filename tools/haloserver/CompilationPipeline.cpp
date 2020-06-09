@@ -3,6 +3,7 @@
 #include "halo/compiler/ExposeSymbolTablePass.h"
 #include "halo/compiler/LinkageFixupPass.h"
 #include "halo/compiler/LoopNamerPass.h"
+#include "halo/compiler/LoopAnnotatorPass.h"
 #include "halo/compiler/SimplePassBuilder.h"
 #include "halo/compiler/Profiler.h"
 #include "halo/compiler/ProgramInfoPass.h"
@@ -117,6 +118,25 @@ Error doCleanup(Module &Module, std::string const& RootFunc, std::unordered_set<
   return Error::success();
 }
 
+
+/// This function will apply annotations to the named loops in the module, according to
+/// the knob configuration.
+Error annotateLoops(Module &Module, KnobSet const& Knobs) {
+  bool Pr = false; // printing?
+  SimplePassBuilder PB(/*DebugAnalyses*/ false);
+  ModulePassManager MPM;
+
+  spb::withPrintAfter(Pr, MPM,
+      createModuleToFunctionPassAdaptor(
+        createFunctionToLoopPassAdaptor(
+          LoopAnnotatorPass(Knobs))));
+
+  MPM.run(Module, PB.getAnalyses());
+
+  return Error::success();
+}
+
+
 Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   bool Pr = false; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
@@ -161,7 +181,11 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
 
   ModulePassManager MPM;
   if (OptLevel != PassBuilder::OptimizationLevel::O0) {
-    // we don't run any optimization passes if O0 is requested.
+    // we only apply optimizations if the level >= 0
+    auto LoopAnnotateErr = annotateLoops(Module, Knobs);
+    if (LoopAnnotateErr)
+      return LoopAnnotateErr;
+
     MPM = PB.buildPerModuleDefaultPipeline(OptLevel, /*Debug*/ false, /*LTOPreLink*/ false);
   }
 

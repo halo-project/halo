@@ -223,7 +223,7 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
     // accounting for any scaling.
     int getScaledVal() const {
       if (isLogScale())
-        return std::pow(getVal(), 2);
+        return std::pow(2, getVal());
 
       return getVal();
     }

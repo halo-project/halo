@@ -91,7 +91,7 @@
     {
       "kind": "flag",
       "name": "llvm.loop.unroll.runtime.disable",
-      "default": true
+      "default": false
     },
     {
       "kind": "int",
