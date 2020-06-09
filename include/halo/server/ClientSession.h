@@ -38,6 +38,10 @@ namespace halo {
 
   // The client's state accessed in a thread-safe manner.
   struct SessionState {
+    SessionState() {
+      DeployedLibs.insert(CodeRegionInfo::OriginalLib);
+    }
+
     ClientID ID; // a unique idenifier for the duration of the server process
     CodeRegionInfo CRI;
     PerformanceData PerfData;

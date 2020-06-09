@@ -7,11 +7,32 @@ namespace halo {
 
 void AggressiveTuningSection::take_step(GroupState &State) {
 
-  Profile.determineIPC(FnGroup);
+  CurrentLib.observeIPC(Profile.determineIPC(FnGroup));
 
-  if (Waiting && trySendCode(State)) {
+  if (Status == ActivityState::WaitingForCompile) {
+    auto CompileDone = Compiler.dequeueCompilation();
+    if (!CompileDone)
+      return;
+
+    CodeVersion NewLib(std::move(CompileDone.getValue()));
+
+    sendLib(State, NewLib);
+    redirectTo(State, NewLib);
+
+    PrevLib = std::move(CurrentLib);
+    CurrentLib = std::move(NewLib);
+
     clogs() << "sent JIT'd code for " << FnGroup.Root << "\n";
-    Waiting = false;
+    Status = ActivityState::TestingNewLib;
+    return;
+  }
+
+  if (Status == ActivityState::TestingNewLib) {
+    if (PrevLib.betterThan(CurrentLib)) {
+      redirectTo(State, PrevLib);
+      CurrentLib = std::move(PrevLib);
+    }
+    Status = ActivityState::Ready;
     return;
   }
 
@@ -19,7 +40,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     randomlyChange(Knobs, gen);
     Knobs.dump();
     Compiler.enqueueCompilation(Bitcode, FnGroup.Root, FnGroup.AllFuncs, Knobs);
-    Waiting = true;
+    Status = ActivityState::WaitingForCompile;
   }
 
   Steps++;
@@ -34,28 +55,24 @@ void AggressiveTuningSection::dump() const {
     clogs() << Func << ", ";
 
   clogs() << "\n\tSteps = " << Steps
-          << "\n\tWaiting = " << Waiting
+          << "\n\tStatus = " << static_cast<int>(Status)
           << "\n";
 
 
   clogs() << "}\n\n";
 }
 
+void TuningSection::sendLib(GroupState &State, CodeVersion const& CV) {
+  if (CV.isBroken()) {
+    warning("trying to send broken lib.");
+    return;
+  }
 
+  if(CV.isOriginalLib())
+    return; // nothing to do!
 
-bool TuningSection::trySendCode(GroupState &State) {
-  auto CodeResult = Compiler.dequeueCompilation();
-    if (!CodeResult)
-      return false; // nothing's ready right now.
-
-  auto CompileOut = std::move(CodeResult.getValue());
-
-  auto MaybeBuf = std::move(CompileOut.Result);
-  if (!MaybeBuf)
-    return false; // an error etc happened and was logged elsewhere
-
-  std::unique_ptr<llvm::MemoryBuffer> Buf = std::move(MaybeBuf.getValue());
-  std::string LibName = CompileOut.UniqueJobName;
+  std::unique_ptr<llvm::MemoryBuffer> const& Buf = CV.getObjectFile();
+  std::string LibName = CV.getLibraryName();
   std::string FuncName = FnGroup.Root;
 
   // tell all clients to load this object file into memory.
@@ -71,11 +88,29 @@ bool TuningSection::trySendCode(GroupState &State) {
   for (auto &Client : State.Clients) {
     auto &DeployedLibs = Client->State.DeployedLibs;
 
-    // send the dylib if the client doesn't have it already
+    // send the dylib only if the client doesn't have it already
     if (DeployedLibs.count(LibName) == 0) {
       Client->Chan.send_proto(msg::LoadDyLib, DylibMsg);
       DeployedLibs.insert(LibName);
     }
+  }
+}
+
+void TuningSection::redirectTo(GroupState &State, CodeVersion const& CV) {
+  if (CV.isBroken()) {
+    warning("trying to redirect to broken lib.");
+    return;
+  }
+
+  std::string LibName = CV.getLibraryName();
+  std::string FuncName = FnGroup.Root;
+
+  clogs() << "redirecting " << FuncName << " to " << LibName << "\n";
+
+  for (auto &Client : State.Clients) {
+    // raise an error if the client doesn't already have this dylib!
+    if (Client->State.DeployedLibs.count(LibName) == 0)
+      fatal_error("trying to redirect client to library it doesn't already have!");
 
     auto MaybeDef = Client->State.CRI.lookup(CodeRegionInfo::OriginalLib, FuncName);
     if (!MaybeDef)
@@ -92,7 +127,7 @@ bool TuningSection::trySendCode(GroupState &State) {
     Client->Chan.send_proto(msg::ModifyFunction, MF);
   }
 
-  return true;
+
 }
 
 
