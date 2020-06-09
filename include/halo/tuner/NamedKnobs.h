@@ -18,6 +18,10 @@ namespace halo {
   namespace named_knob {
     using ty = std::pair<std::string, Knob::KnobKind>;
 
+    /// retrieves the unique name for the named knob for a specific loop id
+    std::string forLoop(unsigned i, ty NamedKnob);
+    std::string forLoop(unsigned i, std::string const& NamedKnob);
+
     static const ty IPRA            = {"ipra",             Knob::KK_Flag};
     static const ty FastISel        = {"fast-isel",        Knob::KK_Flag};
     static const ty GlobalISel      = {"global-isel",      Knob::KK_Flag};
@@ -35,6 +39,22 @@ namespace halo {
     static const ty OptimizeLevel = {"optimize-pipeline-level", Knob::KK_OptLvl};
 
 
+    ///////
+    // The following options are for loops
+
+    /// This metadata suggests an unroll factor to the loop unroller.
+    static const ty LoopUnrollCount = {"llvm.loop.unroll.count", Knob::KK_Int};
+
+    /// This metadata suggests that the loop should be fully unrolled if the trip count
+    /// is known at compile time and partially unrolled if the trip count is not known at compile time.
+    static const ty LoopUnrollEnable = {"llvm.loop.unroll.enable", Knob::KK_Flag};
+
+    /// This metadata disables runtime loop unrolling, which means unrolling for loops where
+    /// the loop bound is a runtime value. Disabling this would basically prevent unrolling if
+    /// a residual loop would be required.
+    static const ty LoopRuntimeUnrollDisable = {"llvm.loop.unroll.runtime.disable", Knob::KK_Flag};
+
+
     static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
       IPRA,
       FastISel,
@@ -50,7 +70,11 @@ namespace halo {
       InlineThresholdColdSite,
       InlineThresholdLocalHotSite,
 
-      OptimizeLevel
+      OptimizeLevel,
+
+      LoopUnrollCount,
+      LoopUnrollEnable,
+      LoopRuntimeUnrollDisable
     };
 
   } // end namespace named_knob

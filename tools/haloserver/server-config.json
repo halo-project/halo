@@ -80,5 +80,27 @@
       "min": "O1",
       "max": "O3"
     }
+  ],
+
+  "loopKnobs": [
+    {
+      "kind": "flag",
+      "name": "llvm.loop.unroll.enable",
+      "default": false
+    },
+    {
+      "kind": "flag",
+      "name": "llvm.loop.unroll.runtime.disable",
+      "default": true
+    },
+    {
+      "kind": "int",
+      "name": "llvm.loop.unroll.count",
+      "log_scale": true,
+      "default": 2,
+      "min": 1,
+      "max": 8
+    }
   ]
+
 }

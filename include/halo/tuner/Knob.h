@@ -36,7 +36,6 @@ namespace halo {
     enum KnobKind {
       KK_Int,
       KK_Flag,
-      KK_Loop,
       KK_OptLvl
     };
 
@@ -56,10 +55,6 @@ namespace halo {
 
     // the knob's current value as a string (for debugging).
     virtual std::string dump() const { return "?"; }
-
-    // members related to exporting to a flat array
-
-    virtual size_t size() const { return 1; } // num values to be flattened
 
   private:
     const KnobKind kind_;
@@ -242,5 +237,4 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
     }
   }; // end class IntKnob
 
-
-} // namespace tuner
+} // end namespace halo

@@ -39,7 +39,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   if ((Steps % 10) == 0) {
     randomlyChange(Knobs, gen);
     Knobs.dump();
-    Compiler.enqueueCompilation(Bitcode, FnGroup.Root, FnGroup.AllFuncs, Knobs);
+    Compiler.enqueueCompilation(*Bitcode, Knobs);
     Status = ActivityState::WaitingForCompile;
   }
 
@@ -128,6 +128,33 @@ void TuningSection::redirectTo(GroupState &State, CodeVersion const& CV) {
   }
 
 
+}
+
+TuningSection::TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
+    : FnGroup(RootFunc), Compiler(TSI.Pool, TSI.Pipeline), Profile(TSI.Profile) {
+  ////////////
+  // Choose the set of all funcs in this tuning section.
+
+  // start off with all functions reachable according to the call-graph
+  auto Reachable = Profile.getCallGraph().allReachable(RootFunc);
+
+  // filter down that set to just those for which we have bitcode
+  for (auto const& Func : Reachable)
+    if (Profile.haveBitcode(Func))
+      FnGroup.AllFuncs.insert(Func);
+
+  // now, we clean-up the original bitcode to only include those functions
+  auto MaybeResult = TSI.Pipeline.cleanup(TSI.OriginalBitcode, FnGroup.Root, FnGroup.AllFuncs);
+  if (!MaybeResult)
+    fatal_error("couldn't clean-up bitcode for tuning section!");
+
+  auto Result = std::move(MaybeResult.getValue());
+  Bitcode = std::move(Result.first);
+  unsigned MaxLoopID = Result.second;
+
+  /////
+  // Finally, we can initialize the knobs for this tuning section
+  KnobSet::InitializeKnobs(TSI.Config, Knobs, MaxLoopID);
 }
 
 

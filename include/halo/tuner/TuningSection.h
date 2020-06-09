@@ -63,7 +63,7 @@ struct TuningSectionInitializer {
   ThreadPool &Pool;
   CompilationPipeline &Pipeline;
   Profiler &Profile;
-  llvm::MemoryBuffer &Bitcode;
+  llvm::MemoryBuffer &OriginalBitcode;
 };
 
 
@@ -88,21 +88,7 @@ public:
   };
 
 protected:
-  TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
-    : FnGroup(RootFunc), Compiler(TSI.Pool, TSI.Pipeline), Bitcode(TSI.Bitcode), Profile(TSI.Profile) {
-    KnobSet::InitializeKnobs(TSI.Config, Knobs);
-
-    ////////////
-    // initialize the set of all funcs in this tuning section.
-
-    // start off with all functions reachable according to the call-graph
-    auto Reachable = Profile.getCallGraph().allReachable(RootFunc);
-
-    // filter down that set to just those for which we have bitcode
-    for (auto const& Func : Reachable)
-      if (Profile.haveBitcode(Func))
-        FnGroup.AllFuncs.insert(Func);
-  }
+  TuningSection(TuningSectionInitializer TSI, std::string RootFunc);
 
   // sends the finished compilation job's object file to all clients.
   // It also will not actually send the library if the client already has it.
@@ -113,7 +99,7 @@ protected:
   FunctionGroup FnGroup;
   KnobSet Knobs;
   CompilationManager Compiler;
-  llvm::MemoryBuffer& Bitcode;
+  std::unique_ptr<llvm::MemoryBuffer> Bitcode;
   Profiler &Profile;
 };
 

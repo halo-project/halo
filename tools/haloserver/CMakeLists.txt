@@ -51,6 +51,7 @@ add_executable(${SERVER_BIN}
   Knob.cpp
   KnobSet.cpp
   MDUtils.cpp
+  NamedKnobs.cpp
   PerformanceData.cpp
   Profiler.cpp
   ProgramInfoPass.cpp

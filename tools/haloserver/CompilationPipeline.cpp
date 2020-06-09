@@ -68,7 +68,7 @@ Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, std::unord
   return Deps.takeVector();
 }
 
-Error cleanup(Module &Module, std::string const& RootFunc, std::unordered_set<std::string> const& TunedFuncs) {
+Error doCleanup(Module &Module, std::string const& RootFunc, std::unordered_set<std::string> const& TunedFuncs, unsigned &NumLoopIDs) {
   bool Pr = false; // printing?
   SimplePassBuilder PB(/*DebugAnalyses*/ false);
   ModulePassManager MPM;
@@ -110,7 +110,7 @@ Error cleanup(Module &Module, std::string const& RootFunc, std::unordered_set<st
   spb::withPrintAfter(Pr, MPM,
       createModuleToFunctionPassAdaptor(
         createFunctionToLoopPassAdaptor(
-          LoopNamerPass())));
+          LoopNamerPass(NumLoopIDs))));
 
   MPM.run(Module, PB.getAnalyses());
 
@@ -184,9 +184,23 @@ Error finalize(Module &Module) {
   return Error::success();
 }
 
+// the clean-up step. It mutates the module passed in to clean it up.
+Expected<unsigned>
+  CompilationPipeline::_cleanup(Module &Module, std::string const& RootFunc, std::unordered_set<std::string> const& TunedFuncs) {
+
+  unsigned NumLoopIDs = 0;
+  auto CleanupErr = doCleanup(Module, RootFunc, TunedFuncs, NumLoopIDs);
+  if (CleanupErr)
+    return CleanupErr;
+
+  return NumLoopIDs;
+}
+
+
+
 // The complete pipeline
 Expected<CompilationPipeline::compile_result>
-  CompilationPipeline::_run(Module &Module, std::string const& RootFunc, std::unordered_set<std::string> const& TunedFuncs, KnobSet const& Knobs) {
+  CompilationPipeline::_run(Module &Module, KnobSet const& Knobs) {
 
   llvm::orc::JITTargetMachineBuilder JTMB(Triple);
   auto MaybeTM = JTMB.createTargetMachine();
@@ -208,12 +222,6 @@ Expected<CompilationPipeline::compile_result>
   TO.GuaranteedTailCallOpt = Knobs.lookup<FlagKnob>(named_knob::GuaranteeTCO).getFlag();
 
   TM->Options = TO; // save the options
-
-
-  auto CleanupErr = cleanup(Module, RootFunc, TunedFuncs);
-  if (CleanupErr)
-    return CleanupErr;
-
 
   auto OptErr = optimize(Module, *TM, Knobs);
   if (OptErr)

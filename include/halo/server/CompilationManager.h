@@ -29,11 +29,10 @@ class CompilationManager {
 
     CompilationManager(ThreadPool &pool, CompilationPipeline &pipeline) : Pool(pool), Pipeline(pipeline)  {}
 
-    void enqueueCompilation(llvm::MemoryBuffer& Bitcode,
-                            std::string RootFunc, std::unordered_set<std::string> AllFuncs, KnobSet Knobs) {
+    void enqueueCompilation(llvm::MemoryBuffer& Bitcode, KnobSet Knobs) {
       InFlight.emplace_back(genName(),
-          std::move(Pool.asyncRet([this,RootFunc,AllFuncs,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
-            return Pipeline.run(Bitcode, RootFunc, AllFuncs, Knobs);
+          std::move(Pool.asyncRet([this,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
+            return Pipeline.run(Bitcode, Knobs);
         })));
     }
 

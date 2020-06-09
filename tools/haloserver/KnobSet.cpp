@@ -1,5 +1,6 @@
 
 #include "halo/tuner/KnobSet.h"
+#include "llvm/ADT/Optional.h"
 #include "halo/nlohmann/json.hpp"
 
 #include "Logging.h"
@@ -9,6 +10,8 @@
 namespace halo {
 
 KnobSet::KnobSet(const KnobSet& Other) {
+  NumLoopIDs = Other.NumLoopIDs;
+
   for (auto const& Entry : Other) {
     Knob* Ptr = Entry.second.get();
 
@@ -17,9 +20,6 @@ KnobSet::KnobSet(const KnobSet& Other) {
 
     else if (FlagKnob* K = llvm::dyn_cast<FlagKnob>(Ptr))
       insert(std::make_unique<FlagKnob>(*K));
-
-    else if (LoopKnob* K = llvm::dyn_cast<LoopKnob>(Ptr))
-      insert(std::make_unique<LoopKnob>(*K));
 
     else if (OptLvlKnob* K = llvm::dyn_cast<OptLvlKnob>(Ptr))
       insert(std::make_unique<OptLvlKnob>(*K));
@@ -30,12 +30,7 @@ KnobSet::KnobSet(const KnobSet& Other) {
 }
 
 size_t KnobSet::size() const {
-   size_t numVals = 0;
-
-   for (auto const& Entry : Knobs)
-     numVals += Entry.second->size();
-
-   return numVals;
+   return Knobs.size();
  }
 
 
@@ -80,7 +75,7 @@ T getValue(std::string const& Key, JSON const& Root, std::string Context = "") {
   return Obj.get<T>();
 }
 
-std::string checkedName(JSON const& Obj, Knob::KnobKind Kind) {
+std::string checkedName(JSON const& Obj, Knob::KnobKind Kind, llvm::Optional<unsigned> LoopID) {
   auto const& Corpus = named_knob::Corpus;
   auto Name = getValue<std::string>("name", Obj);
 
@@ -91,11 +86,14 @@ std::string checkedName(JSON const& Obj, Knob::KnobKind Kind) {
   if (Kind != Result->second)
     parseError("knob with name '" + Name + "' has unexpected kind");
 
-  return Name;
+  if (LoopID)
+    return named_knob::forLoop(LoopID.getValue(), Name);
+  else
+    return Name;
 }
 
 
-void addKnob(JSON const& Spec, KnobSet& Knobs) {
+void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) {
   //
   // Knob Specs must start with { "kind" : "KIND_NAME_HERE" ...
   //
@@ -106,14 +104,14 @@ void addKnob(JSON const& Spec, KnobSet& Knobs) {
   auto Kind = getValue<std::string>("kind", Spec);
 
   if (Kind == "flag") {
-    auto Name = checkedName(Spec, Knob::KK_Flag);
+    auto Name = checkedName(Spec, Knob::KK_Flag, LoopID);
     auto Default = getValue<bool>("default", Spec, Name);
 
     Knobs.insert(std::make_unique<FlagKnob>(Name, Default));
 
 
   } else if (Kind == "int") {
-    auto Name = checkedName(Spec, Knob::KK_Int);
+    auto Name = checkedName(Spec, Knob::KK_Int, LoopID);
     auto Default = getValue<int>("default", Spec, Name);
     auto Min = getValue<int>("min", Spec, Name);
     auto Max = getValue<int>("max", Spec, Name);
@@ -122,7 +120,7 @@ void addKnob(JSON const& Spec, KnobSet& Knobs) {
     Knobs.insert(std::make_unique<IntKnob>(Name, Default, Default, Min, Max, Scale));
 
   } else if (Kind == "optlvl") {
-    auto Name = checkedName(Spec, Knob::KK_OptLvl);
+    auto Name = checkedName(Spec, Knob::KK_OptLvl, LoopID);
     auto Default = getValue<std::string>("default", Spec, Name);
     auto Min = getValue<std::string>("min", Spec, Name);
     auto Max = getValue<std::string>("max", Spec, Name);
@@ -134,7 +132,7 @@ void addKnob(JSON const& Spec, KnobSet& Knobs) {
   }
 }
 
- void KnobSet::InitializeKnobs(JSON const& Config, KnobSet& Knobs) {
+ void KnobSet::InitializeKnobs(JSON const& Config, KnobSet& Knobs, unsigned NumLoopIDs) {
   if (!Config.is_object())
     parseError("top level value must be an object");
 
@@ -146,7 +144,25 @@ void addKnob(JSON const& Spec, KnobSet& Knobs) {
     parseError("top-level 'knobs' must be an array");
 
   for (auto const& Spec : KnobSpecs)
-    addKnob(Spec, Knobs);
+    addKnob(Spec, Knobs, llvm::None);
+
+  // Next, if there are any loop options in the config file, we'll generate
+  // knobs for them.
+
+  KnobSpecs = Config["loopKnobs"];
+  if (!KnobSpecs.is_array())
+    parseError("top-level 'loopKnobs' must be an array");
+
+  bool AtLeastOneLoopOption = false;
+  for (auto const& Spec : KnobSpecs) {
+    for (unsigned i = 0; i < NumLoopIDs; i++) {
+      AtLeastOneLoopOption = true;
+      addKnob(Spec, Knobs, i);
+    }
+  }
+
+  if (AtLeastOneLoopOption)
+    Knobs.setNumLoops(NumLoopIDs);
 
  }
 

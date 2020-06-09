@@ -10,9 +10,13 @@ namespace halo {
 
   class LoopNamerPass : public llvm::PassInfoMixin<LoopNamerPass> {
   private:
-    unsigned LoopIDs = 0;
+    unsigned &LoopIDs;
 
   public:
+    LoopNamerPass (unsigned &loopIDs) : LoopIDs(loopIDs) {
+      LoopIDs = 0; // reset it to ensure we start from 0.
+    }
+
     llvm::PreservedAnalyses run(llvm::Loop &Loop, llvm::LoopAnalysisManager&,
                           llvm::LoopStandardAnalysisResults&, llvm::LPMUpdater&) {
       llvm::MDNode *LoopMD = Loop.getLoopID();

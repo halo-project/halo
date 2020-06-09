@@ -1,7 +1,5 @@
 #pragma once
 
-#include "halo/tuner/Knob.h"
-#include "halo/tuner/LoopKnob.h"
 #include "halo/tuner/NamedKnobs.h"
 #include "halo/nlohmann/json_fwd.hpp"
 
@@ -15,7 +13,6 @@ namespace halo {
 
   // handy type aliases.
   namespace knob_ty {
-    using Loop = LoopKnob;
     using Int = ScalarKnob<int>;
   }
 
@@ -23,6 +20,7 @@ namespace halo {
   class KnobSet {
   private:
     std::unordered_map<std::string, std::unique_ptr<Knob>> Knobs;
+    unsigned NumLoopIDs{0};
 
   public:
 
@@ -62,6 +60,10 @@ namespace halo {
       fatal_error("unknown knob name requested: " + Name);
     }
 
+    void setNumLoops(unsigned Sz) { NumLoopIDs = Sz; }
+    unsigned getNumLoops() const { return NumLoopIDs; }
+
+
     auto begin() noexcept { return Knobs.begin(); }
     auto begin() const noexcept { return Knobs.begin(); }
 
@@ -72,7 +74,7 @@ namespace halo {
 
     void dump() const;
 
-    static void InitializeKnobs(JSON const&, KnobSet&);
+    static void InitializeKnobs(JSON const&, KnobSet&, unsigned NumLoopIDs);
 
   };
 
