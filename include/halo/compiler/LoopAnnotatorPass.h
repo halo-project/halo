@@ -14,12 +14,27 @@ namespace halo {
   private:
     KnobSet const& Knobs;
 
-    // {!"option.name"}, aka, no value
-    llvm::MDNode* setPresenceOption(llvm::MDNode *LMD, bool Option, llvm::StringRef OptName) {
-      if (Option) // add the option
-        return updateLMD(LMD, OptName, nullptr);
-      else // delete any such options, if present
+    // for two-valued flags: {!"option.name"} or deletion of that option
+    // for three-valued flags: {!"option.name", i1 1}, {!"option.name", i1 0}, or deletion of that option
+    llvm::MDNode* setFlagOption(llvm::MDNode *LMD, FlagKnob const& FK, llvm::StringRef OptName) {
+
+      if (FK.twoValued()) {
+        if (FK.isTrue()) // add the option
+          return updateLMD(LMD, OptName, nullptr);
+        else // delete any such options, if present
+          return updateLMD(LMD, OptName, nullptr, true);
+      }
+
+      // otherwise, it's a 3 valued flag
+
+      if (FK.isNeither()) // delete the option, if present
         return updateLMD(LMD, OptName, nullptr, true);
+
+      llvm::LLVMContext &C = LMD->getContext();
+      llvm::IntegerType* i1 = llvm::IntegerType::get(C, 1);
+
+      assert(FlagKnob::TRUE == 1 && FlagKnob::FALSE == 0 && "assumption of code below violated.");
+      return updateLMD(LMD, OptName, mkMDInt(i1, FK.getVal()));
     }
 
   public:
@@ -47,7 +62,7 @@ namespace halo {
             case Knob::KK_Flag: {
               auto const& FK = Knobs.lookup<FlagKnob>(named_knob::forLoop(ID, Option));
 
-              LMD = setPresenceOption(LMD, FK.getFlag(), Option.first);
+              LMD = setFlagOption(LMD, FK, Option.first);
 
             } break;
 

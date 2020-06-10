@@ -169,8 +169,7 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   /// after inlining + simplification.
   /// Thus, since compile time doesn't matter for us with such small snippets of code, we may
   /// want to just fix it to be `true`
-  IP.ComputeFullInlineCost =
-    Knobs.lookup<FlagKnob>(named_knob::InlineFullCost).getFlag();
+  Knobs.lookup<FlagKnob>(named_knob::InlineFullCost).applyFlag(IP.ComputeFullInlineCost);
 
   PTO.Inlining = IP;
 
@@ -234,16 +233,16 @@ Expected<CompilationPipeline::compile_result>
   auto TM = std::move(MaybeTM.get());
   TargetOptions TO = TM->DefaultOptions; // grab defaults
 
-  TO.EnableIPRA = Knobs.lookup<FlagKnob>(named_knob::IPRA).getFlag();
+  Knobs.lookup<FlagKnob>(named_knob::IPRA).applyFlag([&](bool Flag) { TO.EnableIPRA = Flag; });
 
-  TO.EnableFastISel = Knobs.lookup<FlagKnob>(named_knob::FastISel).getFlag();
+  Knobs.lookup<FlagKnob>(named_knob::FastISel).applyFlag([&](bool Flag) { TO.EnableFastISel = Flag; });
 
   // NOTE: global isel doesn't seem to be ready for use yet; it creates malformed call instructions sometimes.
   // TO.EnableGlobalISel = Knobs.lookup<FlagKnob>(named_knob::GlobalISel).getFlag();
   TO.EnableGlobalISel = false;
 
-  TO.EnableMachineOutliner = Knobs.lookup<FlagKnob>(named_knob::MachineOutline).getFlag();
-  TO.GuaranteedTailCallOpt = Knobs.lookup<FlagKnob>(named_knob::GuaranteeTCO).getFlag();
+  Knobs.lookup<FlagKnob>(named_knob::MachineOutline).applyFlag([&](bool Flag) { TO.EnableMachineOutliner = Flag; });
+  Knobs.lookup<FlagKnob>(named_knob::GuaranteeTCO).applyFlag([&](bool Flag) { TO.GuaranteedTailCallOpt = Flag; });
 
   TM->Options = TO; // save the options
 

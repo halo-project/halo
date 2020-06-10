@@ -107,25 +107,54 @@ namespace halo {
   }; // end class ScalarKnob
 
 
-  // a boolean-like scalar range
+  // a boolean-like scalar range, which can also be neither true or false
+  // depending on the constructor.
   class FlagKnob : public ScalarKnob<int> {
-  private:
+  public:
     static constexpr int TRUE = 1;
     static constexpr int FALSE = 0;
-  public:
+    static constexpr int NEITHER = -1;
+
     virtual ~FlagKnob() = default;
+
+    FlagKnob(std::string const& Name)
+      : ScalarKnob<int>(KK_Flag, Name,
+                        NEITHER, // current
+                        NEITHER, // default
+                        NEITHER /*min*/,  TRUE /*max*/) {}
+
     FlagKnob(std::string const& Name, bool dflt)
       : ScalarKnob<int>(KK_Flag, Name,
                         dflt ? TRUE : FALSE, // current
                         dflt ? TRUE : FALSE, // default
                         FALSE /*min*/,  TRUE /*max*/) {}
 
-    bool getFlag() const {
-      return getVal() != FALSE;
+    /// Returns true ONLY IF this flag is set to TRUE.
+    /// Remember that flags can be neither true nor false.
+    bool isTrue() const {
+      return getVal() == TRUE;
     }
 
-    void setFlag(bool flag) {
-      setVal(flag ? TRUE : FALSE);
+    // Returns true if the flag is NEITHER true nor false.
+    bool isNeither() const {
+      return getVal() == NEITHER;
+    }
+
+    // Returns true if the flag can only take on two values, true or false.
+    bool twoValued() const { return ((getMax() - getMin()) + 1) == 2; }
+
+    // Performs an assignment to the reference passed in, only if the
+    // flag is either true or false. No assignment occurs if the flag is 'neither'.
+    template <typename BoolAssignable>
+    void applyFlag(BoolAssignable &Option) const {
+      if (!isNeither())
+        Option = isTrue();
+    }
+
+    // fun fact: this version exists b/c you can't pass a reference to a bit field.
+    void applyFlag(std::function<void(bool)> &&AssignAction) {
+      if (!isNeither())
+        AssignAction(isTrue());
     }
 
     static bool classof(const Knob *K) {
@@ -133,7 +162,13 @@ namespace halo {
     }
 
     std::string dump() const override {
-      return getFlag() ? "true" : "false";
+      auto Val = getVal();
+      if (Val == TRUE)
+        return "true";
+      else if (Val == FALSE)
+        return "false";
+      else
+        return "neither";
     }
 
   }; // end class FlagKnob

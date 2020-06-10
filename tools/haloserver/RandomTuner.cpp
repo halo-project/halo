@@ -16,8 +16,8 @@ void randomlyChange(KnobSet &KS, RNE &Eng) {
       IK->setVal(dist(Eng));
 
     } else if (FlagKnob *FK = llvm::dyn_cast<FlagKnob>(Ptr)) {
-      std::uniform_int_distribution<> dist(0, 1); // [a, b]
-      FK->setFlag(dist(Eng) == 1);
+      std::uniform_int_distribution<> dist(FK->getMin(), FK->getMax());
+      FK->setVal(dist(Eng));
 
     } else if (OptLvlKnob *OK = llvm::dyn_cast<OptLvlKnob>(Ptr)) {
       unsigned Min = OptLvlKnob::asInt(OK->getMin());

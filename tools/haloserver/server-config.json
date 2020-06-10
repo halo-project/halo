@@ -94,6 +94,11 @@
       "default": false
     },
     {
+      "kind": "flag",
+      "name": "llvm.loop.vectorize.enable",
+      "default": null
+    },
+    {
       "kind": "int",
       "name": "llvm.loop.unroll.count",
       "log_scale": true,

@@ -105,10 +105,17 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
 
   if (Kind == "flag") {
     auto Name = checkedName(Spec, Knob::KK_Flag, LoopID);
-    auto Default = getValue<bool>("default", Spec, Name);
+    std::string default_field = "default";
 
-    Knobs.insert(std::make_unique<FlagKnob>(Name, Default));
-
+    // check for default: null
+    // this means the flag really has 3 possible values: true, false, neither
+    if (contains(default_field, Spec) && Spec[default_field].is_null()) {
+      Knobs.insert(std::make_unique<FlagKnob>(Name));
+    } else {
+      // otherwise we expect a bool here
+      auto Default = getValue<bool>(default_field, Spec, Name);
+      Knobs.insert(std::make_unique<FlagKnob>(Name, Default));
+    }
 
   } else if (Kind == "int") {
     auto Name = checkedName(Spec, Knob::KK_Int, LoopID);

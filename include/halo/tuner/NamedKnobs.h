@@ -54,6 +54,10 @@ namespace halo {
     /// a residual loop would be required.
     static const ty LoopRuntimeUnrollDisable = {"llvm.loop.unroll.runtime.disable", Knob::KK_Flag};
 
+    /// This metadata selectively enables or disables vectorization for the loop.
+    /// NB: it's a 3-valued style flag, so it must be defaulted to 'null' to be annotated correctly.
+    static const ty LoopVectorizeEnable = {"llvm.loop.vectorize.enable", Knob::KK_Flag};
+
 
     static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
       IPRA,
@@ -74,13 +78,17 @@ namespace halo {
 
       LoopUnrollCount,
       LoopUnrollEnable,
-      LoopRuntimeUnrollDisable
+      LoopRuntimeUnrollDisable,
+      LoopVectorizeEnable
     };
 
+    // NB: you must add all loop options here too, or else the LoopAnnotatorPass will
+    // not apply the knob's setting to the program!!
     static const std::vector<ty> LoopOptions = {
       LoopUnrollCount,
       LoopUnrollEnable,
-      LoopRuntimeUnrollDisable
+      LoopRuntimeUnrollDisable,
+      LoopVectorizeEnable
     };
 
   } // end namespace named_knob
