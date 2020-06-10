@@ -45,6 +45,17 @@ namespace halo {
     /// This metadata suggests an unroll factor to the loop unroller.
     static const ty LoopUnrollCount = {"llvm.loop.unroll.count", Knob::KK_Int};
 
+    /// This metadata suggests an interleave count to the loop interleaver.
+    /// Note that setting llvm.loop.interleave.count to 1 disables interleaving multiple iterations of the loop.
+    /// If llvm.loop.interleave.count is set to 0 then the interleave count will be determined automatically.
+    static const ty LoopInterleaveCount = {"llvm.loop.interleave.count", Knob::KK_Int};
+
+    /// This metadata sets the target width of the vectorizer.
+    /// Note that setting llvm.loop.vectorize.width to 1 disables vectorization of the loop.
+    /// If llvm.loop.vectorize.width is set to 0 or if the loop does not have this metadata,
+    /// the width will be determined automatically.
+    static const ty LoopVectorizeWidth = {"llvm.loop.vectorize.width", Knob::KK_Int};
+
     /// This metadata suggests that the loop should be fully unrolled if the trip count
     /// is known at compile time and partially unrolled if the trip count is not known at compile time.
     static const ty LoopUnrollEnable = {"llvm.loop.unroll.enable", Knob::KK_Flag};
@@ -53,10 +64,6 @@ namespace halo {
     /// the loop bound is a runtime value. Disabling this would basically prevent unrolling if
     /// a residual loop would be required.
     static const ty LoopRuntimeUnrollDisable = {"llvm.loop.unroll.runtime.disable", Knob::KK_Flag};
-
-    /// This metadata selectively enables or disables vectorization for the loop.
-    /// NB: it's a 3-valued style flag, so it must be defaulted to 'null' to be annotated correctly.
-    static const ty LoopVectorizeEnable = {"llvm.loop.vectorize.enable", Knob::KK_Flag};
 
 
     static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
@@ -77,18 +84,20 @@ namespace halo {
       OptimizeLevel,
 
       LoopUnrollCount,
+      LoopInterleaveCount,
+      LoopVectorizeWidth,
       LoopUnrollEnable,
-      LoopRuntimeUnrollDisable,
-      LoopVectorizeEnable
+      LoopRuntimeUnrollDisable
     };
 
     // NB: you must add all loop options here too, or else the LoopAnnotatorPass will
     // not apply the knob's setting to the program!!
     static const std::vector<ty> LoopOptions = {
       LoopUnrollCount,
+      LoopInterleaveCount,
+      LoopVectorizeWidth,
       LoopUnrollEnable,
-      LoopRuntimeUnrollDisable,
-      LoopVectorizeEnable
+      LoopRuntimeUnrollDisable
     };
 
   } // end namespace named_knob

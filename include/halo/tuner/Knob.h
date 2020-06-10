@@ -251,14 +251,20 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
       ScalarKnob<int>(KK_Int, Name, current, dflt, min, max), LogScale(logscale) {}
 
     // indicates whether the values backing this knob are log_2 of
-    // the actual values.
+    // the actual values. If using log scale and the value is negative,
+    // then the scaled value is zero.
     bool isLogScale() const { return LogScale; }
 
     // Returns the "actual" value that this knob represents,
     // accounting for any scaling.
     int getScaledVal() const {
-      if (isLogScale())
-        return std::pow(2, getVal());
+      if (isLogScale()) {
+        auto Val = getVal();
+        if (Val < 0)
+          return 0;   // [-inf, -1] --> 0
+        else
+          return std::pow(2, Val);  // [0, inf] --> 2^(val)
+      }
 
       return getVal();
     }

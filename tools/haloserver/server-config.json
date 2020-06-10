@@ -84,6 +84,30 @@
 
   "loopKnobs": [
     {
+      "kind": "int",
+      "name": "llvm.loop.unroll.count",
+      "log_scale": true,
+      "default": 0,
+      "min": 0,
+      "max": 8
+    },
+    {
+      "kind": "int",
+      "name": "llvm.loop.interleave.count",
+      "log_scale": true,
+      "default": -1,
+      "min": -1,
+      "max": 4
+    },
+    {
+      "kind": "int",
+      "name": "llvm.loop.vectorize.width",
+      "log_scale": true,
+      "default": -1,
+      "min": -1,
+      "max": 4
+    },
+    {
       "kind": "flag",
       "name": "llvm.loop.unroll.enable",
       "default": false
@@ -92,19 +116,6 @@
       "kind": "flag",
       "name": "llvm.loop.unroll.runtime.disable",
       "default": false
-    },
-    {
-      "kind": "flag",
-      "name": "llvm.loop.vectorize.enable",
-      "default": null
-    },
-    {
-      "kind": "int",
-      "name": "llvm.loop.unroll.count",
-      "log_scale": true,
-      "default": 2,
-      "min": 1,
-      "max": 8
     }
   ]
 
