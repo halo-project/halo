@@ -244,29 +244,33 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
 
 
   class IntKnob : public ScalarKnob<int> {
-  private:
-    bool LogScale;
   public:
-    IntKnob(std::string const& Name, int current, int dflt, int min, int max, bool logscale) :
-      ScalarKnob<int>(KK_Int, Name, current, dflt, min, max), LogScale(logscale) {}
+    enum class Scale {
+      None,     // 1:1
+      Log,      // the knob's values are log_2 of the actual values
+      Half      // the knob's values are 1/2 the actual values
+    };
 
-    // indicates whether the values backing this knob are log_2 of
-    // the actual values. If using log scale and the value is negative,
-    // then the scaled value is zero.
-    bool isLogScale() const { return LogScale; }
+    IntKnob(std::string const& Name, int current, int dflt, int min, int max, Scale scale) :
+      ScalarKnob<int>(KK_Int, Name, current, dflt, min, max), ScaleKind(scale) {}
 
     // Returns the "actual" value that this knob represents,
     // accounting for any scaling.
     int getScaledVal() const {
-      if (isLogScale()) {
-        auto Val = getVal();
+      auto Val = getVal();
+
+      if (ScaleKind == Scale::Log) {
         if (Val < 0)
           return 0;   // [-inf, -1] --> 0
         else
           return std::pow(2, Val);  // [0, inf] --> 2^(val)
+
+      } else if (ScaleKind == Scale::Half) {
+        return 2 * Val;
       }
 
-      return getVal();
+      assert(ScaleKind == Scale::None);
+      return Val;
     }
 
     std::string dump() const override {
@@ -276,6 +280,9 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
     static bool classof(const Knob *K) {
       return K->getKind() == KK_Int;
     }
+
+  private:
+    Scale ScaleKind;
   }; // end class IntKnob
 
 } // end namespace halo

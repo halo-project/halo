@@ -122,7 +122,19 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
     auto Default = getValue<int>("default", Spec, Name);
     auto Min = getValue<int>("min", Spec, Name);
     auto Max = getValue<int>("max", Spec, Name);
-    auto Scale = getValue<bool>("log_scale", Spec, Name);
+
+    // interpret the required scale field
+    auto ScaleName = getValue<std::string>("scale", Spec, Name);
+    IntKnob::Scale Scale;
+    if (ScaleName == "half") {
+      Scale = IntKnob::Scale::Half;
+    } else if (ScaleName == "log") {
+      Scale = IntKnob::Scale::Log;
+    } else if (ScaleName == "none") {
+      Scale = IntKnob::Scale::None;
+    } else {
+      parseError("int knob " + Name + " has invalid 'scale' argument " + ScaleName);
+    }
 
     Knobs.insert(std::make_unique<IntKnob>(Name, Default, Default, Min, Max, Scale));
 

@@ -23,7 +23,7 @@
     {
       "kind": "int",
       "name": "inline-threshold-default",
-      "log_scale": false,
+      "scale": "none",
       "default": 225,
       "min": 0,
       "max": 5000
@@ -31,7 +31,7 @@
     {
       "kind": "int",
       "name": "inline-threshold-hintedfunc",
-      "log_scale": false,
+      "scale": "none",
       "default": 325,
       "min": 0,
       "max": 5000
@@ -39,7 +39,7 @@
     {
       "kind": "int",
       "name": "inline-threshold-coldfunc",
-      "log_scale": false,
+      "scale": "none",
       "default": 45,
       "min": 0,
       "max": 5000
@@ -47,7 +47,7 @@
     {
       "kind": "int",
       "name": "inline-threshold-hotsite",
-      "log_scale": false,
+      "scale": "none",
       "default": 3000,
       "min": 0,
       "max": 5000
@@ -55,7 +55,7 @@
     {
       "kind": "int",
       "name": "inline-threshold-coldsite",
-      "log_scale": false,
+      "scale": "none",
       "default": 45,
       "min": 0,
       "max": 5000
@@ -63,7 +63,7 @@
     {
       "kind": "int",
       "name": "inline-threshold-locallyhotsite",
-      "log_scale": false,
+      "scale": "none",
       "default": 525,
       "min": 0,
       "max": 5000
@@ -86,15 +86,15 @@
     {
       "kind": "int",
       "name": "llvm.loop.unroll.count",
-      "log_scale": true,
-      "default": 0,
-      "min": 0,
+      "scale": "half",
+      "default": 1,
+      "min": 1,
       "max": 5
     },
     {
       "kind": "int",
       "name": "llvm.loop.interleave.count",
-      "log_scale": true,
+      "scale": "log",
       "default": -1,
       "min": -1,
       "max": 4
@@ -102,7 +102,7 @@
     {
       "kind": "int",
       "name": "llvm.loop.vectorize.width",
-      "log_scale": true,
+      "scale": "log",
       "default": -1,
       "min": -1,
       "max": 4
