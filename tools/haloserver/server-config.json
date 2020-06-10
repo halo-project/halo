@@ -89,7 +89,7 @@
       "log_scale": true,
       "default": 0,
       "min": 0,
-      "max": 8
+      "max": 5
     },
     {
       "kind": "int",

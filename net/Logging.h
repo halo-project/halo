@@ -47,7 +47,8 @@ namespace halo {
     LC_CCT_DUMP, // calling context tree (pretty dumps of current state)
     LC_ProgramInfoPass,
     LC_MonitorState,
-    LC_Channel
+    LC_Channel,
+    LC_Compiler
   };
 
   // master controller of what type of logging output you desire.
@@ -55,10 +56,11 @@ namespace halo {
     switch(LC) {
       // EXPLICITLY ENABLED CONTEXTS
       case LC_Anywhere:
-      case LC_CCT_DUMP:
+      // case LC_CCT_DUMP:
       // case LC_CCT:
       // case LC_ProgramInfoPass:
       // case LC_MonitorState:
+      case LC_Compiler:
       case LC_Channel:
         return __logging::NOISY;
 

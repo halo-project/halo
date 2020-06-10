@@ -205,9 +205,9 @@
 #define NTIMES 100
 
 #ifdef SMALL_PROBLEM_SIZE
-  #define ITERS 2000
+  #define ITERS 20000
 #else
-  #define ITERS 4000
+  #define ITERS 40000
 #endif
 
 /**** LLVM Changes ****/

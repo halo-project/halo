@@ -205,10 +205,8 @@ void CallingContextTree::observe(CallGraph const& CG, ClientID ID, CodeRegionInf
     insertSample(CG, ID, CRI, Sample);
   }
 
-  if (SawSample) {
+  if (SawSample)
     dumpDOT(clogs(LC_CCT_DUMP));
-    // fatal_error("todo: implement CCT observe");
-  }
 }
 
 void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {

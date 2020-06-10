@@ -4,6 +4,7 @@
 #include <future>
 #include <list>
 #include <utility>
+#include <chrono>
 
 #include "halo/compiler/CompilationPipeline.h"
 #include "halo/compiler/Profiler.h"
@@ -32,7 +33,15 @@ class CompilationManager {
     void enqueueCompilation(llvm::MemoryBuffer& Bitcode, KnobSet Knobs) {
       InFlight.emplace_back(genName(),
           std::move(Pool.asyncRet([this,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
-            return Pipeline.run(Bitcode, Knobs);
+            auto Start = std::chrono::system_clock::now();
+
+            auto Result = Pipeline.run(Bitcode, Knobs);
+
+            auto End = std::chrono::system_clock::now();
+            std::chrono::duration<float> Diff = End - Start;
+            clogs(LC_Compiler) << "Compile job finished in " << Diff.count() << " seconds.\n";
+
+            return Result;
         })));
     }
 
