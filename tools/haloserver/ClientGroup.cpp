@@ -123,7 +123,7 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
 
 ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
-      ShouldStop(false), ServiceIterationRate(250), Pool(Pool), Config(Config), BitcodeHash(BitcodeSHA1) {
+      ShouldStop(false), ServiceIterationRate(50), Pool(Pool), Config(Config), BitcodeHash(BitcodeSHA1) {
 
       if (!CS->Enrolled)
         llvm::report_fatal_error("was given a non-enrolled client!");

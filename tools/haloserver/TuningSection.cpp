@@ -21,7 +21,9 @@ CodeVersion::CodeVersion(CompilationManager::FinishedJob &&Job) : LibName(Job.Un
 void AggressiveTuningSection::take_step(GroupState &State) {
   Steps++;
 
-  GroupPerf Perf = Profile.currentPerf(FnGroup, Versions[CurrentLib].getLibraryName());
+  assert(Versions.find(CurrentLib) != Versions.end() && "current version not already in database?");
+
+  GroupPerf Perf = Profile.currentPerf(FnGroup, CurrentLib);
 
   // if no new samples have hit any of the functions in the group since last time,
   // or we don't have a valid IPC, we do nothing.
@@ -40,6 +42,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   // this lib is too young to get a decent picture of what's going on.
   if (Versions[CurrentLib].recordedIPCs() < std::max(10UL, EXPLOIT_FACTOR / 2))
     return;
+
 
   if (Status == ActivityState::WaitingForCompile) {
     auto CompileDone = Compiler.dequeueCompilation();
