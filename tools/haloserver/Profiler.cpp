@@ -18,8 +18,8 @@ void Profiler::decay() {
   CCT.decay();
 }
 
-double Profiler::determineIPC(FunctionGroup const& FnGroup) {
-  return CCT.determineIPC(FnGroup);
+GroupPerf Profiler::currentPerf(FunctionGroup const& FnGroup) {
+  return CCT.currentPerf(FnGroup);
 }
 
 llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {

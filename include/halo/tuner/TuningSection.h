@@ -6,6 +6,7 @@
 #include "halo/tuner/Actions.h"
 #include "halo/tuner/KnobSet.h"
 #include "halo/tuner/RandomTuner.h"
+#include "halo/tuner/RandomQuantity.h"
 #include "halo/server/ThreadPool.h"
 #include "halo/server/CompilationManager.h"
 #include "halo/nlohmann/json_fwd.hpp"
@@ -42,18 +43,30 @@ class CodeVersion {
 
   bool isOriginalLib() const { return LibName == CodeRegionInfo::OriginalLib; }
 
-  // TODO: port over the t test and other feedback stuff from atjit
-  void observeIPC(double IPC) { CurrentIPC = IPC; }
+  void observeIPC(double value) { IPC.observe(value); }
 
-  bool betterThan(CodeVersion const& Other) const {
-    return Other.CurrentIPC < CurrentIPC;
+  size_t recordedIPCs() const { return IPC.observations(); }
+
+  // returns true if this code version is better than the given one, and false otherwise.
+  // if the query cannot be answered, then NONE is returned instead.
+  llvm::Optional<bool> betterThan(CodeVersion const& Other) const {
+    // TODO: use something fancier than this.
+    //
+    // 1. Also you need to pay attention to the IPC value being tracked in the CCT.
+    // I think you should set its discount factor to be higher so that it forgets the
+    // previous IPCs quickly.
+    //
+    // 2. TODO: TODO: Also, you need to provide the _library name_ along with the
+    // function group to get the group's performance w.r.t. the library.
+    //
+    return Other.IPC.mean() < IPC.mean();
   }
 
   private:
   bool Broken{false};
   std::string LibName;
   std::unique_ptr<llvm::MemoryBuffer> ObjFile;
-  double CurrentIPC{0};
+  RandomQuantity IPC{50};
 };
 
 
@@ -121,7 +134,18 @@ private:
 
   std::random_device rd;
   std::mt19937_64 gen;
+
+
+  static constexpr uint64_t EXPLOIT_FACTOR = 10; // the number of steps we need to exploit to repay our debt
+  uint64_t ExploitSteps{0};
+  size_t SamplesLastTime{0};
+
+  // statistics for myself
   uint64_t Steps{0};
+  uint64_t Experiments{0};
+
+
+
   ActivityState Status{ActivityState::Ready};
   CodeVersion CurrentLib;
   CodeVersion PrevLib;

@@ -6,8 +6,20 @@ namespace halo {
 
 
 void AggressiveTuningSection::take_step(GroupState &State) {
+  Steps++;
 
-  CurrentLib.observeIPC(Profile.determineIPC(FnGroup));
+  GroupPerf Perf = Profile.currentPerf(FnGroup);
+
+  // if no new samples have hit any of the functions in the group since last time, we do nothing.
+  if (SamplesLastTime == Perf.SamplesSeen)
+    return;
+
+  SamplesLastTime = Perf.SamplesSeen;
+  CurrentLib.observeIPC(Perf.IPC);
+
+  // this lib is too young to get a decent picture of what's going on.
+  if (CurrentLib.recordedIPCs() < std::max(10UL, EXPLOIT_FACTOR / 2))
+    return;
 
   if (Status == ActivityState::WaitingForCompile) {
     auto CompileDone = Compiler.dequeueCompilation();
@@ -28,34 +40,48 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   }
 
   if (Status == ActivityState::TestingNewLib) {
-    if (PrevLib.betterThan(CurrentLib)) {
+    auto Answer = PrevLib.betterThan(CurrentLib);
+
+    if (!Answer.hasValue())
+      return; // we will keep waiting for more samples to come in.
+
+    if (Answer.getValue()) {
+      // then prev is better, let's revert.
       redirectTo(State, PrevLib);
       CurrentLib = std::move(PrevLib);
     }
+
+    ExploitSteps = EXPLOIT_FACTOR;
     Status = ActivityState::Ready;
     return;
   }
 
-  if ((Steps % 10) == 0) {
-    randomlyChange(Knobs, gen);
-    Knobs.dump();
-    Compiler.enqueueCompilation(*Bitcode, Knobs);
-    Status = ActivityState::WaitingForCompile;
+  // not going to take an experiment for now.
+  if (ExploitSteps > 0) {
+    ExploitSteps--;
+    return;
   }
 
-  Steps++;
+  // experiment!
+  Experiments += 1;
+  randomlyChange(Knobs, gen);
+  Knobs.dump();
+  Compiler.enqueueCompilation(*Bitcode, Knobs);
+  Status = ActivityState::WaitingForCompile;
 }
 
 
 void AggressiveTuningSection::dump() const {
-  clogs() << "TuningSection for " << FnGroup.Root << " {\n"
-          << "\tAllFuncs = ";
+  clogs() << "TuningSection for " << FnGroup.Root << " {"\
+          << "\n\tAllFuncs = ";
 
   for (auto const& Func : FnGroup.AllFuncs)
     clogs() << Func << ", ";
 
-  clogs() << "\n\tSteps = " << Steps
+  clogs() << "\n\tCurrentLib = " << CurrentLib.getLibraryName()
+          << "\n\tSteps = " << Steps
           << "\n\tStatus = " << static_cast<int>(Status)
+          << "\n\tExperiments = " << Experiments
           << "\n";
 
 

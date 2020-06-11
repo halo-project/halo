@@ -797,7 +797,7 @@ AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
   return Result;
 }
 
-double CallingContextTree::determineIPC(FunctionGroup const& FnGroup) {
+GroupPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup) {
   // First, we need to collect all of the starting context vertex IDs.
   // Specifically, we find all vertices in the CCT that match the root fn.
   std::vector<VertexID> RootContexts;
@@ -828,8 +828,14 @@ double CallingContextTree::determineIPC(FunctionGroup const& FnGroup) {
   // For example, the IPC of one group is the norm of the vector that
   // is made up of the group's individual IPCs. Same goes for hotness.
   std::vector<AttrPair> AllNorms;
-  for (auto const& Group : Groups)
+  size_t TotalSamples = 0;
+  for (auto const& Group : Groups) {
+
+    for (auto const& ID : Group)
+      TotalSamples += Gr[ID].samplesSeenIP();
+
     AllNorms.push_back(euclideanNorm(toVector(Gr, Group)));
+  }
 
   // Finally, we consider each group to be again another vector in
   // another space, and take the norm of _that_.
@@ -845,12 +851,17 @@ double CallingContextTree::determineIPC(FunctionGroup const& FnGroup) {
     }
     clogs() << "}\n";
   }
-  clogs() << "Total IPC = " << TotalNorm.IPC
-          << "\nTotal Hotness = " << TotalNorm.Hotness;
+  clogs() << "Group IPC = " << TotalNorm.IPC
+          << "\nGroup Hotness = " << TotalNorm.Hotness
+          << "\nGroup Samples = " << TotalSamples;
   clogs() << "\n--------\n";
 
+  GroupPerf Perf;
+  Perf.IPC = TotalNorm.IPC;
+  Perf.Hotness = TotalNorm.Hotness;
+  Perf.SamplesSeen = TotalSamples;
 
-  return TotalNorm.IPC;
+  return Perf;
 }
 
 
@@ -902,13 +913,14 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
 /// VertexInfo definitions
 
 // (0, 1), learning rate / incremental update factor "alpha"
-const float VertexInfo::IPC_DISCOUNT = 0.7f;
+const float VertexInfo::IPC_DISCOUNT = 0.9f;
 const float VertexInfo::HOTNESS_DISCOUNT = 0.7f;
 
 const float VertexInfo::HOTNESS_SAMPLED_IP = 1.0f;
 const float VertexInfo::HOTNESS_BOOST = 0.05f;
 
 void VertexInfo::observeSampledIP(ClientID ID, pb::RawSample const& RS, uint64_t Period) {
+  SamplesSeen++;
   observeSample(ID, RS, Period, HOTNESS_SAMPLED_IP);
 }
 

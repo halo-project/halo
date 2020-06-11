@@ -79,6 +79,9 @@ public:
   // a measure of the instructions-per-cycle in this function
   auto getIPC() const { return IPC; }
 
+  // a count of how many calls to observeSampledIP happened
+  auto samplesSeenIP() const { return SamplesSeen; }
+
   bool isPatchable() const { return Patchable; }
 
 private:
@@ -86,6 +89,7 @@ private:
   bool Patchable{false};
   float Hotness{0};
   float IPC{0};
+  size_t SamplesSeen{0};
   std::map<std::pair<ClientID, uint32_t>, LastSampleInfo> LastSample;
 
   static const float IPC_DISCOUNT;
@@ -117,6 +121,14 @@ public:
     static const float FREQUENCY_DISCOUNT;
     float Frequency{0};
 }; // end class
+
+
+// Profiling-based attributes of a function group.
+struct GroupPerf {
+  double Hotness{0};
+  double IPC{0};
+  size_t SamplesSeen{0};
+};
 
 
 /// A container for context-sensitive profiling data.
@@ -178,8 +190,8 @@ public:
   /// @returns llvm::None if no path exists. Otherwise a path [Start .. Tgt]
   llvm::Optional<std::list<VertexID>> shortestPath(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const;
 
-  /// TODO: comment.
-  double determineIPC(FunctionGroup const& FuncGroup);
+  /// Gather some performance information about this function group.
+  GroupPerf currentPerf(FunctionGroup const& FuncGroup);
 
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);
