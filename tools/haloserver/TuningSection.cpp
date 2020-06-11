@@ -10,9 +10,16 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
   GroupPerf Perf = Profile.currentPerf(FnGroup, CurrentLib.getLibraryName());
 
-  // if no new samples have hit any of the functions in the group since last time, we do nothing.
-  if (SamplesLastTime == Perf.SamplesSeen)
+  // if no new samples have hit any of the functions in the group since last time,
+  // or we don't have a valid IPC, we do nothing.
+  if (SamplesLastTime == Perf.SamplesSeen || Perf.IPC <= 0)
     return;
+
+  clogs() << "\n--------\n"
+          << "Group IPC = " << Perf.IPC
+          << "\nGroup Hotness = " << Perf.Hotness
+          << "\nGroup Samples = " << Perf.SamplesSeen
+          << "\n--------\n";
 
   SamplesLastTime = Perf.SamplesSeen;
   CurrentLib.observeIPC(Perf.IPC);
@@ -49,6 +56,9 @@ void AggressiveTuningSection::take_step(GroupState &State) {
       // then prev is better, let's revert.
       redirectTo(State, PrevLib);
       CurrentLib = std::move(PrevLib);
+    } else {
+      // we're going to keep the current one!
+      SuccessfulExperiments++;
     }
 
     ExploitSteps = EXPLOIT_FACTOR;
@@ -78,10 +88,17 @@ void AggressiveTuningSection::dump() const {
   for (auto const& Func : FnGroup.AllFuncs)
     clogs() << Func << ", ";
 
-  clogs() << "\n\tCurrentLib = " << CurrentLib.getLibraryName()
-          << "\n\tSteps = " << Steps
-          << "\n\tStatus = " << static_cast<int>(Status)
-          << "\n\tExperiments = " << Experiments
+  float SuccessRate = Experiments == 0
+                        ? 0
+                        : 100.0 * (((float)SuccessfulExperiments) / ((float)Experiments));
+
+
+  clogs() << "\n\tStatus = " << stateToString(Status)
+          << "\n\tCurrentLib = " << CurrentLib.getLibraryName()
+          << "\n\tPrevLib = " << PrevLib.getLibraryName()
+          << "\n\t# Steps = " << Steps
+          << "\n\t# Experiments = " << Experiments
+          << "\n\tSuccess Rate = " << SuccessRate << "%"
           << "\n";
 
 

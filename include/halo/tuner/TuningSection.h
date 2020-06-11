@@ -132,6 +132,15 @@ private:
     TestingNewLib
   };
 
+  std::string stateToString(ActivityState S) const {
+    switch(S) {
+      case ActivityState::Ready:                return "ready";
+      case ActivityState::WaitingForCompile:    return "compiling";
+      case ActivityState::TestingNewLib:        return "bakeoff";
+    };
+    return "?";
+  }
+
   std::random_device rd;
   std::mt19937_64 gen;
 
@@ -143,6 +152,7 @@ private:
   // statistics for myself
   uint64_t Steps{0};
   uint64_t Experiments{0};
+  uint64_t SuccessfulExperiments{0};
 
 
 

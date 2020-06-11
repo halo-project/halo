@@ -869,20 +869,6 @@ GroupPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Op
   // NOTE: we ignore the hotness from this final norm.
   AttrPair TotalNorm = euclideanNorm(AllNorms);
 
-
-  clogs() << "Function groups in CCT:\n";
-  for (auto const& Group : Groups) {
-    clogs() << "{\n";
-    for (VertexID Member : Group) {
-      clogs() << Member << " -> " << Gr[Member].getDOTLabel() << "\n";
-    }
-    clogs() << "}\n";
-  }
-  clogs() << "Group IPC = " << TotalNorm.IPC
-          << "\nGroup Hotness = " << TotalNorm.Hotness
-          << "\nGroup Samples = " << TotalSamples;
-  clogs() << "\n--------\n";
-
   GroupPerf Perf;
   Perf.IPC = TotalNorm.IPC;
   Perf.Hotness = TotalNorm.Hotness;
@@ -974,6 +960,8 @@ void VertexInfo::observeSample(CCTNodeInfo &Info, pb::RawSample const& RS, uint6
   ////
   // determine how to update the IPC
   float IPCIncrement;
+  bool ValidSample = true;
+
   if (Info.SamplesSeen == 0) {
     // the very first sample
     IPCIncrement = 0.0f;
@@ -1001,10 +989,11 @@ void VertexInfo::observeSample(CCTNodeInfo &Info, pb::RawSample const& RS, uint6
     warning("out-of-order perf sample. skipping IPC increment.\n");
     IPCIncrement = 0.0f;
     ThisTime = Info.Timestamp;
+    ValidSample = false;
   }
 
   // actually perform the update.
-  Info.SamplesSeen += 1;
+  Info.SamplesSeen += (ValidSample ? 1 : 0);
   Info.IPC += IPCIncrement;
   Info.Timestamp = ThisTime;
 }
