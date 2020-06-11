@@ -1,14 +1,26 @@
 #include "halo/tuner/TuningSection.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/compiler/ReadELF.h"
+#include "llvm/Support/SHA1.h"
 
 namespace halo {
+
+
+CodeVersion::CodeVersion(CompilationManager::FinishedJob &&Job) : LibName(Job.UniqueJobName) {
+  if (!Job.Result) {
+    warning("Compile job failed with an error, library is broken.");
+    Broken = true;
+  }
+
+  ObjFile = std::move(Job.Result.getValue());
+  ObjFileHash = llvm::SHA1::hash(llvm::arrayRefFromStringRef(ObjFile->getBuffer()));
+}
 
 
 void AggressiveTuningSection::take_step(GroupState &State) {
   Steps++;
 
-  GroupPerf Perf = Profile.currentPerf(FnGroup, CurrentLib.getLibraryName());
+  GroupPerf Perf = Profile.currentPerf(FnGroup, Versions[CurrentLib].getLibraryName());
 
   // if no new samples have hit any of the functions in the group since last time,
   // or we don't have a valid IPC, we do nothing.
@@ -22,10 +34,10 @@ void AggressiveTuningSection::take_step(GroupState &State) {
           << "\n--------\n";
 
   SamplesLastTime = Perf.SamplesSeen;
-  CurrentLib.observeIPC(Perf.IPC);
+  Versions[CurrentLib].observeIPC(Perf.IPC);
 
   // this lib is too young to get a decent picture of what's going on.
-  if (CurrentLib.recordedIPCs() < std::max(10UL, EXPLOIT_FACTOR / 2))
+  if (Versions[CurrentLib].recordedIPCs() < std::max(10UL, EXPLOIT_FACTOR / 2))
     return;
 
   if (Status == ActivityState::WaitingForCompile) {
@@ -33,13 +45,15 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     if (!CompileDone)
       return;
 
-    CodeVersion NewLib(std::move(CompileDone.getValue()));
+    auto DoneJob = std::move(CompileDone.getValue());
+    std::string NewLib = DoneJob.UniqueJobName;
+    Versions[NewLib] = std::move(DoneJob);
 
-    sendLib(State, NewLib);
-    redirectTo(State, NewLib);
+    sendLib(State, Versions[NewLib]);
+    redirectTo(State, Versions[NewLib]);
 
-    PrevLib = std::move(CurrentLib);
-    CurrentLib = std::move(NewLib);
+    PrevLib = CurrentLib;
+    CurrentLib = NewLib;
 
     clogs() << "sent JIT'd code for " << FnGroup.Root << "\n";
     Status = ActivityState::TestingNewLib;
@@ -47,15 +61,15 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   }
 
   if (Status == ActivityState::TestingNewLib) {
-    auto Answer = PrevLib.betterThan(CurrentLib);
+    auto Answer = Versions[PrevLib].betterThan(Versions[CurrentLib]);
 
     if (!Answer.hasValue())
       return; // we will keep waiting for more samples to come in.
 
     if (Answer.getValue()) {
       // then prev is better, let's revert.
-      redirectTo(State, PrevLib);
-      CurrentLib = std::move(PrevLib);
+      redirectTo(State, Versions[PrevLib]);
+      CurrentLib = PrevLib;
     } else {
       // we're going to keep the current one!
       SuccessfulExperiments++;
@@ -94,8 +108,8 @@ void AggressiveTuningSection::dump() const {
 
 
   clogs() << "\n\tStatus = " << stateToString(Status)
-          << "\n\tCurrentLib = " << CurrentLib.getLibraryName()
-          << "\n\tPrevLib = " << PrevLib.getLibraryName()
+          << "\n\tCurrentLib = " << CurrentLib
+          << "\n\tPrevLib = " << PrevLib
           << "\n\t# Steps = " << Steps
           << "\n\t# Experiments = " << Experiments
           << "\n\tSuccess Rate = " << SuccessRate << "%"
@@ -104,6 +118,16 @@ void AggressiveTuningSection::dump() const {
 
   clogs() << "}\n\n";
 }
+
+AggressiveTuningSection::AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
+  : TuningSection(TSI, RootFunc), gen(rd()) {
+    // create a dummy version of the original library to record its performance, etc.
+    CodeVersion OriginalLib;
+    std::string Name = OriginalLib.getLibraryName();
+    Versions[Name] = std::move(OriginalLib);
+    CurrentLib = Name;
+    PrevLib = Name;
+  }
 
 void TuningSection::sendLib(GroupState &State, CodeVersion const& CV) {
   if (CV.isBroken()) {

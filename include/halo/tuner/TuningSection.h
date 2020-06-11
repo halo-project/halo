@@ -25,15 +25,13 @@ class GroupState;
 /// colloquially a "dylib" or library.
 class CodeVersion {
   public:
-  CodeVersion() : LibName(CodeRegionInfo::OriginalLib) {}
-  CodeVersion(CompilationManager::FinishedJob &&Job) : LibName(Job.UniqueJobName) {
-    if (!Job.Result) {
-      warning("Compile job failed with an error, library is broken.");
-      Broken = true;
-    }
-
-    ObjFile = std::move(Job.Result.getValue());
+  /// Creates a code version corresponding to the original library in the client.
+  CodeVersion() : LibName(CodeRegionInfo::OriginalLib) {
+    std::fill(ObjFileHash.begin(), ObjFileHash.end(), 0);
   }
+
+  // Create a code version for a finished job.
+  CodeVersion(CompilationManager::FinishedJob &&Job);
 
   std::string const& getLibraryName() const { return LibName; }
 
@@ -42,6 +40,8 @@ class CodeVersion {
   bool isBroken() const { return Broken; }
 
   bool isOriginalLib() const { return LibName == CodeRegionInfo::OriginalLib; }
+
+  std::array<uint8_t, 20> const& getHash() const { return ObjFileHash; }
 
   void observeIPC(double value) { IPC.observe(value); }
 
@@ -66,6 +66,7 @@ class CodeVersion {
   bool Broken{false};
   std::string LibName;
   std::unique_ptr<llvm::MemoryBuffer> ObjFile;
+  std::array<uint8_t, 20> ObjFileHash;
   RandomQuantity IPC{50};
 };
 
@@ -120,8 +121,7 @@ protected:
 /// haven't decided on what this should do yet.
 class AggressiveTuningSection : public TuningSection {
 public:
-  AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
-            : TuningSection(TSI, RootFunc), gen(rd()) {}
+  AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc);
   void take_step(GroupState &) override;
   void dump() const override;
 
@@ -154,11 +154,11 @@ private:
   uint64_t Experiments{0};
   uint64_t SuccessfulExperiments{0};
 
-
-
   ActivityState Status{ActivityState::Ready};
-  CodeVersion CurrentLib;
-  CodeVersion PrevLib;
+  std::string CurrentLib;
+  std::string PrevLib;
+
+  std::unordered_map<std::string, CodeVersion> Versions;
 };
 
 } // end namespace
