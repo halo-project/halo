@@ -8,7 +8,7 @@ namespace halo {
 void AggressiveTuningSection::take_step(GroupState &State) {
   Steps++;
 
-  GroupPerf Perf = Profile.currentPerf(FnGroup);
+  GroupPerf Perf = Profile.currentPerf(FnGroup, CurrentLib.getLibraryName());
 
   // if no new samples have hit any of the functions in the group since last time, we do nothing.
   if (SamplesLastTime == Perf.SamplesSeen)

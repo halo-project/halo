@@ -29,18 +29,21 @@ struct FunctionGroup {
 };
 
 
-// carries some metadata about the last sample seen by a vertex.
-class LastSampleInfo {
+// carries some metadata about the last sample seen by a vertex
+// in a manner that is more specific than than its calling context.
+class CCTNodeInfo {
   public:
-    uint64_t Timestamp = 0;
-    bool Initial = false;
-    float Increment = 0.0f;
+    uint64_t Timestamp{0}; // last timestamp seen
+    size_t SamplesSeen{0};
+    float Hotness{0};
+    float IPC{0};
 };
 
 using ClientID = size_t;
 
 /// Each node summarizes context-sensitive profiling information
-/// within a CallingContextTree.
+/// within a CallingContextTree. It represents a single function,
+/// which can have multiple implementations (i.e., libraries).
 class VertexInfo {
 public:
 
@@ -63,34 +66,38 @@ public:
   /// the sample with existing metrics in this vertex.
   /// It should be used when the sampled IP was observed
   /// at this function context
-  void observeSampledIP(ClientID, pb::RawSample const&, uint64_t SamplePeriod);
+  void observeSampledIP(ClientID, std::string const& Library, pb::RawSample const&, uint64_t SamplePeriod);
 
   /// Should be used to indicate that this function context
   /// was recently active in the given RawSample, but NOT as
   /// the sampled IP.
-  void observeRecentlyActive(ClientID, pb::RawSample const&, uint64_t SamplePeriod);
+  void observeRecentlyActive(ClientID, std::string const& Library, pb::RawSample const&, uint64_t SamplePeriod);
 
   // causes the information in this sample to decay
   void decay();
 
-  // a measure of how often samples appeared in this function.
-  auto getHotness() const { return Hotness; }
+  // a specific measure of hotness for a library.
+  // if NONE is provided, then it's a general measure
+  float getHotness(llvm::Optional<std::string> Lib) const;
 
-  // a measure of the instructions-per-cycle in this function
-  auto getIPC() const { return IPC; }
+  // a specific measure of the instructions-per-cycle for a library.
+  // this currently takes the average across all contexts where the
+  // library was called. If NONE is provided, then it's a general measure.
+  float getIPC(llvm::Optional<std::string> Lib) const;
 
-  // a count of how many calls to observeSampledIP happened
-  auto samplesSeenIP() const { return SamplesSeen; }
+  // a specific count of samples seen at this node for a library
+  // a sample is "seen" if the IPC was updated. If NONE, then it's a general measure
+  size_t getSamplesSeen(llvm::Optional<std::string> Lib) const;
 
   bool isPatchable() const { return Patchable; }
 
 private:
   std::string FuncName{"<XXX>"};
   bool Patchable{false};
-  float Hotness{0};
-  float IPC{0};
-  size_t SamplesSeen{0};
-  std::map<std::pair<ClientID, uint32_t>, LastSampleInfo> LastSample;
+
+  using KeyType = std::tuple<ClientID, uint32_t, std::string>;
+  std::map<KeyType, CCTNodeInfo> SpecificInfo;
+  CCTNodeInfo GeneralInfo;
 
   static const float IPC_DISCOUNT;
   static const float HOTNESS_DISCOUNT;
@@ -98,7 +105,9 @@ private:
   static const float HOTNESS_SAMPLED_IP;
   static const float HOTNESS_BOOST;
 
-  void observeSample(ClientID ID, pb::RawSample const& RS, uint64_t Period, float HotnessNudge);
+  void observeSample(CCTNodeInfo &Info, pb::RawSample const& RS, uint64_t Period, float HotnessNudge);
+
+  void filterByLib(std::string const& Lib, std::function<void(CCTNodeInfo const&)> Action) const;
 }; // end class
 
 
@@ -190,8 +199,8 @@ public:
   /// @returns llvm::None if no path exists. Otherwise a path [Start .. Tgt]
   llvm::Optional<std::list<VertexID>> shortestPath(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const;
 
-  /// Gather some performance information about this function group.
-  GroupPerf currentPerf(FunctionGroup const& FuncGroup);
+  /// Gather some performance information about this function group. Optionally, for a specific library version
+  GroupPerf currentPerf(FunctionGroup const& FuncGroup, llvm::Optional<std::string> Lib);
 
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);

@@ -20,8 +20,8 @@ public:
   Profiler() : CCT(getSamplePeriod()) {}
 
   /// given a set of functions that form sub-trees of the CCT,
-  /// returns an IPC rating for the entire group.
-  GroupPerf currentPerf(FunctionGroup const&);
+  /// returns an IPC rating for the entire group, optionally, specific to a library.
+  GroupPerf currentPerf(FunctionGroup const&, llvm::Optional<std::string> LibName);
 
   /// updates the profiler with new performance data found in the clients
   void consumePerfData(ClientList &);

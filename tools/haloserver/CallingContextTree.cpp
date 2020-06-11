@@ -244,8 +244,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
     // thus we drop the topmost callchain IP.
   }
 
-
-  // maintains current ancestors of the vertex, in order
+  // maintains current ancestors of the vertex, in order while we process the call chain.
   Ancestors Ancestors;
   auto CallerVID = RootVertex;
   auto CallerFI = CRI.getUnknown();
@@ -359,8 +358,21 @@ skipThisCallee:
   }
 
   // at this point CallerVID is the context-sensitive function node's id
+
+  ////////
+  // Try to find the library name
+
+  IPI--; // go back to last IP we reached in the walk.
+  auto CallerDef = CallerFI->getDefinition(*IPI);
+  std::string LibraryName = CodeRegionInfo::OriginalLib;
+  if (CallerDef)
+    LibraryName = CallerDef.getValue().Library;
+  else
+    logs(LC_CCT) << "Unknown function definition for sampled IP in " << CallerFI->getCanonicalName() << "\n";
+
+
   auto &CurrentV = bgl::get(Gr, CallerVID);
-  CurrentV.observeSampledIP(ID, Sample, SamplePeriod); // add the sample to the vertex!
+  CurrentV.observeSampledIP(ID, LibraryName, Sample, SamplePeriod); // add the sample to the vertex!
 
   walkBranchSamples(ID, Ancestors, CG, CallerVID, CRI, Sample);
 
@@ -445,8 +457,17 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
       return;
     }
 
+    // determine the specific library version that we're currently in.
+    auto MaybeDef = To->getDefinition(BI.to());
+    std::string LibraryName = CodeRegionInfo::OriginalLib;
+    if (MaybeDef)
+      LibraryName = MaybeDef.getValue().Library;
+    else
+      logs(LC_CCT) << "Unknown function definition for recently active func " << To->getCanonicalName() << "\n";
+
+
     // mark this vertex as being warm
-    CurI.observeRecentlyActive(ID, Sample, SamplePeriod);
+    CurI.observeRecentlyActive(ID, LibraryName, Sample, SamplePeriod);
 
     // actually process this BTB entry:
 
@@ -684,7 +705,7 @@ llvm::Optional<std::list<VertexID>> CallingContextTree::shortestPath(VertexID St
     return llvm::None;
 
   auto AddHotness = [&](double const& Acc, VertexID const& VID) -> double {
-    return Acc + bgl::get(Gr, VID).getHotness();
+    return Acc + bgl::get(Gr, VID).getHotness(llvm::None);
   }; // end lambda
 
   // find the shortest path, breaking ties by maximal hotness
@@ -751,15 +772,21 @@ std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, std:
 // implementation of determineIPC
 
 struct AttrPair {
-  double Hotness{0};
-  double IPC{0};
+  AttrPair() : Hotness(0), IPC(0) {}
+  AttrPair(CCTNodeInfo Info) : Hotness(Info.Hotness), IPC(Info.IPC) {}
+  AttrPair(double heat, double ipc) : Hotness(heat), IPC(ipc) {}
+
+  double Hotness;
+  double IPC;
 };
 
-std::vector<AttrPair> toVector(CallingContextTree::Graph const& Gr, std::unordered_set<CallingContextTree::VertexID> const& Group) {
+std::vector<AttrPair> toVector(CallingContextTree::Graph const& Gr,
+                               std::unordered_set<CallingContextTree::VertexID> const& Group,
+                               llvm::Optional<std::string> Lib) {
   std::vector<AttrPair> Vec;
   for (auto Vtex : Group) {
     auto const& Info = Gr[Vtex];
-    Vec.push_back({Info.getHotness(), Info.getIPC()});
+    Vec.push_back({Info.getHotness(Lib), Info.getIPC(Lib)});
   }
   return Vec;
 }
@@ -797,7 +824,7 @@ AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
   return Result;
 }
 
-GroupPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup) {
+GroupPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> Lib) {
   // First, we need to collect all of the starting context vertex IDs.
   // Specifically, we find all vertices in the CCT that match the root fn.
   std::vector<VertexID> RootContexts;
@@ -832,9 +859,9 @@ GroupPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup) {
   for (auto const& Group : Groups) {
 
     for (auto const& ID : Group)
-      TotalSamples += Gr[ID].samplesSeenIP();
+      TotalSamples += Gr[ID].getSamplesSeen(Lib);
 
-    AllNorms.push_back(euclideanNorm(toVector(Gr, Group)));
+    AllNorms.push_back(euclideanNorm(toVector(Gr, Group, Lib)));
   }
 
   // Finally, we consider each group to be again another vector in
@@ -919,80 +946,133 @@ const float VertexInfo::HOTNESS_DISCOUNT = 0.7f;
 const float VertexInfo::HOTNESS_SAMPLED_IP = 1.0f;
 const float VertexInfo::HOTNESS_BOOST = 0.05f;
 
-void VertexInfo::observeSampledIP(ClientID ID, pb::RawSample const& RS, uint64_t Period) {
-  SamplesSeen++;
-  observeSample(ID, RS, Period, HOTNESS_SAMPLED_IP);
+void VertexInfo::observeSampledIP(ClientID ID, std::string const& Lib, pb::RawSample const& RS, uint64_t Period) {
+  auto TID = RS.thread_id();
+  KeyType Key{ID, TID, Lib};
+
+  observeSample(SpecificInfo[Key], RS, Period, HOTNESS_SAMPLED_IP);
+  observeSample(GeneralInfo, RS, Period, HOTNESS_SAMPLED_IP);
 }
 
-void VertexInfo::observeRecentlyActive(ClientID ID, pb::RawSample const& RS, uint64_t Period) {
-  // we discount the 'hotness' of a sample at this vertex.
-  observeSample(ID, RS, Period, HOTNESS_BOOST);
+void VertexInfo::observeRecentlyActive(ClientID ID, std::string const& Lib, pb::RawSample const& RS, uint64_t Period) {
+  auto TID = RS.thread_id();
+  KeyType Key{ID, TID, Lib};
+
+  // we discount the 'hotness' of a sample at this vertex since it was only recently active, not the sampled IP
+  observeSample(SpecificInfo[Key], RS, Period, HOTNESS_BOOST);
+  observeSample(GeneralInfo, RS, Period, HOTNESS_BOOST);
 }
 
-void VertexInfo::observeSample(ClientID ID, pb::RawSample const& RS, uint64_t Period, float HotnessNudge) {
+void VertexInfo::observeSample(CCTNodeInfo &Info, pb::RawSample const& RS, uint64_t Period, float HotnessNudge) {
   // TODO: add branch mis-prediction rate?
 
   auto ThisTime = RS.time();
-  auto TID = RS.thread_id();
 
-  std::pair<ClientID, uint32_t> Key{ID, TID};
-  auto LastTime = LastSample[Key];
-
-  // boost hotness by the nudge amount.
-  Hotness += HotnessNudge;
+  // boost hotness by the nudge amount right away
+  Info.Hotness += HotnessNudge;
 
   ////
   // determine how to update the IPC
   float IPCIncrement;
-  if (LastTime.Timestamp == 0) {
+  if (Info.SamplesSeen == 0) {
     // the very first sample
     IPCIncrement = 0.0f;
-    LastTime.Initial = true;
 
-  } else if (ThisTime >= LastTime.Timestamp) {
+  } else if (ThisTime >= Info.Timestamp) {
     // then this sample is ordered properly.
     // use a typical incremental update rule (Section 2.4/2.5 in RL book)
-    auto ElapsedTime = ThisTime - LastTime.Timestamp;
+    auto ElapsedTime = ThisTime - Info.Timestamp;
 
-    // we've seen this sample already (could be re-observing as recently active)
+    // we've seen this sample already (could be re-observing as recently active).
+    // since we already boosted the hotness, we can just return.
     if (ElapsedTime == 0)
       return;
 
     // calculcate the movement to make for the average running IPC
 
     float SampleIPC = static_cast<float>(Period) / ElapsedTime; // IPC for this sample
-    IPCIncrement = IPC_DISCOUNT * (SampleIPC - IPC);  // movement of the average
-    LastTime.Initial = false;
+    IPCIncrement = IPC_DISCOUNT * (SampleIPC - Info.IPC);  // movement of the average
 
   } else {
     // otherwise this sample is out-of-order, so we skip it because
     // we expect this case to be rare!
 
-    // TODO: perform a sorting operation so that this is even more rare for each batch of
-    // samples we get. between batches there could be an out-of-order though!
-
-    assert(ThisTime < LastTime.Timestamp && "expected out-of-order sample");
-    logs(LC_CCT) << "out-of-order perf sample. skipping hotness increment.\n";
+    assert(ThisTime < Info.Timestamp && "expected out-of-order sample");
+    warning("out-of-order perf sample. skipping IPC increment.\n");
     IPCIncrement = 0.0f;
-    ThisTime = LastTime.Timestamp;
+    ThisTime = Info.Timestamp;
   }
 
   // actually perform the update.
-  IPC += IPCIncrement;
+  Info.SamplesSeen += 1;
+  Info.IPC += IPCIncrement;
+  Info.Timestamp = ThisTime;
+}
 
-  LastTime.Increment = IPCIncrement; // TODO: i don't think this is used anymore
-  LastTime.Timestamp = ThisTime;
-
-  LastSample[Key] = LastTime;
+CCTNodeInfo observeZeroTemp(CCTNodeInfo Info, const float DISCOUNT) {
+  const float ZeroTemp = 0.0f;
+  Info.Hotness += DISCOUNT * (ZeroTemp - Info.Hotness);
+  if (Info.Hotness < 0.0001)
+    Info.Hotness = 0.0f;
+  return Info;
 }
 
 void VertexInfo::decay() {
   // take a step in the direction of reaching zero.
   // another way to think about it is that we pretend we observed
   // a zero-temperature sample
-  const float ZeroTemp = 0.0f;
-  Hotness += HOTNESS_DISCOUNT * (ZeroTemp - Hotness);
+  GeneralInfo = observeZeroTemp(GeneralInfo, HOTNESS_DISCOUNT);
+  for (auto& Elm : SpecificInfo)
+    SpecificInfo[Elm.first] = observeZeroTemp(Elm.second, HOTNESS_DISCOUNT);
 }
+
+void VertexInfo::filterByLib(std::string const& Lib, std::function<void(CCTNodeInfo const&)> Action) const {
+  for (auto const& Entry : SpecificInfo) {
+    std::string EntryLib;
+    std::tie(std::ignore, std::ignore, EntryLib) = Entry.first;
+    if (EntryLib == Lib)
+      Action(Entry.second);
+  }
+}
+
+
+// gets a specific IPC
+float VertexInfo::getIPC(llvm::Optional<std::string> Lib) const {
+  if (!Lib)
+    return GeneralInfo.IPC;
+
+  std::vector<AttrPair> Obs;
+  filterByLib(Lib.getValue(), [&](CCTNodeInfo const& Info){
+    Obs.push_back(Info);
+  });
+
+  return euclideanNorm(Obs).IPC;
+}
+
+
+size_t VertexInfo::getSamplesSeen(llvm::Optional<std::string> Lib) const {
+  if (!Lib)
+    return GeneralInfo.SamplesSeen;
+
+  size_t Total = 0;
+  filterByLib(Lib.getValue(), [&](CCTNodeInfo const& Info){
+    Total += Info.SamplesSeen;
+  });
+  return Total;
+}
+
+float VertexInfo::getHotness(llvm::Optional<std::string> Lib) const {
+  if (!Lib)
+    return GeneralInfo.Hotness;
+
+  std::vector<AttrPair> Obs;
+  filterByLib(Lib.getValue(), [&](CCTNodeInfo const& Info){
+    Obs.push_back(Info);
+  });
+
+  return euclideanNorm(Obs).Hotness;
+}
+
 
 // FIXME: there's an arugment to be made that VertexInfo should hold onto
 // the FunctionInfo pointer, since the FI info is going to be dynamic and
@@ -1001,7 +1081,7 @@ VertexInfo::VertexInfo(std::shared_ptr<FunctionInfo> FI) :
   FuncName(FI->getCanonicalName()), Patchable(FI->isPatchable()) {}
 
 std::string VertexInfo::getDOTLabel() const {
-  return FuncName + " (hot=" + to_formatted_str(getHotness()) + ";ipc=" + to_formatted_str(getIPC()) + ")";
+  return FuncName + " (hot=" + to_formatted_str(getHotness(llvm::None)) + ";ipc=" + to_formatted_str(getIPC(llvm::None)) + ")";
 }
 
 

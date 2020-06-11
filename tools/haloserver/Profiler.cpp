@@ -9,6 +9,11 @@ void Profiler::consumePerfData(ClientList & Clients) {
   for (auto &CS : Clients) {
     auto &State = CS->State;
     SamplesSeen += State.PerfData.getSamples().size();
+
+    // TODO: perform a sorting operation over timestamps that they're correctly
+    // ordered to compute IPCs. Of course, between batches there could be an out-of-order samples,
+    // but sorting should fix this in nearly every case.
+
     CCT.observe(CG, State.ID, State.CRI, State.PerfData);
     State.PerfData.clear();
   }
@@ -18,8 +23,8 @@ void Profiler::decay() {
   CCT.decay();
 }
 
-GroupPerf Profiler::currentPerf(FunctionGroup const& FnGroup) {
-  return CCT.currentPerf(FnGroup);
+GroupPerf Profiler::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> LibName) {
+  return CCT.currentPerf(FnGroup, LibName);
 }
 
 llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {
@@ -28,7 +33,7 @@ llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {
   VertexID Root = CCT.getRoot();
   float Max = 0.0f;
   VertexID MaxVID = CCT.reduce<VertexID>([&](VertexID ID, VertexInfo const& VI, VertexID AccID)  {
-    auto Hotness = VI.getHotness();
+    auto Hotness = VI.getHotness(llvm::None);
     if (Hotness > Max) {
       Max = Hotness;
       return ID;
@@ -69,7 +74,7 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode M
     }
 
     // is this parent also an acceptable tuning root?
-    if (VI.isPatchable() && VI.getHotness() >= MINIMUM_HOTNESS) {
+    if (VI.isPatchable() && VI.getHotness(llvm::None) >= MINIMUM_HOTNESS) {
       Suitable = VI.getFuncName();
       continue;
     }
