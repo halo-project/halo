@@ -22,16 +22,17 @@ class CompilationManager {
     using compile_expected = CompilationPipeline::compile_expected;
 
     struct FinishedJob {
-      FinishedJob(std::string n, compile_expected res)
-        : UniqueJobName(n), Result(std::move(res)) {}
+      FinishedJob(std::string n, KnobSet &&c, compile_expected res)
+        : UniqueJobName(n), Config(std::move(c)), Result(std::move(res)) {}
       std::string UniqueJobName;
+      KnobSet Config;
       compile_expected Result;
     };
 
     CompilationManager(ThreadPool &pool, CompilationPipeline &pipeline) : Pool(pool), Pipeline(pipeline)  {}
 
     void enqueueCompilation(llvm::MemoryBuffer& Bitcode, KnobSet Knobs) {
-      InFlight.emplace_back(genName(),
+      InFlight.emplace_back(genName(), Knobs,
           std::move(Pool.asyncRet([this,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
             auto Start = std::chrono::system_clock::now();
 
@@ -52,7 +53,7 @@ class CompilationManager {
       auto &Front = InFlight.front();
       auto &Future = Front.Promise;
       if (Future.valid() && get_status(Future) == std::future_status::ready) {
-        FinishedJob Result(Front.UniqueName, std::move(Future.get()));
+        FinishedJob Result(Front.UniqueName, std::move(Front.Config), std::move(Future.get()));
         InFlight.pop_front();
         return Result;
       }
@@ -68,9 +69,10 @@ class CompilationManager {
     }
 
     struct PromisedJob {
-      PromisedJob(std::string n, std::future<compile_expected> fut)
-        : UniqueName(n), Promise(std::move(fut)) {}
+      PromisedJob(std::string n, KnobSet c, std::future<compile_expected> fut)
+        : UniqueName(n), Config(c), Promise(std::move(fut)) {}
       std::string UniqueName;
+      KnobSet Config;
       std::future<compile_expected> Promise;
     };
 

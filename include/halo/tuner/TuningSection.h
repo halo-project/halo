@@ -30,6 +30,12 @@ class CodeVersion {
     std::fill(ObjFileHash.begin(), ObjFileHash.end(), 0);
   }
 
+  /// Code version for original lib, along with its config.
+  CodeVersion(KnobSet OriginalConfig) : LibName(CodeRegionInfo::OriginalLib) {
+    std::fill(ObjFileHash.begin(), ObjFileHash.end(), 0);
+    Configs.push_back(std::move(OriginalConfig));
+  }
+
   // Create a code version for a finished job.
   CodeVersion(CompilationManager::FinishedJob &&Job);
 
@@ -37,11 +43,27 @@ class CodeVersion {
 
   std::unique_ptr<llvm::MemoryBuffer> const& getObjectFile() const { return ObjFile; }
 
+  /// returns true if the given code version was merged with this code version.
+  /// The check is performed by comparing the object files for equality.
+  /// If they're equal, this code version has its configs extended with the other's.
+  bool tryMerge(CodeVersion &CV) {
+    if (ObjFileHash != CV.ObjFileHash)
+      return false;
+
+    for (auto KS : CV.Configs)
+      Configs.push_back(std::move(KS));
+
+    // TODO: should we merge other stuff, like IPC?
+    // currently I only see calling this on a fresh CV.
+    assert(CV.IPC.observations() == 0 && "see TODO above");
+
+    CV.Configs.clear();
+    return true;
+  }
+
   bool isBroken() const { return Broken; }
 
   bool isOriginalLib() const { return LibName == CodeRegionInfo::OriginalLib; }
-
-  std::array<uint8_t, 20> const& getHash() const { return ObjFileHash; }
 
   void observeIPC(double value) { IPC.observe(value); }
 
@@ -67,6 +89,7 @@ class CodeVersion {
   std::string LibName;
   std::unique_ptr<llvm::MemoryBuffer> ObjFile;
   std::array<uint8_t, 20> ObjFileHash;
+  std::vector<KnobSet> Configs;
   RandomQuantity IPC{50};
 };
 
@@ -134,9 +157,9 @@ private:
 
   std::string stateToString(ActivityState S) const {
     switch(S) {
-      case ActivityState::Ready:                return "ready";
-      case ActivityState::WaitingForCompile:    return "compiling";
-      case ActivityState::TestingNewLib:        return "bakeoff";
+      case ActivityState::Ready:                return "READY";
+      case ActivityState::WaitingForCompile:    return "COMPILING";
+      case ActivityState::TestingNewLib:        return "BAKEOFF";
     };
     return "?";
   }
@@ -149,10 +172,11 @@ private:
   uint64_t ExploitSteps{0};
   size_t SamplesLastTime{0};
 
-  // statistics for myself
+  // statistics for myself during development!!
   uint64_t Steps{0};
   uint64_t Experiments{0};
   uint64_t SuccessfulExperiments{0};
+  uint64_t DuplicateCompiles{0};
 
   ActivityState Status{ActivityState::Ready};
   std::string CurrentLib;

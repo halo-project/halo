@@ -14,6 +14,7 @@ CodeVersion::CodeVersion(CompilationManager::FinishedJob &&Job) : LibName(Job.Un
 
   ObjFile = std::move(Job.Result.getValue());
   ObjFileHash = llvm::SHA1::hash(llvm::arrayRefFromStringRef(ObjFile->getBuffer()));
+  Configs.push_back(Job.Config);
 }
 
 
@@ -45,9 +46,22 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     if (!CompileDone)
       return;
 
-    auto DoneJob = std::move(CompileDone.getValue());
-    std::string NewLib = DoneJob.UniqueJobName;
-    Versions[NewLib] = std::move(DoneJob);
+    CodeVersion NewCV {std::move(CompileDone.getValue())};
+
+    // check if this is a duplicate (quite rare)
+    bool Dupe = false;
+    for (auto const& Entries : Versions)
+      if ( (Dupe = Versions[Entries.first].tryMerge(NewCV)) )
+        break;
+
+    if (Dupe) {
+      clogs() << "compile job produced duplicate code.\ntrying another compile!";
+      DuplicateCompiles++;
+      goto doExperiment;
+    }
+
+    std::string NewLib = NewCV.getLibraryName();
+    Versions[NewLib] = std::move(NewCV);
 
     sendLib(State, Versions[NewLib]);
     redirectTo(State, Versions[NewLib]);
@@ -86,6 +100,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     return;
   }
 
+doExperiment:
   // experiment!
   Experiments += 1;
   randomlyChange(Knobs, gen);
@@ -112,6 +127,7 @@ void AggressiveTuningSection::dump() const {
           << "\n\tPrevLib = " << PrevLib
           << "\n\t# Steps = " << Steps
           << "\n\t# Experiments = " << Experiments
+          << "\n\tDuplicateCompiles = " << DuplicateCompiles
           << "\n\tSuccess Rate = " << SuccessRate << "%"
           << "\n";
 
@@ -122,7 +138,7 @@ void AggressiveTuningSection::dump() const {
 AggressiveTuningSection::AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
   : TuningSection(TSI, RootFunc), gen(rd()) {
     // create a dummy version of the original library to record its performance, etc.
-    CodeVersion OriginalLib;
+    CodeVersion OriginalLib{KnobSet()}; // TODO: get the original config from the build flags!
     std::string Name = OriginalLib.getLibraryName();
     Versions[Name] = std::move(OriginalLib);
     CurrentLib = Name;
