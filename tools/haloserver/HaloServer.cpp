@@ -40,6 +40,10 @@ cl::opt<uint32_t> CL_TimeoutSec("timeout",
                       cl::desc("Quit with non-zero exit code if N seconds have elapsed. Zero means disabled."),
                       cl::init(0));
 
+cl::opt<uint32_t> CL_BeatsPerSecond("bps",
+                      cl::desc("Heartbeats per second. This rate controls how rapidly the entire system takes actions."),
+                      cl::init(10));
+
 cl::opt<std::string> CL_ConfigPath("config",
                       cl::desc("Path to the JSON-formatted configuration file."),
                       cl::init(""));
@@ -120,7 +124,7 @@ int main(int argc, char* argv[]) {
   halo::logs() << "Started Halo Server.\nListening on port "
             << CL_Port << "\n";
 
-  const uint32_t SleepMS = 500; // Lower this to be more aggressive.
+  const uint32_t SleepMS = CL_BeatsPerSecond == 0 ? 0 : 1000 / CL_BeatsPerSecond;
   const bool TimeLimited = CL_TimeoutSec > 0;
   int64_t RemainingTime = CL_TimeoutSec * 1000;
   bool ForceShutdown = false;

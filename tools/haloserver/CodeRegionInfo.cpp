@@ -237,7 +237,7 @@ std::shared_ptr<FunctionInfo> CodeRegionInfo::lookup(uint64_t IP) const {
 
   auto Result = AddrMap.find(IP);
   if (Result == AddrMap.end())
-    return lookup(UnknownFn);
+    return UnknownFI;
 
   FunctionInfo *BareFI = Result->second;
 
@@ -254,13 +254,17 @@ std::shared_ptr<FunctionInfo> CodeRegionInfo::lookup(uint64_t IP) const {
 std::shared_ptr<FunctionInfo> CodeRegionInfo::lookup(std::string const& Name) const {
   auto Result = NameMap.find(Name);
   if (Result == NameMap.end())
-    return lookup(UnknownFn);
+    return UnknownFI;
 
   return Result->second;
 }
 
 llvm::Optional<FunctionDefinition> CodeRegionInfo::lookup(std::string const& Lib, std::string const& Func) const {
   auto FuncInfo = lookup(Func);
+
+  if (FuncInfo == UnknownFI)
+    return llvm::None;
+
   return FuncInfo->getDefinition(Lib);
 }
 

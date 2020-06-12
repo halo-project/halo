@@ -72,16 +72,10 @@ class CodeVersion {
   // returns true if this code version is better than the given one, and false otherwise.
   // if the query cannot be answered, then NONE is returned instead.
   llvm::Optional<bool> betterThan(CodeVersion const& Other) const {
-    // TODO: use something fancier than this.
-    //
-    // 1. Also you need to pay attention to the IPC value being tracked in the CCT.
-    // I think you should set its discount factor to be higher so that it forgets the
-    // previous IPCs quickly.
-    //
-    // 2. TODO: TODO: Also, you need to provide the _library name_ along with the
-    // function group to get the group's performance w.r.t. the library.
-    //
-    return Other.IPC.mean() < IPC.mean();
+    auto Me = IPC.mean();
+    auto Them = Other.IPC.mean();
+
+    return Me >= Them;
   }
 
   private:

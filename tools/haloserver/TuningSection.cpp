@@ -21,6 +21,10 @@ CodeVersion::CodeVersion(CompilationManager::FinishedJob &&Job) : LibName(Job.Un
 void AggressiveTuningSection::take_step(GroupState &State) {
   Steps++;
 
+  // if any clients just (re)joined, get them up-to-speed!
+  sendLib(State, Versions[CurrentLib]);
+  redirectTo(State, Versions[CurrentLib]);
+
   assert(Versions.find(CurrentLib) != Versions.end() && "current version not already in database?");
 
   GroupPerf Perf = Profile.currentPerf(FnGroup, CurrentLib);
@@ -43,7 +47,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   if (Versions[CurrentLib].recordedIPCs() < std::max(10UL, EXPLOIT_FACTOR / 2))
     return;
 
-
+  //////////////////////////// COMPILING
   if (Status == ActivityState::WaitingForCompile) {
     auto CompileDone = Compiler.dequeueCompilation();
     if (!CompileDone)
@@ -60,7 +64,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     if (Dupe) {
       clogs() << "compile job produced duplicate code.\ntrying another compile!";
       DuplicateCompiles++;
-      goto doExperiment;
+      goto retryExperiment;
     }
 
     std::string NewLib = NewCV.getLibraryName();
@@ -77,6 +81,8 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     return;
   }
 
+
+  /////////////////////////// BAKEOFF
   if (Status == ActivityState::TestingNewLib) {
     auto Answer = Versions[PrevLib].betterThan(Versions[CurrentLib]);
 
@@ -85,6 +91,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
     if (Answer.getValue()) {
       // then prev is better, let's revert.
+      sendLib(State, Versions[PrevLib]);
       redirectTo(State, Versions[PrevLib]);
       CurrentLib = PrevLib;
     } else {
@@ -97,15 +104,18 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     return;
   }
 
+
+  ///////////////////////////////// READY
+
   // not going to take an experiment for now.
   if (ExploitSteps > 0) {
     ExploitSteps--;
     return;
   }
 
-doExperiment:
   // experiment!
   Experiments += 1;
+retryExperiment:
   randomlyChange(Knobs, gen);
   Knobs.dump();
   Compiler.enqueueCompilation(*Bitcode, Knobs);
@@ -191,16 +201,22 @@ void TuningSection::redirectTo(GroupState &State, CodeVersion const& CV) {
   std::string LibName = CV.getLibraryName();
   std::string FuncName = FnGroup.Root;
 
-  clogs() << "redirecting " << FuncName << " to " << LibName << "\n";
-
   for (auto &Client : State.Clients) {
     // raise an error if the client doesn't already have this dylib!
     if (Client->State.DeployedLibs.count(LibName) == 0)
       fatal_error("trying to redirect client to library it doesn't already have!");
 
+    // this client is already using the right lib.
+    if (Client->State.CurrentLib == LibName)
+      continue;
+
+    clogs() << "redirecting " << FuncName << " to " << LibName << "\n";
+
     auto MaybeDef = Client->State.CRI.lookup(CodeRegionInfo::OriginalLib, FuncName);
-    if (!MaybeDef)
-      fatal_error("client is missing CRI info for an original lib function: " + FuncName);
+    if (!MaybeDef) {
+      warning("client is missing function definition for an original lib function: " + FuncName);
+      continue;
+    }
     auto OriginalDef = MaybeDef.getValue();
 
     pb::ModifyFunction MF;
@@ -211,6 +227,7 @@ void TuningSection::redirectTo(GroupState &State, CodeVersion const& CV) {
     MF.set_other_name(FuncName);
 
     Client->Chan.send_proto(msg::ModifyFunction, MF);
+    Client->State.CurrentLib = LibName;
   }
 
 

@@ -807,8 +807,9 @@ AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
   }
 
   // calculate each _function_'s weight.
-  for (unsigned i = 0; i < Weight.size(); i++)
-    Weight[i] /= TotalWeight;
+  if (TotalWeight != 0)
+    for (unsigned i = 0; i < Weight.size(); i++)
+        Weight[i] /= TotalWeight;
 
   int i = 0;
   AttrPair Result;
@@ -818,8 +819,8 @@ AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
     i++;
   }
 
-  Result.Hotness = std::sqrt(Result.Hotness);
-  Result.IPC = std::sqrt(Result.IPC);
+  Result.Hotness = Result.Hotness == 0 ? 0 : std::sqrt(Result.Hotness);
+  Result.IPC = Result.IPC == 0 ? 0 : std::sqrt(Result.IPC);
 
   return Result;
 }

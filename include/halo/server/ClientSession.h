@@ -40,12 +40,14 @@ namespace halo {
   struct SessionState {
     SessionState() {
       DeployedLibs.insert(CodeRegionInfo::OriginalLib);
+      CurrentLib = CodeRegionInfo::OriginalLib;
     }
 
     ClientID ID; // a unique idenifier for the duration of the server process
     CodeRegionInfo CRI;
     PerformanceData PerfData;
     std::set<std::string> DeployedLibs;
+    std::string CurrentLib;
   };
 
   class GroupOwnedState {

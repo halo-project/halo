@@ -1,4 +1,8 @@
 {
+  "serverSettings": {
+    "serviceRate_ms": 100
+  },
+
   "knobs": [
     {
       "kind": "flag",
