@@ -46,6 +46,7 @@ add_executable(${SERVER_BIN}
   ClientGroup.cpp
   ClientSession.cpp
   CodeRegionInfo.cpp
+  CodeVersion.cpp
   CompilationPipeline.cpp
   HaloServer.cpp
   Knob.cpp

@@ -1,22 +1,8 @@
 #include "halo/tuner/TuningSection.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/compiler/ReadELF.h"
-#include "llvm/Support/SHA1.h"
 
 namespace halo {
-
-
-CodeVersion::CodeVersion(CompilationManager::FinishedJob &&Job) : LibName(Job.UniqueJobName) {
-  if (!Job.Result) {
-    warning("Compile job failed with an error, library is broken.");
-    Broken = true;
-  }
-
-  ObjFile = std::move(Job.Result.getValue());
-  ObjFileHash = llvm::SHA1::hash(llvm::arrayRefFromStringRef(ObjFile->getBuffer()));
-  Configs.push_back(Job.Config);
-}
-
 
 void AggressiveTuningSection::take_step(GroupState &State) {
   Steps++;
