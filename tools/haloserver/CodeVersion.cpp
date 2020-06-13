@@ -44,7 +44,7 @@ namespace halo {
 
     // TODO: should we merge other stuff, like IPC?
     // currently I only see calling this on a fresh CV.
-    assert(CV.IPC.observations() == 0 && "see TODO above");
+    assert(CV.IPC.size() == 0 && "see TODO above");
 
     CV.Configs.clear();
     return true;
@@ -56,19 +56,6 @@ namespace halo {
 
   void CodeVersion::observeIPC(double value) { IPC.observe(value); }
 
-  size_t CodeVersion::recordedIPCs() const { return IPC.observations(); }
-
-  // returns true if this code version is better than the given one, and false otherwise.
-  // if the query cannot be answered, then NONE is returned instead.
-  llvm::Optional<bool> CodeVersion::betterThan(CodeVersion const& Other) const {
-    auto Me = IPC.mean();
-    auto Them = Other.IPC.mean();
-
-    return Me >= Them;
-  }
-
-
-
-
+  RandomQuantity& CodeVersion::getIPC() { return IPC; }
 
 } // end namespace

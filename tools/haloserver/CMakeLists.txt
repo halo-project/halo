@@ -40,6 +40,7 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${HALO_PROTO_FILES})
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
 add_executable(${SERVER_BIN}
+  Bakeoff.cpp
   Bandit.cpp
   CallGraph.cpp
   CallingContextTree.cpp

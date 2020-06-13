@@ -41,11 +41,7 @@ class CodeVersion {
 
   void observeIPC(double value);
 
-  size_t recordedIPCs() const;
-
-  // returns true if this code version is better than the given one, and false otherwise.
-  // if the query cannot be answered, then NONE is returned instead.
-  llvm::Optional<bool> betterThan(CodeVersion const& Other) const;
+  RandomQuantity& getIPC();
 
   private:
   bool Broken{false};

@@ -17,12 +17,17 @@ public:
         gsl_vector_set_all(Vec.get(), 0);
     }
 
-  // number of elements in the vector
-  size_t size() const { return Vec->size; }
+  // number of elements the vector can handle
+  size_t capacity() const { return Vec->size; }
 
   // The stride is the step-size from one element to the next in physical memory,
   // measured in units of the appropriate datatype.
   size_t stride() const { return Vec->stride; }
+
+  // clears the vector, setting everything to zero
+  void clear() {
+    gsl_vector_set_all(Vec.get(), 0);
+  }
 
   // access underlying vector, without taking ownership.
   gsl_vector* vec() { return Vec.get(); }
@@ -58,21 +63,34 @@ public:
     Count += 1;
     Obs.set(NextFree, NewSample);
 
-    const size_t Sz = Obs.size();
-    NextFree = (NextFree + 1) % Sz; // bump with wrap-around
+    const size_t Len = Obs.capacity();
+    NextFree = (NextFree + 1) % Len; // bump with wrap-around
 
     // If this is the first observation, fill the vector with this value
-    if (Count == 1)
-      for (size_t i = NextFree; i < Sz; i++)
-        Obs.set(i, NewSample);
+    // if (Count == 1)
+    //   for (size_t i = NextFree; i < Len; i++)
+    //     Obs.set(i, NewSample);
+  }
+
+  // resets the random quantity, forgetting previous observations.
+  void clear() {
+    Obs.clear();
+    NextFree = 0;
+    Count = 0;
+  }
+
+  /// returns the maximum capacity of this random quantity's ability to
+  /// remember observations.
+  size_t capacity() {
+    return Obs.capacity();
   }
 
   /// returns the number of individual observations currently remembered
   /// by this random quantity.
-  auto observations() const { return std::min(Count, Obs.size()); }
+  auto size() const { return std::min(Count, Obs.capacity()); }
 
   double mean() const {
-    return gsl_stats_mean(Obs.data(), Obs.stride(), observations());
+    return gsl_stats_mean(Obs.data(), Obs.stride(), size());
   }
 
   private:

@@ -7,13 +7,42 @@ namespace halo {
 void AggressiveTuningSection::take_step(GroupState &State) {
   Steps++;
 
+  /////////////////////////// BAKEOFF
+  if (Status == ActivityState::TestingNewLib) {
+    if (!Bakery.hasValue())
+      fatal_error("no bakery available to conduct bakeoff");
+
+    auto &Bakeoff = Bakery.getValue();
+
+    switch (Bakeoff.take_step(State)) {
+      case Bakeoff::Result::InProgress:
+        return;
+
+      case Bakeoff::Result::Finished: {
+        auto NewBest = Bakeoff.getWinner();
+        if (!NewBest)
+          fatal_error("bakeoff successfully finished but no winner?");
+        BestLib = NewBest.getValue();
+        Status = ActivityState::Ready;
+      }; return;
+
+      case Bakeoff::Result::Timeout: {
+        // the two libraries are too similar, or something??
+        fatal_error("TS don't know how to handle timeout yet");
+        Status = ActivityState::Ready;
+      } return;
+    };
+    fatal_error("unhandled bakeoff case");
+  }
+
+  /////////////
   // if any clients just (re)joined, get them up-to-speed!
-  sendLib(State, Versions[CurrentLib]);
-  redirectTo(State, Versions[CurrentLib]);
+  assert(Versions.find(BestLib) != Versions.end() && "current version not already in database?");
+  sendLib(State, Versions[BestLib]);
+  redirectTo(State, Versions[BestLib]);
 
-  assert(Versions.find(CurrentLib) != Versions.end() && "current version not already in database?");
-
-  GroupPerf Perf = Profile.currentPerf(FnGroup, CurrentLib);
+  // determine whether _any_ actions should be taken
+  GroupPerf Perf = Profile.currentPerf(FnGroup, BestLib);
 
   // if no new samples have hit any of the functions in the group since last time,
   // or we don't have a valid IPC, we do nothing.
@@ -27,11 +56,9 @@ void AggressiveTuningSection::take_step(GroupState &State) {
           << "\n--------\n";
 
   SamplesLastTime = Perf.SamplesSeen;
-  Versions[CurrentLib].observeIPC(Perf.IPC);
+  Versions[BestLib].observeIPC(Perf.IPC);
 
-  // this lib is too young to get a decent picture of what's going on.
-  if (Versions[CurrentLib].recordedIPCs() < std::max(10UL, EXPLOIT_FACTOR / 2))
-    return;
+
 
   //////////////////////////// COMPILING
   if (Status == ActivityState::WaitingForCompile) {
@@ -41,7 +68,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
     CodeVersion NewCV {std::move(CompileDone.getValue())};
 
-    // check if this is a duplicate (quite rare)
+    // check if this is a duplicate
     bool Dupe = false;
     for (auto const& Entries : Versions)
       if ( (Dupe = Versions[Entries.first].tryMerge(NewCV)) )
@@ -56,39 +83,12 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     std::string NewLib = NewCV.getLibraryName();
     Versions[NewLib] = std::move(NewCV);
 
-    sendLib(State, Versions[NewLib]);
-    redirectTo(State, Versions[NewLib]);
+    Bakery = Bakeoff(State, this, BestLib, NewLib);
 
-    PrevLib = CurrentLib;
-    CurrentLib = NewLib;
-
-    clogs() << "sent JIT'd code for " << FnGroup.Root << "\n";
     Status = ActivityState::TestingNewLib;
     return;
   }
 
-
-  /////////////////////////// BAKEOFF
-  if (Status == ActivityState::TestingNewLib) {
-    auto Answer = Versions[PrevLib].betterThan(Versions[CurrentLib]);
-
-    if (!Answer.hasValue())
-      return; // we will keep waiting for more samples to come in.
-
-    if (Answer.getValue()) {
-      // then prev is better, let's revert.
-      sendLib(State, Versions[PrevLib]);
-      redirectTo(State, Versions[PrevLib]);
-      CurrentLib = PrevLib;
-    } else {
-      // we're going to keep the current one!
-      SuccessfulExperiments++;
-    }
-
-    ExploitSteps = EXPLOIT_FACTOR;
-    Status = ActivityState::Ready;
-    return;
-  }
 
 
   ///////////////////////////////// READY
@@ -122,8 +122,7 @@ void AggressiveTuningSection::dump() const {
 
 
   clogs() << "\n\tStatus = " << stateToString(Status)
-          << "\n\tCurrentLib = " << CurrentLib
-          << "\n\tPrevLib = " << PrevLib
+          << "\n\tBestLib = " << BestLib
           << "\n\t# Steps = " << Steps
           << "\n\t# Experiments = " << Experiments
           << "\n\tDuplicateCompiles = " << DuplicateCompiles
@@ -140,8 +139,7 @@ AggressiveTuningSection::AggressiveTuningSection(TuningSectionInitializer TSI, s
     CodeVersion OriginalLib{KnobSet()}; // TODO: get the original config from the build flags!
     std::string Name = OriginalLib.getLibraryName();
     Versions[Name] = std::move(OriginalLib);
-    CurrentLib = Name;
-    PrevLib = Name;
+    BestLib = Name;
   }
 
 void TuningSection::sendLib(GroupState &State, CodeVersion const& CV) {
@@ -215,9 +213,8 @@ void TuningSection::redirectTo(GroupState &State, CodeVersion const& CV) {
     Client->Chan.send_proto(msg::ModifyFunction, MF);
     Client->State.CurrentLib = LibName;
   }
-
-
 }
+
 
 TuningSection::TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
     : FnGroup(RootFunc), Compiler(TSI.Pool, TSI.Pipeline), Profile(TSI.Profile) {

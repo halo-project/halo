@@ -4,6 +4,7 @@
 #include "halo/compiler/CompilationPipeline.h"
 #include "halo/compiler/Profiler.h"
 #include "halo/tuner/Actions.h"
+#include "halo/tuner/Bakeoff.h"
 #include "halo/tuner/KnobSet.h"
 #include "halo/tuner/RandomTuner.h"
 #include "halo/tuner/RandomQuantity.h"
@@ -21,8 +22,6 @@ using JSON = nlohmann::json;
 namespace halo {
 
 class GroupState;
-
-
 
 
 /// There's a lot of junk needed to initialize one of these tuning sections.
@@ -58,10 +57,13 @@ public:
 protected:
   TuningSection(TuningSectionInitializer TSI, std::string RootFunc);
 
+  friend Bakeoff;
+
   // sends the finished compilation job's object file to all clients.
   // It also will not actually send the library if the client already has it.
   void sendLib(GroupState &, CodeVersion const&);
 
+  // performs redirection on each client, if the client is not already using that version.
   void redirectTo(GroupState &, CodeVersion const&);
 
   FunctionGroup FnGroup;
@@ -69,7 +71,10 @@ protected:
   CompilationManager Compiler;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
   Profiler &Profile;
+  std::unordered_map<std::string, CodeVersion> Versions;
 };
+
+
 
 
 /// haven't decided on what this should do yet.
@@ -109,11 +114,9 @@ private:
   uint64_t SuccessfulExperiments{0};
   uint64_t DuplicateCompiles{0};
 
+  llvm::Optional<Bakeoff> Bakery;
   ActivityState Status{ActivityState::Ready};
-  std::string CurrentLib;
-  std::string PrevLib;
-
-  std::unordered_map<std::string, CodeVersion> Versions;
+  std::string BestLib;
 };
 
 } // end namespace
