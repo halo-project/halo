@@ -72,7 +72,7 @@ public:
     //     Obs.set(i, NewSample);
   }
 
-  // resets the random quantity, forgetting previous observations.
+  // resets the random quantity, forgetting all previous observations.
   void clear() {
     Obs.clear();
     NextFree = 0;
@@ -85,12 +85,18 @@ public:
     return Obs.capacity();
   }
 
-  /// returns the number of individual observations currently remembered
+  /// returns the number of observations currently remembered
   /// by this random quantity.
   auto size() const { return std::min(Count, Obs.capacity()); }
 
+  /// returns the mean of the RQ's observations.
   double mean() const {
     return gsl_stats_mean(Obs.data(), Obs.stride(), size());
+  }
+
+  /// Given the mean of this RQ's observations, returns the variance.
+  double variance(double mean) const {
+    return gsl_stats_variance_m(Obs.data(), Obs.stride(), size(), mean);
   }
 
   private:

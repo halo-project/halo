@@ -17,11 +17,11 @@ Bakeoff::Bakeoff(GroupState &State, TuningSection *TS, std::string Current, std:
 
   // start off by clearing out previous performance data from both versions.
   auto &CurIPC = TS->Versions[Current].getIPC();
-  assert(CurIPC.capacity() >= MIN_OBSERVATIONS);
+  assert(CurIPC.capacity() > 0);
   CurIPC.clear();
 
   auto &NewIPC = TS->Versions[New].getIPC();
-  assert(NewIPC.capacity() >= MIN_OBSERVATIONS);
+  assert(NewIPC.capacity() > 0);
   NewIPC.clear();
 
   // make sure the clients are in the state we expect
@@ -42,16 +42,11 @@ void Bakeoff::deploy(GroupState &State, std::string const& Name) {
 void Bakeoff::switchVersions(GroupState &State) {
   std::string Temp = Deployed;
   Deployed = Other;
-  Other = Deployed;
+  Other = Temp;
 
   DeployedSampledSeen = 0;
 
   deploy(State, Deployed);
-}
-
-
-bool Bakeoff::hasSufficientObservations(std::string const& LibName) {
-  return TS->Versions[LibName].getIPC().size() >= MIN_OBSERVATIONS;
 }
 
 
@@ -71,35 +66,59 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   else
     DeployedSampledSeen = Perf.SamplesSeen;
 
-  // add the new IPC reading
-  auto &DeployedCV = TS->Versions[Deployed];
-  DeployedCV.observeIPC(Perf.IPC);
-
-  // do we have enough readings for this one?
-  if (!hasSufficientObservations(Deployed))
-    return Status;
-
-  // do we have enough readings for the other one?
-  if (!hasSufficientObservations(Other)) {
-    switchVersions(State);
-    return Status;
-  }
-
-  // at this point, we're positioned to determine a winner!
 
   auto &DeployedIPC = TS->Versions.at(Deployed).getIPC();
   auto &OtherIPC = TS->Versions.at(Other).getIPC();
 
-  // TODO: use a more rigorous method to compare means.
-  if (OtherIPC.mean() >= DeployedIPC.mean()) {
-    Winner = Other;
-    switchVersions(State);
-  } else {
-    Winner = Deployed;
-  }
+  // add the new IPC reading
+  DeployedIPC.observe(Perf.IPC);
 
-  Status = Result::Finished;
+
+  // try to determine a winner
+  switch(compare_means(DeployedIPC, OtherIPC)) {
+    case ComparisonResult::GreaterThan: {
+      Winner = Deployed;
+      Status = Result::Finished;
+    }; break;
+
+    case ComparisonResult::LessThan: {
+      Winner = Other;
+      switchVersions(State);  // switch to better version.
+      Status = Result::Finished;
+    }; break;
+
+    case ComparisonResult::NoAnswer: {
+      // we'll stay in this state and try again next time step.
+      StepsUntilSwitch -= 1;
+      if (StepsUntilSwitch == 0) {
+        StepsUntilSwitch = SWITCH_RATE;
+        switchVersions(State);
+      }
+    };
+  };
+
   return Status;
+}
+
+Bakeoff::ComparisonResult Bakeoff::compare_means(RandomQuantity const& A, RandomQuantity const& B) const {
+  constexpr size_t MIN_OBSERVATIONS = 5;
+
+  if (A.size() < MIN_OBSERVATIONS || B.size() < MIN_OBSERVATIONS)
+    return ComparisonResult::NoAnswer;
+
+  auto meanA = A.mean();
+  auto meanB = B.mean();
+
+  if (meanA < meanB)
+    return ComparisonResult::LessThan;
+  else if (meanA > meanB)
+    return ComparisonResult::GreaterThan;
+  else
+    return ComparisonResult::NoAnswer;
+}
+
+Bakeoff::ComparisonResult Bakeoff::compare_ttest(RandomQuantity const& A, RandomQuantity const& B) const {
+  return ComparisonResult::NoAnswer;
 }
 
 } // end namespace
