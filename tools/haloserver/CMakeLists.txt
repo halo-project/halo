@@ -59,6 +59,7 @@ add_executable(${SERVER_BIN}
   PerformanceData.cpp
   Profiler.cpp
   ProgramInfoPass.cpp
+  PseudoBayesTuner.cpp
   RandomTuner.cpp
   TuningSection.cpp
   ${HALO_NET_DIR}/Logging.cpp

@@ -75,6 +75,4 @@ namespace halo {
 
   void CodeVersion::observeIPC(double value) { IPC.observe(value); }
 
-  RandomQuantity& CodeVersion::getIPC() { return IPC; }
-
 } // end namespace

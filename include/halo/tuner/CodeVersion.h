@@ -29,6 +29,8 @@ class CodeVersion {
 
   std::string const& getLibraryName() const;
 
+  std::vector<KnobSet> const& getConfigs() const { return Configs; }
+
   std::unique_ptr<llvm::MemoryBuffer> const& getObjectFile() const;
 
   /// returns true if the given code version was merged with this code version.
@@ -50,7 +52,8 @@ class CodeVersion {
 
   void observeIPC(double value);
 
-  RandomQuantity& getIPC();
+  RandomQuantity& getIPC() { return IPC; };
+  RandomQuantity const& getIPC() const { return IPC; };
 
   private:
   using SHAHash = std::array<uint8_t, 20>;

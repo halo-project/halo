@@ -3,7 +3,9 @@
     "seed": 986734259,
     "heartbeats-per-second": 10,
     "group-service-per-second": 10,
-    "perf-sample-period": 15485867
+    "perf-sample-period": 15485867,
+    "pbtuner-heldout-ratio": 0.1,
+    "pbtuner-seed": 310428590256
   },
 
   "knobs": [
