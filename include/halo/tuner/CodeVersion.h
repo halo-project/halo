@@ -3,6 +3,7 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include <set>
 
 #include "halo/tuner/RandomQuantity.h"
 #include "halo/tuner/KnobSet.h"
@@ -35,6 +36,14 @@ class CodeVersion {
   /// If they're equal, this code version has its configs extended with the other's.
   bool tryMerge(CodeVersion &CV);
 
+  // The given code version CV will be treated as exactly equal to this version,
+  // even if their object files differ in terms of equality.
+  // Other contents of CV are merged into this one and a future call to
+  // this.tryMerge(CV) will yield true.
+  //
+  // returns true if a merge actually happened.
+  bool forceMerge(CodeVersion &CV);
+
   bool isBroken() const;
 
   bool isOriginalLib() const;
@@ -44,10 +53,12 @@ class CodeVersion {
   RandomQuantity& getIPC();
 
   private:
+  using SHAHash = std::array<uint8_t, 20>;
+
   bool Broken{false};
   std::string LibName;
   std::unique_ptr<llvm::MemoryBuffer> ObjFile;
-  std::array<uint8_t, 20> ObjFileHash;
+  std::set<SHAHash> ObjFileHashes;
   std::vector<KnobSet> Configs;
   RandomQuantity IPC{50};
 };

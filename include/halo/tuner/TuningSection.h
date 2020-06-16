@@ -113,6 +113,7 @@ private:
   uint64_t Experiments{0};
   uint64_t SuccessfulExperiments{0};
   uint64_t DuplicateCompiles{0};
+  uint64_t BakeoffTimeouts{0};
 
   llvm::Optional<Bakeoff> Bakery;
   ActivityState Status{ActivityState::Ready};

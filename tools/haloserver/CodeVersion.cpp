@@ -7,12 +7,12 @@ namespace halo {
 
   /// Creates a code version corresponding to the original library in the client.
   CodeVersion::CodeVersion() : LibName(CodeRegionInfo::OriginalLib) {
-    std::fill(ObjFileHash.begin(), ObjFileHash.end(), 0);
+    ObjFileHashes.insert({}); // the {} here is a value initializer for std::array that is zero-filled.
   }
 
   /// Code version for original lib, along with its config.
   CodeVersion::CodeVersion(KnobSet OriginalConfig) : LibName(CodeRegionInfo::OriginalLib) {
-    std::fill(ObjFileHash.begin(), ObjFileHash.end(), 0);
+    ObjFileHashes.insert({});
     Configs.push_back(std::move(OriginalConfig));
   }
 
@@ -24,7 +24,8 @@ namespace halo {
     }
 
     ObjFile = std::move(Job.Result.getValue());
-    ObjFileHash = llvm::SHA1::hash(llvm::arrayRefFromStringRef(ObjFile->getBuffer()));
+    SHAHash Hash = llvm::SHA1::hash(llvm::arrayRefFromStringRef(ObjFile->getBuffer()));
+    ObjFileHashes.insert(Hash);
     Configs.push_back(Job.Config);
   }
 
@@ -36,17 +37,35 @@ namespace halo {
   /// The check is performed by comparing the object files for equality.
   /// If they're equal, this code version has its configs extended with the other's.
   bool CodeVersion::tryMerge(CodeVersion &CV) {
-    if (ObjFileHash != CV.ObjFileHash)
-      return false;
+
+    bool Mergable = false;
+    for (auto TheirHash : CV.ObjFileHashes)
+      if (ObjFileHashes.count(TheirHash) == 1) {
+        Mergable = true;
+        break;
+      }
+
+    if (Mergable)
+      return forceMerge(CV);
+
+    return false;
+  }
+
+  bool CodeVersion::forceMerge(CodeVersion &CV) {
+
+    for (auto TheirHash : CV.ObjFileHashes)
+      ObjFileHashes.insert(TheirHash);
 
     for (auto KS : CV.Configs)
       Configs.push_back(std::move(KS));
 
-    // TODO: should we merge other stuff, like IPC?
-    // currently I only see calling this on a fresh CV.
-    assert(CV.IPC.size() == 0 && "see TODO above");
+    IPC.merge(CV.IPC);
 
+    // empty out the other one for safety.
     CV.Configs.clear();
+    CV.ObjFileHashes.clear();
+    CV.IPC.clear();
+
     return true;
   }
 

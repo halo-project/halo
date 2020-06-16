@@ -27,8 +27,19 @@ void AggressiveTuningSection::take_step(GroupState &State) {
       }; return;
 
       case Bakeoff::Result::Timeout: {
-        // the two libraries are too similar, or something??
-        fatal_error("TS don't know how to handle timeout yet");
+        // the two libraries are too similar. we'll merge them.
+        BakeoffTimeouts++;
+        assert(Bakeoff.getDeployed() != Bakeoff.getOther());
+
+        // we'll keep the currently deployed version, to avoid
+        // unnessecary code switching.
+        BestLib = Bakeoff.getDeployed();
+
+        // merge and then remove the other version
+        auto Other = Bakeoff.getOther();
+        Versions[BestLib].forceMerge(Versions[Other]);
+        Versions.erase(Other);
+
         Status = ActivityState::Ready;
       } return;
     };
@@ -125,6 +136,7 @@ void AggressiveTuningSection::dump() const {
           << "\n\tBestLib = " << BestLib
           << "\n\t# Steps = " << Steps
           << "\n\t# Experiments = " << Experiments
+          << "\n\t# Bakeoff Timeouts = " << BakeoffTimeouts
           << "\n\tDuplicateCompiles = " << DuplicateCompiles
           << "\n\tSuccess Rate = " << SuccessRate << "%"
           << "\n";

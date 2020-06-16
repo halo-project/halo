@@ -72,6 +72,12 @@ public:
     //     Obs.set(i, NewSample);
   }
 
+  // adds observations from another random quantity into this one.
+  void merge(RandomQuantity const& RQ) {
+    for (size_t i = 0; i < RQ.size(); i++)
+      observe(RQ.Obs.get(i));
+  }
+
   // resets the random quantity, forgetting all previous observations.
   void clear() {
     Obs.clear();
@@ -87,7 +93,7 @@ public:
 
   /// returns the number of observations currently remembered
   /// by this random quantity.
-  auto size() const { return std::min(Count, Obs.capacity()); }
+  size_t size() const { return std::min(Count, Obs.capacity()); }
 
   /// returns the mean of the RQ's observations.
   double mean() const {
