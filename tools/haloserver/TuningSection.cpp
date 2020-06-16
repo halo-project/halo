@@ -1,6 +1,7 @@
 #include "halo/tuner/TuningSection.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/compiler/ReadELF.h"
+#include "halo/nlohmann/util.hpp"
 
 namespace halo {
 
@@ -146,7 +147,7 @@ void AggressiveTuningSection::dump() const {
 }
 
 AggressiveTuningSection::AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
-  : TuningSection(TSI, RootFunc), gen(rd()) {
+  : TuningSection(TSI, RootFunc), gen(config::getServerSetting<uint64_t>("seed", TSI.Config)) {
     // create a dummy version of the original library to record its performance, etc.
     CodeVersion OriginalLib{KnobSet()}; // TODO: get the original config from the build flags!
     std::string Name = OriginalLib.getLibraryName();
