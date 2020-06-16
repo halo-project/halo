@@ -23,11 +23,11 @@ fi
 ############
 # always prefer using Ninja if available
 
+NUM_CPUS=$(getconf _NPROCESSORS_ONLN)
 if command -v ninja; then
   GENERATOR="Ninja"
   BUILD_CMD="ninja"
 else
-  NUM_CPUS=$(getconf _NPROCESSORS_ONLN)
   GENERATOR="Unix Makefiles"
   BUILD_CMD="make -j${NUM_CPUS}"
 fi
@@ -35,7 +35,8 @@ fi
 ##################
 # make sure xgboost is built. we assume the sources have been pulled to 'root' already
 pushd xgboost/root || exit 1
-make -j $((NUM_CPUS / 2)) || echo "did you run xgboost/get.sh to download the sources?"
+XG_BUILD_CPUS=$((NUM_CPUS / 2 + 1))
+make -j ${XG_BUILD_CPUS} || (echo "did you run xgboost/get.sh to download the sources?" && exit 1)
 popd || exit 1
 
 
