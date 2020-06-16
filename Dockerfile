@@ -24,8 +24,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       cmake \
       ccache \
       \
-      # for our gitlab ci script
+      # for our gitlab ci script and xgboost download & build
       git \
+      ca-certificates \
+      make \
       \
       # for lit
       python2 \
@@ -42,6 +44,9 @@ COPY . /tmp/halo
 
 # set the working directory
 WORKDIR /tmp/halo
+
+# obtain XGBoost sources
+RUN ./xgboost/get.sh
 
 # build
 RUN ./fresh-build.sh docker

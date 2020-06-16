@@ -32,6 +32,13 @@ else
   BUILD_CMD="make -j${NUM_CPUS}"
 fi
 
+##################
+# make sure xgboost is built. we assume the sources have been pulled to 'root' already
+pushd xgboost/root || exit 1
+make -j $((NUM_CPUS / 2)) || echo "did you run xgboost/get.sh to download the sources?"
+popd || exit 1
+
+
 #########
 # default build options and setup
 BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"  # all those that support JIT

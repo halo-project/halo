@@ -25,6 +25,8 @@ find_package(Boost 1.65 COMPONENTS system graph REQUIRED)
 find_package(Protobuf 3 REQUIRED)
 find_package(GSL 2.4 REQUIRED)
 
+include(XGBoost)
+
 include_directories(${Protobuf_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${GSL_INCLUDE_DIR})
 add_definitions(${LLVM_DEFINITIONS} -DGOOGLE_PROTOBUF_NO_RTTI -DBOOST_EXCEPTION_DISABLE -DBOOST_NO_RTTI)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fmax-errors=1")
@@ -67,7 +69,7 @@ add_executable(${SERVER_BIN}
 # NOTE: rlllib requires c++17
 set_property(TARGET ${SERVER_BIN} PROPERTY CXX_STANDARD 17)
 
-target_link_libraries(${SERVER_BIN} PRIVATE ${Boost_LIBRARIES} ${Protobuf_LIBRARIES} ${GSL_LIBRARIES})
+target_link_libraries(${SERVER_BIN} PRIVATE ${Boost_LIBRARIES} ${Protobuf_LIBRARIES} ${GSL_LIBRARIES} ${XGB_LIB})
 llvm_config(${SERVER_BIN} USE_SHARED) # since halomon requires libLLVM, we use it here too.
 
 install(TARGETS ${SERVER_BIN}

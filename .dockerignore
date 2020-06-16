@@ -5,3 +5,4 @@ install/
 benchmark/
 bench-build/
 bench-results/
+xgboost/root
