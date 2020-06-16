@@ -8,7 +8,7 @@
 #include "llvm/IR/DataLayout.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "halo/nlohmann/json.hpp"
+#include "halo/nlohmann/util.hpp"
 
 #include "rl.hpp"
 
@@ -122,27 +122,14 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
   return true;
 }
 
-size_t parseIterationRate(JSON const& Config) {
-  const std::string SETTINGS = "serverSettings";
-  const std::string ITERATION_RATE = "serviceRate_ms";
-
-  if (!Config.is_object() || Config.find(SETTINGS) == Config.end())
-    fatal_error("invalid / missing " + SETTINGS + " in server config!");
-
-  auto Next = Config[SETTINGS];
-
-  if (!Next.is_object() || Next.find(ITERATION_RATE) == Next.end() || !Next[ITERATION_RATE].is_number())
-    fatal_error("invalid / missing " + ITERATION_RATE + " in server config!");
-
-  return Next[ITERATION_RATE].get<size_t>();
-}
-
 
 ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
-      ShouldStop(false), Pool(Pool), Config(Config), BitcodeHash(BitcodeSHA1) {
+      ShouldStop(false), Pool(Pool), Config(Config), Profile(Config), BitcodeHash(BitcodeSHA1) {
 
-      ServiceIterationRate = parseIterationRate(Config);
+      // the amount of time to sleep before enqueueing another ASIO service iteration.
+      size_t ItersPerSec = config::getServerSetting<size_t>("group-service-per-second", Config);
+      ServiceIterationRate = ItersPerSec == 0 ? 0 : 1000 / ItersPerSec;
 
       if (!CS->Enrolled)
         llvm::report_fatal_error("was given a non-enrolled client!");

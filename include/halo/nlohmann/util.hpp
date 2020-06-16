@@ -12,20 +12,24 @@ namespace halo {
       fatal_error("Error during parsing of config file:\n\t" + hint);
     }
 
-    inline bool contains(std::string const& Key, JSON const& Object) {
+    inline bool contains(std::string const& Key, nlohmann::json const& Object) {
       return Object.find(Key) != Object.end();
     }
 
     // checked lookup of a value for the given key.
+    // NOTE: key goes first, then json object!
     template <typename T>
     T getValue(std::string const& Key, nlohmann::json const& Root, std::string Context = "") {
       if (Context != "")
         Context = "(" + Context + ") ";
 
+      if (!Root.is_object())
+        parseError(Context + "expected an object.");
+
       if (!contains(Key, Root))
         parseError(Context + "expected member '" + Key + "' not found.");
 
-      auto Obj = Root[Key];
+       nlohmann::json const& Obj = Root[Key];
 
       if (std::is_same<T, bool>()) {
         if (!Obj.is_boolean())
@@ -44,6 +48,19 @@ namespace halo {
       }
 
       return Obj.get<T>();
+    }
+
+    // lookup of a value from the serverSettings in the root of the server config.
+    // NOTE: key goes first, then json object!
+    template <typename T>
+    T getServerSetting(std::string const& Key, nlohmann::json const& Config) {
+      const std::string SETTINGS = "serverSettings";
+      if (!Config.is_object() || !contains(SETTINGS, Config))
+        parseError("invalid / missing " + SETTINGS + " in top level of server config!");
+
+       nlohmann::json const& Settings = Config[SETTINGS];
+
+      return getValue<T>(Key, Settings, SETTINGS);
     }
 
   } // end namespace config

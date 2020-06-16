@@ -4,7 +4,7 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 
-#include "halo/nlohmann/json.hpp"
+#include "halo/nlohmann/util.hpp"
 
 #include "boost/asio.hpp"
 
@@ -39,10 +39,6 @@ cl::opt<bool> CL_NoPersist("no-persist",
 cl::opt<uint32_t> CL_TimeoutSec("timeout",
                       cl::desc("Quit with non-zero exit code if N seconds have elapsed. Zero means disabled."),
                       cl::init(0));
-
-cl::opt<uint32_t> CL_BeatsPerSecond("bps",
-                      cl::desc("Heartbeats per second. This rate controls how rapidly the entire system takes actions."),
-                      cl::init(10));
 
 cl::opt<std::string> CL_ConfigPath("config",
                       cl::desc("Path to the JSON-formatted configuration file."),
@@ -124,7 +120,10 @@ int main(int argc, char* argv[]) {
   halo::logs() << "Started Halo Server.\nListening on port "
             << CL_Port << "\n";
 
-  const uint32_t SleepMS = CL_BeatsPerSecond == 0 ? 0 : 1000 / CL_BeatsPerSecond;
+  // This rate controls how rapidly the entire system takes actions
+  const size_t BeatsPerSecond = halo::config::getServerSetting<size_t>("heartbeats-per-second", ServerConfig);
+
+  const uint32_t SleepMS = BeatsPerSecond == 0 ? 0 : 1000 / BeatsPerSecond;
   const bool TimeLimited = CL_TimeoutSec > 0;
   int64_t RemainingTime = CL_TimeoutSec * 1000;
   bool ForceShutdown = false;

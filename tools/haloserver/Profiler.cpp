@@ -1,9 +1,15 @@
 #include "halo/compiler/Profiler.h"
-
 #include "halo/server/ClientSession.h"
+#include "halo/nlohmann/util.hpp"
+
 #include "Messages.pb.h"
 
 namespace halo {
+
+Profiler::Profiler(JSON const& Config)
+  : SamplePeriod(config::getServerSetting<uint64_t>("perf-sample-period", Config)), CCT(SamplePeriod) {
+
+}
 
 void Profiler::consumePerfData(ClientList & Clients) {
   for (auto &CS : Clients) {
