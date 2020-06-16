@@ -175,6 +175,8 @@ static const std::map<float, std::vector<std::pair<unsigned, double>>> Threshold
 
 // you should make sure to use the exact float literal, with the f suffix, when calling this function!!
 double t_threshold(const float confidenceLevel, unsigned degrees_of_freedom) {
+  assert(degrees_of_freedom != 0 && "invalid dof");
+
   auto Result = ThresholdTable.find(confidenceLevel);
 
   if (Result == ThresholdTable.end())
