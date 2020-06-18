@@ -67,7 +67,7 @@ protected:
   void redirectTo(GroupState &, CodeVersion const&);
 
   FunctionGroup FnGroup;
-  KnobSet Knobs;
+  KnobSet BaseKnobs; // the knobs corresponding to the JSON file & the loops in the code. you generally don't want to modify this!
   CompilationManager Compiler;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
   Profiler &Profile;

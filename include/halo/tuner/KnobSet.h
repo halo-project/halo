@@ -26,6 +26,8 @@ namespace halo {
 
     KnobSet() {}
     KnobSet(const KnobSet&);
+    KnobSet(KnobSet&&) = default;
+    KnobSet& operator=(KnobSet&&) = default;
 
     Knob& insert(std::unique_ptr<Knob> KNB) {
       auto Name = KNB->getID();

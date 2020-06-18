@@ -114,9 +114,9 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   // experiment!
   Experiments += 1;
 retryExperiment:
-  randomlyChange(Knobs, gen);
-  Knobs.dump();
-  Compiler.enqueueCompilation(*Bitcode, Knobs);
+  KnobSet NewKnobs = std::move(RandomTuner::randomFrom(BaseKnobs, gen));
+  NewKnobs.dump();
+  Compiler.enqueueCompilation(*Bitcode, std::move(NewKnobs));
   Status = ActivityState::WaitingForCompile;
 }
 
@@ -253,7 +253,7 @@ TuningSection::TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
 
   /////
   // Finally, we can initialize the knobs for this tuning section
-  KnobSet::InitializeKnobs(TSI.Config, Knobs, MaxLoopID);
+  KnobSet::InitializeKnobs(TSI.Config, BaseKnobs, MaxLoopID);
 }
 
 
