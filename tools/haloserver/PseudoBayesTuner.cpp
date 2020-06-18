@@ -1,6 +1,8 @@
 #include "halo/tuner/PseudoBayesTuner.h"
 #include "halo/nlohmann/util.hpp"
 
+#include <xgboost/c_api.h>
+
 #include <cstdlib>
 #include <cmath>
 #include <algorithm>
@@ -13,6 +15,24 @@ PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, std::unordered_
     HELDOUT_RATIO(config::getServerSetting<float>("pbtuner-heldout-ratio", Config))
   {}
 
+llvm::Optional<KnobSet> PseudoBayesTuner::getConfig() {
+  if (GeneratedConfigs.size() == 0) {
+    auto Error = generateConfigs();
+    if (Error) {
+     warning(std::move(Error));
+     return llvm::None;
+    }
+  }
+
+  assert(GeneratedConfigs.size() > 0);
+
+  KnobSet KS = GeneratedConfigs.front();
+  GeneratedConfigs.pop_front();
+  return KS;
+}
+
+///////////////////////////////////////
+// helper funs and types for generateConfigs.
 
 // a _dense_ 2D array of configuration data, i.e.,
 // cfg[rowNum][i]  must be written as  cfg[(rowNum * ncol) + i]
@@ -68,12 +88,27 @@ public:
     }
   }
 
-  // number of rows written
-  size_t size() const { return nextFree; }
+  // total number of rows written to the cfg matrix (and correspondingly the results vector)
+  // this does _not_ return the total row capacity
+  size_t rows() const { return nextFree; }
+
+  // total number of columns in the cfg matrix
+  size_t cols() const { return NUM_COLS; }
+
+  // total row capacity
+  size_t max_rows() const {return NUM_ROWS; }
+
+  // returns a pointer to the CFG matrix
+  FloatTy const* getCFG() const { return cfg.get(); }
+
+  // return a pointer to the results / IPC vector
+  FloatTy const* getResults() const { return result.get(); }
+
+  // get a specific result from the results array
+  FloatTy getResult(size_t row) const { return result.get()[row]; }
 
 private:
 
-  FloatTy getResult (size_t row) const { return result.get()[row]; }
   void setResult(size_t row, FloatTy v) { result.get()[row] = v; }
 
   FloatTy* cfgRow(size_t row) {
@@ -87,9 +122,143 @@ private:
   Array cfg;  // cfg[rowNum][i]  must be written as  cfg[(rowNum * ncol) + i]
   Array result;
 };
+/////// end class ConfigMatrix
 
 
-KnobSet PseudoBayesTuner::generateConfig() {
+
+void initBooster(const DMatrixHandle dmats[],
+                      bst_ulong len,
+                      BoosterHandle *out) {
+
+  XGBoosterCreate(dmats, len, out);
+  // NOTE: all of these settings were picked arbitrarily
+#ifdef NDEBUG
+  XGBoosterSetParam(*out, "silent", "1");
+#endif
+  XGBoosterSetParam(*out, "booster", "gbtree");
+  XGBoosterSetParam(*out, "objective", "reg:linear");
+  XGBoosterSetParam(*out, "max_depth", "5");
+  XGBoosterSetParam(*out, "eta", "0.3");
+  XGBoosterSetParam(*out, "min_child_weight", "1");
+  XGBoosterSetParam(*out, "subsample", "0.5");
+  XGBoosterSetParam(*out, "colsample_bytree", "1");
+  XGBoosterSetParam(*out, "num_parallel_tree", "4");
+}
+
+
+
+////////////
+// the training step. returns the best model learned (in a serialized form)
+std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const& validateData,
+                  unsigned MaxLearnIters=500, unsigned MaxLearnPastBest=0) {
+
+  // must be an array. not sure why.
+  // this thing manages the XGBoost view of the config matrix.
+  DMatrixHandle train[1];
+  {
+    // add config data
+    if (XGDMatrixCreateFromMat(trainData.getCFG(),
+                                trainData.rows(), trainData.cols(),
+                                ConfigMatrix::MISSING_VAL, &train[0]))
+      fatal_error("XGDMatrixCreateFromMat failed.");
+
+    // add labels, aka, IPCs corresponding to each configuration
+    if (XGDMatrixSetFloatInfo(train[0], "label", trainData.getResults(), trainData.rows()))
+      fatal_error("XGDMatrixSetFloatInfo failed.");
+  }
+
+  //////////////////////////
+  // make a boosted model so we can start training
+  BoosterHandle booster;
+  initBooster(train, 1, &booster);
+
+  // setup validation dataset
+  const size_t validateRows = validateData.rows();
+  DMatrixHandle h_validate;
+  XGDMatrixCreateFromMat(validateData.getCFG(),
+                         validateData.rows(), validateData.cols(),
+                         ConfigMatrix::MISSING_VAL, &h_validate);
+
+  double bestErr = std::numeric_limits<double>::max();
+  std::vector<char> bestModel;
+  unsigned bestIter;
+  for (unsigned i = 0; i < MaxLearnIters; i++) {
+    int rv = XGBoosterUpdateOneIter(booster, i, train[0]);
+    assert(rv == 0 && "learn step failed");
+
+    /////////////
+    // evaluate this new model
+    bst_ulong out_len;
+    const float *predict;
+    rv = XGBoosterPredict(booster, h_validate, 0, 0, &out_len, &predict);
+
+    assert(rv == 0 && "predict failed");
+    assert(out_len == validateRows && "doesn't make sense!");
+
+    // calculate Root Mean Squared Error (RMSE) of predicting our held-out set
+    double err = 0.0;
+    for (size_t i = 0; i < validateRows; i++) {
+      double actual = validateData.getResult(i);
+      double guess = predict[i];
+
+      clogs() << "actual = " << actual
+                << ", guess = " << guess;
+
+      err += std::pow(actual - guess, 2) / validateRows;
+    }
+    err = std::sqrt(err);
+
+    clogs() << "RMSE = " << err << "\n\n";
+
+    // is this model better than we've seen before?
+    if (err <= bestErr || bestModel.size() == 0) {
+      const char* ro_view;
+      bst_ulong ro_len;
+      rv = XGBoosterGetModelRaw(booster, &ro_len, &ro_view);
+      assert(rv == 0 && "can't view model");
+
+      // save this new best model
+      bestErr = err;
+      bestIter = i;
+
+      // drop the old model
+      bestModel.clear();
+
+      // copy the read-only view of the model to our vector
+      for (size_t i = 0; i < ro_len; i++)
+        bestModel.push_back(ro_view[i]);
+
+    } else if (i - bestIter < MaxLearnPastBest) {
+          // we're willing to go beyond the minima so-far.
+          clogs() << "going beyond best-seen";
+    }  else {
+      // stop training, since it's not any getting better
+      break;
+    }
+  }
+
+  assert(bestModel.size() != 0 && "training failed?");
+
+  clogs() << "Learned model with error: " << bestErr;
+
+  // clean-up!
+  XGBoosterFree(booster);
+  XGDMatrixFree(train[0]);
+  XGDMatrixFree(h_validate);
+
+  return bestModel;
+}
+
+
+
+
+
+
+
+////////////////////////////
+// This is the juicy part that kicks-off all the work!
+//
+llvm::Error PseudoBayesTuner::generateConfigs() {
   if (Versions.size() == 0)
     fatal_error("cannot generate a config with no prior!");
 
@@ -111,7 +280,7 @@ KnobSet PseudoBayesTuner::generateConfig() {
 
       auto const& Configs = Entry.second.getConfigs();
       if (Configs.size() == 0)
-        fatal_error("A code version is missing a knob configuration!");
+        return makeError("A code version is missing a knob configuration!");
 
       // check for any new knobs we haven't seen in a prior config.
       for (auto const& Config : Configs) {
@@ -124,36 +293,46 @@ KnobSet PseudoBayesTuner::generateConfig() {
 
       }
     }
-  }
+  } // end block
 
   const size_t numConfigs = allConfigs.size();
   if (numConfigs == 0)
-    fatal_error("no usable configurations. please collect IPC measurements.");
+    return makeError("no usable configurations. please collect IPC measurements.");
 
   //////
   // split the data into training and validation sets
 
   size_t validateRows = std::max(1, (int) std::round(HELDOUT_RATIO * numConfigs));
   size_t trainingRows = numConfigs - validateRows;
+
+  // some sanity checks
   assert(validateRows < allConfigs.size());
+  assert(validateRows > 0);
+  assert(trainingRows > 0);
 
-  ConfigMatrix train(trainingRows, knobsPerConfig, KnobToCol);
-  ConfigMatrix validate(validateRows, knobsPerConfig, KnobToCol);
+  ConfigMatrix trainData(trainingRows, knobsPerConfig, KnobToCol);
+  ConfigMatrix validateData(validateRows, knobsPerConfig, KnobToCol);
 
-  // shuffle the data
+  // shuffle the data so validation and training sets are allocated at random
   std::shuffle(allConfigs.begin(), allConfigs.end(), RNG);
 
   // partition
   auto I = allConfigs.cbegin();
   for (size_t cnt = 0; cnt < validateRows; I++, cnt++)
-    validate.emplace_back(I->first, I->second);
+    validateData.emplace_back(I->first, I->second);
 
   for (; I < allConfigs.cend(); I++)
-    train.emplace_back(I->first, I->second);
+    trainData.emplace_back(I->first, I->second);
+
+
+  ///////////
+  // train an XGBoost model on the trainData dataset w.r.t the validation dataset.
+
+  auto bestModelSerialized = runTraining(trainData, validateData);
 
 
 
-  fatal_error("TODO: train an XGBoost model on this data!");
-}
+  return makeError("TODO: train an XGBoost model on this data!");
+} // end of generateConfigs
 
 } // end namespace
