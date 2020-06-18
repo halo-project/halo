@@ -65,10 +65,10 @@ namespace halo {
 
 
     auto begin() noexcept { return Knobs.begin(); }
-    auto begin() const noexcept { return Knobs.begin(); }
+    auto begin() const noexcept { return Knobs.cbegin(); }
 
     auto end() noexcept { return Knobs.end(); }
-    auto end() const noexcept { return Knobs.end(); }
+    auto end() const noexcept { return Knobs.cend(); }
 
     size_t size() const;
 
