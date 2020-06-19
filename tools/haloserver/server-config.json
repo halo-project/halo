@@ -5,7 +5,7 @@
     "group-service-per-second": 10,
     "perf-sample-period": 15485867,
 
-    "pbtuner-top-taken": 2,
+    "pbtuner-top-taken": 5,
     "pbtuner-search-size": 200,
     "pbtuner-min-prior": 5,
     "pbtuner-heldout-ratio": 0.2,

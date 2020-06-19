@@ -88,7 +88,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
         break;
 
     if (Dupe) {
-      clogs() << "compile job produced duplicate code.\ntrying another compile!";
+      clogs() << "compile job produced duplicate code... trying another compile!\n";
       DuplicateCompiles++;
       goto retryExperiment;
     }
