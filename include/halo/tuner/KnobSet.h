@@ -24,11 +24,28 @@ namespace halo {
 
   public:
 
-    KnobSet() {}
-    KnobSet(const KnobSet&);
+    KnobSet() = default;
     KnobSet(KnobSet&&) = default;
     KnobSet& operator=(KnobSet&&) = default;
 
+    KnobSet(const KnobSet& Other) {
+      assert(Knobs.empty() && "not starting from an empty set?");
+      copyingUnion(Other);
+    }
+
+    // A fairly standard set-union operation, where
+    //
+    //    this = this `unionWith` other
+    //
+    // The difference are that:
+    //
+    // 1. knobs are uniqued by their name (aka their ID)
+    // 2. when inserting missing knobs into this
+    // knob set, we insert a copy of the knob from the other set.
+    void copyingUnion(const KnobSet&);
+
+    // an insertion operation that assumes a knob with the given name
+    // does NOT already exist in the set.
     Knob& insert(std::unique_ptr<Knob> KNB) {
       auto Name = KNB->getID();
       auto Res = Knobs.insert({Name, std::move(KNB)});

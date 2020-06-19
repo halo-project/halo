@@ -9,6 +9,7 @@
 #include "halo/tuner/RandomTuner.h"
 #include "halo/tuner/RandomQuantity.h"
 #include "halo/tuner/CodeVersion.h"
+#include "halo/tuner/BuildSettings.h"
 #include "halo/server/ThreadPool.h"
 #include "halo/server/CompilationManager.h"
 #include "halo/nlohmann/json_fwd.hpp"
@@ -31,6 +32,7 @@ struct TuningSectionInitializer {
   CompilationPipeline &Pipeline;
   Profiler &Profile;
   llvm::MemoryBuffer &OriginalBitcode;
+  BuildSettings &OriginalSettings;
 };
 
 
@@ -68,6 +70,7 @@ protected:
 
   FunctionGroup FnGroup;
   KnobSet BaseKnobs; // the knobs corresponding to the JSON file & the loops in the code. you generally don't want to modify this!
+  KnobSet OriginalLibKnobs; // knobs corresponding to the original executable. a subset of the BaseKnobs.
   CompilationManager Compiler;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
   Profiler &Profile;

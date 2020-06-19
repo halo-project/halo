@@ -12,6 +12,7 @@
 #include "halo/compiler/CompilationPipeline.h"
 #include "halo/compiler/Profiler.h"
 #include "halo/tuner/TuningSection.h"
+#include "halo/tuner/BuildSettings.h"
 
 #include "llvm/Support/MemoryBuffer.h"
 
@@ -91,6 +92,7 @@ private:
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;
   std::array<uint8_t, 20> BitcodeHash;
+  BuildSettings OriginalSettings;
 
 };
 

@@ -1,6 +1,7 @@
 #include "halo/tuner/TuningSection.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/compiler/ReadELF.h"
+#include "halo/tuner/NamedKnobs.h"
 #include "halo/nlohmann/util.hpp"
 
 namespace halo {
@@ -148,8 +149,8 @@ void AggressiveTuningSection::dump() const {
 
 AggressiveTuningSection::AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
   : TuningSection(TSI, RootFunc), gen(config::getServerSetting<uint64_t>("seed", TSI.Config)) {
-    // create a dummy version of the original library to record its performance, etc.
-    CodeVersion OriginalLib{KnobSet()}; // TODO: get the original config from the build flags!
+    // create a version for the original library to record its performance, etc.
+    CodeVersion OriginalLib{OriginalLibKnobs};
     std::string Name = OriginalLib.getLibraryName();
     Versions[Name] = std::move(OriginalLib);
     BestLib = Name;
@@ -254,6 +255,19 @@ TuningSection::TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
   /////
   // Finally, we can initialize the knobs for this tuning section
   KnobSet::InitializeKnobs(TSI.Config, BaseKnobs, MaxLoopID);
+
+  ///////
+  // Now, we initialize the OriginalLibKnobs as a subset of the BaseKnobs
+  // We can only do this if the original build setting is in range of
+  // the knob specified in the JSON file.
+
+  auto OrigOptLvl = TSI.OriginalSettings.OptLvl;
+  auto OK = std::make_unique<OptLvlKnob>(BaseKnobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel));
+  if (OK->getMin() <= OrigOptLvl && OrigOptLvl <= OK->getMax()) {
+    OK->setVal(OrigOptLvl);
+    OriginalLibKnobs.insert(std::move(OK));
+  }
+
 }
 
 

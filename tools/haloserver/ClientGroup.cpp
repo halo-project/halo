@@ -14,6 +14,8 @@
 
 #include "Logging.h"
 
+#include <regex>
+
 namespace halo {
 
   // kicks off a continuous service loop for this group.
@@ -55,7 +57,7 @@ namespace halo {
           return end_service_iteration(); // not enough samples to create a TS
 
         auto MaybeTS = TuningSection::Create(TuningSection::Strategy::Aggressive,
-                                              {Config, Pool, Pipeline, Profile, *Bitcode});
+                            {Config, Pool, Pipeline, Profile, *Bitcode, OriginalSettings});
         if (!MaybeTS)
           return end_service_iteration(); // no suitable tuning section... nothing to do
 
@@ -123,6 +125,23 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
 }
 
 
+void analyzeBuildFlags(BuildSettings &Settings, pb::ModuleInfo const& MI) {
+  const std::regex OptLevelRegex("-(O[0123])");
+  std::smatch pieces_match;
+
+  // based on example from  https://en.cppreference.com/w/cpp/regex/regex_match
+  for (auto const& Flag : MI.build_flags()) {
+    if (std::regex_match(Flag, pieces_match, OptLevelRegex)) {
+      // since we go in order, we'll always end up with the last -On flag.
+      std::ssub_match sub_match = pieces_match[1];
+      std::string piece = sub_match.str();
+      clogs() << "Opt level found in build flags: " << piece << "\n";
+      Settings.OptLvl = OptLvlKnob::parseLevel(piece);
+    }
+  }
+}
+
+
 ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
       ShouldStop(false), Pool(Pool), Config(Config), Profile(Config), BitcodeHash(BitcodeSHA1) {
@@ -136,8 +155,11 @@ ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS
 
       pb::ClientEnroll &Client = CS->Client;
 
-      // TODO: parse the build flags and perhaps have client
-      // send llvm::sys::getHostCPUFeatures() info for -mattr flags.
+      // TODO: have client send llvm::sys::getHostCPUFeatures() info so we can
+      // add -mattr flags during compilation.
+
+      analyzeBuildFlags(OriginalSettings, Client.module());
+
       Pipeline = CompilationPipeline(
                     llvm::Triple(Client.process_triple()),
                     Client.host_cpu());

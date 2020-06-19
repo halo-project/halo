@@ -9,10 +9,14 @@
 
 namespace halo {
 
-KnobSet::KnobSet(const KnobSet& Other) {
-  NumLoopIDs = Other.NumLoopIDs;
+void KnobSet::copyingUnion(const KnobSet& Other) {
+  NumLoopIDs = std::max(NumLoopIDs, Other.NumLoopIDs);
 
   for (auto const& Entry : Other) {
+
+    if (Knobs.find(Entry.first) != Knobs.end())
+      continue; // skip! we already have a knob with this name.
+
     Knob* Ptr = Entry.second.get();
 
     if (IntKnob* K = llvm::dyn_cast<IntKnob>(Ptr))
@@ -25,7 +29,7 @@ KnobSet::KnobSet(const KnobSet& Other) {
       insert(std::make_unique<OptLvlKnob>(*K));
 
     else
-      llvm::report_fatal_error("KnobSet::KnobSet copy ctor -- unknown knob kind encountered");
+      fatal_error("KnobSet::KnobSet copy ctor -- unknown knob kind encountered");
   }
 }
 
