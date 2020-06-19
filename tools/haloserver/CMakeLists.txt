@@ -73,6 +73,15 @@ set_property(TARGET ${SERVER_BIN} PROPERTY CXX_STANDARD 17)
 target_link_libraries(${SERVER_BIN} PRIVATE ${Boost_LIBRARIES} ${Protobuf_LIBRARIES} ${GSL_LIBRARIES} ${XGB_LIB})
 llvm_config(${SERVER_BIN} USE_SHARED) # since halomon requires libLLVM, we use it here too.
 
+# the installed version of the binary needs to
+# retain its rpath to the non-system-wide libs that we're linking in.
+# it will get stripped during install without this.
+#
+# for example, because XGBoost is not integrated with CMake, we need to do this.
+set_target_properties(${SERVER_BIN} PROPERTIES
+                      INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${XGB_LIB_DIR}"
+                      INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 install(TARGETS ${SERVER_BIN}
         COMPONENT ${SERVER_BIN}   # gives a name to this install target for the phony target below.
         LIBRARY DESTINATION lib
