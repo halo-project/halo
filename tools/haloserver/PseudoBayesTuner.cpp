@@ -1,4 +1,5 @@
 #include "halo/tuner/PseudoBayesTuner.h"
+#include "halo/tuner/RandomTuner.h"
 #include "halo/nlohmann/util.hpp"
 
 #include <xgboost/c_api.h>
@@ -6,15 +7,26 @@
 #include <cstdlib>
 #include <cmath>
 #include <algorithm>
+#include <set>
 
 namespace halo {
 
-PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, std::unordered_map<std::string, CodeVersion> &Versions)
-  : Versions(Versions),
-    RNG(config::getServerSetting<uint64_t>("pbtuner-seed", Config)),
-    HELDOUT_RATIO(config::getServerSetting<float>("pbtuner-heldout-ratio", Config))
-  {}
+PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& BaseKnobs,  std::unordered_map<std::string, CodeVersion> &Versions)
+  : BaseKnobs(BaseKnobs), Versions(Versions),
+    RNG(config::getServerSetting<uint64_t>("seed", Config)),
+    TopTaken(config::getServerSetting<size_t>("pbtuner-top-taken", Config)),
+    SearchSz(config::getServerSetting<size_t>("pbtuner-search-size", Config)),
+    HELDOUT_RATIO(config::getServerSetting<float>("pbtuner-heldout-ratio", Config)),
+    ExploreRatio(config::getServerSetting<float>("pbtuner-explore-ratio", Config)),
+    EnergyLvl(config::getServerSetting<float>("pbtuner-energy-level", Config)) {
+      assert(0 < HELDOUT_RATIO && HELDOUT_RATIO < 1);
+      assert(0 <= ExploreRatio && ExploreRatio <= 1);
+      assert(0 <= EnergyLvl && EnergyLvl <= 100);
+      assert(0 < TopTaken && TopTaken <= SearchSz);
+  }
 
+////////////////////////////////////////////////////////////////////////////////////
+// obtains a config, generating them if we've run out of cached ones
 llvm::Optional<KnobSet> PseudoBayesTuner::getConfig() {
   if (GeneratedConfigs.size() == 0) {
     auto Error = generateConfigs();
@@ -30,10 +42,11 @@ llvm::Optional<KnobSet> PseudoBayesTuner::getConfig() {
   GeneratedConfigs.pop_front();
   return KS;
 }
+////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////
-// helper funs and types for generateConfigs.
 
+
+////////////////////////////////////////////////////////////////////////////////////
 // a _dense_ 2D array of configuration data, i.e.,
 // cfg[rowNum][i]  must be written as  cfg[(rowNum * ncol) + i]
 // each row corrsponds to one configuration.
@@ -54,17 +67,26 @@ public:
 
         // we need to fill the cfg matrix with MISSING values, b/c some configs may not have all the knobs.
         FloatTy* cfg_raw = cfg.get();
-        for (size_t i = 0; i < NUM_COLS; i++)
+        for (size_t i = 0; i < NUM_ROWS * NUM_COLS; i++)
           cfg_raw[i] = MISSING_VAL;
+
+        // for sanity, we also fill the results vector with zeroes
+        FloatTy* result_raw = result.get();
+        for (size_t i = 0; i < NUM_ROWS; i++)
+          result_raw[i] = 0;
 
       }
 
   // writes to the next row of the matrix, using the provided information
   void emplace_back(KnobSet const* Config, RandomQuantity const* IPC) {
-    // locate and allocate the row, etc.
-    FloatTy *row = cfgRow(nextFree);
     setResult(nextFree, IPC->mean());
-    nextFree++;
+    emplace_back(Config);
+  }
+
+  // writes to the next row of the matrix, using the provided information
+  void emplace_back(KnobSet const* Config) {
+    // locate and allocate the row, etc.
+    FloatTy *row = cfgRow(nextFree++);
 
     // fill the columns of the row in the cfg matrix
     for (auto const& Entry : *Config) {
@@ -126,6 +148,8 @@ private:
 
 
 
+////////////////////////////////////////////////////////////////////////////////////
+// Creates an initial XGB Booster
 void initBooster(const DMatrixHandle dmats[],
                       bst_ulong len,
                       BoosterHandle *out) {
@@ -144,10 +168,11 @@ void initBooster(const DMatrixHandle dmats[],
   XGBoosterSetParam(*out, "colsample_bytree", "1");
   XGBoosterSetParam(*out, "num_parallel_tree", "4");
 }
+////////////////////////////////////////////////////////////////////////////////////
 
 
 
-////////////
+////////////////////////////////////////////////////////////////////////////////////
 // the training step. returns the best model learned (in a serialized form)
 std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const& validateData,
                   unsigned MaxLearnIters=500, unsigned MaxLearnPastBest=0) {
@@ -167,10 +192,10 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
       fatal_error("XGDMatrixSetFloatInfo failed.");
   }
 
-  //////////////////////////
   // make a boosted model so we can start training
   BoosterHandle booster;
   initBooster(train, 1, &booster);
+
 
   // setup validation dataset
   const size_t validateRows = validateData.rows();
@@ -186,7 +211,7 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
     int rv = XGBoosterUpdateOneIter(booster, i, train[0]);
     assert(rv == 0 && "learn step failed");
 
-    /////////////
+
     // evaluate this new model
     bst_ulong out_len;
     const float *predict;
@@ -248,14 +273,117 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
 
   return bestModel;
 }
+////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Leveraging a model of the performance for configurations, we search the configuration-space
+// for new high-value configurations based on our prior experience.
+void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
+                     std::vector<std::pair<KnobSet const*, RandomQuantity const*>>& Prior,
+                     size_t knobsPerConfig,
+                     std::unordered_map<std::string, size_t> const& KnobToCol) {
+
+  assert(Prior.size() > 1 && "can't search with no prior!");
+
+  // sort our prior knowledge from best to worst IPC
+  // FIXME: if we end up not using anything but the #1, we can simplify this to a single pass over the prior.
+  using ElmTy = std::pair<KnobSet const*, RandomQuantity const*>;
+  auto goesBefore = [](ElmTy const& A, ElmTy const& B){ return A.second->mean() >= B.second->mean(); };
+  std::sort(Prior.begin(), Prior.end(), goesBefore);
+
+
+  // search by first generating a bunch of configurations
+  size_t ExploreSz = std::round(ExploreRatio * SearchSz);
+  size_t ExploitSz = SearchSz - ExploreSz;
+
+  ConfigMatrix searchData(SearchSz, knobsPerConfig, KnobToCol);
+  std::vector<KnobSet> searchConfig;
+
+  { // EXPLORE
+    for (size_t i = 0; i < ExploreSz; i++) {
+      searchConfig.push_back(RandomTuner::randomFrom(BaseKnobs, RNG));
+      searchData.emplace_back(&(searchConfig.back()));
+    }
+  }
+
+  { // EXPLOIT
+    KnobSet const* Best = Prior.front().first;
+    for (size_t i = 0; i < ExploitSz; i++) {
+      searchConfig.push_back(RandomTuner::nearby(*Best, RNG, EnergyLvl));
+      searchData.emplace_back(&(searchConfig.back()));
+    }
+  }
+
+
+  // load the model
+  BoosterHandle model;
+  XGBoosterCreate(NULL, 0, &model);
+  int rv = XGBoosterLoadModelFromBuffer(model, SerializedModel.data(), SerializedModel.size());
+  assert(rv == 0);
+
+  // now, use the model to predict the quality of the configurations we generated.
+  DMatrixHandle h_test;
+  XGDMatrixCreateFromMat(searchData.getCFG(), searchData.rows(), searchData.cols(), ConfigMatrix::MISSING_VAL, &h_test);
+  bst_ulong out_len;
+  const float *out;
+  XGBoosterPredict(model, h_test, 0, 0, &out_len, &out);
+
+
+  // take the top N best predictions
+  using SetKey = std::pair<uint32_t, float>;
+
+  struct lessThan {
+    constexpr bool operator()(const SetKey &lhs, const SetKey &rhs) const
+    {
+        return lhs.second < rhs.second;
+    }
+  };
+
+  // the IPCs contained in this set are the negative of the predicted IPC.
+  // this is done so that the multiset works for us in keeping the smallest N
+  // elements, where the smallest negative IPC = largest IPC
+  std::multiset<SetKey, lessThan> Best;
+  for (uint32_t i = 0; i < out_len; i++) {
+    float predictedIPC = out[i];
+
+    clogs() << "prediction[" << i << "]=" << predictedIPC;
+
+    auto Cur = std::make_pair(i, -predictedIPC);
+
+    if (Best.size() < TopTaken) {
+      Best.insert(Cur);
+      continue;
+    }
+
+    auto UB = Best.upper_bound(Cur);
+    if (UB != Best.end()) {
+      // then UB is greater than Cur
+      Best.erase(UB);
+      Best.insert(Cur);
+    }
+  }
+
+  // now we've got the top N configurations.
+  for (auto Entry : Best) {
+    auto Chosen = Entry.first;
+    clogs() << "chose config " << Chosen
+              << " with estimated IPC " << -Entry.second;
+    GeneratedConfigs.push_back(searchConfig[Chosen]);
+  }
+
+  // cleanup
+  XGBoosterFree(model);
+  XGDMatrixFree(h_test);
+
+} // end surrogateSearch
+////////////////////////////////////////////////////////////////////////////////////
 
 
 
 
-
-
-
-////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
 // This is the juicy part that kicks-off all the work!
 //
 llvm::Error PseudoBayesTuner::generateConfigs() {
@@ -327,12 +455,18 @@ llvm::Error PseudoBayesTuner::generateConfigs() {
 
   ///////////
   // train an XGBoost model on the trainData dataset w.r.t the validation dataset.
+  //
+  // we want a model which has learned whether a configuration will yield a good IPC or not.
 
-  auto bestModelSerialized = runTraining(trainData, validateData);
+  auto surrogateModel = runTraining(trainData, validateData);
 
+  ///////////
+  // finally, we use this model to search the configuration space, saving
+  // the good configurations we've found.
 
+  surrogateSearch(surrogateModel, allConfigs, knobsPerConfig, KnobToCol);
 
-  return makeError("TODO: train an XGBoost model on this data!");
+  return llvm::Error::success();
 } // end of generateConfigs
 
 } // end namespace

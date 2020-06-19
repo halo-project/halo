@@ -1,11 +1,16 @@
 {
   "serverSettings": {
-    "seed": 986734259,
+    "seed": 310428590257,
     "heartbeats-per-second": 10,
     "group-service-per-second": 10,
     "perf-sample-period": 15485867,
+
+    "pbtuner-top-taken": 2,
+    "pbtuner-search-size": 200,
     "pbtuner-heldout-ratio": 0.1,
-    "pbtuner-seed": 310428590256
+    "pbtuner-explore-ratio": 0.5,
+    "pbtuner-energy-level": 30
+
   },
 
   "knobs": [
