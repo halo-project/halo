@@ -7,7 +7,7 @@
 
     "bakeoff-switch-rate": 2,
     "bakeoff-max-switches": 10,
-    "bakeoff-confidence": 95,
+    "bakeoff-confidence": 99,
     "bakeoff-min-samples": 2,
 
     "pbtuner-top-taken": 5,

@@ -21,6 +21,8 @@ BakeoffParameters::BakeoffParameters(nlohmann::json const& Config) {
   size_t confidenceInt = config::getServerSetting<size_t>("bakeoff-confidence", Config);
   if (confidenceInt == 95)
     CONFIDENCE = 0.95f;
+  else if (confidenceInt == 99)
+    CONFIDENCE = 0.99f;
   else
     fatal_error("unknown confidence level " + std::to_string(confidenceInt));
 }
@@ -185,8 +187,43 @@ static const std::map<float, std::vector<std::pair<unsigned, double>>> Threshold
       {60, 1.671},
       {120, 1.658},
       {std::numeric_limits<unsigned>::max(), 1.645},
-    }
-  }
+    }},
+    {0.99f, {
+      {1, 31.821},
+      {2, 6.965},
+      {3, 4.541},
+      {4, 3.747},
+      {5, 3.365},
+      {6, 3.143},
+      {7, 2.998},
+      {8, 2.896},
+      {9, 2.821},
+      {10, 2.764},
+      {11, 2.718},
+      {12, 2.681},
+      {13, 2.650},
+      {14, 2.624},
+      {15, 2.602},
+      {16, 2.583},
+      {17, 2.567},
+      {18, 2.552},
+      {19, 2.539},
+      {20, 2.528},
+      {21, 2.518},
+      {22, 2.508},
+      {23, 2.500},
+      {24, 2.492},
+      {25, 2.485},
+      {26, 2.479},
+      {27, 2.473},
+      {28, 2.467},
+      {29, 2.462},
+      {30, 2.457},
+      {40, 2.423},
+      {60, 2.390},
+      {120, 2.358},
+      {std::numeric_limits<unsigned>::max(), 2.326},
+    }}
 };
 
 // you should make sure to use the exact float literal, with the f suffix, when calling this function!!
