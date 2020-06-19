@@ -96,7 +96,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     std::string NewLib = NewCV.getLibraryName();
     Versions[NewLib] = std::move(NewCV);
 
-    Bakery = Bakeoff(State, this, BestLib, NewLib);
+    Bakery = Bakeoff(State, this, BP, BestLib, NewLib);
 
     Status = ActivityState::TestingNewLib;
     return;
@@ -149,7 +149,8 @@ void AggressiveTuningSection::dump() const {
 
 AggressiveTuningSection::AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
   : TuningSection(TSI, RootFunc),
-    PBT(TSI.Config, BaseKnobs, Versions) {
+    PBT(TSI.Config, BaseKnobs, Versions),
+    BP(TSI.Config) {
     // create a version for the original library to record its performance, etc.
     CodeVersion OriginalLib{OriginalLibKnobs};
     std::string Name = OriginalLib.getLibraryName();

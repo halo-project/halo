@@ -5,6 +5,11 @@
     "group-service-per-second": 10,
     "perf-sample-period": 15485867,
 
+    "bakeoff-switch-rate": 2,
+    "bakeoff-max-switches": 10,
+    "bakeoff-confidence": 95,
+    "bakeoff-min-samples": 2,
+
     "pbtuner-top-taken": 5,
     "pbtuner-search-size": 200,
     "pbtuner-min-prior": 5,

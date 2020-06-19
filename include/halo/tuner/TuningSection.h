@@ -116,6 +116,7 @@ private:
   uint64_t DuplicateCompiles{0};
   uint64_t BakeoffTimeouts{0};
 
+  BakeoffParameters BP;
   llvm::Optional<Bakeoff> Bakery;
   ActivityState Status{ActivityState::Ready};
   std::string BestLib;

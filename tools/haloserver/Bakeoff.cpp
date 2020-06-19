@@ -1,6 +1,7 @@
 #include "halo/tuner/Bakeoff.h"
 #include "halo/tuner/TuningSection.h"
 #include "halo/tuner/CodeVersion.h"
+#include "halo/nlohmann/util.hpp"
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_statistics_double.h>
@@ -8,12 +9,29 @@
 
 namespace halo {
 
+BakeoffParameters::BakeoffParameters(nlohmann::json const& Config) {
+  SWITCH_RATE = config::getServerSetting<size_t>("bakeoff-switch-rate", Config);
+  MAX_SWITCHES = config::getServerSetting<size_t>("bakeoff-max-switches", Config);
+  MIN_SAMPLES = config::getServerSetting<size_t>("bakeoff-min-samples", Config);
 
-Bakeoff::Bakeoff(GroupState &State, TuningSection *TS, std::string Current, std::string New)
-    : TS(TS), Deployed(Current), Other(New), Status(Result::InProgress), DeployedSampledSeen(0) {
+  assert(MIN_SAMPLES >= 2);
+  assert(MAX_SWITCHES > 0);
+  assert(SWITCH_RATE > 0);
+
+  size_t confidenceInt = config::getServerSetting<size_t>("bakeoff-confidence", Config);
+  if (confidenceInt == 95)
+    CONFIDENCE = 0.95f;
+  else
+    fatal_error("unknown confidence level " + std::to_string(confidenceInt));
+}
+
+Bakeoff::Bakeoff(GroupState &State, TuningSection *TS, BakeoffParameters BP, std::string Current, std::string New)
+    : BP(BP), TS(TS), Deployed(Current), Other(New), Status(Result::InProgress), DeployedSampledSeen(0) {
 
   assert(TS->Versions.find(Current) != TS->Versions.end() && "Current not in version database?");
   assert(TS->Versions.find(New) != TS->Versions.end() && "New not in version database?");
+
+  StepsUntilSwitch = BP.SWITCH_RATE;
 
   // start off by clearing out previous performance data from both versions.
   auto &CurIPC = TS->Versions[Current].getIPC();
@@ -49,7 +67,7 @@ void Bakeoff::switchVersions(GroupState &State) {
 
   DeployedSampledSeen = 0;
   Switches += 1;
-  StepsUntilSwitch = SWITCH_RATE;
+  StepsUntilSwitch = BP.SWITCH_RATE;
 
   deploy(State, Deployed);
 }
@@ -95,7 +113,7 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
     case ComparisonResult::NoAnswer: {
       // set-up for the next iteration of the bake-off
 
-      if (Switches >= MAX_SWITCHES) {
+      if (Switches >= BP.MAX_SWITCHES) {
         // we give up... don't know which one is better!
         Status = Result::Timeout;
         return Status;
@@ -112,9 +130,7 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
 }
 
 Bakeoff::ComparisonResult Bakeoff::compare_means(RandomQuantity const& A, RandomQuantity const& B) const {
-  constexpr size_t MIN_OBSERVATIONS = 5;
-
-  if (A.size() < MIN_OBSERVATIONS || B.size() < MIN_OBSERVATIONS)
+  if (A.size() < BP.MIN_SAMPLES || B.size() < BP.MIN_SAMPLES)
     return ComparisonResult::NoAnswer;
 
   auto meanA = A.mean();
@@ -200,9 +216,7 @@ double t_threshold(const float confidenceLevel, unsigned degrees_of_freedom) {
 }
 
 Bakeoff::ComparisonResult Bakeoff::compare_ttest(RandomQuantity const& A, RandomQuantity const& B) const {
-  constexpr size_t MIN_SAMPLES = 2; // 2 are required to compute the degrees of freedom.
-
-  if (A.size() < MIN_SAMPLES || B.size() < MIN_SAMPLES)
+  if (A.size() < BP.MIN_SAMPLES || B.size() < BP.MIN_SAMPLES)
     return ComparisonResult::NoAnswer;
 
   /*
@@ -258,7 +272,7 @@ Bakeoff::ComparisonResult Bakeoff::compare_ttest(RandomQuantity const& A, Random
                   ));
 
 
-  const double THRESH = t_threshold(0.95f, df);
+  const double THRESH = t_threshold(BP.CONFIDENCE, df);
 
   // clogs() << "t = " << test_statistic
   //         << ", df = " << df

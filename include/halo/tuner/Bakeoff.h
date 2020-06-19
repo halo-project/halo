@@ -3,12 +3,21 @@
 #include <string>
 #include "llvm/ADT/Optional.h"
 #include "halo/tuner/RandomQuantity.h"
+#include "halo/nlohmann/json_fwd.hpp"
 
 namespace halo {
 
 class TuningSection;
 class GroupState;
 
+struct BakeoffParameters {
+  BakeoffParameters(nlohmann::json const& Config);
+
+  size_t SWITCH_RATE;  // time steps until we switch versions.
+  size_t MAX_SWITCHES; // the timeout threshold.
+  size_t MIN_SAMPLES;
+  float CONFIDENCE;    // must be a float constant like 0.95f, with f suffix
+};
 
 /// an online comparison of two versions of the same code.
 /// The term 'bakeoff' and its general design here is based on
@@ -16,7 +25,7 @@ class GroupState;
 /// Lau et al in PLDI'06, "Online Performance Auditing: Using Hot Optimizations Without Getting Burned"
 class Bakeoff {
 public:
-  Bakeoff(GroupState &, TuningSection *TS, std::string Current, std::string New);
+  Bakeoff(GroupState &, TuningSection *TS, BakeoffParameters BP, std::string Current, std::string New);
 
   enum class Result {
     Finished,
@@ -38,9 +47,6 @@ public:
 
 private:
 
-  static constexpr size_t SWITCH_RATE = 2;  // time steps until we switch versions.
-  static constexpr size_t MAX_SWITCHES = 8; // the timeout threshold.
-
   void deploy(GroupState&, std::string const& LibName);
   void switchVersions(GroupState&);
 
@@ -56,6 +62,7 @@ private:
 
   ComparisonResult compare_means(RandomQuantity const& A, RandomQuantity const& B) const;
 
+  BakeoffParameters BP;
   TuningSection *TS;
   std::string Deployed;
   std::string Other;
@@ -63,7 +70,7 @@ private:
   llvm::Optional<std::string> Winner;
   Result Status;
   size_t DeployedSampledSeen{0};
-  size_t StepsUntilSwitch{SWITCH_RATE};
+  size_t StepsUntilSwitch;
   size_t Switches{0};
 };
 
