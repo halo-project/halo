@@ -84,6 +84,7 @@ namespace halo {
   llvm::Error makeError(const std::string &msg);
   llvm::Error makeError(llvm::Twine msg);
 
+  void info(llvm::Error const& err);
   void info(const std::string &msg);
   void info(const char *msg);
 

@@ -16,6 +16,7 @@ PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& 
     RNG(config::getServerSetting<uint64_t>("seed", Config)),
     TopTaken(config::getServerSetting<size_t>("pbtuner-top-taken", Config)),
     SearchSz(config::getServerSetting<size_t>("pbtuner-search-size", Config)),
+    MIN_PRIOR(config::getServerSetting<size_t>("pbtuner-min-prior", Config)),
     HELDOUT_RATIO(config::getServerSetting<float>("pbtuner-heldout-ratio", Config)),
     ExploreRatio(config::getServerSetting<float>("pbtuner-explore-ratio", Config)),
     EnergyLvl(config::getServerSetting<float>("pbtuner-energy-level", Config)) {
@@ -23,16 +24,22 @@ PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& 
       assert(0 <= ExploreRatio && ExploreRatio <= 1);
       assert(0 <= EnergyLvl && EnergyLvl <= 100);
       assert(0 < TopTaken && TopTaken <= SearchSz);
+      assert(4 <= MIN_PRIOR);
   }
 
 ////////////////////////////////////////////////////////////////////////////////////
 // obtains a config, generating them if we've run out of cached ones
-llvm::Optional<KnobSet> PseudoBayesTuner::getConfig() {
+KnobSet PseudoBayesTuner::getConfig() {
   if (GeneratedConfigs.size() == 0) {
     auto Error = generateConfigs();
     if (Error) {
-     warning(std::move(Error));
-     return llvm::None;
+      // log it
+      info(Error);
+      llvm::consumeError(std::move(Error));
+
+      // an error can happen if we have an insufficient prior.
+      // so we return a random config instead to help establish one.
+      return RandomTuner::randomFrom(BaseKnobs, RNG);
     }
   }
 
@@ -227,7 +234,7 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
       double guess = predict[i];
 
       clogs() << "actual = " << actual
-                << ", guess = " << guess;
+                << ", guess = " << guess << "\n";
 
       err += std::pow(actual - guess, 2) / validateRows;
     }
@@ -264,7 +271,7 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
 
   assert(bestModel.size() != 0 && "training failed?");
 
-  clogs() << "Learned model with error: " << bestErr;
+  clogs() << "Learned model with error: " << bestErr << "\n";
 
   // clean-up!
   XGBoosterFree(booster);
@@ -281,18 +288,9 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
 // Leveraging a model of the performance for configurations, we search the configuration-space
 // for new high-value configurations based on our prior experience.
 void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
-                     std::vector<std::pair<KnobSet const*, RandomQuantity const*>>& Prior,
+                     KnobSet const* bestConfig,
                      size_t knobsPerConfig,
                      std::unordered_map<std::string, size_t> const& KnobToCol) {
-
-  assert(Prior.size() > 1 && "can't search with no prior!");
-
-  // sort our prior knowledge from best to worst IPC
-  // FIXME: if we end up not using anything but the #1, we can simplify this to a single pass over the prior.
-  using ElmTy = std::pair<KnobSet const*, RandomQuantity const*>;
-  auto goesBefore = [](ElmTy const& A, ElmTy const& B){ return A.second->mean() >= B.second->mean(); };
-  std::sort(Prior.begin(), Prior.end(), goesBefore);
-
 
   // search by first generating a bunch of configurations
   size_t ExploreSz = std::round(ExploreRatio * SearchSz);
@@ -309,9 +307,10 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
   }
 
   { // EXPLOIT
-    KnobSet const* Best = Prior.front().first;
+    KnobSet Best{*bestConfig};
+    Best.copyingUnion(BaseKnobs); // we want to expand this best config with all possible tuning knobs.
     for (size_t i = 0; i < ExploitSz; i++) {
-      searchConfig.push_back(RandomTuner::nearby(*Best, RNG, EnergyLvl));
+      searchConfig.push_back(RandomTuner::nearby(Best, RNG, EnergyLvl));
       searchData.emplace_back(&(searchConfig.back()));
     }
   }
@@ -348,7 +347,7 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
   for (uint32_t i = 0; i < out_len; i++) {
     float predictedIPC = out[i];
 
-    clogs() << "prediction[" << i << "]=" << predictedIPC;
+    clogs() << "prediction[" << i << "]=" << predictedIPC << "\n";
 
     auto Cur = std::make_pair(i, -predictedIPC);
 
@@ -369,7 +368,8 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
   for (auto Entry : Best) {
     auto Chosen = Entry.first;
     clogs() << "chose config " << Chosen
-              << " with estimated IPC " << -Entry.second;
+            << " with estimated IPC " << -Entry.second
+            << "\n";
     GeneratedConfigs.push_back(searchConfig[Chosen]);
   }
 
@@ -388,7 +388,7 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
 //
 llvm::Error PseudoBayesTuner::generateConfigs() {
   if (Versions.size() == 0)
-    fatal_error("cannot generate a config with no prior!");
+    return makeError("cannot generate a config with no prior!");
 
   /////////////////////
   // establish prior
@@ -424,13 +424,30 @@ llvm::Error PseudoBayesTuner::generateConfigs() {
   } // end block
 
   const size_t numConfigs = allConfigs.size();
-  if (numConfigs == 0)
-    return makeError("no usable configurations. please collect IPC measurements.");
+  if (numConfigs < MIN_PRIOR)
+    return makeError("insufficient usable configurations. please collect more IPC measurements with varying configs.");
+
+
+  // Find the best config.
+  KnobSet const* bestConfig = nullptr;
+  {
+    float BestIPC = std::numeric_limits<float>::min();
+
+    for (auto const& Entry : allConfigs) {
+      float IPC = Entry.second->mean();
+      if (IPC > BestIPC) {
+        bestConfig = Entry.first;
+        BestIPC = IPC;
+      }
+    }
+
+    assert(bestConfig != nullptr);
+  }
 
   //////
   // split the data into training and validation sets
 
-  size_t validateRows = std::max(1, (int) std::round(HELDOUT_RATIO * numConfigs));
+  size_t validateRows = std::max(2, (int) std::round(HELDOUT_RATIO * numConfigs));
   size_t trainingRows = numConfigs - validateRows;
 
   // some sanity checks
@@ -438,33 +455,38 @@ llvm::Error PseudoBayesTuner::generateConfigs() {
   assert(validateRows > 0);
   assert(trainingRows > 0);
 
-  ConfigMatrix trainData(trainingRows, knobsPerConfig, KnobToCol);
-  ConfigMatrix validateData(validateRows, knobsPerConfig, KnobToCol);
-
-  // shuffle the data so validation and training sets are allocated at random
-  std::shuffle(allConfigs.begin(), allConfigs.end(), RNG);
-
-  // partition
-  auto I = allConfigs.cbegin();
-  for (size_t cnt = 0; cnt < validateRows; I++, cnt++)
-    validateData.emplace_back(I->first, I->second);
-
-  for (; I < allConfigs.cend(); I++)
-    trainData.emplace_back(I->first, I->second);
-
+  std::vector<char> surrogateModel;
 
   ///////////
   // train an XGBoost model on the trainData dataset w.r.t the validation dataset.
   //
   // we want a model which has learned whether a configuration will yield a good IPC or not.
+  {
+    ConfigMatrix trainData(trainingRows, knobsPerConfig, KnobToCol);
+    ConfigMatrix validateData(validateRows, knobsPerConfig, KnobToCol);
 
-  auto surrogateModel = runTraining(trainData, validateData);
+    // shuffle the data so validation and training sets are allocated at random
+    std::shuffle(allConfigs.begin(), allConfigs.end(), RNG);
+
+    // partition
+    auto I = allConfigs.cbegin();
+    for (size_t cnt = 0; cnt < validateRows; I++, cnt++)
+      validateData.emplace_back(I->first, I->second);
+
+    for (; I < allConfigs.cend(); I++)
+      trainData.emplace_back(I->first, I->second);
+
+    // at this point, we're done with the allConfigs.
+    allConfigs.clear();
+
+    surrogateModel = runTraining(trainData, validateData);
+  }
 
   ///////////
   // finally, we use this model to search the configuration space, saving
   // the good configurations we've found.
 
-  surrogateSearch(surrogateModel, allConfigs, knobsPerConfig, KnobToCol);
+  surrogateSearch(surrogateModel, bestConfig, knobsPerConfig, KnobToCol);
 
   return llvm::Error::success();
 } // end of generateConfigs

@@ -15,10 +15,8 @@ class PseudoBayesTuner {
 public:
   PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& BaseKnobs, std::unordered_map<std::string, CodeVersion> &Versions);
 
-  // obtains a configuration that the tuner believes should be tried next
-  // returns llvm::None if there's an error, or the tuner doesn't have
-  // a sufficient prior established yet.
-  llvm::Optional<KnobSet> getConfig();
+  // obtains a configuration that the tuner believes should be tried next.
+  KnobSet getConfig();
 
 private:
   KnobSet const& BaseKnobs;
@@ -29,6 +27,7 @@ private:
   // these affect the generateConfig process.
   size_t TopTaken;  // the top N predictions that will be saved to be tested for real.
   size_t SearchSz;  // the number of configurations to evaluate with the surrogate when generating new configs.
+  const size_t MIN_PRIOR; // the minimum number of <config,IPC> observations required in order to perform training.
   const float HELDOUT_RATIO;  // (0,1) indicates how much of the dataset should be held-out during training, for validation purposes.
   float ExploreRatio; // [0,1] indicates how much to "explore", with the remaining percent used to "exploit".
   float EnergyLvl; // [0, 100] energy level to be used to perturb the best configuration when exploiting.
@@ -43,7 +42,7 @@ private:
   // Leveraging a model of the performance for configurations, we search the configuration-space
   // for new high-value configurations based on our prior experience.
   void surrogateSearch(std::vector<char> const& SerializedModel,
-                  std::vector<std::pair<KnobSet const*, RandomQuantity const*>>& Prior,
+                  KnobSet const* bestConfig,
                   size_t knobsPerConfig,
                   std::unordered_map<std::string, size_t> const& KnobToCol);
 

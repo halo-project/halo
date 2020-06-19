@@ -44,6 +44,10 @@ namespace halo {
     clogs() << WarnTag << msg << "\n";
   }
 
+  void info(llvm::Error const& err) {
+    logs() << InfoTag << err << "\n";
+  }
+
   void info(const char *msg) {
     clogs() << InfoTag << msg << "\n";
   }

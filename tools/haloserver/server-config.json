@@ -7,7 +7,8 @@
 
     "pbtuner-top-taken": 2,
     "pbtuner-search-size": 200,
-    "pbtuner-heldout-ratio": 0.1,
+    "pbtuner-min-prior": 5,
+    "pbtuner-heldout-ratio": 0.2,
     "pbtuner-explore-ratio": 0.5,
     "pbtuner-energy-level": 30
 

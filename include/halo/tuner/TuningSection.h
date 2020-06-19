@@ -6,7 +6,7 @@
 #include "halo/tuner/Actions.h"
 #include "halo/tuner/Bakeoff.h"
 #include "halo/tuner/KnobSet.h"
-#include "halo/tuner/RandomTuner.h"
+#include "halo/tuner/PseudoBayesTuner.h"
 #include "halo/tuner/RandomQuantity.h"
 #include "halo/tuner/CodeVersion.h"
 #include "halo/tuner/BuildSettings.h"
@@ -103,8 +103,7 @@ private:
     return "?";
   }
 
-  std::mt19937_64 gen;
-
+  PseudoBayesTuner PBT;
 
   static constexpr uint64_t EXPLOIT_FACTOR = 10; // the number of steps we need to exploit to repay our debt
   uint64_t ExploitSteps{0};

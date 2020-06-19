@@ -115,7 +115,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   // experiment!
   Experiments += 1;
 retryExperiment:
-  KnobSet NewKnobs = std::move(RandomTuner::randomFrom(BaseKnobs, gen));
+  KnobSet NewKnobs = std::move(PBT.getConfig());
   NewKnobs.dump();
   Compiler.enqueueCompilation(*Bitcode, std::move(NewKnobs));
   Status = ActivityState::WaitingForCompile;
@@ -148,7 +148,8 @@ void AggressiveTuningSection::dump() const {
 }
 
 AggressiveTuningSection::AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
-  : TuningSection(TSI, RootFunc), gen(config::getServerSetting<uint64_t>("seed", TSI.Config)) {
+  : TuningSection(TSI, RootFunc),
+    PBT(TSI.Config, BaseKnobs, Versions) {
     // create a version for the original library to record its performance, etc.
     CodeVersion OriginalLib{OriginalLibKnobs};
     std::string Name = OriginalLib.getLibraryName();
