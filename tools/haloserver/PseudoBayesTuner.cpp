@@ -86,12 +86,18 @@ public:
 
   // writes to the next row of the matrix, using the provided information
   void emplace_back(KnobSet const* Config, RandomQuantity const* IPC) {
+    if (nextFree == NUM_ROWS)
+      fatal_error("ConfigMatrix is full!");
+
     setResult(nextFree, IPC->mean());
     emplace_back(Config);
   }
 
   // writes to the next row of the matrix, using the provided information
   void emplace_back(KnobSet const* Config) {
+    if (nextFree == NUM_ROWS)
+      fatal_error("ConfigMatrix is full!");
+
     // locate and allocate the row, etc.
     FloatTy *row = cfgRow(nextFree++);
 
@@ -296,13 +302,13 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
   size_t ExploreSz = std::round(ExploreRatio * SearchSz);
   size_t ExploitSz = SearchSz - ExploreSz;
 
-  ConfigMatrix searchData(SearchSz, knobsPerConfig, KnobToCol);
+  ConfigMatrix searchMatrix(SearchSz + 1, knobsPerConfig, KnobToCol);
   std::vector<KnobSet> searchConfig;
 
   { // EXPLORE
     for (size_t i = 0; i < ExploreSz; i++) {
       searchConfig.push_back(RandomTuner::randomFrom(BaseKnobs, RNG));
-      searchData.emplace_back(&(searchConfig.back()));
+      searchMatrix.emplace_back(&(searchConfig.back()));
     }
   }
 
@@ -311,9 +317,15 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
     Best.copyingUnion(BaseKnobs); // we want to expand this best config with all possible tuning knobs.
     for (size_t i = 0; i < ExploitSz; i++) {
       searchConfig.push_back(RandomTuner::nearby(Best, RNG, EnergyLvl));
-      searchData.emplace_back(&(searchConfig.back()));
+      searchMatrix.emplace_back(&(searchConfig.back()));
     }
   }
+
+  // we also want to ask the model for its prediction about the current-best configuration
+  // so that we have a baseline to work off-of. So, we put that at the end of the matrix.
+  searchMatrix.emplace_back(bestConfig);
+
+  assert((searchMatrix.rows() - 1) == searchConfig.size());
 
 
   // load the model
@@ -324,10 +336,11 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
 
   // now, use the model to predict the quality of the configurations we generated.
   DMatrixHandle h_test;
-  XGDMatrixCreateFromMat(searchData.getCFG(), searchData.rows(), searchData.cols(), ConfigMatrix::MISSING_VAL, &h_test);
+  XGDMatrixCreateFromMat(searchMatrix.getCFG(), searchMatrix.rows(), searchMatrix.cols(), ConfigMatrix::MISSING_VAL, &h_test);
   bst_ulong out_len;
   const float *out;
-  XGBoosterPredict(model, h_test, 0, 0, &out_len, &out);
+  XGBoosterPredict(model, h_test, 0, 0, &out_len, &out); // predict!!
+  assert(out_len == searchMatrix.rows());
 
 
   // take the top N best predictions
@@ -340,14 +353,22 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
     }
   };
 
+  // get the model's estimate of the IPC for our current-best config.
+  const float baselineIPC = out[searchMatrix.rows() - 1];
+  clogs() << "baseline IPC = " << baselineIPC << "\n";
+
   // the IPCs contained in this set are the negative of the predicted IPC.
   // this is done so that the multiset works for us in keeping the smallest N
   // elements, where the smallest negative IPC = largest IPC
   std::multiset<SetKey, lessThan> Best;
-  for (uint32_t i = 0; i < out_len; i++) {
+  for (size_t i = 0; i < searchMatrix.rows()-1; i++) {
     float predictedIPC = out[i];
 
     clogs() << "prediction[" << i << "]=" << predictedIPC << "\n";
+
+    // model thinks this is worse, skip it!
+    if (predictedIPC < baselineIPC)
+      continue;
 
     auto Cur = std::make_pair(i, -predictedIPC);
 
@@ -364,13 +385,21 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
     }
   }
 
-  // now we've got the top N configurations.
+  // now we've got the top N-ish configurations.
   for (auto Entry : Best) {
     auto Chosen = Entry.first;
     clogs() << "chose config " << Chosen
             << " with estimated IPC " << -Entry.second
             << "\n";
     GeneratedConfigs.push_back(searchConfig[Chosen]);
+  }
+
+
+  if (GeneratedConfigs.size() == 0) {
+    clogs() << "pbtuner doesn't think any generated config is better.\n"
+            << "generating a random one\n";
+
+    GeneratedConfigs.push_back(RandomTuner::randomFrom(BaseKnobs, RNG));
   }
 
   // cleanup
