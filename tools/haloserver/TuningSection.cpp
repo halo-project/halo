@@ -115,7 +115,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   // experiment!
   Experiments += 1;
 retryExperiment:
-  KnobSet NewKnobs = std::move(PBT.getConfig());
+  KnobSet NewKnobs = std::move(PBT.getConfig(BestLib));
   NewKnobs.dump();
   Compiler.enqueueCompilation(*Bitcode, std::move(NewKnobs));
   Status = ActivityState::WaitingForCompile;

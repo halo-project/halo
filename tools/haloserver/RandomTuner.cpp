@@ -8,9 +8,7 @@ namespace halo {
 namespace RandomTuner {
 
 template < typename RNE >  // meets the requirements of RandomNumberEngine
-KnobSet randomFrom(KnobSet const& KS, RNE &Eng) {
-  KnobSet New(KS);
-
+KnobSet randomFrom(KnobSet &&New, RNE &Eng) {
   for (auto &Entry : New) {
     auto Ptr = Entry.second.get();
 
@@ -73,9 +71,7 @@ int nearbyInt (RNE &Eng, int cur, int min, int max, double energy) {
 
 
 template < typename RNE >
-KnobSet nearby(KnobSet const& KS, RNE &Eng, float energy) {
-  KnobSet New(KS);
-
+KnobSet nearby(KnobSet &&New, RNE &Eng, float energy) {
   for (auto &Entry : New) {
     auto Ptr = Entry.second.get();
 
@@ -104,8 +100,8 @@ KnobSet nearby(KnobSet const& KS, RNE &Eng, float energy) {
 
 
 // specializations
-template KnobSet randomFrom<std::mt19937_64>(KnobSet const&, std::mt19937_64&);
-template KnobSet nearby<std::mt19937_64>(KnobSet const& KS, std::mt19937_64 &Eng, float energy);
+template KnobSet randomFrom<std::mt19937_64>(KnobSet &&, std::mt19937_64&);
+template KnobSet nearby<std::mt19937_64>(KnobSet &&, std::mt19937_64 &Eng, float energy);
 
 
 

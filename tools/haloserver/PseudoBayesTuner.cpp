@@ -29,9 +29,9 @@ PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& 
 
 ////////////////////////////////////////////////////////////////////////////////////
 // obtains a config, generating them if we've run out of cached ones
-KnobSet PseudoBayesTuner::getConfig() {
+KnobSet PseudoBayesTuner::getConfig(std::string CurrentLib) {
   if (GeneratedConfigs.size() == 0) {
-    auto Error = generateConfigs();
+    auto Error = generateConfigs(CurrentLib);
     if (Error) {
       // log it
       info(Error);
@@ -39,7 +39,7 @@ KnobSet PseudoBayesTuner::getConfig() {
 
       // an error can happen if we have an insufficient prior.
       // so we return a random config instead to help establish one.
-      return RandomTuner::randomFrom(BaseKnobs, RNG);
+      return RandomTuner::randomFrom(KnobSet(BaseKnobs), RNG);
     }
   }
 
@@ -293,8 +293,8 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
 ////////////////////////////////////////////////////////////////////////////////////
 // Leveraging a model of the performance for configurations, we search the configuration-space
 // for new high-value configurations based on our prior experience.
-void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
-                     KnobSet const* bestConfig,
+llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
+                     CodeVersion const& bestVersion,
                      size_t knobsPerConfig,
                      std::unordered_map<std::string, size_t> const& KnobToCol) {
 
@@ -302,31 +302,27 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
   size_t ExploreSz = std::round(ExploreRatio * SearchSz);
   size_t ExploitSz = SearchSz - ExploreSz;
 
-  ConfigMatrix searchMatrix(SearchSz + 1, knobsPerConfig, KnobToCol);
+  ConfigMatrix searchMatrix(SearchSz, knobsPerConfig, KnobToCol);
   std::vector<KnobSet> searchConfig;
 
   { // EXPLORE
     for (size_t i = 0; i < ExploreSz; i++) {
-      searchConfig.push_back(RandomTuner::randomFrom(BaseKnobs, RNG));
+      searchConfig.push_back(RandomTuner::randomFrom(KnobSet(BaseKnobs), RNG));
       searchMatrix.emplace_back(&(searchConfig.back()));
     }
   }
 
   { // EXPLOIT
-    KnobSet Best{*bestConfig};
-    Best.copyingUnion(BaseKnobs); // we want to expand this best config with all possible tuning knobs.
+    std::vector<KnobSet> const& SimilarConfigs = bestVersion.getConfigs();
+    std::uniform_int_distribution<size_t> Chooser(0, SimilarConfigs.size()-1);
     for (size_t i = 0; i < ExploitSz; i++) {
-      searchConfig.push_back(RandomTuner::nearby(Best, RNG, EnergyLvl));
+      KnobSet GoodConfig = SimilarConfigs[Chooser(RNG)];
+      GoodConfig.copyingUnion(BaseKnobs); // we want to expand this good config with all possible tuning knobs.
+
+      searchConfig.push_back(RandomTuner::nearby(std::move(GoodConfig), RNG, EnergyLvl));
       searchMatrix.emplace_back(&(searchConfig.back()));
     }
   }
-
-  // we also want to ask the model for its prediction about the current-best configuration
-  // so that we have a baseline to work off-of. So, we put that at the end of the matrix.
-  searchMatrix.emplace_back(bestConfig);
-
-  assert((searchMatrix.rows() - 1) == searchConfig.size());
-
 
   // load the model
   BoosterHandle model;
@@ -353,9 +349,11 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
     }
   };
 
-  // get the model's estimate of the IPC for our current-best config.
-  const float baselineIPC = out[searchMatrix.rows() - 1];
-  clogs() << "baseline IPC = " << baselineIPC << "\n";
+  // TODO: what if we pruned the top N predictions so that only those
+  // which are higher than the mean predicted IPC of the best version
+  // appear in that list. It could be the case that the model doesn't think
+  // _anything_ is better than what we've got, and we should return an error
+  // in that case so the tuner generates a random one instead.
 
   // the IPCs contained in this set are the negative of the predicted IPC.
   // this is done so that the multiset works for us in keeping the smallest N
@@ -365,10 +363,6 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
     float predictedIPC = out[i];
 
     clogs() << "prediction[" << i << "]=" << predictedIPC << "\n";
-
-    // model thinks this is worse, skip it!
-    if (predictedIPC < baselineIPC)
-      continue;
 
     auto Cur = std::make_pair(i, -predictedIPC);
 
@@ -394,18 +388,14 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
     GeneratedConfigs.push_back(searchConfig[Chosen]);
   }
 
-
-  if (GeneratedConfigs.size() == 0) {
-    clogs() << "pbtuner doesn't think any generated config is better.\n"
-            << "generating a random one\n";
-
-    GeneratedConfigs.push_back(RandomTuner::randomFrom(BaseKnobs, RNG));
-  }
-
   // cleanup
   XGBoosterFree(model);
   XGDMatrixFree(h_test);
 
+  if (GeneratedConfigs.size() == 0)
+    return makeError("pbtuner failed to find any good configurations");
+
+  return llvm::Error::success();
 } // end surrogateSearch
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -415,7 +405,7 @@ void PseudoBayesTuner::surrogateSearch(std::vector<char> const& SerializedModel,
 ////////////////////////////////////////////////////////////////////////////////////
 // This is the juicy part that kicks-off all the work!
 //
-llvm::Error PseudoBayesTuner::generateConfigs() {
+llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
   if (Versions.size() == 0)
     return makeError("cannot generate a config with no prior!");
 
@@ -456,22 +446,7 @@ llvm::Error PseudoBayesTuner::generateConfigs() {
   if (numConfigs < MIN_PRIOR)
     return makeError("insufficient usable configurations. please collect more IPC measurements with varying configs.");
 
-
-  // Find the best config.
-  KnobSet const* bestConfig = nullptr;
-  {
-    float BestIPC = std::numeric_limits<float>::min();
-
-    for (auto const& Entry : allConfigs) {
-      float IPC = Entry.second->mean();
-      if (IPC > BestIPC) {
-        bestConfig = Entry.first;
-        BestIPC = IPC;
-      }
-    }
-
-    assert(bestConfig != nullptr);
-  }
+  CodeVersion const& bestVersion = Versions.at(CurrentLib);
 
   //////
   // split the data into training and validation sets
@@ -515,9 +490,7 @@ llvm::Error PseudoBayesTuner::generateConfigs() {
   // finally, we use this model to search the configuration space, saving
   // the good configurations we've found.
 
-  surrogateSearch(surrogateModel, bestConfig, knobsPerConfig, KnobToCol);
-
-  return llvm::Error::success();
+  return surrogateSearch(surrogateModel, bestVersion, knobsPerConfig, KnobToCol);
 } // end of generateConfigs
 
 } // end namespace

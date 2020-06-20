@@ -16,7 +16,7 @@ public:
   PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& BaseKnobs, std::unordered_map<std::string, CodeVersion> &Versions);
 
   // obtains a configuration that the tuner believes should be tried next.
-  KnobSet getConfig();
+  KnobSet getConfig(std::string CurrentLib);
 
 private:
   KnobSet const& BaseKnobs;
@@ -37,12 +37,12 @@ private:
   // adds more configurations to the list of generated configs
   // using the pseudo-bayes tuner, based on the current state of
   // the code versions and their performance.
-  llvm::Error generateConfigs();
+  llvm::Error generateConfigs(std::string CurrentLib);
 
   // Leveraging a model of the performance for configurations, we search the configuration-space
   // for new high-value configurations based on our prior experience.
-  void surrogateSearch(std::vector<char> const& SerializedModel,
-                  KnobSet const* bestConfig,
+  llvm::Error surrogateSearch(std::vector<char> const& SerializedModel,
+                  CodeVersion const& bestVersion,
                   size_t knobsPerConfig,
                   std::unordered_map<std::string, size_t> const& KnobToCol);
 

@@ -18,7 +18,7 @@ namespace RandomTuner {
   //
   // RNE meets the requirements of RandomNumberEngine
   template < typename RNE >
-  KnobSet randomFrom(KnobSet const& KS, RNE &Eng);
+  KnobSet randomFrom(KnobSet &&KS, RNE &Eng);
 
 
   // Generates a KnobSet that is "nearby" the given KnobSet's settings.
@@ -34,12 +34,12 @@ namespace RandomTuner {
   //
   // RNE meets the requirements of RandomNumberEngine
   template < typename RNE >
-  KnobSet nearby(KnobSet const& KS, RNE &Eng, float energy);
+  KnobSet nearby(KnobSet &&KS, RNE &Eng, float energy);
 
 
   // specializations
-  extern template KnobSet randomFrom<std::mt19937_64>(KnobSet const&, std::mt19937_64&);
-  extern template KnobSet nearby<std::mt19937_64>(KnobSet const& KS, std::mt19937_64 &Eng, float energy);
+  extern template KnobSet randomFrom<std::mt19937_64>(KnobSet &&, std::mt19937_64&);
+  extern template KnobSet nearby<std::mt19937_64>(KnobSet &&, std::mt19937_64 &Eng, float energy);
 
 } // end namespace RandomTuner
 
