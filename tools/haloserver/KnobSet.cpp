@@ -92,8 +92,10 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
     // interpret the required scale field
     auto ScaleName = config::getValue<std::string>("scale", Spec, Name);
     IntKnob::Scale Scale;
-    if (ScaleName == "half") {
+    if (ScaleName == "1/2") {
       Scale = IntKnob::Scale::Half;
+    } else if (ScaleName == "1/100") {
+      Scale = IntKnob::Scale::Hundredth;
     } else if (ScaleName == "log") {
       Scale = IntKnob::Scale::Log;
     } else if (ScaleName == "none") {

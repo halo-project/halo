@@ -246,9 +246,10 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
   class IntKnob : public ScalarKnob<int> {
   public:
     enum class Scale {
-      None,     // 1:1
-      Log,      // the knob's values are log_2 of the actual values
-      Half      // the knob's values are 1/2 the actual values
+      None,       // 1:1
+      Log,        // the knob's values are log_2 of the actual values
+      Half,       // the knob's values are 1/2 the actual values
+      Hundredth   // the knob's values are 1/100 the actual values
     };
 
     IntKnob(std::string const& Name, int current, int dflt, int min, int max, Scale scale) :
@@ -267,6 +268,9 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
 
       } else if (ScaleKind == Scale::Half) {
         return 2 * Val;
+
+      } else if (ScaleKind == Scale::Hundredth) {
+        return 100 * Val;
       }
 
       assert(ScaleKind == Scale::None);

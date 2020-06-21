@@ -43,50 +43,50 @@
     {
       "kind": "int",
       "name": "inline-threshold-default",
-      "scale": "none",
-      "default": 225,
+      "scale": "1/100",
+      "default": 2,
       "min": 0,
-      "max": 5000
+      "max": 30
     },
     {
       "kind": "int",
       "name": "inline-threshold-hintedfunc",
-      "scale": "none",
-      "default": 325,
+      "scale": "1/100",
+      "default": 3,
       "min": 0,
-      "max": 5000
+      "max": 30
     },
     {
       "kind": "int",
       "name": "inline-threshold-coldfunc",
-      "scale": "none",
-      "default": 45,
+      "scale": "1/100",
+      "default": 0,
       "min": 0,
-      "max": 5000
+      "max": 30
     },
     {
       "kind": "int",
       "name": "inline-threshold-hotsite",
-      "scale": "none",
-      "default": 3000,
+      "scale": "1/100",
+      "default": 30,
       "min": 0,
-      "max": 5000
+      "max": 30
     },
     {
       "kind": "int",
       "name": "inline-threshold-coldsite",
-      "scale": "none",
-      "default": 45,
+      "scale": "1/100",
+      "default": 0,
       "min": 0,
-      "max": 5000
+      "max": 30
     },
     {
       "kind": "int",
       "name": "inline-threshold-locallyhotsite",
-      "scale": "none",
-      "default": 525,
+      "scale": "1/100",
+      "default": 5,
       "min": 0,
-      "max": 5000
+      "max": 30
     },
     {
       "kind": "flag",
@@ -106,7 +106,7 @@
     {
       "kind": "int",
       "name": "llvm.loop.unroll.count",
-      "scale": "half",
+      "scale": "1/2",
       "default": 1,
       "min": 1,
       "max": 5
