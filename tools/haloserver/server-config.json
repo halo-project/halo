@@ -94,6 +94,11 @@
       "default": true
     },
     {
+      "kind": "flag",
+      "name": "slp-vectorize-enable",
+      "default": true
+    },
+    {
       "kind": "optlvl",
       "name": "optimize-pipeline-level",
       "default": "O2",

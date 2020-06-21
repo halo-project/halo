@@ -141,6 +141,18 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   bool Pr = false; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
 
+  // these options are tuned per-loop, so we need to tell the optimizer that
+  // it should always consider it, unless we say otherwise for a particular loop.
+  // FIXME: is this right? should this be tuned?
+  // PTO.LoopInterleaving = true;
+  // PTO.LoopVectorization = true;
+  // PTO.LoopUnrolling = true;
+
+  // TODO: expose more tuning options in LLVM through the PTO struct. There's a lot
+  // being left on the table.
+
+  Knobs.lookup<FlagKnob>(named_knob::SLPVectorizeEnable).applyFlag(PTO.SLPVectorization);
+
   /// NOTE: IP.OptSizeThreshold and IP.OptMinSizeThreshold
   /// are not currently set. If you end up using / not deleting optsize & minsize attributes
   /// then they may be worth using, though they will have an affect on optimizations other than inlining.

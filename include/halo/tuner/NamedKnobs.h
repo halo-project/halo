@@ -28,6 +28,7 @@ namespace halo {
     static const ty MachineOutline  = {"machine-outline",  Knob::KK_Flag};
     static const ty GuaranteeTCO    = {"guarantee-tco",    Knob::KK_Flag};
     static const ty InlineFullCost  = {"inline-computefullcost", Knob::KK_Flag};
+    static const ty SLPVectorizeEnable  = {"slp-vectorize-enable", Knob::KK_Flag};
 
     static const ty InlineThreshold = {"inline-threshold-default", Knob::KK_Int};
     static const ty InlineThresholdHint = {"inline-threshold-hintedfunc", Knob::KK_Int};
@@ -74,6 +75,7 @@ namespace halo {
       MachineOutline,
       GuaranteeTCO,
       InlineFullCost,
+      SLPVectorizeEnable,
 
       InlineThreshold,
       InlineThresholdHint,
