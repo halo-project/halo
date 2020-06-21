@@ -99,6 +99,13 @@
       "default": "O2",
       "min": "O1",
       "max": "O3"
+    },
+    {
+      "kind": "optlvl",
+      "name": "codegen-optimize-level",
+      "default": "O2",
+      "min": "O1",
+      "max": "O3"
     }
   ],
 

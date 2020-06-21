@@ -226,6 +226,9 @@ Expected<CompilationPipeline::compile_result>
   CompilationPipeline::_run(Module &Module, KnobSet const& Knobs) {
 
   llvm::orc::JITTargetMachineBuilder JTMB(Triple);
+
+  JTMB.setCodeGenOptLevel(Knobs.lookup<OptLvlKnob>(named_knob::CodegenLevel).asCodegenLevel());
+
   auto MaybeTM = JTMB.createTargetMachine();
   if (!MaybeTM)
     return MaybeTM.takeError();

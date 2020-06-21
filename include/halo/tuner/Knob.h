@@ -10,6 +10,7 @@
 #include "halo/tuner/Utility.h"
 
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/CodeGen.h"
 #include "llvm/Passes/PassBuilder.h"
 
 #include "Logging.h"
@@ -183,6 +184,16 @@ namespace halo {
 
     std::string dump() const override {
       return std::to_string(OptLvlKnob::asInt(getVal()));
+    }
+
+    llvm::CodeGenOpt::Level asCodegenLevel() const {
+      switch(asInt(getVal())) {
+        case 0: return llvm::CodeGenOpt::None;
+        case 1: return llvm::CodeGenOpt::Less;
+        case 2: return llvm::CodeGenOpt::Default;
+        case 3: return llvm::CodeGenOpt::Aggressive;
+        default: fatal_error("impossible level");
+      };
     }
 
     static LevelTy parseLevel(std::string const& Level) {

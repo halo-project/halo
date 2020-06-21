@@ -37,6 +37,7 @@ namespace halo {
     static const ty InlineThresholdLocalHotSite = {"inline-threshold-locallyhotsite", Knob::KK_Int};
 
     static const ty OptimizeLevel = {"optimize-pipeline-level", Knob::KK_OptLvl};
+    static const ty CodegenLevel = {"codegen-optimize-level", Knob::KK_OptLvl};
 
 
     ///////
@@ -82,6 +83,7 @@ namespace halo {
       InlineThresholdLocalHotSite,
 
       OptimizeLevel,
+      CodegenLevel,
 
       LoopUnrollCount,
       LoopInterleaveCount,
