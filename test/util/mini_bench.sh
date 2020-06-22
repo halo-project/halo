@@ -120,14 +120,10 @@ for PROG in "${BENCHMARKS[@]}"; do
         wait
       fi
 
-    done  # trail loop end
+    done  # trial loop end
 
   done
 done
 
-# double-check that server is killed
-kill ${SERVER_PID}
-wait
-
 # clean-up temp file
-rm "$TIME_OUTPUT_FILE"
+rm -f "$TIME_OUTPUT_FILE"
