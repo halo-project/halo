@@ -29,6 +29,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       ca-certificates \
       make \
       \
+      # for minibench
+      time \
+      \
       # for lit
       python2 \
       python-is-python2 \

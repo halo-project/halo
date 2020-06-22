@@ -29,6 +29,11 @@ SERVER_EXE="$ROOT/bin/haloserver"
 CLANG_EXE="$ROOT/bin/clang"
 TIME_EXE=$(command -v time)  # do not want built-in bash 'time'
 
+if [ -z "$TIME_EXE" ]; then
+  echo "GNU time command is missing!"
+  exit 1
+fi
+
 # the superset of all libs possibly needed by all benchmarks.
 LIBS="-lm"
 
