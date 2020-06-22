@@ -2,6 +2,7 @@
 stages:
   - build
   - test
+  - bench
   - release
 
 variables:
@@ -27,6 +28,12 @@ test:
   script:
     - docker pull $CONTAINER_TEST_IMAGE
     - docker run --cap-add sys_admin -w /tmp/halo $CONTAINER_TEST_IMAGE ./test.sh docker
+
+mini-bench:
+  stage: bench
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker run --privileged -w /tmp/halo $CONTAINER_TEST_IMAGE ./minibench.sh docker
 
 release-image:
   stage: release

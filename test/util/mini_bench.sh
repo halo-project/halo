@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # quit if anything fails
-set -euxo pipefail
+set -euo pipefail
 
 ROOT=$1
 NUM_TRIALS=$2   # number of fresh trials, to average the results.
@@ -41,6 +41,7 @@ TEST_DIR="$SELF_DIR/.."
 
 declare -a BENCHMARKS=(
   "basic/fixed_workload.c"
+  "basic/random_workload.c"
   "bench/c/almabench.c"
 )
 
@@ -60,8 +61,9 @@ declare -a OPTIONS=(
 )
 
 # overwrite and create the file
+
 HEADER="program,flags,trial,iter,time"
-echo "${HEADER}" > "${CSVFILE}"
+echo "${HEADER}" | tee "${CSVFILE}"
 
 # we need to send output of the time command to a separate file.
 TIME_OUTPUT_FILE=$(mktemp)
@@ -101,8 +103,10 @@ for PROG in "${BENCHMARKS[@]}"; do
         ${TIME_EXE} --format="%e" --output="${TIME_OUTPUT_FILE}" ${CLIENT_BIN} &> /dev/null
 
         ELAPSED_TIME=$(cat "${TIME_OUTPUT_FILE}")
-        printf "%s\n" "$PROG" "$FLAGS" "$TRIAL" "$ITER" "$ELAPSED_TIME"\
-                                            | paste -sd "," >> "${CSVFILE}"
+        CSV_ROW=$(printf "%s\n" "$PROG" "$FLAGS" "$TRIAL" "$ITER" "$ELAPSED_TIME"\
+                                            | paste -sd ",")
+
+        echo "$CSV_ROW" | tee -a "${CSVFILE}"
       done # iter loop end
 
       # kill server
@@ -122,8 +126,3 @@ wait
 
 # clean-up temp file
 rm "$TIME_OUTPUT_FILE"
-
-# lets output the results so i can view it on gitlab
-set +x
-echo -e "\n\nBenchmarking Complete. Results follow:\n\n"
-cat "$CSVFILE"
