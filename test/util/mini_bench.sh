@@ -8,7 +8,7 @@ NUM_TRIALS=$2   # number of fresh trials, to average the results.
 NUM_ITERS=$3    # number of times to run the program _per_ trial
 
 STAMP=$(date +"%m_%d_%Y-%H_%M_%S")
-CSVFILE="./minibench-${STAMP}.csv"
+CSVFILE="./results-${STAMP}.csv"
 
 if [[ $# -lt 2 ]]; then
   echo "must provide <path to root of HALO build / install dir> <num-trials>"
@@ -70,18 +70,38 @@ declare -a OPTIONS=(
 HEADER="program,flags,trial,iter,time"
 echo "${HEADER}" | tee "${CSVFILE}"
 
+
 # we need to send output of the time command to a separate file.
 TIME_OUTPUT_FILE=$(mktemp)
-
 SERVER_PID="" # clear it to make sure we don't kill something random!
-# kill the current server PID if we ever get a ctrl+c
-trap 'kill -9 $SERVER_PID' SIGINT
+SERVER_LOG=""
+
+cleanup() {
+  if [[ -n "$SERVER_PID" ]]; then
+    if kill -0 $SERVER_PID 2> /dev/null ; then
+      kill -9 $SERVER_PID
+    fi
+  fi
+  rm -f "$TIME_OUTPUT_FILE"
+}
+
+# if we hit an error, try to print the server log if it exists, then clean-up
+err_handler() {
+  if [[ -n "$SERVER_LOG" && -f "$SERVER_LOG" ]]; then
+    tail -n 50 "$SERVER_LOG"
+  fi
+  cleanup
+}
+
+trap cleanup SIGINT EXIT
+trap err_handler ERR
+
 
 for PROG in "${BENCHMARKS[@]}"; do
   for FLAGS in "${OPTIONS[@]}"; do
     COMPILE_FLAGS=${FLAGS//withserver/}  # remove withserver from flags
-    # NOTE: do NOT double-quote COMPILE_FLAGS!
     CLIENT_BIN="./a.out"
+    # NOTE: do NOT double-quote COMPILE_FLAGS!!! ignore shellcheck here.
     ${CLANG_EXE} ${PREPROCESSOR_FLAGS} ${COMPILE_FLAGS} "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN}
 
     for TRIAL in $(seq 1 "$NUM_TRIALS"); do
@@ -89,7 +109,8 @@ for PROG in "${BENCHMARKS[@]}"; do
 
       # start a fresh server
       if [[ $FLAGS =~ "withserver" ]]; then
-        ${SERVER_EXE} &> /dev/null &
+        SERVER_LOG=$(mktemp)
+        ${SERVER_EXE} &> "$SERVER_LOG" &
         SERVER_PID=$!
         sleep 2s
       else
@@ -118,12 +139,10 @@ for PROG in "${BENCHMARKS[@]}"; do
       if [[ $FLAGS =~ "withserver" ]]; then
         kill $SERVER_PID
         wait
+        rm -f "$SERVER_LOG"
       fi
 
     done  # trial loop end
 
   done
 done
-
-# clean-up temp file
-rm -f "$TIME_OUTPUT_FILE"
