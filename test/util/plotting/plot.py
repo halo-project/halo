@@ -36,16 +36,53 @@ def configure_seaborn():
   sns.set_context("talk")
 
 
+def extrapolate_iters(df):
+  '''
+  to save time, we setup the benchmark suite to not iterate per-trial
+  for programs compiled without halo running. to show a nice plot though,
+  we want those observations, so we duplicate the rows for those observations
+  for other iterations in the df
+  '''
+
+  maxIter = df['iter'].max()
+  for kind in df['flags'].unique():
+    for it in range(2,maxIter+1):
+      subset = df[df['flags'] == kind]
+
+      if len(subset[subset['iter'] == it]) != 0:
+        continue
+
+      # grab all the observations from the previous iteration
+      prev_iter = it-1
+      prev_iter_rows = subset[subset['iter'] == prev_iter].copy()
+
+      assert len(prev_iter_rows) != 0, "cannot extrapolate!"
+
+      # forward them as this iteration
+      prev_iter_rows['iter'] = it
+      df = df.append(prev_iter_rows, ignore_index=True)
+
+  return df
+
+
 def plot_progression(df, title, file_prefix):
-  g = sns.lineplot(x='iter', y='time', hue='flags', data=df)
+  g = sns.lineplot(x='iter', y='time', hue='flags', data=df, legend='brief')
 
-  # g.set_
-  # g.set_ylabels("Running time (sec)")
+  # https://stackoverflow.com/questions/51579215/remove-seaborn-lineplot-legend-title?rq=1
+  handles, labels = g.get_legend_handles_labels()
 
-  export_fig(g, file_prefix)
+  # https://matplotlib.org/3.1.1/tutorials/intermediate/legend_guide.html
+  # https://stackoverflow.com/questions/30490740/move-legend-outside-figure-in-seaborn-tsplot
+  lgd = plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
+           ncol=3, mode="expand", borderaxespad=0., title="",
+           handles=handles[1:], labels=labels[1:])
+
+  # https://stackoverflow.com/questions/10101700/moving-matplotlib-legend-outside-of-the-axis-makes-it-cutoff-by-the-figure-box
+  export_fig(g, file_prefix, [lgd])
 
 
 def plot_iter_progressions(df):
+  ''' produces multiple plots showing tuning progression over time '''
   df = df.copy()
 
   programs = set(df['program'])
@@ -53,6 +90,7 @@ def plot_iter_progressions(df):
   for prog in programs:
     for opt in aot_opts:
       obs = df[(df['program'] == prog) & (df['aot_opt'] == opt)]
+      obs = extrapolate_iters(obs)
       title = prog + "_" + opt
       plot_progression(obs, title, title)
 
