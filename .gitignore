@@ -44,3 +44,5 @@ bench-results/
 test/bench/c/jfk_1963_0626_berliner.ogg
 test/oggenc
 favorites/
+__pycache__
+pdfs/
