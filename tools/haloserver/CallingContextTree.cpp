@@ -4,6 +4,7 @@
 #include "halo/compiler/PerformanceData.h"
 #include "halo/compiler/ReachableVisitor.h"
 #include "halo/compiler/Util.h"
+#include "halo/nlohmann/util.hpp"
 #include "llvm/ADT/StringMap.h"
 #include "Logging.h"
 
@@ -142,7 +143,7 @@ namespace bgl {
   // preserve invariants of the CCT.
   //
   // There is an option to disable the ancestor check in case of a call to an unknown function.
-  VertexID add_cct_call(Graph &Gr, Ancestors &Ancestors, VertexID Src, std::shared_ptr<FunctionInfo> Tgt,
+  VertexID add_cct_call(LearningParameters const* LP,Graph &Gr, Ancestors &Ancestors, VertexID Src, std::shared_ptr<FunctionInfo> Tgt,
                         bool CheckAncestors=true) {
     // Step 1: check if the Src already has an out-edge to an equivalent Vertex.
     auto Range = boost::out_edges(Src, Gr);
@@ -166,7 +167,7 @@ namespace bgl {
       Ancestors.truncate(Idx);
     } else {
       // it's neither an ancestor nor a child, so we make a new child.
-      TgtV = boost::add_vertex(VertexInfo(Tgt), Gr); // otherwise we make a new child
+      TgtV = boost::add_vertex(VertexInfo(LP, Tgt), Gr); // otherwise we make a new child
     }
 
     // finally, make the edge.
@@ -193,8 +194,10 @@ namespace bgl {
 //////
 // CallingContextTree definitions
 
-CallingContextTree::CallingContextTree(uint64_t samplePeriod) : SamplePeriod(samplePeriod) {
-  RootVertex = boost::add_vertex(VertexInfo("<root>"), Gr);
+CallingContextTree::CallingContextTree(LearningParameters const* lp, uint64_t samplePeriod)
+: SamplePeriod(samplePeriod), LP(lp) {
+  assert(LP != nullptr);
+  RootVertex = boost::add_vertex(VertexInfo(LP, "<root>"), Gr);
 }
 
 void CallingContextTree::observe(CallGraph const& CG, ClientID ID, CodeRegionInfo const& CRI, PerformanceData const& PD) {
@@ -353,7 +356,7 @@ skipThisCallee:
     }
 
     logs(LC_CCT) << "Adding CCT call " << bgl::get(Gr, CallerVID).getFuncName() << " -> " << Callee->getCanonicalName() << "\n";
-    CallerVID = bgl::add_cct_call(Gr, Ancestors, CallerVID, Callee, Callee->isKnown());
+    CallerVID = bgl::add_cct_call(LP, Gr, Ancestors, CallerVID, Callee, Callee->isKnown());
     CallerFI = Callee;
   }
 
@@ -552,7 +555,7 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
         return;
       }
 
-      Cur = bgl::add_cct_call(Gr, Ancestors, Cur, From, From->isKnown());
+      Cur = bgl::add_cct_call(LP, Gr, Ancestors, Cur, From, From->isKnown());
       Ancestors.push({Cur, From->getCanonicalName()});
 
     }
@@ -936,19 +939,12 @@ void CallingContextTree::dumpDOT(std::ostream &out) {
 ///////////////////////////////////////////////
 /// VertexInfo definitions
 
-// (0, 1), learning rate / incremental update factor "alpha"
-const float VertexInfo::IPC_DISCOUNT = 0.9f;
-const float VertexInfo::HOTNESS_DISCOUNT = 0.7f;
-
-const float VertexInfo::HOTNESS_SAMPLED_IP = 1.0f;
-const float VertexInfo::HOTNESS_BOOST = 0.05f;
-
 void VertexInfo::observeSampledIP(ClientID ID, std::string const& Lib, pb::RawSample const& RS, uint64_t Period) {
   auto TID = RS.thread_id();
   KeyType Key{ID, TID, Lib};
 
-  observeSample(SpecificInfo[Key], RS, Period, HOTNESS_SAMPLED_IP);
-  observeSample(GeneralInfo, RS, Period, HOTNESS_SAMPLED_IP);
+  observeSample(SpecificInfo[Key], RS, Period, LP->HOTNESS_SAMPLED_IP);
+  observeSample(GeneralInfo, RS, Period, LP->HOTNESS_SAMPLED_IP);
 }
 
 void VertexInfo::observeRecentlyActive(ClientID ID, std::string const& Lib, pb::RawSample const& RS, uint64_t Period) {
@@ -956,8 +952,8 @@ void VertexInfo::observeRecentlyActive(ClientID ID, std::string const& Lib, pb::
   KeyType Key{ID, TID, Lib};
 
   // we discount the 'hotness' of a sample at this vertex since it was only recently active, not the sampled IP
-  observeSample(SpecificInfo[Key], RS, Period, HOTNESS_BOOST);
-  observeSample(GeneralInfo, RS, Period, HOTNESS_BOOST);
+  observeSample(SpecificInfo[Key], RS, Period, LP->HOTNESS_BOOST);
+  observeSample(GeneralInfo, RS, Period, LP->HOTNESS_BOOST);
 }
 
 void VertexInfo::observeSample(CCTNodeInfo &Info, pb::RawSample const& RS, uint64_t Period, float HotnessNudge) {
@@ -990,7 +986,7 @@ void VertexInfo::observeSample(CCTNodeInfo &Info, pb::RawSample const& RS, uint6
     // calculcate the movement to make for the average running IPC
 
     float SampleIPC = static_cast<float>(Period) / ElapsedTime; // IPC for this sample
-    IPCIncrement = IPC_DISCOUNT * (SampleIPC - Info.IPC);  // movement of the average
+    IPCIncrement = LP->IPC_DISCOUNT * (SampleIPC - Info.IPC);  // movement of the average
 
   } else {
     // otherwise this sample is out-of-order, so we skip it because
@@ -1021,9 +1017,9 @@ void VertexInfo::decay() {
   // take a step in the direction of reaching zero.
   // another way to think about it is that we pretend we observed
   // a zero-temperature sample
-  GeneralInfo = observeZeroTemp(GeneralInfo, HOTNESS_DISCOUNT);
+  GeneralInfo = observeZeroTemp(GeneralInfo, LP->HOTNESS_DISCOUNT);
   for (auto& Elm : SpecificInfo)
-    SpecificInfo[Elm.first] = observeZeroTemp(Elm.second, HOTNESS_DISCOUNT);
+    SpecificInfo[Elm.first] = observeZeroTemp(Elm.second, LP->HOTNESS_DISCOUNT);
 }
 
 void VertexInfo::filterByLib(std::string const& Lib, std::function<void(CCTNodeInfo const&)> Action) const {
@@ -1077,8 +1073,9 @@ float VertexInfo::getHotness(llvm::Optional<std::string> Lib) const {
 // FIXME: there's an arugment to be made that VertexInfo should hold onto
 // the FunctionInfo pointer, since the FI info is going to be dynamic and
 // the info here could become outdated.
-VertexInfo::VertexInfo(std::shared_ptr<FunctionInfo> FI) :
-  FuncName(FI->getCanonicalName()), Patchable(FI->isPatchable()) {}
+VertexInfo::VertexInfo(LearningParameters const* lp, std::shared_ptr<FunctionInfo> FI) :
+  FuncName(FI->getCanonicalName()), Patchable(FI->isPatchable()),
+  LP(lp) {}
 
 std::string VertexInfo::getDOTLabel() const {
   return FuncName + " (hot=" + to_formatted_str(getHotness(llvm::None)) + ";ipc=" + to_formatted_str(getIPC(llvm::None)) + ")";
@@ -1101,5 +1098,18 @@ void EdgeInfo::decay() {
   Frequency += FREQUENCY_DISCOUNT * (ZeroTemp - Frequency);
 }
 
+
+////////////////
+// LearningParameters
+
+LearningParameters::LearningParameters(nlohmann::json const& Config)
+  : IPC_DISCOUNT(config::getServerSetting<float>("cct-ipc-discount", Config))
+  , HOTNESS_DISCOUNT(config::getServerSetting<float>("cct-hotness-discount", Config))
+  , HOTNESS_SAMPLED_IP(config::getServerSetting<float>("cct-hotness-sampledip", Config))
+  , HOTNESS_BOOST(config::getServerSetting<float>("cct-hotness-recentlyactive", Config))
+  {
+    assert(0 < IPC_DISCOUNT && IPC_DISCOUNT <= 1.0f);
+    assert(0 < HOTNESS_DISCOUNT && HOTNESS_DISCOUNT <= 1.0f);
+  }
 
 } // end namespace halo

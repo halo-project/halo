@@ -8,9 +8,10 @@
 namespace halo {
 
 Profiler::Profiler(JSON const& Config)
-  : SamplePeriod(config::getServerSetting<uint64_t>("perf-sample-period", Config)), CCT(SamplePeriod) {
-
-}
+  : SamplePeriod(config::getServerSetting<uint64_t>("perf-sample-period", Config))
+  , LP(Config)
+  , CCT(&LP, SamplePeriod)
+  {}
 
 void Profiler::consumePerfData(ClientList & Clients) {
   for (auto &CS : Clients) {

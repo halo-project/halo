@@ -73,6 +73,7 @@ private:
     // In reality, CPUs have noticable non-constant skid, but we don't want to
     // rely on that for good samples.
   uint64_t SamplePeriod;
+  LearningParameters LP;
 
   CallingContextTree CCT;
   CallGraph CG;

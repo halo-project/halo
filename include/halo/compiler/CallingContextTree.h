@@ -2,6 +2,7 @@
 
 #include "boost/graph/adjacency_list.hpp"
 #include "llvm/ADT/Optional.h"
+#include "halo/nlohmann/json_fwd.hpp"
 #include <ostream>
 #include <map>
 
@@ -41,6 +42,17 @@ class CCTNodeInfo {
 
 using ClientID = size_t;
 
+struct LearningParameters {
+  LearningParameters(nlohmann::json const& Config);
+
+  // (0, 1), learning rate / incremental update factor "alpha"
+  const float IPC_DISCOUNT;
+  const float HOTNESS_DISCOUNT;
+
+  const float HOTNESS_SAMPLED_IP;
+  const float HOTNESS_BOOST;
+};
+
 /// Each node summarizes context-sensitive profiling information
 /// within a CallingContextTree. It represents a single function,
 /// which can have multiple implementations (i.e., libraries).
@@ -48,8 +60,8 @@ class VertexInfo {
 public:
 
   VertexInfo() {}
-  VertexInfo(std::string const& name) : FuncName(name) {}
-  VertexInfo(std::shared_ptr<FunctionInfo>);
+  VertexInfo(LearningParameters const* lp, std::string const& name) : FuncName(name), LP(lp) {}
+  VertexInfo(LearningParameters const* lp, std::shared_ptr<FunctionInfo>);
 
   // a short name that describes this vertex suitable
   // for dumping to a DOT file as the vertex's label.
@@ -99,11 +111,7 @@ private:
   std::map<KeyType, CCTNodeInfo> SpecificInfo;
   CCTNodeInfo GeneralInfo;
 
-  static const float IPC_DISCOUNT;
-  static const float HOTNESS_DISCOUNT;
-
-  static const float HOTNESS_SAMPLED_IP;
-  static const float HOTNESS_BOOST;
+  LearningParameters const* LP{nullptr};
 
   void observeSample(CCTNodeInfo &Info, pb::RawSample const& RS, uint64_t Period, float HotnessNudge);
 
@@ -208,7 +216,7 @@ public:
   // returns true iff the context tree is currently malformed.
   bool isMalformed() const;
 
-  CallingContextTree(uint64_t samplePeriod);
+  CallingContextTree(LearningParameters const* lp, uint64_t samplePeriod);
 
 private:
 
@@ -221,6 +229,7 @@ private:
   Graph Gr;
   VertexID RootVertex;
   uint64_t SamplePeriod;
+  LearningParameters const* LP;
 };
 
 } // end namespace halo
