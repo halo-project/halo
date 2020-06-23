@@ -3,6 +3,7 @@
 #include "halo/nlohmann/util.hpp"
 
 #include "Messages.pb.h"
+#include <algorithm>
 
 namespace halo {
 
@@ -14,11 +15,18 @@ Profiler::Profiler(JSON const& Config)
 void Profiler::consumePerfData(ClientList & Clients) {
   for (auto &CS : Clients) {
     auto &State = CS->State;
-    SamplesSeen += State.PerfData.getSamples().size();
+    auto &Samples = State.PerfData.getSamples();
+    SamplesSeen += Samples.size();
 
-    // TODO: perform a sorting operation over timestamps that they're correctly
-    // ordered to compute IPCs. Of course, between batches there could be an out-of-order samples,
-    // but sorting should fix this in nearly every case.
+    // Perform a sorting operation over timestamps so they're correctly
+    // ordered to compute IPCs.
+    // Of course, between batches there could be an out-of-order samples,
+    // but sorting should fix mis-orderings in nearly every case.
+    std::sort(Samples.begin(), Samples.end(),
+      // less-than comparator
+      [](pb::RawSample const& A, pb::RawSample const& B) {
+        return A.time() < B.time();
+    });
 
     CCT.observe(CG, State.ID, State.CRI, State.PerfData);
     State.PerfData.clear();

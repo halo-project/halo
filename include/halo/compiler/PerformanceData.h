@@ -4,6 +4,7 @@
 #include "Messages.pb.h"
 
 #include <list>
+#include <vector>
 
 namespace halo {
 
@@ -25,7 +26,7 @@ public:
   void clear();
 
 private:
-  std::list<pb::RawSample> Samples;
+  std::vector<pb::RawSample> Samples;
   std::list<pb::XRayProfileData> Events;
 };
 
