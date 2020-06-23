@@ -37,23 +37,23 @@ namespace halo {
   const char* InfoTag = "halo info: ";
 
   void warning(llvm::Error const& err) {
-    logs() << WarnTag << err << "\n";
+    logs(LC_Warning) << WarnTag << err << "\n";
   }
 
   void warning(const std::string &msg) {
-    clogs() << WarnTag << msg << "\n";
+    clogs(LC_Warning) << WarnTag << msg << "\n";
   }
 
   void info(llvm::Error const& err) {
-    logs() << InfoTag << err << "\n";
+    logs(LC_Info) << InfoTag << err << "\n";
   }
 
   void info(const char *msg) {
-    clogs() << InfoTag << msg << "\n";
+    clogs(LC_Info) << InfoTag << msg << "\n";
   }
 
   void info(const std::string &msg) {
-    clogs() << InfoTag << msg << "\n";
+    clogs(LC_Info) << InfoTag << msg << "\n";
   }
 
   namespace __logging {

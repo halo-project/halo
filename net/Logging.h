@@ -48,7 +48,9 @@ namespace halo {
     LC_ProgramInfoPass,
     LC_MonitorState,
     LC_Channel,
-    LC_Compiler
+    LC_Compiler,
+    LC_Info,
+    LC_Warning
   };
 
   // master controller of what type of logging output you desire.
@@ -56,7 +58,9 @@ namespace halo {
     switch(LC) {
       // EXPLICITLY ENABLED CONTEXTS
       case LC_Anywhere:
-      // case LC_CCT_DUMP:
+      case LC_Info:
+      case LC_Warning:
+      case LC_CCT_DUMP:
       // case LC_CCT:
       // case LC_ProgramInfoPass:
       // case LC_MonitorState:
