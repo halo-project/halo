@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+# NOTE: system dependencies are:
+# sudo apt install \
+#   python3 \
+#   python3-pandas \
+#   python3-click \
+#   python3-seaborn \
+
 import click
 import os
 import read_minibench as rm

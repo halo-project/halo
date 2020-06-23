@@ -29,12 +29,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
       ca-certificates \
       make \
       \
-      # for minibench & plotting
+      # for minibench (data collection only)
       time \
-      python3 \
-      python3-pandas \
-      python3-click \
-      python3-seaborn \
       \
       # for lit
       python2 \
