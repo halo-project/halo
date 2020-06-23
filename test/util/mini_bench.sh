@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # quit if anything fails
-set -euo pipefail
+set -eEuo pipefail
 
 ROOT=$1
 NUM_TRIALS=$2   # number of fresh trials, to average the results.
@@ -83,8 +83,11 @@ cleanup() {
 
 # if we hit an error, try to print the server log if it exists, then clean-up
 err_handler() {
+  echo "minibench error handler invoked!"
   if [[ -n "$SERVER_LOG" && -f "$SERVER_LOG" ]]; then
+    echo "Server log preview:"
     tail -n 50 "$SERVER_LOG"
+    echo "See more in the log at $SERVER_LOG"
   fi
   cleanup
 }
