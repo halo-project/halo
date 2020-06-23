@@ -46,3 +46,4 @@ test/oggenc
 favorites/
 __pycache__
 pdfs/
+*.csv
