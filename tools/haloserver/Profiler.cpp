@@ -101,13 +101,6 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode M
   return Suitable;
 }
 
-void Profiler::setBitcodeStatus(std::string const& Name, bool Status) {
-  if (Status)
-    FuncsWithBitcode.insert(Name);
-  else
-    FuncsWithBitcode.erase(Name);
-}
-
 void Profiler::dump(llvm::raw_ostream &out) {
   fatal_error("implement Profiler::dump!");
 }

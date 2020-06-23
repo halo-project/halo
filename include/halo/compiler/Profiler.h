@@ -51,10 +51,7 @@ public:
 
   /// @returns true iff the profiler knows we have bitcode available
   ///          for the given function.
-  bool haveBitcode(std::string const& Name) { return FuncsWithBitcode.count(Name) != 0; }
-
-  /// modifies knowledge of whether we have bitcode for the given function.
-  void setBitcodeStatus(std::string const& Name, bool Status);
+  bool haveBitcode(std::string const& Name) const { return CG.haveBitcode(Name); }
 
   // obtains the profiler's static call graph.
   CallGraph& getCallGraph() { return CG; }
@@ -78,7 +75,6 @@ private:
   CallingContextTree CCT;
   CallGraph CG;
   size_t SamplesSeen{0};
-  std::set<std::string> FuncsWithBitcode;
 
 };
 

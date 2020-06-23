@@ -1,9 +1,22 @@
 #pragma once
 
 #include "boost/graph/adjacency_list.hpp"
-#include <unordered_set>
+#include <set>
 
 namespace halo {
+
+struct CGVertex {
+  // NOTE: the assumption that we do not have the bitcode, by default, is sort-of baked into
+  // the implementation of the ProgramInfoPass, so be careful changing that.
+  CGVertex() : Name(""), HaveBitcode(false) {}
+  CGVertex(const char* name, bool haveBitcode=false) : Name(name), HaveBitcode(haveBitcode) {}
+  CGVertex(std::string const& name, bool haveBitcode=false) : Name(name), HaveBitcode(haveBitcode) {}
+  std::string Name;
+  bool HaveBitcode; // irrelevant for node comparisons; it's just extra metadata!
+};
+
+bool operator==(CGVertex const& A, CGVertex const& B);
+bool operator<(CGVertex const& A, CGVertex const& B);
 
 /// A simple static call graph, which is a
 /// directed graph where an edge A->B represents
@@ -13,7 +26,7 @@ namespace halo {
 /// in A that refer to B.
 class CallGraph {
 public:
-  using Vertex = std::string;
+  using Vertex = CGVertex;
   using Edge = size_t;
   using Graph = boost::adjacency_list<
                   boost::vecS, boost::vecS, boost::bidirectionalS,
@@ -25,6 +38,10 @@ public:
   /// or "external" function that the analysis was
   /// unable to determine.
   Vertex const& getUnknown() const { return Gr[UnknownID]; }
+
+  // tries to add the call-graph node. If the node already exists, then
+  // its bitcode status is updated to the given status.
+  void addNode(std::string const& Name, bool HaveBitcode);
 
   // Records the existence of a call-site
   // within the function Src that calls Tgt.
@@ -43,10 +60,13 @@ public:
   ///
   /// The set will always at least contain the Src itself, unless if
   /// the Src is not in the graph!
-  std::unordered_set<Vertex> allReachable(Vertex src);
+  std::set<Vertex> allReachable(Vertex src);
 
   // returns true iff the call-graph has a node for the given function
   bool contains(Vertex Func) const;
+
+  // returns true iff the function, if it exists, is known to have bitcode available.
+  bool haveBitcode(std::string const& Func) const;
 
   void dumpDOT(std::ostream &out) const;
 

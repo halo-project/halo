@@ -2,6 +2,8 @@
 #include "halo/compiler/ReachableVisitor.h"
 #include "llvm/ADT/Optional.h"
 
+#include <unordered_set>
+
 
 namespace halo {
 
@@ -10,6 +12,16 @@ using Edge = CallGraph::Edge;
 using Graph = CallGraph::Graph;
 using VertexID = CallGraph::VertexID;
 using EdgeID = CallGraph::EdgeID;
+
+// bitcode status is irrelevant to node equality!
+bool operator==(CGVertex const& A, CGVertex const& B) {
+  return A.Name == B.Name;
+}
+
+// bitcode status is irrelevant to node ordering!
+bool operator<(CGVertex const& A, CGVertex const& B) {
+  return A.Name < B.Name;
+}
 
 
 // NOTE: this is an O(V) operation right now!
@@ -34,7 +46,7 @@ llvm::Optional<EdgeID> findEdge(VertexID Src, VertexID Tgt, Graph const& Gr) {
 
 
 CallGraph::CallGraph() {
-  UnknownID = boost::add_vertex("???", Gr);
+  UnknownID = boost::add_vertex(CGVertex("???", false), Gr);
 }
 
 
@@ -56,6 +68,27 @@ bool CallGraph::hasCall(Vertex Src, Vertex Tgt) const {
 
   auto MaybeEdge = findEdge(MaybeSrc.getValue(), MaybeTgt.getValue(), Gr);
   return MaybeEdge.hasValue();
+}
+
+void CallGraph::addNode(std::string const& Name, bool HaveBitcode) {
+  VertexID VID = UnknownID;
+  Vertex V(Name, HaveBitcode);
+
+  auto MaybeID = findVertex(V, Gr);
+  if (!MaybeID)
+    VID = boost::add_vertex(V, Gr);
+  else
+    VID = MaybeID.getValue();
+
+  Gr[VID].HaveBitcode = HaveBitcode;
+}
+
+bool CallGraph::haveBitcode(std::string const& Func) const {
+  auto MaybeID = findVertex(Func, Gr);
+  if (!MaybeID)
+    return false;
+
+  return Gr[MaybeID.getValue()].HaveBitcode;
 }
 
 bool CallGraph::isLeaf(Vertex Func) const {
@@ -90,8 +123,8 @@ EdgeID CallGraph::getEdgeID(VertexID Src, VertexID Tgt) {
   return boost::add_edge(Src, Tgt, Gr).first;
 }
 
-std::unordered_set<Vertex> CallGraph::allReachable(Vertex Root) {
-  std::unordered_set<Vertex> Reachable;
+std::set<Vertex> CallGraph::allReachable(Vertex Root) {
+  std::set<Vertex> Reachable;
 
   if (!contains(Root))
     return Reachable;
@@ -122,11 +155,14 @@ void CallGraph::dumpDOT(std::ostream &out) const {
   auto VRange = boost::vertices(Gr);
   for (auto I = VRange.first; I != VRange.second; I++) {
     auto VertexID = *I;
+    auto const& Vertex = Gr[VertexID];
+
+    auto Style = Vertex.HaveBitcode ? "solid" : "dashed";
 
     // output vertex and its metadata
     out << VertexID
-        << " [label=\"" << Gr[VertexID] << "\""
-        // << ",style=\""  << Style << "\""
+        << " [label=\"" << Vertex.Name << "\""
+        << ",style=\""  << Style << "\""
         << "];";
 
     out << "\n";

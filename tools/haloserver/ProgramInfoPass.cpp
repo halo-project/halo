@@ -14,7 +14,9 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
 
   for (auto const& Func : M.functions()) {
     // record whether we have bitcode for the function, which is if it's not a decl.
-    Profiler.setBitcodeStatus(Func.getName().str(), !Func.isDeclaration());
+    bool HaveBitcode = !Func.isDeclaration();
+    std::string ThisFunc = Func.getName().str();
+    CallGraph.addNode(ThisFunc, HaveBitcode);
 
     // check the function's call-sites to populate the call-graph.
     CallGraphNode *CGNode = CGR[&Func];
@@ -29,9 +31,9 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
       Function* Callee = CalleeNode->getFunction();
 
       if (Callee)
-        CallGraph.addCall(Func.getName().str(), Callee->getName().str());
+        CallGraph.addCall(ThisFunc, Callee->getName().str());
       else
-        CallGraph.addCall(Func.getName().str(), CallGraph.getUnknown());
+        CallGraph.addCall(ThisFunc, CallGraph.getUnknown());
     }
   }
 

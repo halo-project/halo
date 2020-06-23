@@ -242,8 +242,8 @@ TuningSection::TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
 
   // filter down that set to just those for which we have bitcode
   for (auto const& Func : Reachable)
-    if (Profile.haveBitcode(Func))
-      FnGroup.AllFuncs.insert(Func);
+    if (Func.HaveBitcode)
+      FnGroup.AllFuncs.insert(Func.Name);
 
   // now, we clean-up the original bitcode to only include those functions
   auto MaybeResult = TSI.Pipeline.cleanup(TSI.OriginalBitcode, FnGroup.Root, FnGroup.AllFuncs);
