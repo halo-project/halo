@@ -70,6 +70,26 @@ bool CallGraph::hasCall(Vertex Src, Vertex Tgt) const {
   return MaybeEdge.hasValue();
 }
 
+bool CallGraph::hasOpaqueCall(Vertex Src) const {
+  auto MaybeID = findVertex(Src, Gr);
+  if (!MaybeID)
+    return false; // function doesn't exist, so we can't confirm this fact!
+
+  VertexID VID = MaybeID.getValue();
+
+  // first case: we have an edge to the unknown vertex.
+  if (findEdge(VID, UnknownID, Gr))
+    return true;
+
+  // search its callees for a function with NO bitcode
+  auto Range = boost::out_edges(VID, Gr);
+  for (auto I = Range.first; I != Range.second; I++)
+    if (Gr[boost::target(*I, Gr)].HaveBitcode == false)
+      return true;  // second case: a callee with no bitcode.
+
+  return false;
+}
+
 void CallGraph::addNode(std::string const& Name, bool HaveBitcode) {
   VertexID VID = UnknownID;
   Vertex V(Name, HaveBitcode);

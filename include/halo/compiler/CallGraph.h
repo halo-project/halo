@@ -51,6 +51,11 @@ public:
   /// @return true iff Src exists and contains a call-site to Tgt.
   bool hasCall(Vertex Src, Vertex Tgt) const;
 
+  // query the call graph to see if this function could call either:
+  //  1. the unknown function, i.e., a non-analyzable callee.
+  //  2. a function for which no bitcode definition exists (like libm's sin, tan, etc.)
+  bool hasOpaqueCall(Vertex Src) const;
+
   // returns true iff the given function is contained in the CG and
   // makes no calls i.e., its out-edge set in the CG is empty.
   bool isLeaf(Vertex Func) const;

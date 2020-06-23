@@ -286,11 +286,11 @@ skipThisCallee:
     bool ImaginaryCaller = CallerFI->isUnknown();
     bool ImaginaryCallee = Callee->isUnknown();
     bool DirectlyCalled = Callee->isKnown() && CG.hasCall(CallerV.getFuncName(), Callee->getCanonicalName());
-    bool HasIndirectCallee = CG.hasCall(CallerV.getFuncName(), CG.getUnknown());
+    bool HasOpaqueCallee = CG.hasOpaqueCall(CallerV.getFuncName());
 
     logs(LC_CCT) << "Calling context contains " << CallerV.getFuncName() << " -> " << Callee->getCanonicalName()
            << "\n\tand DirectlyCalled = " << DirectlyCalled
-           << ", HasIndirectCallee = " << HasIndirectCallee
+           << ", HasOpaqueCallee = " << HasOpaqueCallee
            << ", ImaginaryCaller = " << ImaginaryCaller
            << ", ImaginaryCallee = " << ImaginaryCallee
            << "\n";
@@ -300,7 +300,7 @@ skipThisCallee:
     if (ImaginaryCaller && ImaginaryCallee)
       goto skipThisCallee;
 
-    if (!ImaginaryCaller && !DirectlyCalled && !HasIndirectCallee) {
+    if (!ImaginaryCaller && !DirectlyCalled && !HasOpaqueCallee) {
       // Then the calling context data from perf is incorrect, because
       // it's not possible for the current function to have called the next one
       // according to the call graph.
@@ -542,14 +542,14 @@ void CallingContextTree::walkBranchSamples(ClientID ID, Ancestors &Ancestors, Ca
       bool ImaginaryCaller = From->isUnknown();
       bool ImaginaryCallee = To->isUnknown();
       bool DirectlyCalled = From->isKnown() && CG.hasCall(CurI.getFuncName(), From->getCanonicalName());
-      bool HasIndirectCallee = CG.hasCall(CurI.getFuncName(), CG.getUnknown());
+      bool HasOpaqueCallee = CG.hasOpaqueCall(CurI.getFuncName());
 
       // Skip ??? -> ??? edges
       if (ImaginaryCaller && ImaginaryCallee)
         continue;
 
       // avoid creating 'impossible' edges in the CCT
-      if (!DirectlyCalled && !HasIndirectCallee) {
+      if (!DirectlyCalled && !HasOpaqueCallee) {
         logs(LC_CCT) << "warning: BTB claims " << CurI.getFuncName() << " called " << From->getCanonicalName()
                << " but call-graph disagrees! skipping\n----\n";
         return;

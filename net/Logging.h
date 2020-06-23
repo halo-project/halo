@@ -60,7 +60,7 @@ namespace halo {
       case LC_Anywhere:
       case LC_Info:
       case LC_Warning:
-      case LC_CCT_DUMP:
+      // case LC_CCT_DUMP:
       // case LC_CCT:
       // case LC_ProgramInfoPass:
       // case LC_MonitorState:
