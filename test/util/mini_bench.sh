@@ -50,24 +50,21 @@ declare -a BENCHMARKS=(
   "bench/c/almabench.c"
 )
 
-declare -a OPTIONS=(
+declare -a AOT_OPTS=(
   "-O0"
-  "withserver -fhalo -O0"
-  "-fhalo -O0"
   "-O1"
-  "withserver -fhalo -O1"
-  "-fhalo -O1"
   "-O2"
-  "withserver -fhalo -O2"
-  "-fhalo -O2"
-  "-O3"
-  "withserver -fhalo -O3"
-  "-fhalo -O3"
+)
+
+declare -a OPTIONS=(
+  "none"
+  "-fhalo"
+  "withserver -fhalo"
 )
 
 # overwrite and create the file
 
-HEADER="program,flags,trial,iter,time"
+HEADER="program,flags,aot_opt,trial,iter,time"
 echo "${HEADER}" | tee "${CSVFILE}"
 
 
@@ -98,51 +95,58 @@ trap err_handler ERR
 
 
 for PROG in "${BENCHMARKS[@]}"; do
-  for FLAGS in "${OPTIONS[@]}"; do
-    COMPILE_FLAGS=${FLAGS//withserver/}  # remove withserver from flags
-    CLIENT_BIN="./a.out"
-    # NOTE: do NOT double-quote COMPILE_FLAGS!!! ignore shellcheck here.
-    ${CLANG_EXE} ${PREPROCESSOR_FLAGS} ${COMPILE_FLAGS} "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN}
+  for AOT_OPT in "${AOT_OPTS[@]}"; do
+    for FLAGS in "${OPTIONS[@]}"; do
+      CLIENT_BIN="./a.out"
 
-    for TRIAL in $(seq 1 "$NUM_TRIALS"); do
-      THIS_NUM_ITERS=${NUM_ITERS}
+      COMPILE_FLAGS=${FLAGS//withserver/}       # remove 'withserver' from flags
+      COMPILE_FLAGS=${COMPILE_FLAGS//none/}     # remove 'none' from flags
+      COMPILE_FLAGS="$COMPILE_FLAGS $AOT_OPT"   # add aot opt
 
-      # start a fresh server
-      if [[ $FLAGS =~ "withserver" ]]; then
-        SERVER_LOG=$(mktemp)
-        ${SERVER_EXE} &> "$SERVER_LOG" &
-        SERVER_PID=$!
-        sleep 2s
-      else
-        THIS_NUM_ITERS="1"
-      fi
+      # compile!
+      # NOTE: do NOT double-quote COMPILE_FLAGS!!! ignore shellcheck here.
+      ${CLANG_EXE} ${PREPROCESSOR_FLAGS} ${COMPILE_FLAGS} "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN}
 
-      # execute the program N times
-      for ITER in $(seq 1 "$THIS_NUM_ITERS"); do
+      for TRIAL in $(seq 1 "$NUM_TRIALS"); do
+        THIS_NUM_ITERS=${NUM_ITERS}
 
-        # make sure the server is still running!
+        # start a fresh server
         if [[ $FLAGS =~ "withserver" ]]; then
-          kill -0 $SERVER_PID
+          SERVER_LOG=$(mktemp)
+          ${SERVER_EXE} &> "$SERVER_LOG" &
+          SERVER_PID=$!
+          sleep 2s
+        else
+          THIS_NUM_ITERS="1"
         fi
 
-        # run the program under 'time'
-        ${TIME_EXE} --format="%e" --output="${TIME_OUTPUT_FILE}" ${CLIENT_BIN} &> /dev/null
+        # execute the program N times
+        for ITER in $(seq 1 "$THIS_NUM_ITERS"); do
 
-        ELAPSED_TIME=$(cat "${TIME_OUTPUT_FILE}")
-        CSV_ROW=$(printf "%s\n" "$PROG" "$FLAGS" "$TRIAL" "$ITER" "$ELAPSED_TIME"\
-                                            | paste -sd ",")
+          # make sure the server is still running!
+          if [[ $FLAGS =~ "withserver" ]]; then
+            kill -0 $SERVER_PID
+          fi
 
-        echo "$CSV_ROW" | tee -a "${CSVFILE}"
-      done # iter loop end
+          # run the program under 'time'
+          ${TIME_EXE} --format="%e" --output="${TIME_OUTPUT_FILE}" ${CLIENT_BIN} &> /dev/null
 
-      # kill server
-      if [[ $FLAGS =~ "withserver" ]]; then
-        kill $SERVER_PID
-        wait
-        rm -f "$SERVER_LOG"
-      fi
+          ELAPSED_TIME=$(cat "${TIME_OUTPUT_FILE}")
+          CSV_ROW=$(printf "%s\n" "$PROG" "$FLAGS" "$AOT_OPT" "$TRIAL" "$ITER" "$ELAPSED_TIME"\
+                                              | paste -sd ",")
 
-    done  # trial loop end
+          echo "$CSV_ROW" | tee -a "${CSVFILE}"
+        done # iter loop end
 
-  done
-done
+        # kill server
+        if [[ $FLAGS =~ "withserver" ]]; then
+          kill $SERVER_PID
+          wait
+          rm -f "$SERVER_LOG"
+        fi
+
+      done  # trial loop end
+
+    done # flag loop end
+  done # aot opt loop end
+done #prog loop end
