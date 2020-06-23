@@ -276,15 +276,23 @@ TuningSection::TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
 
 llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(Strategy Strat, TuningSectionInitializer TSI) {
   auto MaybeHotNode = TSI.Profile.hottestNode();
-  if (!MaybeHotNode) return llvm::None;
+  if (!MaybeHotNode){
+    info("TuningSection::Create -- no suitable hottest node.");
+    return llvm::None;
+  }
 
   auto MaybeAncestor = TSI.Profile.findSuitableTuningRoot(MaybeHotNode.getValue());
-  if (!MaybeAncestor) return llvm::None;
+  if (!MaybeAncestor) {
+    info("TuningSection::Create -- no suitable tuning root.");
+    return llvm::None;
+  }
 
   std::string PatchableAncestorName = MaybeAncestor.getValue();
 
-  if (!TSI.Profile.haveBitcode(PatchableAncestorName))
+  if (!TSI.Profile.haveBitcode(PatchableAncestorName)) {
+    info("TuningSection::Create -- no bitcode available for tuning root.");
     return llvm::None;
+  }
 
   TuningSection *TS = nullptr;
   switch (Strat) {

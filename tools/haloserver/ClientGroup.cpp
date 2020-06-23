@@ -46,6 +46,8 @@ namespace halo {
 
       // Update the profiler with new PerfData, if any.
       Profile.consumePerfData(State.Clients);
+      size_t TotalSamples = Profile.samplesConsumed();
+      info("Samples consumed: " + std::to_string(TotalSamples));
 
       // age the data
       Profile.decay();
@@ -53,7 +55,7 @@ namespace halo {
       // Do we need to create a tuning section?
       if (TS == nullptr) {
 
-        if (Profile.samplesConsumed() < 100)
+        if (TotalSamples < 100)
           return end_service_iteration(); // not enough samples to create a TS
 
         auto MaybeTS = TuningSection::Create(TuningSection::Strategy::Aggressive,
