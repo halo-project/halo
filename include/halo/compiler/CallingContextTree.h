@@ -47,7 +47,7 @@ struct LearningParameters {
 
   // (0, 1), learning rate / incremental update factor "alpha"
   const float IPC_DISCOUNT;
-  const float HOTNESS_DISCOUNT;
+  const float COOLDOWN_DISCOUNT;
 
   const float HOTNESS_SAMPLED_IP;
   const float HOTNESS_BOOST;

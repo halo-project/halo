@@ -5,9 +5,9 @@
     "group-service-per-second": 10,
     "perf-sample-period": 15485867,
 
-    "cct-ipc-discount": 0.9,
-    "cct-hotness-discount": 0.7,
-    "cct-hotness-sampledip": 1,
+    "cct-ipc-discount": 0.5,
+    "cct-cooldown-discount": 0.3,
+    "cct-hotness-ipsample": 1,
     "cct-hotness-recentlyactive": 0.05,
 
     "bakeoff-switch-rate": 2,

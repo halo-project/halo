@@ -1017,9 +1017,9 @@ void VertexInfo::decay() {
   // take a step in the direction of reaching zero.
   // another way to think about it is that we pretend we observed
   // a zero-temperature sample
-  GeneralInfo = observeZeroTemp(GeneralInfo, LP->HOTNESS_DISCOUNT);
+  GeneralInfo = observeZeroTemp(GeneralInfo, LP->COOLDOWN_DISCOUNT);
   for (auto& Elm : SpecificInfo)
-    SpecificInfo[Elm.first] = observeZeroTemp(Elm.second, LP->HOTNESS_DISCOUNT);
+    SpecificInfo[Elm.first] = observeZeroTemp(Elm.second, LP->COOLDOWN_DISCOUNT);
 }
 
 void VertexInfo::filterByLib(std::string const& Lib, std::function<void(CCTNodeInfo const&)> Action) const {
@@ -1104,12 +1104,12 @@ void EdgeInfo::decay() {
 
 LearningParameters::LearningParameters(nlohmann::json const& Config)
   : IPC_DISCOUNT(config::getServerSetting<float>("cct-ipc-discount", Config))
-  , HOTNESS_DISCOUNT(config::getServerSetting<float>("cct-hotness-discount", Config))
-  , HOTNESS_SAMPLED_IP(config::getServerSetting<float>("cct-hotness-sampledip", Config))
+  , COOLDOWN_DISCOUNT(config::getServerSetting<float>("cct-cooldown-discount", Config))
+  , HOTNESS_SAMPLED_IP(config::getServerSetting<float>("cct-hotness-ipsample", Config))
   , HOTNESS_BOOST(config::getServerSetting<float>("cct-hotness-recentlyactive", Config))
   {
     assert(0 < IPC_DISCOUNT && IPC_DISCOUNT <= 1.0f);
-    assert(0 < HOTNESS_DISCOUNT && HOTNESS_DISCOUNT <= 1.0f);
+    assert(0 < COOLDOWN_DISCOUNT && COOLDOWN_DISCOUNT <= 1.0f);
   }
 
 } // end namespace halo
