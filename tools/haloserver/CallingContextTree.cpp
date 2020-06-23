@@ -210,7 +210,9 @@ void CallingContextTree::observe(CallGraph const& CG, ClientID ID, CodeRegionInf
 }
 
 void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
-  // we add a sample from root downwards, so we go through the context in reverse
+  ///////////
+  // STEP 1
+  // we add a sample from root downwards, so we go through the calling-context in reverse
   // as if we are calling the sampled function.
 
   auto &CallChain = Sample.call_context();
@@ -258,10 +260,8 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
 
 skipThisCallee:
     // our iterator is IPI
-    if (IPI == Top) {
-      logs(LC_CCT) << "done with BTB.\n";
+    if (IPI == Top)
       break;
-    }
 
     std::shared_ptr<FunctionInfo> Callee = nullptr;
     if (IntermediateFns.size() > 0) {
@@ -365,22 +365,32 @@ skipThisCallee:
   IPI--; // go back to last IP we reached in the walk.
   auto CallerDef = CallerFI->getDefinition(*IPI);
   std::string LibraryName = CodeRegionInfo::OriginalLib;
-  if (CallerDef)
-    LibraryName = CallerDef.getValue().Library;
-  else
+
+  if (!CallerDef) {
     logs(LC_CCT) << "Unknown function definition for sampled IP in " << CallerFI->getCanonicalName() << "\n";
+    goto epilogue;
+  }
 
-
+  LibraryName = CallerDef.getValue().Library;
   auto &CurrentV = bgl::get(Gr, CallerVID);
   CurrentV.observeSampledIP(ID, LibraryName, Sample, SamplePeriod); // add the sample to the vertex!
 
+  logs(LC_CCT) << "Observed sample at IP in " << CallerFI->getCanonicalName() << "\n";
+
+  ///////////
+  // STEP 2
+  // now we assign additional hotness by walking through the CCT step-by-step,
+  // starting from the point we've identified, using the BTB
   walkBranchSamples(ID, Ancestors, CG, CallerVID, CRI, Sample);
 
-  // TODO: maybe only if NDEBUG ?
+
+epilogue:
+#ifndef NDEBUG
   if (isMalformed()) {
     dumpDOT(clogs(LC_CCT));
     fatal_error("malformed calling-context tree!");
   }
+#endif
 }
 
 /// We walk through the branch history in reverse order (recent to oldest; and to -> from) to
