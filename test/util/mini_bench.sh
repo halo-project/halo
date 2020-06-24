@@ -49,6 +49,7 @@ declare -a BENCHMARKS=(
   "basic/random_workload.c"
   "bench/c/almabench.c"
   "bench/c/perlin.c"
+  "bench/c/ReedSolomon.c"
 )
 
 declare -a AOT_OPTS=(
