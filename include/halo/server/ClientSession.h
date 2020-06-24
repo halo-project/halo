@@ -91,6 +91,10 @@ namespace halo {
     // kicks off the async interaction loop for this client session in the IOService.
     void start(ClientGroup *CG);
 
+    void send_library(SessionState &MyState, pb::LoadDyLib const&);
+
+    void redirect_to(SessionState &MyState, pb::ModifyFunction &);
+
 private:
     void listen();
 

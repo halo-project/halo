@@ -5,6 +5,44 @@
 
 namespace halo {
 
+void ClientSession::send_library(SessionState &MyState, pb::LoadDyLib const& DylibMsg) {
+  auto &DeployedLibs = MyState.DeployedLibs;
+  std::string const& LibName = DylibMsg.name();
+
+  // send the dylib only if the client doesn't have it already
+  if (DeployedLibs.count(LibName) == 0) {
+    Chan.send_proto(msg::LoadDyLib, DylibMsg);
+    DeployedLibs.insert(LibName);
+  }
+}
+
+void ClientSession::redirect_to(SessionState &MyState, pb::ModifyFunction &MF) {
+  std::string const& LibName = MF.other_lib();
+  std::string const& FuncName = MF.other_name();
+
+  // raise an error if the client doesn't already have this dylib!
+  if (MyState.DeployedLibs.count(LibName) == 0)
+    fatal_error("trying to redirect client to library it doesn't already have!");
+
+  // this client is already using the right lib.
+  if (MyState.CurrentLib == LibName)
+    return;
+
+  clogs() << "redirecting " << FuncName << " to " << LibName << "\n";
+
+  auto MaybeDef = MyState.CRI.lookup(CodeRegionInfo::OriginalLib, FuncName);
+  if (!MaybeDef) {
+    warning("client is missing function definition for an original lib function: " + FuncName);
+    return;
+  }
+  auto OriginalDef = MaybeDef.getValue();
+
+  MF.set_addr(OriginalDef.Start);
+
+  Chan.send_proto(msg::ModifyFunction, MF);
+  MyState.CurrentLib = LibName;
+}
+
 void ClientSession::start(ClientGroup *CG) {
   Parent = CG;
 

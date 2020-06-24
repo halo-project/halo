@@ -193,15 +193,8 @@ void TuningSection::sendLib(GroupState &State, CodeVersion const& CV) {
   if (ELFReadError)
     fatal_error(std::move(ELFReadError));
 
-  for (auto &Client : State.Clients) {
-    auto &DeployedLibs = Client->State.DeployedLibs;
-
-    // send the dylib only if the client doesn't have it already
-    if (DeployedLibs.count(LibName) == 0) {
-      Client->Chan.send_proto(msg::LoadDyLib, DylibMsg);
-      DeployedLibs.insert(LibName);
-    }
-  }
+  for (auto &Client : State.Clients)
+    Client->send_library(Client->State, DylibMsg);
 }
 
 void TuningSection::redirectTo(GroupState &State, CodeVersion const& CV) {
@@ -213,34 +206,16 @@ void TuningSection::redirectTo(GroupState &State, CodeVersion const& CV) {
   std::string LibName = CV.getLibraryName();
   std::string FuncName = FnGroup.Root;
 
-  for (auto &Client : State.Clients) {
-    // raise an error if the client doesn't already have this dylib!
-    if (Client->State.DeployedLibs.count(LibName) == 0)
-      fatal_error("trying to redirect client to library it doesn't already have!");
-
-    // this client is already using the right lib.
-    if (Client->State.CurrentLib == LibName)
-      continue;
-
-    clogs() << "redirecting " << FuncName << " to " << LibName << "\n";
-
-    auto MaybeDef = Client->State.CRI.lookup(CodeRegionInfo::OriginalLib, FuncName);
-    if (!MaybeDef) {
-      warning("client is missing function definition for an original lib function: " + FuncName);
-      continue;
-    }
-    auto OriginalDef = MaybeDef.getValue();
-
+  // NOTE: this is _partially_ initialized. we let the client modify the addr field
+  // before it sends it off (if needed).
     pb::ModifyFunction MF;
     MF.set_name(FuncName);
-    MF.set_addr(OriginalDef.Start);
     MF.set_desired_state(pb::FunctionState::REDIRECTED);
     MF.set_other_lib(LibName);
     MF.set_other_name(FuncName);
 
-    Client->Chan.send_proto(msg::ModifyFunction, MF);
-    Client->State.CurrentLib = LibName;
-  }
+  for (auto &Client : State.Clients)
+    Client->redirect_to(Client->State, MF);
 }
 
 
