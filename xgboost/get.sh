@@ -12,6 +12,6 @@ pushd "$DIR" || exit 1
 rm -rf $ROOT
 mkdir $ROOT
 
-git clone -b 'v0.72' --single-branch --depth 1 --recursive https://github.com/dmlc/xgboost.git $ROOT
+git clone -b 'v0.90' --single-branch --depth 1 --recursive https://github.com/dmlc/xgboost.git $ROOT
 
 popd || exit 1

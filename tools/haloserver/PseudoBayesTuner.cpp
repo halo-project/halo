@@ -167,19 +167,33 @@ void initBooster(const DMatrixHandle dmats[],
                       bst_ulong len,
                       BoosterHandle *out) {
 
+  auto chk = [](int Result) {
+    if (Result != 0)
+      fatal_error("bad XGBooster parameter setting.");
+  };
+
   XGBoosterCreate(dmats, len, out);
-  // NOTE: all of these settings were picked arbitrarily
+
+  // NOTE: all of the char*'s passed to XGB here need to have a lifetime
+  // that exceeds the lifetime of this function call.
+
 #ifdef NDEBUG
-  XGBoosterSetParam(*out, "silent", "1");
+  // 0 = silent, 1 = warning, 2 = info, 3 = debug. default is 1
+  chk(XGBoosterSetParam(*out, "verbosity", "0"));
 #endif
-  XGBoosterSetParam(*out, "booster", "gbtree");
-  XGBoosterSetParam(*out, "objective", "reg:linear");
-  XGBoosterSetParam(*out, "max_depth", "5");
-  XGBoosterSetParam(*out, "eta", "0.3");
-  XGBoosterSetParam(*out, "min_child_weight", "1");
-  XGBoosterSetParam(*out, "subsample", "0.5");
-  XGBoosterSetParam(*out, "colsample_bytree", "1");
-  XGBoosterSetParam(*out, "num_parallel_tree", "4");
+
+  // FIXME: all of these settings were picked arbitrarily and/or with specific machines in mind!
+  // Read here for info: https://xgboost.readthedocs.io/en/latest/parameter.html
+  chk(XGBoosterSetParam(*out, "booster", "gbtree"));
+  chk(XGBoosterSetParam(*out, "nthread", "2"));
+  chk(XGBoosterSetParam(*out, "objective", "reg:squarederror"));
+  chk(XGBoosterSetParam(*out, "max_depth", "10"));
+  // Step size shrinkage used in update to prevents overfitting. Default = 0.3
+  chk(XGBoosterSetParam(*out, "eta", "0.3"));
+  chk(XGBoosterSetParam(*out, "min_child_weight", "1"));
+  chk(XGBoosterSetParam(*out, "subsample", "0.75"));
+  chk(XGBoosterSetParam(*out, "colsample_bytree", "1"));
+  chk(XGBoosterSetParam(*out, "num_parallel_tree", "4"));
 }
 ////////////////////////////////////////////////////////////////////////////////////
 
