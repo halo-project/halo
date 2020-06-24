@@ -88,8 +88,17 @@ void AggressiveTuningSection::take_step(GroupState &State) {
         break;
 
     if (Dupe) {
+      DuplicateCompiles++; DuplicateCompilesInARow++;
+
+      if (DuplicateCompilesInARow >= MAX_DUPES_IN_ROW) {
+        // give up.
+        DuplicateCompilesInARow = 0;
+        clogs() << "hit max number of duplicate compiles in a row.\n";
+        Status = ActivityState::Ready;
+        return;
+      }
+
       clogs() << "compile job produced duplicate code... trying another compile!\n";
-      DuplicateCompiles++;
       goto retryExperiment;
     }
 
@@ -111,6 +120,9 @@ void AggressiveTuningSection::take_step(GroupState &State) {
     ExploitSteps--;
     return;
   }
+
+  // reset exploit-step counter
+  ExploitSteps = EXPLOIT_FACTOR;
 
   // experiment!
   Experiments += 1;

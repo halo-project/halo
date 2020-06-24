@@ -106,8 +106,11 @@ private:
   PseudoBayesTuner PBT;
 
   static constexpr uint64_t EXPLOIT_FACTOR = 10; // the number of steps we need to exploit to repay our debt
+  static constexpr unsigned MAX_DUPES_IN_ROW = 10; // max duplicate compiles in a row before we give up.
+
   uint64_t ExploitSteps{0};
   size_t SamplesLastTime{0};
+  unsigned DuplicateCompilesInARow{0};
 
   // statistics for myself during development!!
   uint64_t Steps{0};
