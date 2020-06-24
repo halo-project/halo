@@ -13,6 +13,7 @@ using JSON = nlohmann::json;
 namespace halo {
 
 class ClientSession;
+class GroupState;
 
 /// Tracks all profiling information.
 class Profiler {
@@ -27,7 +28,8 @@ public:
   GroupPerf currentPerf(FunctionGroup const&, llvm::Optional<std::string> LibName);
 
   /// updates the profiler with new performance data found in the clients
-  void consumePerfData(ClientList &);
+  /// and then decays the data by one time step.
+  void consumePerfData(GroupState &);
 
   /// in terms of number of instructions per sample
   uint64_t getSamplePeriod() const {

@@ -41,6 +41,7 @@ namespace halo {
     SessionState() {
       DeployedLibs.insert(CodeRegionInfo::OriginalLib);
       CurrentLib = CodeRegionInfo::OriginalLib;
+      SamplingPeriod = 0;
     }
 
     ClientID ID; // a unique idenifier for the duration of the server process
@@ -48,6 +49,7 @@ namespace halo {
     PerformanceData PerfData;
     std::set<std::string> DeployedLibs;
     std::string CurrentLib;
+    uint64_t SamplingPeriod; // if set to 0, then sampling is disabled
   };
 
   class GroupOwnedState {
@@ -73,8 +75,8 @@ namespace halo {
 
     // thread-safe members
     ip::tcp::socket Socket;
-    Channel Chan;
     std::atomic<enum SessionStatus> Status;
+    Channel Chan;
     ClientGroup *Parent = nullptr;
 
     ClientSession(asio::io_service &IOService, ThreadPool &Pool);
@@ -94,6 +96,8 @@ namespace halo {
     void send_library(SessionState &MyState, pb::LoadDyLib const&);
 
     void redirect_to(SessionState &MyState, pb::ModifyFunction &);
+
+    void set_sampling_period(SessionState &MyState, uint64_t Period);
 
 private:
     void listen();

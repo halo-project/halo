@@ -40,30 +40,60 @@ namespace halo {
     run_service_loop();
   }
 
+  void ClientGroup::broadcastSamplingPeriod(GroupState &State, uint64_t Period) {
+    for (auto &Client : State.Clients)
+      Client->set_sampling_period(Client->State, Period);
+  }
+
+  bool ClientGroup::identifyTuningSection(GroupState &State) {
+    const int N = 4;
+    // update with wrap-around
+    // we spend 1/N of our the time sampling to identify a TS,
+    // and (N-1)/N of our time taking a break.
+    IdentifySteps--;
+    if (IdentifySteps <= -(N * IDENTIFY_STEP_FACTOR))
+      IdentifySteps = IDENTIFY_STEP_FACTOR;
+
+    if (IdentifySteps < 0) {
+      // take a break from sampling
+      info("identifyTuningSection -- taking a break.");
+      broadcastSamplingPeriod(State, 0);
+      return false;
+    }
+
+    broadcastSamplingPeriod(State, Profile.getSamplePeriod());
+    Profile.consumePerfData(State);
+
+    size_t TotalSamples = Profile.samplesConsumed();
+
+    if (TotalSamples < 100)
+      return false; // not enough samples to create a TS
+
+    auto MaybeTS = TuningSection::Create(TuningSection::Strategy::Aggressive,
+                        {Config, Pool, Pipeline, Profile, *Bitcode, OriginalSettings});
+    if (!MaybeTS)
+      return false; // no suitable tuning section... nothing to do
+
+
+    TS = std::move(MaybeTS.getValue());
+
+    return true; // we finally got a tuning section!
+  }
+
 
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
 
-      // Update the profiler with new PerfData, if any.
-      Profile.consumePerfData(State.Clients);
-      size_t TotalSamples = Profile.samplesConsumed();
-      info("Samples consumed: " + std::to_string(TotalSamples));
-
-      // age the data
-      Profile.decay();
-
       // Do we need to create a tuning section?
       if (TS == nullptr) {
 
-        if (TotalSamples < 100)
-          return end_service_iteration(); // not enough samples to create a TS
 
-        auto MaybeTS = TuningSection::Create(TuningSection::Strategy::Aggressive,
-                            {Config, Pool, Pipeline, Profile, *Bitcode, OriginalSettings});
-        if (!MaybeTS)
-          return end_service_iteration(); // no suitable tuning section... nothing to do
+        if (!identifyTuningSection(State))
+          return end_service_iteration();
 
-        TS = std::move(MaybeTS.getValue());
+        // turn sampling back off, since that's the default expected state for TuningSection
+        // upon initialization.
+        broadcastSamplingPeriod(State, 0);
       }
 
       TS->take_step(State);
@@ -95,12 +125,6 @@ void ClientGroup::cleanup_async() {
 
 void ClientGroup::addSession(ClientSession *CS, GroupState &State) {
   CS->start(this);
-
-  // turn on sampling right away
-  pb::SamplePeriod SP;
-  SP.set_period(Profile.getSamplePeriod());
-  CS->Chan.send_proto(msg::SetSamplingPeriod, SP);
-  CS->Chan.send(msg::StartSampling);
 
   State.Clients.push_back(std::unique_ptr<ClientSession>(CS));
 }

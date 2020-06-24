@@ -76,9 +76,14 @@ public:
     });
   }
 
+  static void broadcastSamplingPeriod(GroupState &State, uint64_t Period);
+
 private:
 
   void addSession(ClientSession *CS, GroupState &State);
+
+  // returns true if it found new tuning section
+  bool identifyTuningSection(GroupState &);
 
   void run_service_loop();
   void end_service_iteration();
@@ -88,6 +93,9 @@ private:
   CompilationPipeline Pipeline;
   Profiler Profile;
   std::unique_ptr<TuningSection> TS;
+
+  static constexpr int IDENTIFY_STEP_FACTOR = 8;
+  int IdentifySteps{IDENTIFY_STEP_FACTOR};
 
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;

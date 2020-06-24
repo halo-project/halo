@@ -90,6 +90,7 @@ public:
 private:
   enum class ActivityState {
     Ready,
+    Paused,   // basically, exploiting
     WaitingForCompile,
     TestingNewLib
   };
@@ -97,18 +98,21 @@ private:
   std::string stateToString(ActivityState S) const {
     switch(S) {
       case ActivityState::Ready:                return "READY";
+      case ActivityState::Paused:               return "PAUSED";
       case ActivityState::WaitingForCompile:    return "COMPILING";
       case ActivityState::TestingNewLib:        return "BAKEOFF";
     };
     return "?";
   }
 
+  void transitionTo(ActivityState S);
+
   PseudoBayesTuner PBT;
 
   static constexpr uint64_t EXPLOIT_FACTOR = 10; // the number of steps we need to exploit to repay our debt
   static constexpr unsigned MAX_DUPES_IN_ROW = 10; // max duplicate compiles in a row before we give up.
 
-  uint64_t ExploitSteps{0};
+  uint64_t ExploitSteps{1}; // start off with the first step being an exploit.
   size_t SamplesLastTime{0};
   unsigned DuplicateCompilesInARow{0};
 

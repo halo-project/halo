@@ -6,27 +6,46 @@
 
 namespace halo {
 
+void AggressiveTuningSection::transitionTo(ActivityState S) {
+  ActivityState From = Status;
+  ActivityState To = S;
+
+  // self-loop?
+  if (From == To)
+    return;
+  else
+    Status = To;  // we actually changed to a different state.
+}
+
+/// The implementation of this take-step always must assume that
+/// a client has joined at an arbitrary time. So actions such as
+/// enabling/disabling sampling, or sending the current code, should be
+/// attempted on every step to make sure they're in the right state.
 void AggressiveTuningSection::take_step(GroupState &State) {
   Steps++;
 
   /////////////////////////// BAKEOFF
   if (Status == ActivityState::TestingNewLib) {
-    if (!Bakery.hasValue())
-      fatal_error("no bakery available to conduct bakeoff");
+    // make sure all clients are sampling right now
+    ClientGroup::broadcastSamplingPeriod(State, Profile.getSamplePeriod());
 
+    // update CCT etc
+    Profile.consumePerfData(State);
+
+    assert(Bakery.hasValue() && "no bakery when trying to test a lib?");
     auto &Bakeoff = Bakery.getValue();
 
     switch (Bakeoff.take_step(State)) {
       case Bakeoff::Result::InProgress:
-        return;
+        return transitionTo(ActivityState::TestingNewLib);
 
       case Bakeoff::Result::Finished: {
         auto NewBest = Bakeoff.getWinner();
         if (!NewBest)
           fatal_error("bakeoff successfully finished but no winner?");
         BestLib = NewBest.getValue();
-        Status = ActivityState::Ready;
-      }; return;
+        return transitionTo(ActivityState::Paused);
+      };
 
       case Bakeoff::Result::Timeout: {
         // the two libraries are too similar. we'll merge them.
@@ -42,34 +61,40 @@ void AggressiveTuningSection::take_step(GroupState &State) {
         Versions[BestLib].forceMerge(Versions[Other]);
         Versions.erase(Other);
 
-        Status = ActivityState::Ready;
-      } return;
+        return transitionTo(ActivityState::Paused);
+      };
     };
     fatal_error("unhandled bakeoff case");
   }
 
+
+
   /////////////
-  // if any clients just (re)joined, get them up-to-speed!
+  // Since we're not in a bakeoff, if any clients just
+  // (re)joined, get them up-to-speed with the best one!
+  //
   assert(Versions.find(BestLib) != Versions.end() && "current version not already in database?");
   sendLib(State, Versions[BestLib]);
   redirectTo(State, Versions[BestLib]);
 
-  // determine whether _any_ actions should be taken
-  GroupPerf Perf = Profile.currentPerf(FnGroup, BestLib);
+  // make sure all clients are not sampling right now
+  ClientGroup::broadcastSamplingPeriod(State, 0);
 
-  // if no new samples have hit any of the functions in the group since last time,
-  // or we don't have a valid IPC, we do nothing.
-  if (SamplesLastTime == Perf.SamplesSeen || Perf.IPC <= 0)
-    return;
 
-  clogs() << "\n--------\n"
-          << "Group IPC = " << Perf.IPC
-          << "\nGroup Hotness = " << Perf.Hotness
-          << "\nGroup Samples = " << Perf.SamplesSeen
-          << "\n--------\n";
 
-  SamplesLastTime = Perf.SamplesSeen;
-  Versions[BestLib].observeIPC(Perf.IPC);
+  //////////////////////////// PAUSED / EXPLOITNG
+  if (Status == ActivityState::Paused) {
+
+    if (ExploitSteps > 0) {
+      // not going to take an experiment for now.
+      ExploitSteps--;
+      return transitionTo(ActivityState::Paused);
+    }
+
+    // reset exploit-step counter
+    ExploitSteps = EXPLOIT_FACTOR;
+    return transitionTo(ActivityState::Ready);
+  }
 
 
 
@@ -94,8 +119,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
         // give up.
         DuplicateCompilesInARow = 0;
         clogs() << "hit max number of duplicate compiles in a row.\n";
-        Status = ActivityState::Ready;
-        return;
+        return transitionTo(ActivityState::Ready);
       }
 
       clogs() << "compile job produced duplicate code... trying another compile!\n";
@@ -107,22 +131,13 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
     Bakery = Bakeoff(State, this, BP, BestLib, NewLib);
 
-    Status = ActivityState::TestingNewLib;
-    return;
+    return transitionTo(ActivityState::TestingNewLib);
   }
 
 
 
   ///////////////////////////////// READY
-
-  // not going to take an experiment for now.
-  if (ExploitSteps > 0) {
-    ExploitSteps--;
-    return;
-  }
-
-  // reset exploit-step counter
-  ExploitSteps = EXPLOIT_FACTOR;
+  assert(Status == ActivityState::Ready);
 
   // experiment!
   Experiments += 1;
@@ -130,7 +145,7 @@ retryExperiment:
   KnobSet NewKnobs = std::move(PBT.getConfig(BestLib));
   NewKnobs.dump();
   Compiler.enqueueCompilation(*Bitcode, std::move(NewKnobs));
-  Status = ActivityState::WaitingForCompile;
+  transitionTo(ActivityState::WaitingForCompile);
 }
 
 
@@ -208,11 +223,11 @@ void TuningSection::redirectTo(GroupState &State, CodeVersion const& CV) {
 
   // NOTE: this is _partially_ initialized. we let the client modify the addr field
   // before it sends it off (if needed).
-    pb::ModifyFunction MF;
-    MF.set_name(FuncName);
-    MF.set_desired_state(pb::FunctionState::REDIRECTED);
-    MF.set_other_lib(LibName);
-    MF.set_other_name(FuncName);
+  pb::ModifyFunction MF;
+  MF.set_name(FuncName);
+  MF.set_desired_state(pb::FunctionState::REDIRECTED);
+  MF.set_other_lib(LibName);
+  MF.set_other_name(FuncName);
 
   for (auto &Client : State.Clients)
     Client->redirect_to(Client->State, MF);

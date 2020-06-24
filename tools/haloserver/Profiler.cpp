@@ -1,5 +1,6 @@
 #include "halo/compiler/Profiler.h"
 #include "halo/server/ClientSession.h"
+#include "halo/server/ClientGroup.h"
 #include "halo/nlohmann/util.hpp"
 
 #include "Messages.pb.h"
@@ -13,8 +14,8 @@ Profiler::Profiler(JSON const& Config)
   , CCT(&LP, SamplePeriod)
   {}
 
-void Profiler::consumePerfData(ClientList & Clients) {
-  for (auto &CS : Clients) {
+void Profiler::consumePerfData(GroupState &State) {
+  for (auto &CS : State.Clients) {
     auto &State = CS->State;
     auto &Samples = State.PerfData.getSamples();
     SamplesSeen += Samples.size();
@@ -32,6 +33,9 @@ void Profiler::consumePerfData(ClientList & Clients) {
     CCT.observe(CG, State.ID, State.CRI, State.PerfData);
     State.PerfData.clear();
   }
+
+  // age the data
+  decay();
 }
 
 void Profiler::decay() {

@@ -5,6 +5,26 @@
 
 namespace halo {
 
+void ClientSession::set_sampling_period(SessionState &MyState, uint64_t NewPeriod) {
+  if (MyState.SamplingPeriod == NewPeriod)
+    return;
+
+  uint64_t OldPeriod = MyState.SamplingPeriod;
+  MyState.SamplingPeriod = NewPeriod;
+
+  if (NewPeriod == 0) {
+    Chan.send(msg::StopSampling);
+    return;
+  }
+
+  pb::SamplePeriod SP;
+  SP.set_period(NewPeriod);
+  Chan.send_proto(msg::SetSamplingPeriod, SP);
+
+  if (OldPeriod == 0)
+    Chan.send(msg::StartSampling);
+}
+
 void ClientSession::send_library(SessionState &MyState, pb::LoadDyLib const& DylibMsg) {
   auto &DeployedLibs = MyState.DeployedLibs;
   std::string const& LibName = DylibMsg.name();
@@ -129,7 +149,7 @@ void ClientSession::shutdown_async() {
 }
 
 ClientSession::ClientSession(asio::io_service &IOService, ThreadPool &Pool) :
-  Socket(IOService), Chan(Socket), Status(Fresh) {}
+  Socket(IOService), Status(Fresh), Chan(Socket) {}
 
 
 
