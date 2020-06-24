@@ -55,6 +55,7 @@ declare -a BENCHMARKS=(
 declare -a AOT_OPTS=(
   "-O1"
   "-O2"
+  "-O3"
 )
 
 declare -a OPTIONS=(
@@ -109,7 +110,8 @@ for PROG in "${BENCHMARKS[@]}"; do
 
       # compile!
       # NOTE: do NOT double-quote COMPILE_FLAGS!!! ignore shellcheck here.
-      ${CLANG_EXE} ${PREPROCESSOR_FLAGS} ${COMPILE_FLAGS} "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN}
+      ${CLANG_EXE} ${PREPROCESSOR_FLAGS} ${COMPILE_FLAGS} \
+          "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN} &> /dev/null
 
       for TRIAL in $(seq 1 "$NUM_TRIALS"); do
         THIS_NUM_ITERS=${NUM_ITERS}
