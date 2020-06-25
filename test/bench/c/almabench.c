@@ -15,7 +15,7 @@
 
 // changing the number of loops does _not_ change the answer.
 #ifdef SMALL_PROBLEM_SIZE
-static const int TEST_LOOPS  =    50; // ~15s
+static const int TEST_LOOPS  =    25;
 #else
 static const int TEST_LOOPS  =    100;
 #endif
