@@ -14,17 +14,21 @@ namespace halo {
 PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& BaseKnobs,  std::unordered_map<std::string, CodeVersion> &Versions)
   : BaseKnobs(BaseKnobs), Versions(Versions),
     RNG(config::getServerSetting<uint64_t>("seed", Config)),
-    TopTaken(config::getServerSetting<size_t>("pbtuner-top-taken", Config)),
-    SearchSz(config::getServerSetting<size_t>("pbtuner-search-size", Config)),
+    TotalBatchSz(config::getServerSetting<size_t>("pbtuner-batch-size", Config)),
+    SearchSz(config::getServerSetting<size_t>("pbtuner-surrogate-batch-size", Config)),
     MIN_PRIOR(config::getServerSetting<size_t>("pbtuner-min-prior", Config)),
     HELDOUT_RATIO(config::getServerSetting<float>("pbtuner-heldout-ratio", Config)),
-    ExploreRatio(config::getServerSetting<float>("pbtuner-explore-ratio", Config)),
+    ExploreRatio(config::getServerSetting<float>("pbtuner-surrogate-explore-ratio", Config)),
     EnergyLvl(config::getServerSetting<float>("pbtuner-energy-level", Config)) {
       assert(0 < HELDOUT_RATIO && HELDOUT_RATIO < 1);
       assert(0 <= ExploreRatio && ExploreRatio <= 1);
       assert(0 <= EnergyLvl && EnergyLvl <= 100);
-      assert(0 < TopTaken && TopTaken <= SearchSz);
       assert(4 <= MIN_PRIOR);
+
+      const float MainBatchExploreRatio = config::getServerSetting<float>("pbtuner-explore-ratio", Config);
+      assert(0 <= MainBatchExploreRatio && MainBatchExploreRatio <= 1.0f);
+
+      ExploitBatchSz = TotalBatchSz - std::floor(MainBatchExploreRatio * TotalBatchSz);
   }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -33,14 +37,14 @@ KnobSet PseudoBayesTuner::getConfig(std::string CurrentLib) {
   if (GeneratedConfigs.size() == 0) {
     auto Error = generateConfigs(CurrentLib);
     if (Error) {
-      // log it
+      // log it. an error can happen if we have an insufficient prior.
       info(Error);
       llvm::consumeError(std::move(Error));
-
-      // an error can happen if we have an insufficient prior.
-      // so we return a random config instead to help establish one.
-      return RandomTuner::randomFrom(KnobSet(BaseKnobs), RNG);
     }
+
+    // we always want to make sure we're not overfitting to what we already know.
+    while (GeneratedConfigs.size() < TotalBatchSz)
+      GeneratedConfigs.push_back(RandomTuner::randomFrom(KnobSet(BaseKnobs), RNG));
   }
 
   assert(GeneratedConfigs.size() > 0);
@@ -380,7 +384,7 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
 
     auto Cur = std::make_pair(i, -predictedIPC);
 
-    if (Best.size() < TopTaken) {
+    if (Best.size() < ExploitBatchSz) {
       Best.insert(Cur);
       continue;
     }
