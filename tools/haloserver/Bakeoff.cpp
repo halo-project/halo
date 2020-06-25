@@ -331,4 +331,15 @@ Bakeoff::ComparisonResult Bakeoff::compare_ttest(RandomQuantity const& A, Random
   return ComparisonResult::NoAnswer;  // neither Hypo1 nor Hypo2 is true.
 }
 
+
+void Bakeoff::dump() const {
+  clogs() << "\tBakeoff: {"
+          << "\n\t\tSteps = " << Switches
+          << "\n\t\tStepsUntilSwitch = " << StepsUntilSwitch
+          << "\n\t\tCurrently Deployed = " << Deployed
+          << "\n\t}";
+}
+
+
+
 } // end namespace

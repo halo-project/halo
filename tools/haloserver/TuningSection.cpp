@@ -170,6 +170,9 @@ void AggressiveTuningSection::dump() const {
           << "\n\tSuccess Rate = " << SuccessRate << "%"
           << "\n";
 
+  if (Bakery.hasValue())
+    Bakery.getValue().dump();
+
 
   clogs() << "}\n\n";
 }

@@ -45,6 +45,8 @@ public:
   // makes progress on the bakeoff
   Result take_step(GroupState&);
 
+  void dump() const;
+
 private:
 
   void deploy(GroupState&, std::string const& LibName);
