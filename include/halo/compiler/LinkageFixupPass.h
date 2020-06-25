@@ -33,6 +33,7 @@ public:
         // prepare this function definition for optimization
         Fun.removeFnAttr(llvm::Attribute::NoInline);
         Fun.removeFnAttr(llvm::Attribute::OptimizeNone);
+        Fun.removeFnAttr("xray-instruction-threshold"); // we will not be patching the JIT compiled version.
         Fun.setVisibility(llvm::GlobalValue::DefaultVisibility);
 
         // if it's not the root function (i.e., what will be patched in)

@@ -44,6 +44,8 @@ void AggressiveTuningSection::take_step(GroupState &State) {
         if (!NewBest)
           fatal_error("bakeoff successfully finished but no winner?");
         BestLib = NewBest.getValue();
+
+        Bakery = llvm::None;
         return transitionTo(ActivityState::Paused);
       };
 
@@ -61,6 +63,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
         Versions[BestLib].forceMerge(Versions[Other]);
         Versions.erase(Other);
 
+        Bakery = llvm::None;
         return transitionTo(ActivityState::Paused);
       };
     };
