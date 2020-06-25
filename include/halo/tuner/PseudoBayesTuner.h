@@ -18,6 +18,9 @@ public:
   // obtains a configuration that the tuner believes should be tried next.
   KnobSet getConfig(std::string CurrentLib);
 
+  // in case you need an RNG in a pinch, this one is seeded correctly!
+  std::mt19937_64& getRNG() { return RNG; }
+
 private:
   KnobSet const& BaseKnobs;
   std::unordered_map<std::string, CodeVersion> &Versions;

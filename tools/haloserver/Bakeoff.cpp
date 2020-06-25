@@ -28,8 +28,11 @@ BakeoffParameters::BakeoffParameters(nlohmann::json const& Config) {
 }
 
 Bakeoff::Bakeoff(GroupState &State, TuningSection *TS, BakeoffParameters BP, std::string Current, std::string New)
-    : BP(BP), TS(TS), Deployed(Current), Other(New), Status(Result::InProgress), DeployedSampledSeen(0) {
+    : BP(BP), TS(TS),
+    NEW_LIBNAME(New), Deployed(Current), Other(New),
+    Status(Result::InProgress), DeployedSampledSeen(0) {
 
+  assert(Deployed != Other);
   assert(TS->Versions.find(Current) != TS->Versions.end() && "Current not in version database?");
   assert(TS->Versions.find(New) != TS->Versions.end() && "New not in version database?");
 
@@ -49,7 +52,7 @@ Bakeoff::Bakeoff(GroupState &State, TuningSection *TS, BakeoffParameters BP, std
 }
 
 llvm::Optional<std::string> Bakeoff::getWinner() const {
-  if (Status == Result::Finished)
+  if (Status == Result::NewIsBetter || Status == Result::CurrentIsBetter)
     return Winner;
   return llvm::None;
 }
@@ -103,13 +106,13 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   switch(compare_ttest(DeployedIPC, OtherIPC)) {
     case ComparisonResult::GreaterThan: {
       Winner = Deployed;
-      Status = Result::Finished;
+      Status = (Winner == NEW_LIBNAME ? Result::NewIsBetter : Result::CurrentIsBetter);
     }; break;
 
     case ComparisonResult::LessThan: {
       Winner = Other;
       switchVersions(State);  // switch to better version.
-      Status = Result::Finished;
+      Status = (Winner == NEW_LIBNAME ? Result::NewIsBetter : Result::CurrentIsBetter);
     }; break;
 
     case ComparisonResult::NoAnswer: {
@@ -117,6 +120,11 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
 
       if (Switches >= BP.MAX_SWITCHES) {
         // we give up... don't know which one is better!
+
+        // prefer going back to the original one when timing out.
+        if (Deployed == NEW_LIBNAME)
+          switchVersions(State);
+
         Status = Result::Timeout;
         return Status;
       }

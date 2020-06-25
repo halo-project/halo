@@ -5,15 +5,21 @@
     "group-service-per-second": 10,
     "perf-sample-period": 15485867,
 
-    "cct-ipc-discount": 0.5,
+    "cct-ipc-discount": 0.4,
     "cct-cooldown-discount": 0.3,
     "cct-hotness-ipsample": 1,
     "cct-hotness-recentlyactive": 0.05,
 
-    "bakeoff-switch-rate": 2,
+    "ts-max-dupes-row": 10,
+    "ts-exploit-discount": 0.05,
+    "ts-exploit-max": 200,
+    "ts-exploit-init": 10,
+    "ts-exploit-min": 2,
+
+    "bakeoff-switch-rate": 5,
     "bakeoff-max-switches": 10,
     "bakeoff-confidence": 99,
-    "bakeoff-min-samples": 2,
+    "bakeoff-min-samples": 8,
 
     "pbtuner-top-taken": 5,
     "pbtuner-search-size": 200,

@@ -107,26 +107,35 @@ private:
 
   void transitionTo(ActivityState S);
 
+  // adjusts the Exploit factor based on the result of the bakeoff
+  void adjustAfterBakeoff(Bakeoff::Result);
+
   PseudoBayesTuner PBT;
 
-  static constexpr uint64_t EXPLOIT_FACTOR = 10; // the number of steps we need to exploit to repay our debt
-  static constexpr unsigned MAX_DUPES_IN_ROW = 10; // max duplicate compiles in a row before we give up.
-
-  uint64_t ExploitSteps{1}; // start off with the first step being an exploit.
+  uint64_t ExploitSteps{1}; // the count-down for steps remaining to perform that "exploit"
   size_t SamplesLastTime{0};
   unsigned DuplicateCompilesInARow{0};
 
   // statistics for myself during development!!
   uint64_t Steps{0};
-  uint64_t Experiments{0};
-  uint64_t SuccessfulExperiments{0};
-  uint64_t DuplicateCompiles{0};
+  uint64_t Bakeoffs{0};
+  uint64_t SuccessfulBakeoffs{0};
   uint64_t BakeoffTimeouts{0};
+  uint64_t DuplicateCompiles{0};
 
   BakeoffParameters BP;
   llvm::Optional<Bakeoff> Bakery;
   ActivityState Status{ActivityState::Ready};
   std::string BestLib;
+
+  // for choosing a new code version
+  const unsigned MAX_DUPES_IN_ROW; // max duplicate compiles in a row before we give up.
+
+  // for managing explore-exploit tradeoff
+  const float EXPLOIT_LEARNING_RATE;
+  const float MAX_TGT_FACTOR;
+  const float MIN_TGT_FACTOR;
+  float ExploitFactor; // the number of steps to be taken in the next "exploit" phase
 };
 
 } // end namespace

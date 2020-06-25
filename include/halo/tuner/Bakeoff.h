@@ -28,13 +28,16 @@ public:
   Bakeoff(GroupState &, TuningSection *TS, BakeoffParameters BP, std::string Current, std::string New);
 
   enum class Result {
-    Finished,
-    Timeout,
+    CurrentIsBetter,  // finished
+    NewIsBetter,      // finished
+    Timeout,          // finished (but no winner!)
     InProgress
   };
 
-  // if the bakeoff has finished, then this function declares the winner.
+  // if the bakeoff has finished, then this function returns the winner.
   llvm::Optional<std::string> getWinner() const;
+
+  Result lastResult() const { return Status; }
 
   // returns the name of the library that's currently deployed in this bake-off
   std::string getDeployed() const { return Deployed; }
@@ -66,6 +69,11 @@ private:
 
   BakeoffParameters BP;
   TuningSection *TS;
+
+  // name of the "new" library we're suppose to be testing
+  std::string NEW_LIBNAME;
+
+  // manages the switches between libs
   std::string Deployed;
   std::string Other;
 
