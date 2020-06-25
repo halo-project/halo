@@ -84,6 +84,11 @@ namespace halo {
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
 
+      if (State.Clients.size() == 0) {
+        info("no clients connected");
+        return end_service_iteration();
+      }
+
       // Do we need to create a tuning section?
       if (TS == nullptr) {
 
