@@ -22,6 +22,8 @@ namespace halo {
     std::string forLoop(unsigned i, ty NamedKnob);
     std::string forLoop(unsigned i, std::string const& NamedKnob);
 
+    static const ty MTuneCPU        = {"mtune-cpu",        Knob::KK_Flag};
+    static const ty MAttrCPU        = {"mattr-cpu",        Knob::KK_Flag};
     static const ty IPRA            = {"ipra",             Knob::KK_Flag};
     static const ty FastISel        = {"fast-isel",        Knob::KK_Flag};
     static const ty GlobalISel      = {"global-isel",      Knob::KK_Flag};
@@ -69,6 +71,8 @@ namespace halo {
 
 
     static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
+      MTuneCPU,
+      MAttrCPU,
       IPRA,
       FastISel,
       GlobalISel,

@@ -32,6 +32,14 @@
   },
 
   "knobs": [
+    { "kind": "flag",
+      "name": "mtune-cpu",
+      "default": false
+    },
+    { "kind": "flag",
+      "name": "mattr-cpu",
+      "default": false
+    },
     {
       "kind": "flag",
       "name": "ipra",

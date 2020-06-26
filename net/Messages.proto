@@ -76,7 +76,8 @@ message LibFunctionSymbol {
 message ClientEnroll {
   string process_triple = 1;
   string host_cpu = 2;
-  ModuleInfo module = 3;
+  map<string, bool> cpu_features = 3;
+  ModuleInfo module = 4;
 }
 
 message RawSample {

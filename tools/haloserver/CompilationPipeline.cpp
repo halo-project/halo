@@ -231,13 +231,32 @@ Expected<unsigned>
   return NumLoopIDs;
 }
 
-
+// remove an attribute from all functions in the module
+void removeFunctionAttr(Module &M, llvm::StringRef Attr) {
+  for (auto &F : M.functions())
+    F.removeFnAttr(Attr);
+}
 
 // The complete pipeline
 Expected<CompilationPipeline::compile_result>
   CompilationPipeline::_run(Module &Module, KnobSet const& Knobs) {
 
   llvm::orc::JITTargetMachineBuilder JTMB(Triple);
+
+  Knobs.lookup<FlagKnob>(named_knob::MTuneCPU).applyFlag([&](bool Flag) {
+    if (Flag) {
+      removeFunctionAttr(Module, "target-cpu");
+      JTMB.setCPU(CPUName);
+    }
+  });
+
+  Knobs.lookup<FlagKnob>(named_knob::MAttrCPU).applyFlag([&](bool Flag) {
+    if (Flag) {
+      removeFunctionAttr(Module, "target-features");
+      for (auto &Feature : CPUFeatureMap)
+        JTMB.getFeatures().AddFeature(Feature.first(), Feature.second);
+    }
+  });
 
   JTMB.setCodeGenOptLevel(Knobs.lookup<OptLvlKnob>(named_knob::CodegenLevel).asCodegenLevel());
 

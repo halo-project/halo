@@ -1,6 +1,7 @@
 #pragma once
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/Bitcode/BitcodeReader.h"
 #include "llvm/Bitcode/BitcodeWriter.h"
 #include "llvm/ExecutionEngine/JITSymbol.h"
@@ -33,8 +34,8 @@ namespace halo {
     using compile_expected = llvm::Optional<compile_result>;
 
     CompilationPipeline() {}
-    CompilationPipeline(llvm::Triple Triple, llvm::StringRef CPU)
-      : Triple(Triple), CPUName(CPU) {}
+    CompilationPipeline(llvm::Triple Triple, std::string const& CPU, llvm::StringMap<bool> FeatureMap)
+      : Triple(Triple), CPUName(CPU), CPUFeatureMap(FeatureMap) {}
 
     // This function cleans-up the given module and names the loops in a stable manner.
     // It returns the new bitcode and the number of loop IDs assigned.
@@ -112,6 +113,7 @@ namespace halo {
 
     llvm::Triple const& getTriple() const { return Triple; }
     llvm::StringRef getCPUName() const { return CPUName; }
+    llvm::StringMap<bool> const& getCPUFeatures() const { return CPUFeatureMap; }
 
   private:
     llvm::Expected<unsigned> _cleanup(llvm::Module&, std::string const&, std::unordered_set<std::string> const&);
@@ -122,6 +124,7 @@ namespace halo {
 
     llvm::Triple Triple;
     std::string CPUName;
+    llvm::StringMap<bool> CPUFeatureMap;
   };
 
 } // end namespace halo

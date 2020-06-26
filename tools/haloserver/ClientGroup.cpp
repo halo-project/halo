@@ -147,6 +147,16 @@ bool ClientGroup::tryAdd(ClientSession *CS, std::array<uint8_t, 20> &TheirHash) 
   if (Pipeline.getCPUName() != CE.host_cpu())
     return false;
 
+  // compare CPU Features
+  auto const& TheirFeatures = CE.cpu_features();
+  for (auto const& Entry : Pipeline.getCPUFeatures()) {
+    auto Result = TheirFeatures.find(Entry.getKey().str());
+    if (Result == TheirFeatures.end())
+      return false;
+    if (Result->second != Entry.getValue())
+      return false;
+  }
+
   NumActive++; // do this in the caller's thread eagarly.
   withState([this,CS] (GroupState &State) {
     addSession(CS, State);
@@ -186,14 +196,16 @@ ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS
 
       pb::ClientEnroll &Client = CS->Client;
 
-      // TODO: have client send llvm::sys::getHostCPUFeatures() info so we can
-      // add -mattr flags during compilation.
-
       analyzeBuildFlags(OriginalSettings, Client.module());
+
+      llvm::StringMap<bool> FeatureMap;
+      for (auto const& Entry : Client.cpu_features())
+        FeatureMap[Entry.first] = Entry.second;
 
       Pipeline = CompilationPipeline(
                     llvm::Triple(Client.process_triple()),
-                    Client.host_cpu());
+                    Client.host_cpu(),
+                    FeatureMap);
 
 
       // take ownership of the bitcode, and maintain a MemoryBuffer view of it.
