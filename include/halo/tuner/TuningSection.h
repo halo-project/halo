@@ -41,7 +41,8 @@ class TuningSection {
 public:
 
   enum class Strategy {
-    Aggressive
+    Aggressive,
+    CompileOnce
   };
 
   /// @returns a fresh tuning section that is selected based on the current profiling data.

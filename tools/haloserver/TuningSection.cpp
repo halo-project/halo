@@ -1,4 +1,5 @@
 #include "halo/tuner/TuningSection.h"
+#include "halo/tuner/CompileOnceTuningSection.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/compiler/ReadELF.h"
 #include "halo/tuner/NamedKnobs.h"
@@ -376,6 +377,9 @@ llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(Strategy St
   switch (Strat) {
     case Strategy::Aggressive:
       TS = new AggressiveTuningSection(TSI, PatchableAncestorName);
+      break;
+    case Strategy::CompileOnce:
+      TS = new CompileOnceTuningSection(TSI, PatchableAncestorName);
       break;
   };
 
