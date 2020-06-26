@@ -1,7 +1,7 @@
 /*
 
 RUN: %clang %s -fhalo -lm -o %t
-RUN: %testhalo %server 4 '%t %p/jfk_1963_0626_berliner.wav -o %t.ogg' > /dev/null
+RUN: %testhalo %server 1 '%t %p/jfk_1963_0626_berliner.wav -o %t.ogg' > /dev/null
 
 consider downloading the .WAV file suggested from the link below
 
