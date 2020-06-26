@@ -1,5 +1,7 @@
 #pragma once
 
+#include "llvm/ADT/Optional.h"
+
 // for new PM
 #include "halo/compiler/PrintIRPass.h"
 #include "llvm/Passes/PassBuilder.h"
@@ -35,10 +37,7 @@ namespace halo {
     /// @param Dbg indicates whether you want debugging enabled for the analysis passes.
     SimplePassBuilder(bool Dbg)
     : llvm::PassBuilder(nullptr, llvm::PipelineTuningOptions(), llvm::None, nullptr),
-    LAM(Dbg), FAM(Dbg), CGAM(Dbg), MAM(Dbg) {
-
-      registerAnalyses();
-    }
+    LAM(Dbg), FAM(Dbg), CGAM(Dbg), MAM(Dbg) {}
 
     /// @param Dbg indicates whether you want debugging enabled for the analysis passes.
     SimplePassBuilder(llvm::TargetMachine *TM = nullptr,
@@ -46,28 +45,47 @@ namespace halo {
                       llvm::Optional<llvm::PGOOptions> PGOOpt = llvm::None,
                       bool Dbg = false)
     : llvm::PassBuilder(TM, PTO, PGOOpt, nullptr), LAM(Dbg), FAM(Dbg),
-      CGAM(Dbg), MAM(Dbg) {
+      CGAM(Dbg), MAM(Dbg) {}
 
-        registerAnalyses();
+    llvm::ModuleAnalysisManager& getAnalyses(llvm::Triple givenTriple) {
+      if (!Registered)
+        registerAnalyses(givenTriple);
+
+      // make sure subsequent calls always give the same target triple.
+      assert(TargetTriple.hasValue() && TargetTriple.getValue() == givenTriple);
+
+      return MAM;
     }
-
-    llvm::ModuleAnalysisManager& getAnalyses() { return MAM; }
 
   private:
 
-    void registerAnalyses() {
-      // Register all the things.
+    void registerAnalyses(llvm::Triple givenTriple) {
+      // Register the AA manager first so that our version is the one used.
+      FAM.registerPass([&] { return buildDefaultAAPipeline(); });
+
+      // Register the target library analysis directly and give it a customized
+      // preset TLI.
+      TLII = std::make_unique<llvm::TargetLibraryInfoImpl>(givenTriple);
+      FAM.registerPass([&] { return llvm::TargetLibraryAnalysis(*TLII); });
+
+      // Register all the basic analyses with the managers.
       registerModuleAnalyses(MAM);
       registerCGSCCAnalyses(CGAM);
       registerFunctionAnalyses(FAM);
       registerLoopAnalyses(LAM);
       crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+      Registered = true;
+      TargetTriple = givenTriple;
     }
 
     llvm::LoopAnalysisManager LAM;
     llvm::FunctionAnalysisManager FAM;
     llvm::CGSCCAnalysisManager CGAM;
     llvm::ModuleAnalysisManager MAM;
+    std::unique_ptr<llvm::TargetLibraryInfoImpl> TLII;
+    bool Registered{false};
+    llvm::Optional<llvm::Triple> TargetTriple;
   };
 
 

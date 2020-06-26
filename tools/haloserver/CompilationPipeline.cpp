@@ -113,7 +113,7 @@ Error doCleanup(Module &Module, std::string const& RootFunc, std::unordered_set<
         createFunctionToLoopPassAdaptor(
           LoopNamerPass(NumLoopIDs))));
 
-  MPM.run(Module, PB.getAnalyses());
+  MPM.run(Module, PB.getAnalyses(Triple(Module.getTargetTriple())));
 
   return Error::success();
 }
@@ -131,7 +131,7 @@ Error annotateLoops(Module &Module, KnobSet const& Knobs) {
         createFunctionToLoopPassAdaptor(
           LoopAnnotatorPass(Knobs))));
 
-  MPM.run(Module, PB.getAnalyses());
+  MPM.run(Module, PB.getAnalyses(Triple(Module.getTargetTriple())));
 
   return Error::success();
 }
@@ -143,10 +143,12 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
 
   // these options are tuned per-loop, so we need to tell the optimizer that
   // it should always consider it, unless we say otherwise for a particular loop.
-  // FIXME: is this right? should this be tuned?
-  // PTO.LoopInterleaving = true;
-  // PTO.LoopVectorization = true;
-  // PTO.LoopUnrolling = true;
+
+  // TODO: should these be tuned?
+  PTO.LoopUnrolling = true;
+  PTO.LoopInterleaving = true;
+  PTO.LoopVectorization = true;
+
 
   // TODO: expose more tuning options in LLVM through the PTO struct. There's a lot
   // being left on the table.
@@ -201,7 +203,7 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   }
 
   spb::addPrintPass(Pr, MPM, "after optimization pipeline.");
-  MPM.run(Module, PB.getAnalyses());
+  MPM.run(Module, PB.getAnalyses(Triple(Module.getTargetTriple())));
 
   return Error::success();
 }
@@ -214,7 +216,7 @@ Error finalize(Module &Module) {
 
   spb::withPrintAfter(Pr, MPM, ExposeSymbolTablePass());
 
-  MPM.run(Module, PB.getAnalyses());
+  MPM.run(Module, PB.getAnalyses(Triple(Module.getTargetTriple())));
 
   return Error::success();
 }
@@ -335,9 +337,11 @@ void CompilationPipeline::analyzeForProfiling(Profiler &Profile, llvm::MemoryBuf
   // Populate the profiler with static program information.
   SimplePassBuilder PB;
   ModulePassManager MPM;
+  llvm::Triple TheTriple(Twine(Module->getTargetTriple()));
 
   MPM.addPass(ProgramInfoPass(Profile));
-  MPM.run(*Module, PB.getAnalyses());
+
+  MPM.run(*Module, PB.getAnalyses(TheTriple));
 }
 
 } // end namespace

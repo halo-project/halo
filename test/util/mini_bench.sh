@@ -53,13 +53,14 @@ declare -a BENCHMARKS=(
 )
 
 declare -a AOT_OPTS=(
+  "-O0"
   "-O1"
   "-O2"
-  "-O3"
+  # "-O3"
 )
 
 declare -a OPTIONS=(
-  "none"
+  "none -fexperimental-new-pass-manager"
   "-fhalo"
   "withserver -fhalo"
 )
