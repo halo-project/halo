@@ -113,13 +113,19 @@ public:
       Knob const* Knob = Entry.second.get();
 
       if (IntKnob const* IK = llvm::dyn_cast<IntKnob>(Knob)) {
-        *cell = static_cast<FloatTy>(IK->getVal()); // NOTE: we're using the *non-scaled* value! this reduces the space of values.
+        IK->applyVal([&](int Val) {
+          *cell = static_cast<FloatTy>(Val); // NOTE: we're using the *non-scaled* value! this reduces the space of values.
+        });
 
       } else if (FlagKnob const* FK = llvm::dyn_cast<FlagKnob>(Knob)) {
-        *cell = static_cast<FloatTy>(FK->getVal());
+        FK->applyVal([&](int Val) {
+          *cell = static_cast<FloatTy>(Val);
+        });
 
       } else if (OptLvlKnob const* OK = llvm::dyn_cast<OptLvlKnob>(Knob)) {
-        *cell = static_cast<FloatTy>(OptLvlKnob::asInt(OK->getVal()));
+        OK->applyVal([&](OptLvlKnob::LevelTy Val) {
+          *cell = static_cast<FloatTy>(OptLvlKnob::asInt(Val));
+        });
 
       } else {
         fatal_error("non-exhaustive match failure in ConfigMatrix when flattening a config");

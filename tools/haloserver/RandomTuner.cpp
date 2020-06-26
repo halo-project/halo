@@ -12,13 +12,26 @@ KnobSet randomFrom(KnobSet &&New, RNE &Eng) {
   for (auto &Entry : New) {
     auto Ptr = Entry.second.get();
 
-    if (IntKnob *IK = llvm::dyn_cast<IntKnob>(Ptr)) {
-      std::uniform_int_distribution<> dist(IK->getMin(), IK->getMax());
-      IK->setVal(dist(Eng));
+    ScalarKnob<int> *SK = nullptr;
 
-    } else if (FlagKnob *FK = llvm::dyn_cast<FlagKnob>(Ptr)) {
-      std::uniform_int_distribution<> dist(FK->getMin(), FK->getMax());
-      FK->setVal(dist(Eng));
+    if (SK == nullptr)
+      SK = llvm::dyn_cast<IntKnob>(Ptr);
+
+    if (SK == nullptr)
+      SK = llvm::dyn_cast<FlagKnob>(Ptr);
+
+    if (SK) {
+      const int NONE = SK->getMin()-1; // representation of llvm::None;
+
+      std::uniform_int_distribution<int> dist(NONE, SK->getMax());
+
+      llvm::Optional<int> NewVal;
+      int RandInt = dist(Eng);
+
+      if (RandInt != NONE)
+        NewVal = RandInt;
+
+      SK->setVal(NewVal);
 
     } else if (OptLvlKnob *OK = llvm::dyn_cast<OptLvlKnob>(Ptr)) {
       unsigned Min = OptLvlKnob::asInt(OK->getMin());
@@ -75,17 +88,38 @@ KnobSet nearby(KnobSet &&New, RNE &Eng, float energy) {
   for (auto &Entry : New) {
     auto Ptr = Entry.second.get();
 
-    if (IntKnob *IK = llvm::dyn_cast<IntKnob>(Ptr)) {
-      // NOTE: not using scaled val, since the scaled space is sparse and doesn't make sense to pick values from!
-      IK->setVal(nearbyInt<RNE>(Eng, IK->getVal(), IK->getMin(), IK->getMax(), energy));
+    ScalarKnob<int> *SK = nullptr;
 
-    } else if (FlagKnob *FK = llvm::dyn_cast<FlagKnob>(Ptr)) {
-      FK->setVal(nearbyInt<RNE>(Eng, FK->getVal(), FK->getMin(), FK->getMax(), energy));
+    if (SK == nullptr)
+      SK = llvm::dyn_cast<IntKnob>(Ptr);
+
+    if (SK == nullptr)
+      SK = llvm::dyn_cast<FlagKnob>(Ptr);
+
+    if (SK) {
+      // NOTE: not using scaled val, since the scaled space is sparse and doesn't make sense to pick values from!
+      const int NONE = SK->getMin()-1; // representation of llvm::None;
+
+      int CurrentVal = NONE;
+      SK->applyVal(CurrentVal);
+
+      llvm::Optional<int> NewVal;
+      int Nearby = nearbyInt<RNE>(Eng, CurrentVal, NONE, SK->getMax(), energy);
+
+      if (Nearby != NONE)
+        NewVal = Nearby;
+
+      SK->setVal(NewVal);
 
     } else if (OptLvlKnob *OK = llvm::dyn_cast<OptLvlKnob>(Ptr)) {
       unsigned Min = OptLvlKnob::asInt(OK->getMin());
       unsigned Max = OptLvlKnob::asInt(OK->getMax());
-      unsigned Cur = OptLvlKnob::asInt(OK->getVal());
+
+      assert(OK->hasVal());
+      unsigned Cur;
+      OK->applyVal([&](OptLvlKnob::LevelTy Lvl) {
+        Cur = OptLvlKnob::asInt(Lvl);
+      });
 
       unsigned NearbyLevel = nearbyInt<RNE>(Eng, Cur, Min, Max, energy);
 

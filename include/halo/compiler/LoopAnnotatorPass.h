@@ -34,7 +34,10 @@ namespace halo {
       llvm::IntegerType* i1 = llvm::IntegerType::get(C, 1);
 
       assert(FlagKnob::TRUE == 1 && FlagKnob::FALSE == 0 && "assumption of code below violated.");
-      return updateLMD(LMD, OptName, mkMDInt(i1, FK.getVal()));
+      assert(FK.hasVal());
+      uint64_t AsInt;
+      FK.applyVal([&](int RawVal) { AsInt = RawVal; });
+      return updateLMD(LMD, OptName, mkMDInt(i1, AsInt));
     }
 
   public:
@@ -67,9 +70,10 @@ namespace halo {
             } break;
 
             case Knob::KK_Int: {
-              auto const& IK = Knobs.lookup<IntKnob>(named_knob::forLoop(ID, Option));
-
-              LMD = updateLMD(LMD, Option.first, mkMDInt(i32, IK.getScaledVal()));
+              Knobs.lookup<IntKnob>(named_knob::forLoop(ID, Option)).applyScaledVal(
+                [&](int ScaledVal) {
+                  LMD = updateLMD(LMD, Option.first, mkMDInt(i32, ScaledVal));
+                });
 
             } break;
 

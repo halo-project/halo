@@ -159,25 +159,14 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   /// are not currently set. If you end up using / not deleting optsize & minsize attributes
   /// then they may be worth using, though they will have an affect on optimizations other than inlining.
   InlineParams IP;
-  IP.DefaultThreshold =
-    Knobs.lookup<IntKnob>(named_knob::InlineThreshold).getScaledVal();
+  Knobs.lookup<IntKnob>(named_knob::InlineThreshold).applyScaledVal(IP.DefaultThreshold);
+  Knobs.lookup<IntKnob>(named_knob::InlineThresholdHint).applyScaledVal(IP.HintThreshold);
+  Knobs.lookup<IntKnob>(named_knob::InlineThresholdCold).applyScaledVal(IP.ColdThreshold);
+  Knobs.lookup<IntKnob>(named_knob::InlineThresholdHotSite).applyScaledVal(IP.HotCallSiteThreshold);
+  Knobs.lookup<IntKnob>(named_knob::InlineThresholdLocalHotSite).applyScaledVal(IP.LocallyHotCallSiteThreshold);
+  Knobs.lookup<IntKnob>(named_knob::InlineThresholdColdSite).applyScaledVal(IP.ColdCallSiteThreshold);
 
-  IP.HintThreshold =
-    Knobs.lookup<IntKnob>(named_knob::InlineThresholdHint).getScaledVal();
-
-  IP.ColdThreshold =
-    Knobs.lookup<IntKnob>(named_knob::InlineThresholdCold).getScaledVal();
-
-  IP.HotCallSiteThreshold =
-    Knobs.lookup<IntKnob>(named_knob::InlineThresholdHotSite).getScaledVal();
-
-  IP.LocallyHotCallSiteThreshold =
-    Knobs.lookup<IntKnob>(named_knob::InlineThresholdLocalHotSite).getScaledVal();
-
-  IP.ColdCallSiteThreshold =
-    Knobs.lookup<IntKnob>(named_knob::InlineThresholdColdSite).getScaledVal();
-
-  /// NOTE: It may not even bet worthwhile to tune this? I believe it is just pessimistically
+  /// NOTE: It may not even be worthwhile to tune this? I believe it is just pessimistically
   /// stopping the cost estimation before it's been fully computed to limit compile time.
   /// Since the cost analysis essentially simulates what the resulting function will look like
   /// after inlining + simplification.
@@ -190,7 +179,9 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   // PGOOptions PGO; // TODO: would maybe want to use this later.
   SimplePassBuilder PB(&TM, PTO);
 
-  auto OptLevel = Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel).getVal();
+
+  PassBuilder::OptimizationLevel OptLevel;
+  Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel).applyVal(OptLevel);
 
   ModulePassManager MPM;
   if (OptLevel != PassBuilder::OptimizationLevel::O0) {

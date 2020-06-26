@@ -69,7 +69,7 @@ namespace halo {
     if (TotalSamples < 100)
       return false; // not enough samples to create a TS
 
-    auto MaybeTS = TuningSection::Create(TuningSection::Strategy::CompileOnce,
+    auto MaybeTS = TuningSection::Create(TuningSection::Strategy::Aggressive,
                         {Config, Pool, Pipeline, Profile, *Bitcode, OriginalSettings});
     if (!MaybeTS)
       return false; // no suitable tuning section... nothing to do

@@ -12,6 +12,7 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CodeGen.h"
 #include "llvm/Passes/PassBuilder.h"
+#include "llvm/ADT/Optional.h"
 
 #include "Logging.h"
 
@@ -73,16 +74,16 @@ namespace halo {
   class ScalarKnob : public Knob {
   protected:
     std::string Name;
-    ValTy Current;
-    ValTy Default;
+    llvm::Optional<ValTy> Current;
     ValTy Min;
     ValTy Max;
   public:
-    ScalarKnob(KnobKind kind, std::string const& name, ValTy current, ValTy dflt, ValTy min, ValTy max)
+    ScalarKnob(KnobKind kind, std::string const& name, llvm::Optional<ValTy> current, ValTy min, ValTy max)
         : Knob(kind), Name(name),
-          Current(current), Default(dflt), Min(min), Max(max) {
-            if (!(Min <= Default && Default <= Max))
-              llvm::report_fatal_error("ScalarKnob Ctor -- contract that min <= default <= max violated.");
+          Current(current), Min(min), Max(max) {
+            if (Current.hasValue())
+              if (!(Min <= Current.getValue() && Current.getValue() <= Max))
+                fatal_error("ScalarKnob Ctor -- contract that min <= default <= max violated.");
           }
 
     virtual ~ScalarKnob() = default;
@@ -91,19 +92,27 @@ namespace halo {
       return Name;
     }
 
-    // value accessors
-    virtual ValTy getVal() const { return Current; }
-    virtual void setVal(ValTy NewV) { Current = NewV; }
+    // main value accessor. assignment only occurs if the knob is set.
+    template <typename ValTyAssignable>
+    void applyVal(ValTyAssignable& Out) const {
+      if (hasVal())
+        Out = Current.getValue();
+    }
 
-    virtual ValTy getDefault() const { return Default; }
-    virtual void setDefault(ValTy NewD) { Default = NewD; }
+    // alternate accessor. provided func is applied to the value if the knob is set.
+    void applyVal(std::function<void(ValTy)> AssignAction) const {
+      if (hasVal())
+        AssignAction(Current.getValue());
+    }
+
+    // assign or clear the current setting of this knob.
+    void setVal(llvm::Optional<ValTy> NewV) { Current = NewV; }
+
+    bool hasVal() const { return Current.hasValue(); }
 
     // inclusive ranges
-    virtual ValTy getMin() const { return Min; }
-    virtual void setMin(ValTy NewMin) { Min = NewMin; }
-
-    virtual ValTy getMax() const { return Max; }
-    virtual void setMax(ValTy NewMax) { Max = NewMax; }
+    ValTy getMin() const { return Min; }
+    ValTy getMax() const { return Max; }
 
   }; // end class ScalarKnob
 
@@ -111,65 +120,57 @@ namespace halo {
   // a boolean-like scalar range, which can also be neither true or false
   // depending on the constructor.
   class FlagKnob : public ScalarKnob<int> {
+  private:
+    bool hadDefault; // cruft for loop knobs, sadly.
   public:
     static constexpr int TRUE = 1;
     static constexpr int FALSE = 0;
-    static constexpr int NEITHER = -1;
 
     virtual ~FlagKnob() = default;
 
     FlagKnob(std::string const& Name)
       : ScalarKnob<int>(KK_Flag, Name,
-                        NEITHER, // current
-                        NEITHER, // default
-                        NEITHER /*min*/,  TRUE /*max*/) {}
+                        llvm::None, // current
+                        FALSE /*min*/,  TRUE /*max*/), hadDefault(false) {}
 
     FlagKnob(std::string const& Name, bool dflt)
       : ScalarKnob<int>(KK_Flag, Name,
                         dflt ? TRUE : FALSE, // current
-                        dflt ? TRUE : FALSE, // default
-                        FALSE /*min*/,  TRUE /*max*/) {}
-
-    /// Returns true ONLY IF this flag is set to TRUE.
-    /// Remember that flags can be neither true nor false.
-    bool isTrue() const {
-      return getVal() == TRUE;
-    }
-
-    // Returns true if the flag is NEITHER true nor false.
-    bool isNeither() const {
-      return getVal() == NEITHER;
-    }
-
-    // Returns true if the flag can only take on two values, true or false.
-    bool twoValued() const { return ((getMax() - getMin()) + 1) == 2; }
+                        FALSE /*min*/,  TRUE /*max*/), hadDefault(true) {}
 
     // Performs an assignment to the reference passed in, only if the
     // flag is either true or false. No assignment occurs if the flag is 'neither'.
     template <typename BoolAssignable>
     void applyFlag(BoolAssignable &Option) const {
-      if (!isNeither())
-        Option = isTrue();
+      applyFlag([&](bool Val) {
+        Option = Val;
+      });
     }
 
     // fun fact: this version exists b/c you can't pass a reference to a bit field.
-    void applyFlag(std::function<void(bool)> &&AssignAction) {
-      if (!isNeither())
-        AssignAction(isTrue());
+    void applyFlag(std::function<void(bool)> &&AssignAction) const {
+      applyVal([&](int Val) {
+        AssignAction(Val == TRUE);
+      });
     }
+
+    bool twoValued() const { return hadDefault; }
+    bool isTrue() const { return Current.getValueOr(FALSE) == TRUE; }
+    bool isNeither() const { return !hasVal(); }
 
     static bool classof(const Knob *K) {
       return K->getKind() == KK_Flag;
     }
 
     std::string dump() const override {
-      auto Val = getVal();
-      if (Val == TRUE)
-        return "true";
-      else if (Val == FALSE)
-        return "false";
-      else
-        return "neither";
+      std::string AsStr = "none";
+      applyFlag([&](bool Flag) {
+        if (Flag)
+          AsStr = "true";
+        else
+          AsStr = "false";
+      });
+      return AsStr;
     }
 
   }; // end class FlagKnob
@@ -178,16 +179,20 @@ namespace halo {
   public:
     using LevelTy = llvm::PassBuilder::OptimizationLevel;
     OptLvlKnob(std::string const& Name, std::string const& current,
-               std::string const& dflt, std::string const& min, std::string const& max)
+               std::string const& min, std::string const& max)
       : ScalarKnob<LevelTy>(KK_OptLvl, Name,
-          parseLevel(current), parseLevel(dflt), parseLevel(min), parseLevel(max)) {}
+          parseLevel(current), parseLevel(min), parseLevel(max)) {}
 
     std::string dump() const override {
-      return std::to_string(OptLvlKnob::asInt(getVal()));
+      LevelTy Val;
+      applyVal(Val);
+      return std::to_string(OptLvlKnob::asInt(Val));
     }
 
     llvm::CodeGenOpt::Level asCodegenLevel() const {
-      switch(asInt(getVal())) {
+      LevelTy Val;
+      applyVal(Val);
+      switch(asInt(Val)) {
         case 0: return llvm::CodeGenOpt::None;
         case 1: return llvm::CodeGenOpt::Less;
         case 2: return llvm::CodeGenOpt::Default;
@@ -263,33 +268,45 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
       Hundredth   // the knob's values are 1/100 the actual values
     };
 
-    IntKnob(std::string const& Name, int current, int dflt, int min, int max, Scale scale) :
-      ScalarKnob<int>(KK_Int, Name, current, dflt, min, max), ScaleKind(scale) {}
+    IntKnob(std::string const& Name, llvm::Optional<int> current, int min, int max, Scale scale) :
+      ScalarKnob<int>(KK_Int, Name, current, min, max), ScaleKind(scale) {}
 
-    // Returns the "actual" value that this knob represents,
+    // Accesses the "actual" value that this knob represents,
     // accounting for any scaling.
-    int getScaledVal() const {
-      auto Val = getVal();
+    void applyScaledVal(std::function<void(int)> &&AssignTo) const {
+      applyVal([&](int Val) {
+        if (ScaleKind == Scale::Log) {
 
-      if (ScaleKind == Scale::Log) {
-        if (Val < 0)
-          return 0;   // [-inf, -1] --> 0
-        else
-          return std::pow(2, Val);  // [0, inf] --> 2^(val)
+          if (Val < 0)
+            AssignTo(0);   // [-inf, -1] --> 0
+          else
+            AssignTo(std::pow(2, Val));  // [0, inf] --> 2^(val)
 
-      } else if (ScaleKind == Scale::Half) {
-        return 2 * Val;
+        } else if (ScaleKind == Scale::Half) {
+          AssignTo(2 * Val);
 
-      } else if (ScaleKind == Scale::Hundredth) {
-        return 100 * Val;
-      }
+        } else if (ScaleKind == Scale::Hundredth) {
+          AssignTo(100 * Val);
 
-      assert(ScaleKind == Scale::None);
-      return Val;
+        } else {
+          assert(ScaleKind == Scale::None);
+          AssignTo(Val);
+        }
+      });
+    }
+
+    template <typename IntAssignable>
+    void applyScaledVal(IntAssignable &Out) const {
+      applyScaledVal([&](int Ans){ Out = Ans; });
     }
 
     std::string dump() const override {
-      return std::to_string(getScaledVal());
+      if (!hasVal())
+        return "none";
+
+      int ScaledVal;
+      applyScaledVal(ScaledVal);
+      return std::to_string(ScaledVal);
     }
 
     static bool classof(const Knob *K) {

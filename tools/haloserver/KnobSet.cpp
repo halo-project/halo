@@ -85,9 +85,18 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
 
   } else if (Kind == "int") {
     auto Name = checkedName(Spec, Knob::KK_Int, LoopID);
-    auto Default = config::getValue<int>("default", Spec, Name);
     auto Min = config::getValue<int>("min", Spec, Name);
     auto Max = config::getValue<int>("max", Spec, Name);
+    std::string default_field = "default";
+    llvm::Optional<int> Default;
+
+    if (!config::contains(default_field, Spec))
+      config::parseError("int knob " + Name
+                          + " is missing a '" + default_field
+                          + "' key (you can map it to val 'null')");
+
+    if (!Spec[default_field].is_null())
+      Default = config::getValue<int>(default_field, Spec, Name);
 
     // interpret the required scale field
     auto ScaleName = config::getValue<std::string>("scale", Spec, Name);
@@ -104,7 +113,7 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
       config::parseError("int knob " + Name + " has invalid 'scale' argument " + ScaleName);
     }
 
-    Knobs.insert(std::make_unique<IntKnob>(Name, Default, Default, Min, Max, Scale));
+    Knobs.insert(std::make_unique<IntKnob>(Name, Default, Min, Max, Scale));
 
   } else if (Kind == "optlvl") {
     auto Name = checkedName(Spec, Knob::KK_OptLvl, LoopID);
@@ -112,7 +121,7 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
     auto Min = config::getValue<std::string>("min", Spec, Name);
     auto Max = config::getValue<std::string>("max", Spec, Name);
 
-    Knobs.insert(std::make_unique<OptLvlKnob>(Name, Default, Default, Min, Max));
+    Knobs.insert(std::make_unique<OptLvlKnob>(Name, Default, Min, Max));
 
   } else {
     config::parseError("unkown knob kind: " + Kind);
