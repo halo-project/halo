@@ -33,11 +33,7 @@
 
   "knobs": [
     { "kind": "flag",
-      "name": "mtune-cpu",
-      "default": false
-    },
-    { "kind": "flag",
-      "name": "mattr-cpu",
+      "name": "native-cpu",
       "default": false
     },
     {

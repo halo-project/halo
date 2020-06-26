@@ -231,30 +231,51 @@ Expected<unsigned>
   return NumLoopIDs;
 }
 
-// remove an attribute from all functions in the module
-void removeFunctionAttr(Module &M, llvm::StringRef Attr) {
-  for (auto &F : M.functions())
-    F.removeFnAttr(Attr);
+// based on llvm::codegen::setFunctionAttributes, but we override target-cpu attributes.
+void overrideFunctionAttributes(StringRef CPU, StringRef Features, Module &Module) {
+  for (Function &F : Module) {
+    auto &Ctx = F.getContext();
+    AttributeList Attrs = F.getAttributes();
+    AttrBuilder NewAttrs;
+
+    if (!CPU.empty())
+      NewAttrs.addAttribute("target-cpu", CPU);
+
+    if (!Features.empty()) {
+      // Append the command line features to any that are already on the function.
+      StringRef OldFeatures = F.getFnAttribute("target-features").getValueAsString();
+
+      if (OldFeatures.empty()) {
+        NewAttrs.addAttribute("target-features", Features);
+
+      } else {
+        SmallString<256> Appended(OldFeatures);
+        Appended.push_back(',');
+        Appended.append(Features);
+        NewAttrs.addAttribute("target-features", Appended);
+      }
+    }
+
+    // Let NewAttrs override Attrs.
+    F.setAttributes(
+        Attrs.addAttributes(Ctx, AttributeList::FunctionIndex, NewAttrs));
+  }
 }
 
 // The complete pipeline
 Expected<CompilationPipeline::compile_result>
   CompilationPipeline::_run(Module &Module, KnobSet const& Knobs) {
 
-  llvm::orc::JITTargetMachineBuilder JTMB(Triple);
+  orc::JITTargetMachineBuilder JTMB(Triple);
 
-  Knobs.lookup<FlagKnob>(named_knob::MTuneCPU).applyFlag([&](bool Flag) {
+  Knobs.lookup<FlagKnob>(named_knob::NativeCPU).applyFlag([&](bool Flag) {
     if (Flag) {
-      removeFunctionAttr(Module, "target-cpu");
-      JTMB.setCPU(CPUName);
-    }
-  });
+      JTMB.setCPU(getCPUName().str());
+      SubtargetFeatures &Features = JTMB.getFeatures();
+      for (auto &F : getCPUFeatures())
+        Features.AddFeature(F.first(), F.second);
 
-  Knobs.lookup<FlagKnob>(named_knob::MAttrCPU).applyFlag([&](bool Flag) {
-    if (Flag) {
-      removeFunctionAttr(Module, "target-features");
-      for (auto &Feature : CPUFeatureMap)
-        JTMB.getFeatures().AddFeature(Feature.first(), Feature.second);
+      overrideFunctionAttributes(getCPUName(), Features.getString(), Module);
     }
   });
 
