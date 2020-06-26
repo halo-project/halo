@@ -82,6 +82,10 @@ namespace halo {
     void setNumLoops(unsigned Sz) { NumLoopIDs = Sz; }
     unsigned getNumLoops() const { return NumLoopIDs; }
 
+    // all knobs will be set to 'none',
+    // for those that support it.
+    void unsetAll();
+
 
     auto begin() noexcept { return Knobs.begin(); }
     auto begin() const noexcept { return Knobs.cbegin(); }

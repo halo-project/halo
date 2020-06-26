@@ -189,16 +189,16 @@ namespace halo {
       return std::to_string(OptLvlKnob::asInt(Val));
     }
 
-    llvm::CodeGenOpt::Level asCodegenLevel() const {
-      LevelTy Val;
-      applyVal(Val);
-      switch(asInt(Val)) {
-        case 0: return llvm::CodeGenOpt::None;
-        case 1: return llvm::CodeGenOpt::Less;
-        case 2: return llvm::CodeGenOpt::Default;
-        case 3: return llvm::CodeGenOpt::Aggressive;
-        default: fatal_error("impossible level");
-      };
+    void applyCodegenLevel(llvm::CodeGenOpt::Level &Out) const {
+      applyVal([&](LevelTy Lvl) {
+        switch(asInt(Lvl)) {
+          case 0: Out = llvm::CodeGenOpt::None; break;
+          case 1: Out = llvm::CodeGenOpt::Less; break;
+          case 2: Out = llvm::CodeGenOpt::Default; break;
+          case 3: Out = llvm::CodeGenOpt::Aggressive; break;
+          default: fatal_error("impossible level");
+        };
+      });
     }
 
     static LevelTy parseLevel(std::string const& Level) {

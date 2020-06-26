@@ -180,7 +180,8 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   SimplePassBuilder PB(&TM, PTO);
 
 
-  PassBuilder::OptimizationLevel OptLevel;
+  // always at least O2
+  PassBuilder::OptimizationLevel OptLevel = PassBuilder::OptimizationLevel::O2;
   Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel).applyVal(OptLevel);
 
   ModulePassManager MPM;
@@ -272,7 +273,9 @@ Expected<CompilationPipeline::compile_result>
     }
   });
 
-  JTMB.setCodeGenOptLevel(Knobs.lookup<OptLvlKnob>(named_knob::CodegenLevel).asCodegenLevel());
+  CodeGenOpt::Level CodeGenLevel = CodeGenOpt::Default;
+  Knobs.lookup<OptLvlKnob>(named_knob::CodegenLevel).applyCodegenLevel(CodeGenLevel);
+  JTMB.setCodeGenOptLevel(CodeGenLevel);
 
   auto MaybeTM = JTMB.createTargetMachine();
   if (!MaybeTM)

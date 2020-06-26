@@ -10,6 +10,7 @@ namespace halo {
       // TODO: this would be better if it were just a knob set with one knob in it, and the pipeline
       // skips settings for which there is a missing knob!
       KnobSet Config(BaseKnobs);
+      Config.unsetAll();
 
       auto FixedOptLevel = llvm::PassBuilder::OptimizationLevel::O3;
       auto &OK = Config.lookup<OptLvlKnob>(named_knob::OptimizeLevel);

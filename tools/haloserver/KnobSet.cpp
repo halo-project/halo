@@ -37,6 +37,24 @@ size_t KnobSet::size() const {
    return Knobs.size();
  }
 
+void KnobSet::unsetAll() {
+  for (auto &Entry : Knobs) {
+    Knob *Ptr = Entry.second.get();
+
+    if (IntKnob* K = llvm::dyn_cast<IntKnob>(Ptr))
+      K->setVal(llvm::None);
+
+    else if (FlagKnob* K = llvm::dyn_cast<FlagKnob>(Ptr))
+      K->setVal(llvm::None);
+
+    else if (OptLvlKnob* K = llvm::dyn_cast<OptLvlKnob>(Ptr))
+      K->setVal(llvm::None);
+
+    else
+      fatal_error("KnobSet::unsetAll -- unknown knob kind encountered");
+  }
+}
+
 
 ////////////////////////////
 // Knob spec parsing (from JSON) is below
