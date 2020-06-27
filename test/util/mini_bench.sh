@@ -108,7 +108,7 @@ for PROG in "${BENCHMARKS[@]}"; do
 
       COMPILE_FLAGS=${FLAGS//withserver/}       # remove 'withserver' from flags
       COMPILE_FLAGS=${COMPILE_FLAGS//none/}     # remove 'none' from flags
-      COMPILE_FLAGS=$(echo "$COMPILE_FLAGS" | cut -d ";" 1)  # take the first field, (separated by ;)
+      COMPILE_FLAGS=$(echo "$COMPILE_FLAGS" | cut -d ";" -f 1)  # take the first field, (separated by ;)
       COMPILE_FLAGS="$COMPILE_FLAGS $AOT_OPT"   # add aot opt
 
       # compile!
