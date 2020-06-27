@@ -15,9 +15,9 @@ def cleanup_aot_opt(opt):
   return opt
 
 def cleanup_flags(flag):
-  flag = re.sub(r'withserver -fhalo', 'halo', flag)
-  flag = re.sub(r'-fhalo', 'no-server', flag)
-  flag = re.sub(r'none', 'default', flag)
+  flag = re.sub(r'withserver *-fhalo *; *--strategy=', '', flag)
+  flag = re.sub(r' *-fhalo *', 'no-server', flag)
+  flag = re.sub(r'.*none.*', 'default', flag)
   return flag
 
 
