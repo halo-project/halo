@@ -158,7 +158,9 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   /// NOTE: IP.OptSizeThreshold and IP.OptMinSizeThreshold
   /// are not currently set. If you end up using / not deleting optsize & minsize attributes
   /// then they may be worth using, though they will have an affect on optimizations other than inlining.
-  InlineParams IP;
+
+  InlineParams IP = llvm::getInlineParams(llvm::InlineConstants::OptAggressiveThreshold);
+
   Knobs.lookup<IntKnob>(named_knob::InlineThreshold).applyScaledVal(IP.DefaultThreshold);
   Knobs.lookup<IntKnob>(named_knob::InlineThresholdHint).applyScaledVal(IP.HintThreshold);
   Knobs.lookup<IntKnob>(named_knob::InlineThresholdCold).applyScaledVal(IP.ColdThreshold);
