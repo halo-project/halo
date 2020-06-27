@@ -1,6 +1,7 @@
 #pragma once
 
 #include "boost/graph/adjacency_list.hpp"
+#include "llvm/ADT/Optional.h"
 #include <set>
 
 namespace halo {
@@ -18,6 +19,23 @@ struct CGVertex {
 bool operator==(CGVertex const& A, CGVertex const& B);
 bool operator<(CGVertex const& A, CGVertex const& B);
 
+// Metadata about an edge between functions F --> G.
+// We record information about the types of callsites in F that refer to G.
+struct CGEdge {
+  size_t LoopBodyCallsites = 0;
+  size_t OtherCallsites = 0;
+
+  size_t totalCallsites() const { return LoopBodyCallsites + OtherCallsites; }
+
+  void addCallsite(bool WithinLoopBody) {
+    if (WithinLoopBody)
+      LoopBodyCallsites += 1;
+    else
+      OtherCallsites += 1;
+  }
+
+};
+
 /// A simple static call graph, which is a
 /// directed graph where an edge A->B represents
 /// the fact that A could call B.
@@ -27,7 +45,7 @@ bool operator<(CGVertex const& A, CGVertex const& B);
 class CallGraph {
 public:
   using Vertex = CGVertex;
-  using Edge = size_t;
+  using Edge = CGEdge;
   using Graph = boost::adjacency_list<
                   boost::vecS, boost::vecS, boost::bidirectionalS,
                   Vertex, Edge>;
@@ -45,11 +63,16 @@ public:
 
   // Records the existence of a call-site
   // within the function Src that calls Tgt.
-  void addCall(Vertex Src, Vertex Tgt);
+  // The bool indicates whether the call-site is within a loop
+  // of Src.
+  void addCall(Vertex Src, Vertex Tgt, bool WithinLoopBody);
 
   /// query the call graph for the existence of an edge.
   /// @return true iff Src exists and contains a call-site to Tgt.
   bool hasCall(Vertex Src, Vertex Tgt) const;
+
+  // returns a copy of the Edge information, if such an edge exists.
+  llvm::Optional<Edge> getCallEdge(Vertex Src, Vertex Tgt) const;
 
   // query the call graph to see if this function could call either:
   //  1. the unknown function, i.e., a non-analyzable callee.

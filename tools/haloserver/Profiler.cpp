@@ -81,18 +81,29 @@ llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {
   //
 llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode HotVID) {
   const double MINIMUM_ROOT_HOTNESS = 2.0;
-  const double MINIMUM_PARENT_HOTNESS = MINIMUM_ROOT_HOTNESS / 4;
+  const double MINIMUM_PARENT_HOTNESS = MINIMUM_ROOT_HOTNESS / 2;
   llvm::Optional<std::string> Suitable;
   llvm::Optional<CCTNode> CandidateID;
 
-  auto SuitableTuningRoot = [&](VertexInfo const& VI) {
+  auto SuitableTuningRoot = [&](VertexInfo const& VI) -> bool {
     bool Patchable = VI.isPatchable();
     float Hotness = VI.getHotness(llvm::None);
-    clogs() << "Patchable = " << Patchable << ", Hotness = " << Hotness << "\n";
+    clogs() << "\tConsidering " << VI.getFuncName()
+            << " for TS root (Patchable = " << Patchable << ", Hotness = " << Hotness << ")\n";
     return Patchable && Hotness >= MINIMUM_ROOT_HOTNESS;
   };
 
-  CCT.dumpDOT(clogs());
+  // asks the call-graph if the Src function's callsites to Tgt are all within loops.
+  auto AllCallsFromLoops = [&](VertexInfo const& Src, VertexInfo const& Tgt) -> bool {
+    auto MaybeEdge = CG.getCallEdge(Src.getFuncName(), Tgt.getFuncName());
+    if (!MaybeEdge)
+      return false;
+    CallGraph::Edge Edge = MaybeEdge.getValue();
+    assert(Edge.totalCallsites() > 0 && "the callgraph edge info is invalid");
+    return (Edge.totalCallsites() == Edge.LoopBodyCallsites);
+  };
+
+  // CCT.dumpDOT(clogs());
 
   // walk the context of this hot node. the context always includes the node itself at the start.
   auto CxtIDs = CCT.contextOf(HotVID);
@@ -115,10 +126,23 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode H
 
     float ParentHotness = Parent.getHotness(llvm::None);
     float CandidateCalledFreq = CCT.getCallFrequency(CandID);
-    clogs() << "Parent Hotness = " << ParentHotness << ", CandidateCalledFreq = " << CandidateCalledFreq <<  "\n";
+    bool OnlyCalledFromLoop = AllCallsFromLoops(Parent, Candidate);
+    clogs() << "Inspecting Parent of " << Candidate.getFuncName()
+            << " (" << Parent.getFuncName()
+            << "): Hotness = " << ParentHotness
+            << ", CandidateCalledFreq = " << CandidateCalledFreq
+            << ", CandidateOnlyCalledFromLoop = " << OnlyCalledFromLoop
+            <<  "\n";
 
-    // the candidate is suitable if its parent is either hot or has called the candidate recently
-    if (ParentHotness >= MINIMUM_PARENT_HOTNESS || CandidateCalledFreq > 0) {
+    // the candidate is suitable if its parent is either
+    // 1. hot
+    // 2. has called the candidate recently
+    // 3. all of the callsites from parent -> candidate are within loop bodies.
+
+    if (ParentHotness >= MINIMUM_PARENT_HOTNESS
+        || CandidateCalledFreq > 0
+        || OnlyCalledFromLoop) {
+
       Suitable = Candidate.getFuncName();
 
       // could the parent also be a possible tuning root?

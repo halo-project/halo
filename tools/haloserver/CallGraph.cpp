@@ -1,6 +1,5 @@
 #include "halo/compiler/CallGraph.h"
 #include "halo/compiler/ReachableVisitor.h"
-#include "llvm/ADT/Optional.h"
 
 #include <unordered_set>
 
@@ -50,24 +49,31 @@ CallGraph::CallGraph() {
 }
 
 
-void CallGraph::addCall(Vertex Src, Vertex Tgt) {
+void CallGraph::addCall(Vertex Src, Vertex Tgt, bool WithinLoopBody) {
   Edge &Edge = Gr[getEdgeID(getVertexID(Src), getVertexID(Tgt))];
-  Edge += 1;
+  Edge.addCallsite(WithinLoopBody);
+}
+
+llvm::Optional<Edge> CallGraph::getCallEdge(Vertex Src, Vertex Tgt) const {
+  auto MaybeSrc = findVertex(Src, Gr);
+  if (!MaybeSrc)
+    return llvm::None;
+
+  auto MaybeTgt = findVertex(Tgt, Gr);
+  if (!MaybeTgt)
+    return llvm::None;
+
+  auto MaybeEdgeID = findEdge(MaybeSrc.getValue(), MaybeTgt.getValue(), Gr);
+  if (!MaybeEdgeID)
+    return llvm::None;
+
+  return Gr[MaybeEdgeID.getValue()];
 }
 
 
 /// query the call graph for the existence of an edge.
 bool CallGraph::hasCall(Vertex Src, Vertex Tgt) const {
-  auto MaybeSrc = findVertex(Src, Gr);
-  if (!MaybeSrc)
-    return false;
-
-  auto MaybeTgt = findVertex(Tgt, Gr);
-  if (!MaybeTgt)
-    return false;
-
-  auto MaybeEdge = findEdge(MaybeSrc.getValue(), MaybeTgt.getValue(), Gr);
-  return MaybeEdge.hasValue();
+  return getCallEdge(Src, Tgt).hasValue();
 }
 
 bool CallGraph::hasOpaqueCall(Vertex Src) const {
@@ -191,12 +197,13 @@ void CallGraph::dumpDOT(std::ostream &out) const {
   auto ERange = boost::edges(Gr);
   for (auto I = ERange.first; I != ERange.second; I++) {
     auto EdgeID = *I;
+    auto const& Edge = Gr[EdgeID];
 
     // output edge
     out << boost::source(EdgeID, Gr)
         << " -> "
         << boost::target(EdgeID, Gr)
-        << " [label=\"" << Gr[EdgeID]
+        << " [label=\"" << Edge.totalCallsites() << ";lp=" << Edge.LoopBodyCallsites
         << "\"];\n";
   }
 

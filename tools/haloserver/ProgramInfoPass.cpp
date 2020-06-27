@@ -1,6 +1,7 @@
 #include "halo/compiler/Profiler.h"
 #include "halo/compiler/ProgramInfoPass.h"
 #include "llvm/Analysis/CallGraph.h"
+#include "llvm/Analysis/LoopInfo.h"
 
 #include "Logging.h"
 
@@ -9,10 +10,11 @@ namespace llvm {
 PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
   // For now, we just collect the call graph.
 
+  auto &FAM = MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
   CallGraphAnalysis::Result &CGR = MAM.getResult<CallGraphAnalysis>(M);
   halo::CallGraph &CallGraph = Profiler.getCallGraph();
 
-  for (auto const& Func : M.functions()) {
+  for (auto &Func : M.functions()) {
     // record whether we have bitcode for the function, which is if it's not a decl.
     bool HaveBitcode = !Func.isDeclaration();
     std::string ThisFunc = Func.getName().str();
@@ -25,23 +27,32 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
       // thus, each CallRecord corresponds to one call-site in the function.
       CallGraphNode* CalleeNode = Record.second;
 
+      // determine whether this callsite is within a loop of the function.
+      bool CalledInLoopBody = false;
+      if (HaveBitcode) {
+        auto &LI = FAM.getResult<LoopAnalysis>(Func);
+        if (CallBase *CB = dyn_cast_or_null<CallBase>(Record.first)) // should always be true
+          if (LI.getLoopFor(CB->getParent()) != nullptr)
+            CalledInLoopBody = true;
+      }
+
       // A call graph may contain nodes where the function that they correspond to
       // is null.  These 'external' nodes are used to represent control flow that is
       // not represented (or analyzable) in the module.
       Function* Callee = CalleeNode->getFunction();
 
       if (Callee)
-        CallGraph.addCall(ThisFunc, Callee->getName().str());
+        CallGraph.addCall(ThisFunc, Callee->getName().str(), CalledInLoopBody);
       else
-        CallGraph.addCall(ThisFunc, CallGraph.getUnknown());
+        CallGraph.addCall(ThisFunc, CallGraph.getUnknown(), CalledInLoopBody);
     }
   }
 
-  const auto LC = halo::LC_ProgramInfoPass;
+  const auto LC = halo::LC_CallGraph;
   halo::logs(LC) << "Dumping static call graph:\n";
   CallGraph.dumpDOT(halo::clogs(LC));
 
-  return PreservedAnalyses::all();
+  return PreservedAnalyses::none();
 }
 
 } // end namespace llvm
