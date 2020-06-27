@@ -63,5 +63,15 @@ namespace halo {
       return getValue<T>(Key, Settings, SETTINGS);
     }
 
+    inline void setServerSetting(std::string const& Key, std::string const& Val, nlohmann::json &Config) {
+      const std::string SETTINGS = "serverSettings";
+      if (!Config.is_object() || !contains(SETTINGS, Config))
+        parseError("invalid / missing " + SETTINGS + " in top level of server config!");
+
+       nlohmann::json &Settings = Config[SETTINGS];
+
+       Settings[Key] = Val;
+    }
+
   } // end namespace config
 } // end namespace halo

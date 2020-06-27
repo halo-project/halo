@@ -40,13 +40,8 @@ struct TuningSectionInitializer {
 class TuningSection {
 public:
 
-  enum class Strategy {
-    Aggressive,
-    CompileOnce
-  };
-
   /// @returns a fresh tuning section that is selected based on the current profiling data.
-  static llvm::Optional<std::unique_ptr<TuningSection>> Create(Strategy, TuningSectionInitializer);
+  static llvm::Optional<std::unique_ptr<TuningSection>> Create(TuningSectionInitializer);
 
   /// incrementally tunes the tuning section for the given set of clients, etc.
   virtual void take_step(GroupState &) {

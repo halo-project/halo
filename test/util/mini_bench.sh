@@ -62,7 +62,8 @@ declare -a AOT_OPTS=(
 declare -a OPTIONS=(
   "none -fexperimental-new-pass-manager"
   "-fhalo"
-  "withserver -fhalo"
+  "withserver -fhalo;--strategy=aggressive"
+  "withserver -fhalo;--strategy=jitonce"
 )
 
 # overwrite and create the file
@@ -107,6 +108,7 @@ for PROG in "${BENCHMARKS[@]}"; do
 
       COMPILE_FLAGS=${FLAGS//withserver/}       # remove 'withserver' from flags
       COMPILE_FLAGS=${COMPILE_FLAGS//none/}     # remove 'none' from flags
+      COMPILE_FLAGS=$(echo "$COMPILE_FLAGS" | cut -d ";" 1)  # take the first field, (separated by ;)
       COMPILE_FLAGS="$COMPILE_FLAGS $AOT_OPT"   # add aot opt
 
       # compile!
@@ -120,7 +122,8 @@ for PROG in "${BENCHMARKS[@]}"; do
         # start a fresh server
         if [[ $FLAGS =~ "withserver" ]]; then
           SERVER_LOG=$(mktemp)
-          ${SERVER_EXE} &> "$SERVER_LOG" &
+          SERVER_ARGS=$(echo "$FLAGS" | cut -d ";" -f 2)  # 2nd field (separated by ;)
+          ${SERVER_EXE} ${SERVER_ARGS} &> "$SERVER_LOG" &
           SERVER_PID=$!
           sleep 2s
         else

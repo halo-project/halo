@@ -353,7 +353,7 @@ TuningSection::TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
 
 
 
-llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(Strategy Strat, TuningSectionInitializer TSI) {
+llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(TuningSectionInitializer TSI) {
   auto MaybeHotNode = TSI.Profile.hottestNode();
   if (!MaybeHotNode){
     info("TuningSection::Create -- no suitable hottest node.");
@@ -374,14 +374,16 @@ llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(Strategy St
   }
 
   TuningSection *TS = nullptr;
-  switch (Strat) {
-    case Strategy::Aggressive:
-      TS = new AggressiveTuningSection(TSI, PatchableAncestorName);
-      break;
-    case Strategy::CompileOnce:
-      TS = new CompileOnceTuningSection(TSI, PatchableAncestorName);
-      break;
-  };
+  const std::string Strat = config::getServerSetting<std::string>("strategy", TSI.Config);
+
+  if (Strat == "aggressive")
+    TS = new AggressiveTuningSection(TSI, PatchableAncestorName);
+
+  else if (Strat == "jitonce")
+    TS = new CompileOnceTuningSection(TSI, PatchableAncestorName);
+
+  else
+    fatal_error("unknown tuning section strategy: " + Strat);
 
   if (TS == nullptr)
     fatal_error("unknown / unrecognized TuningSection strategy.");

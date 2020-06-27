@@ -44,6 +44,10 @@ cl::opt<std::string> CL_ConfigPath("config",
                       cl::desc("Path to the JSON-formatted configuration file."),
                       cl::init(""));
 
+cl::opt<std::string> CL_Strategy("strategy",
+                      cl::desc("The TuningSection strategy to be used."),
+                      cl::init("aggressive"));
+
 namespace halo {
 
 void service_group(ClientGroup &G) {
@@ -112,6 +116,8 @@ int main(int argc, char* argv[]) {
 
 
   asio::io_service IOService;
+
+  halo::config::setServerSetting("strategy", CL_Strategy, ServerConfig);
 
   halo::ClientRegistrar CR(IOService, CL_Port, CL_NoPersist, ServerConfig);
 
