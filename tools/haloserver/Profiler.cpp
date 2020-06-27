@@ -66,40 +66,69 @@ llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {
   return MaxVID;
 }
 
-llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode MaxVID) {
-  // Walk backwards towards 'main' and look first for the very-first first patchable function
+
+  // Walk backwards towards 'root' and look first for the very-first first patchable function
   // that can reach the given vertex.
   //
-  // Then we consider expanding the scope of the tuning section if the next parent
-  // both patchable & hot enough.
+  // Then we consider expanding the scope from current to the candidate if both candidate
+  // and parent both hot.
   //
-  // The reasoning here is that if a parent is cold but its child is hot,
-  // then it must not be calling the child often enough to be a suitable tuning root.
-  // Otherwise, if the parent is hot then there must be some call-return happening
-  // and we can expand the scope.
+  //   (parent : hot)  --A--> (candidate : hot) --B--> { (current : hot) --> ... }
+  //
+  // The reasoning here is that if the parent is cold, then there may not be enough
+  // call-return happening on edge A for the candidate to be a suitable tuning root, since code changes
+  // (and thus tuning progress) only happens on calls to the tuning root.
+  //
+llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode HotVID) {
+  const double MINIMUM_ROOT_HOTNESS = 2.0;
+  const double MINIMUM_PARENT_HOTNESS = MINIMUM_ROOT_HOTNESS / 4;
+  llvm::Optional<std::string> Suitable;
+  llvm::Optional<CCTNode> CandidateID;
 
-  const double MINIMUM_HOTNESS = 2.0;
-  llvm::Optional<std::string> Suitable = llvm::None;
+  auto SuitableTuningRoot = [&](VertexInfo const& VI) {
+    bool Patchable = VI.isPatchable();
+    float Hotness = VI.getHotness(llvm::None);
+    clogs() << "Patchable = " << Patchable << ", Hotness = " << Hotness << "\n";
+    return Patchable && Hotness >= MINIMUM_ROOT_HOTNESS;
+  };
 
-  auto CxtIDs = CCT.contextOf(MaxVID); // obtain the context of that VID
+  CCT.dumpDOT(clogs());
+
+  // walk the context of this hot node. the context always includes the node itself at the start.
+  auto CxtIDs = CCT.contextOf(HotVID);
+  assert(*(CxtIDs.rbegin()) == HotVID);
+
   for (auto IDI = CxtIDs.rbegin(); IDI != CxtIDs.rend(); IDI++) {
-    auto VI = CCT.getInfo(*IDI);
+    auto const& Parent = CCT.getInfo(*IDI);
 
-    // climb up to find the first patchable ancestor
-    if (!Suitable.hasValue()) {
-      if (VI.isPatchable())
-        Suitable = VI.getFuncName();
-      continue;
+    // is there no candidate?
+    if (!CandidateID.hasValue()) {
+      // check if this one is okay
+      if (SuitableTuningRoot(Parent)) {
+        CandidateID = *IDI;
+      }
+       continue; // keep looking
     }
 
-    // is this parent also an acceptable tuning root?
-    if (VI.isPatchable() && VI.getHotness(llvm::None) >= MINIMUM_HOTNESS) {
-      Suitable = VI.getFuncName();
-      continue;
+    CCTNode CandID = CandidateID.getValue();
+    auto const& Candidate = CCT.getInfo(CandID);
+
+    float ParentHotness = Parent.getHotness(llvm::None);
+    float CandidateCalledFreq = CCT.getCallFrequency(CandID);
+    clogs() << "Parent Hotness = " << ParentHotness << ", CandidateCalledFreq = " << CandidateCalledFreq <<  "\n";
+
+    // the candidate is suitable if its parent is either hot or has called the candidate recently
+    if (ParentHotness >= MINIMUM_PARENT_HOTNESS || CandidateCalledFreq > 0) {
+      Suitable = Candidate.getFuncName();
+
+      // could the parent also be a possible tuning root?
+      if (SuitableTuningRoot(Parent)) {
+        CandidateID = *IDI;
+        continue;
+      }
     }
 
-    // stop climbing any further
-    break;
+    break; // stop!
   }
 
   return Suitable;

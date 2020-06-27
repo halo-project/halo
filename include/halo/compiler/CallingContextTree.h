@@ -132,10 +132,9 @@ public:
   auto getFrequency() const { return Frequency; }
 
   // causes the information in this sample to decay
-  void decay();
+  void decay(float CooldownRate);
 
   private:
-    static const float FREQUENCY_DISCOUNT;
     float Frequency{0};
 }; // end class
 
@@ -182,7 +181,11 @@ public:
   /// returned sequence since it is not a "real" vertex.
   std::vector<VertexID> contextOf(VertexID);
 
-  VertexInfo getInfo(VertexID) const;
+  VertexInfo const& getInfo(VertexID) const;
+
+  // returns the sum of the weights of all incoming edges to this
+  // CCT node. Those weights represent recent calls to this node that have occurred.
+  float getCallFrequency(VertexID) const;
 
   /// If Tgt is reachable from Src, then all paths connecting them
   /// is returned.

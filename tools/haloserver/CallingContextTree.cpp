@@ -598,13 +598,27 @@ void CallingContextTree::decay() {
   auto ERange = boost::edges(Gr);
   for (auto I = ERange.first; I != ERange.second; I++) {
     auto &Info = bgl::get(Gr, *I);
-    Info.decay();
+    Info.decay(LP->COOLDOWN_DISCOUNT);
   }
 }
 
-VertexInfo CallingContextTree::getInfo(VertexID ID) const {
+VertexInfo const& CallingContextTree::getInfo(VertexID ID) const {
   return bgl::get(Gr, ID);
 }
+
+
+// sum the weights of the _incoming_ edges of this node
+float CallingContextTree::getCallFrequency(VertexID Vtex) const {
+  float TotalFreq = 0.0f;
+
+  auto Range = boost::in_edges(Vtex, Gr);
+  for (auto I = Range.first; I != Range.second; I++) {
+    TotalFreq += Gr[*I].getFrequency();
+  }
+
+  return TotalFreq;
+}
+
 
 std::vector<VertexID> CallingContextTree::contextOf(VertexID Target) {
 
@@ -1006,21 +1020,23 @@ void VertexInfo::observeSample(CCTNodeInfo &Info, pb::RawSample const& RS, uint6
   Info.Timestamp = ThisTime;
 }
 
-CCTNodeInfo observeZeroTemp(CCTNodeInfo Info, const float DISCOUNT) {
+void observeZeroTemp(float &Hotness, const float DISCOUNT) {
   const float ZeroTemp = 0.0f;
-  Info.Hotness += DISCOUNT * (ZeroTemp - Info.Hotness);
-  if (Info.Hotness < 0.0001)
-    Info.Hotness = 0.0f;
-  return Info;
+  Hotness += DISCOUNT * (ZeroTemp - Hotness);
+  if (Hotness < 0.0001)
+    Hotness = 0.0f;
 }
 
 void VertexInfo::decay() {
   // take a step in the direction of reaching zero.
   // another way to think about it is that we pretend we observed
   // a zero-temperature sample
-  GeneralInfo = observeZeroTemp(GeneralInfo, LP->COOLDOWN_DISCOUNT);
-  for (auto& Elm : SpecificInfo)
-    SpecificInfo[Elm.first] = observeZeroTemp(Elm.second, LP->COOLDOWN_DISCOUNT);
+  observeZeroTemp(GeneralInfo.Hotness, LP->COOLDOWN_DISCOUNT);
+  for (auto& Elm : SpecificInfo) {
+    CCTNodeInfo SI = Elm.second;
+    observeZeroTemp(SI.Hotness, LP->COOLDOWN_DISCOUNT);
+    SpecificInfo[Elm.first] = SI;
+  }
 }
 
 void VertexInfo::filterByLib(std::string const& Lib, std::function<void(CCTNodeInfo const&)> Action) const {
@@ -1086,17 +1102,12 @@ std::string VertexInfo::getDOTLabel() const {
 /////////////
 // EdgeInfo implementations
 
-// (0, 1), learning rate / incremental update factor "alpha"
-const float EdgeInfo::FREQUENCY_DISCOUNT = 0.7f;
-
 void EdgeInfo::observe() {
   Frequency += 1.0f;
 }
 
-void EdgeInfo::decay() {
-  // take a step in the direction of reaching zero.
-  const float ZeroTemp = 0.0f;
-  Frequency += FREQUENCY_DISCOUNT * (ZeroTemp - Frequency);
+void EdgeInfo::decay(float FREQUENCY_DISCOUNT) {
+  observeZeroTemp(Frequency, FREQUENCY_DISCOUNT);
 }
 
 
