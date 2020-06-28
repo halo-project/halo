@@ -25,9 +25,6 @@ namespace halo {
     static const ty NativeCPU       = {"native-cpu",       Knob::KK_Flag};
     static const ty IPRA            = {"ipra",             Knob::KK_Flag};
     static const ty FastISel        = {"fast-isel",        Knob::KK_Flag};
-    static const ty GlobalISel      = {"global-isel",      Knob::KK_Flag};
-    static const ty MachineOutline  = {"machine-outline",  Knob::KK_Flag};
-    static const ty GuaranteeTCO    = {"guarantee-tco",    Knob::KK_Flag};
     static const ty InlineFullCost  = {"inline-computefullcost", Knob::KK_Flag};
     static const ty SLPVectorizeEnable  = {"slp-vectorize-enable", Knob::KK_Flag};
     static const ty AttributorEnable    = {"attributor-enable",           Knob::KK_Flag};
@@ -38,11 +35,6 @@ namespace halo {
     static const ty NewGVNHoistEnable = {"new-gvn-hoist-enable",  Knob::KK_Flag};
 
     static const ty InlineThreshold = {"inline-threshold-default", Knob::KK_Int};
-    static const ty InlineThresholdHint = {"inline-threshold-hintedfunc", Knob::KK_Int};
-    static const ty InlineThresholdCold = {"inline-threshold-coldfunc", Knob::KK_Int};
-    static const ty InlineThresholdHotSite = {"inline-threshold-hotsite", Knob::KK_Int};
-    static const ty InlineThresholdColdSite = {"inline-threshold-coldsite", Knob::KK_Int};
-    static const ty InlineThresholdLocalHotSite = {"inline-threshold-locallyhotsite", Knob::KK_Int};
 
     static const ty OptimizeLevel = {"optimize-pipeline-level", Knob::KK_OptLvl};
     static const ty CodegenLevel = {"codegen-optimize-level", Knob::KK_OptLvl};
@@ -79,9 +71,6 @@ namespace halo {
       NativeCPU,
       IPRA,
       FastISel,
-      GlobalISel,
-      MachineOutline,
-      GuaranteeTCO,
       InlineFullCost,
       SLPVectorizeEnable,
       AttributorEnable,
@@ -92,11 +81,6 @@ namespace halo {
       NewGVNHoistEnable,
 
       InlineThreshold,
-      InlineThresholdHint,
-      InlineThresholdCold,
-      InlineThresholdHotSite,
-      InlineThresholdColdSite,
-      InlineThresholdLocalHotSite,
 
       OptimizeLevel,
       CodegenLevel,

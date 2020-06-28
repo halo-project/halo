@@ -47,60 +47,10 @@
       "default": false
     },
     {
-      "kind": "flag",
-      "name": "machine-outline",
-      "default": false
-    },
-    {
-      "kind": "flag",
-      "name": "guarantee-tco",
-      "default": null
-    },
-    {
       "kind": "int",
       "name": "inline-threshold-default",
       "scale": "1/100",
       "default": 2,
-      "min": 0,
-      "max": 30
-    },
-    {
-      "kind": "int",
-      "name": "inline-threshold-hintedfunc",
-      "scale": "1/100",
-      "default": 3,
-      "min": 0,
-      "max": 30
-    },
-    {
-      "kind": "int",
-      "name": "inline-threshold-coldfunc",
-      "scale": "1/100",
-      "default": 0,
-      "min": 0,
-      "max": 30
-    },
-    {
-      "kind": "int",
-      "name": "inline-threshold-hotsite",
-      "scale": "1/100",
-      "default": 30,
-      "min": 0,
-      "max": 30
-    },
-    {
-      "kind": "int",
-      "name": "inline-threshold-coldsite",
-      "scale": "1/100",
-      "default": 0,
-      "min": 0,
-      "max": 30
-    },
-    {
-      "kind": "int",
-      "name": "inline-threshold-locallyhotsite",
-      "scale": "1/100",
-      "default": 5,
       "min": 0,
       "max": 30
     },

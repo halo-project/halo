@@ -170,21 +170,21 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   /// are not currently set. If you end up using / not deleting optsize & minsize attributes
   /// then they may be worth using, though they will have an affect on optimizations other than inlining.
 
-  InlineParams IP = llvm::getInlineParams(llvm::InlineConstants::OptAggressiveThreshold);
+  // internally we default to aggressive inlining thresholds.
+  int Threshold = llvm::InlineConstants::OptAggressiveThreshold;
+  Knobs.lookup<IntKnob>(named_knob::InlineThreshold).applyScaledVal(Threshold);
+  InlineParams IP = llvm::getInlineParams(Threshold);
 
-  Knobs.lookup<IntKnob>(named_knob::InlineThreshold).applyScaledVal(IP.DefaultThreshold);
-  Knobs.lookup<IntKnob>(named_knob::InlineThresholdHint).applyScaledVal(IP.HintThreshold);
-  Knobs.lookup<IntKnob>(named_knob::InlineThresholdCold).applyScaledVal(IP.ColdThreshold);
-  Knobs.lookup<IntKnob>(named_knob::InlineThresholdHotSite).applyScaledVal(IP.HotCallSiteThreshold);
-  Knobs.lookup<IntKnob>(named_knob::InlineThresholdLocalHotSite).applyScaledVal(IP.LocallyHotCallSiteThreshold);
-  Knobs.lookup<IntKnob>(named_knob::InlineThresholdColdSite).applyScaledVal(IP.ColdCallSiteThreshold);
-
-  /// NOTE: It may not even be worthwhile to tune this? I believe it is just pessimistically
-  /// stopping the cost estimation before it's been fully computed to limit compile time.
-  /// Since the cost analysis essentially simulates what the resulting function will look like
-  /// after inlining + simplification.
-  /// Thus, since compile time doesn't matter for us with such small snippets of code, we may
-  /// want to just fix it to be `true`
+  /// NOTE: I use to think this was worth tuning, but I believe it is just pessimistically
+  /// stopping the cost estimation before it's been fully computed to limit compile time
+  /// and thus makes the analysis imprecise.
+  //
+  /// Specifically, the cost analysis essentially simulates what the resulting function will look like
+  /// after inlining + simplification, but the moment the cost exceeds the threshold it
+  /// pessimistically stops early if this is set to false, even though it may go back down below
+  /// the threshold after simplifications.
+  ///
+  /// Thus, since compile time doesn't matter for us, maybe we should just always set it to true?
   Knobs.lookup<FlagKnob>(named_knob::InlineFullCost).applyFlag(IP.ComputeFullInlineCost);
 
   PTO.Inlining = IP;
@@ -320,8 +320,16 @@ Expected<CompilationPipeline::compile_result>
   // TO.EnableGlobalISel = Knobs.lookup<FlagKnob>(named_knob::GlobalISel).getFlag();
   TO.EnableGlobalISel = false;
 
-  Knobs.lookup<FlagKnob>(named_knob::MachineOutline).applyFlag([&](bool Flag) { TO.EnableMachineOutliner = Flag; });
-  Knobs.lookup<FlagKnob>(named_knob::GuaranteeTCO).applyFlag([&](bool Flag) { TO.GuaranteedTailCallOpt = Flag; });
+  // Let's not use machine outliner. I don't think my infrastructure can determine the outlined function's
+  // position and size. The call-graph would also need to be updated dynamically to aid the BTB entries in samples
+  // too. I think this would just lead to inaccurate IPC measurements due to thrown-out samples.
+  //
+  // Knobs.lookup<FlagKnob>(named_knob::MachineOutline).applyFlag([&](bool Flag) { TO.EnableMachineOutliner = Flag; });
+  TO.EnableMachineOutliner = false;
+
+  // It doesn't make sense to have this ever be off.
+  // Knobs.lookup<FlagKnob>(named_knob::GuaranteeTCO).applyFlag([&](bool Flag) { TO.GuaranteedTailCallOpt = Flag; });
+  TO.GuaranteedTailCallOpt = true;
 
   TM->Options = TO; // save the options
 
