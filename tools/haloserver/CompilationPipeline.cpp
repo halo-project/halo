@@ -10,6 +10,7 @@
 #include "halo/tuner/NamedKnobs.h"
 
 #include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/Scalar.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/Transforms/IPO/Attributor.h"
 #include "llvm/Transforms/IPO/ForceFunctionAttrs.h"
@@ -113,6 +114,10 @@ Error doCleanup(Module &Module, std::string const& RootFunc, std::unordered_set<
 
     spb::legacy::withPrintAfter(Pr, LegacyPM,
             "StripDeadProto", createStripDeadPrototypesPass()); // Remove dead func decls
+
+    // if the bitcode has already been optimized AOT, let's try to undo loop unrolling
+    // so we can redo it possibly better.
+    spb::legacy::withPrintAfter(Pr, LegacyPM, "LoopReroll", createLoopRerollPass());
 
     LegacyPM.run(Module);
   }
