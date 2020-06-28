@@ -115,6 +115,36 @@
       "default": true
     },
     {
+      "kind": "flag",
+      "name": "attributor-enable",
+      "default": null
+    },
+    {
+      "kind": "flag",
+      "name": "partial-inliner-enable",
+      "default": null
+    },
+    {
+      "kind": "flag",
+      "name": "unroll-and-jam-pass-enable",
+      "default": null
+    },
+    {
+      "kind": "flag",
+      "name": "gvn-sink-enable",
+      "default": null
+    },
+    {
+      "kind": "flag",
+      "name": "new-gvn-enable",
+      "default": null
+    },
+    {
+      "kind": "flag",
+      "name": "new-gvn-hoist-enable",
+      "default": null
+    },
+    {
       "kind": "optlvl",
       "name": "optimize-pipeline-level",
       "default": "O3",

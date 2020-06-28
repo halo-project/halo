@@ -11,10 +11,20 @@
 
 #include "llvm/Transforms/IPO.h"
 #include "llvm/IR/DebugInfo.h"
+#include "llvm/Transforms/IPO/Attributor.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 #include "Logging.h"
 
 using namespace llvm;
+
+// these LLVM command-line options must be declared outside of any namespace
+extern cl::opt<AttributorRunOption> AttributorRun;
+extern cl::opt<bool> RunPartialInlining;
+extern cl::opt<bool> EnableUnrollAndJam;
+extern cl::opt<bool> EnableGVNSink;
+extern cl::opt<bool> RunNewGVN;
+extern cl::opt<bool> EnableGVNHoist;
 
 namespace halo {
 
@@ -141,14 +151,32 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   bool Pr = false; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
 
+  // set all the CL options to defaults (from PassManagerBuilder) first
+  AttributorRun = AttributorRunOption::NONE;
+  RunPartialInlining = false;
+  EnableUnrollAndJam = false;
+  EnableGVNSink = false;
+  RunNewGVN = false;
+  EnableGVNHoist = false;
+
+  Knobs.lookup<FlagKnob>(named_knob::AttributorEnable).applyFlag([&](bool Flag) {
+    if (Flag)
+      AttributorRun = AttributorRunOption::ALL;
+    else
+      AttributorRun = AttributorRunOption::NONE;
+  });
+
+  Knobs.lookup<FlagKnob>(named_knob::PartialInlineEnable).applyFlag(RunPartialInlining);
+  Knobs.lookup<FlagKnob>(named_knob::UnrollAndJamEnable).applyFlag(EnableUnrollAndJam);
+  Knobs.lookup<FlagKnob>(named_knob::GVNSinkEnable).applyFlag(EnableGVNSink);
+  Knobs.lookup<FlagKnob>(named_knob::NewGVNEnable).applyFlag(RunNewGVN);
+  Knobs.lookup<FlagKnob>(named_knob::NewGVNHoistEnable).applyFlag(EnableGVNHoist);
+
   // these options are tuned per-loop, so we need to tell the optimizer that
   // it should always consider it, unless we say otherwise for a particular loop.
-
-  // TODO: should these be tuned?
   PTO.LoopUnrolling = true;
   PTO.LoopInterleaving = true;
   PTO.LoopVectorization = true;
-
 
   // TODO: expose more tuning options in LLVM through the PTO struct. There's a lot
   // being left on the table.
@@ -193,7 +221,7 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
     if (LoopAnnotateErr)
       return LoopAnnotateErr;
 
-    MPM = PB.buildPerModuleDefaultPipeline(OptLevel, /*Debug*/ false, /*LTOPreLink*/ false);
+    MPM = PB.buildPerModuleDefaultPipeline(OptLevel, /*DebugLogging*/ Pr, /*LTOPreLink*/ false);
   }
 
   spb::addPrintPass(Pr, MPM, "after optimization pipeline.");

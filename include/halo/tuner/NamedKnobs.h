@@ -30,6 +30,12 @@ namespace halo {
     static const ty GuaranteeTCO    = {"guarantee-tco",    Knob::KK_Flag};
     static const ty InlineFullCost  = {"inline-computefullcost", Knob::KK_Flag};
     static const ty SLPVectorizeEnable  = {"slp-vectorize-enable", Knob::KK_Flag};
+    static const ty AttributorEnable    = {"attributor-enable",           Knob::KK_Flag};
+    static const ty PartialInlineEnable = {"partial-inliner-enable",      Knob::KK_Flag};
+    static const ty UnrollAndJamEnable  = {"unroll-and-jam-pass-enable",  Knob::KK_Flag};
+    static const ty GVNSinkEnable     = {"gvn-sink-enable",       Knob::KK_Flag};
+    static const ty NewGVNEnable      = {"new-gvn-enable",        Knob::KK_Flag};
+    static const ty NewGVNHoistEnable = {"new-gvn-hoist-enable",  Knob::KK_Flag};
 
     static const ty InlineThreshold = {"inline-threshold-default", Knob::KK_Int};
     static const ty InlineThresholdHint = {"inline-threshold-hintedfunc", Knob::KK_Int};
@@ -78,6 +84,12 @@ namespace halo {
       GuaranteeTCO,
       InlineFullCost,
       SLPVectorizeEnable,
+      AttributorEnable,
+      PartialInlineEnable,
+      UnrollAndJamEnable,
+      GVNSinkEnable,
+      NewGVNEnable,
+      NewGVNHoistEnable,
 
       InlineThreshold,
       InlineThresholdHint,
