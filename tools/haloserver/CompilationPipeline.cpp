@@ -12,7 +12,7 @@
 #include "llvm/Transforms/IPO.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/Transforms/IPO/Attributor.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Transforms/IPO/ForceFunctionAttrs.h"
 
 #include "Logging.h"
 
@@ -35,7 +35,7 @@ Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
   return C(M);
 }
 
-// TODO: make this take a Module const& because it doesn't mutate the module.
+
 Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, std::unordered_set<std::string> const& TunedFuncs) {
   SetVector<Function*> Work;
 
@@ -78,6 +78,7 @@ Expected<std::vector<GlobalValue*>> findRequiredFuncs(Module &Module, std::unord
 
   return Deps.takeVector();
 }
+
 
 Error doCleanup(Module &Module, std::string const& RootFunc, std::unordered_set<std::string> const& TunedFuncs, unsigned &NumLoopIDs) {
   bool Pr = false; // printing?
@@ -129,26 +130,8 @@ Error doCleanup(Module &Module, std::string const& RootFunc, std::unordered_set<
 }
 
 
-/// This function will apply annotations to the named loops in the module, according to
-/// the knob configuration.
-Error annotateLoops(Module &Module, KnobSet const& Knobs) {
-  bool Pr = false; // printing?
-  SimplePassBuilder PB(/*DebugAnalyses*/ false);
-  ModulePassManager MPM;
-
-  spb::withPrintAfter(Pr, MPM,
-      createModuleToFunctionPassAdaptor(
-        createFunctionToLoopPassAdaptor(
-          LoopAnnotatorPass(Knobs))));
-
-  MPM.run(Module, PB.getAnalyses(Triple(Module.getTargetTriple())));
-
-  return Error::success();
-}
-
-
 Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
-  bool Pr = false; // printing?
+  bool Pr = true; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
 
   // set all the CL options to defaults (from PassManagerBuilder) first
@@ -178,8 +161,8 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   PTO.LoopInterleaving = true;
   PTO.LoopVectorization = true;
 
-  // TODO: expose more tuning options in LLVM through the PTO struct. There's a lot
-  // being left on the table.
+  // TODO: expose more tuning options in LLVM through the PTO struct or new pases at
+  // extension points.
 
   Knobs.lookup<FlagKnob>(named_knob::SLPVectorizeEnable).applyFlag(PTO.SLPVectorization);
 
@@ -210,18 +193,32 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   SimplePassBuilder PB(&TM, PTO);
 
 
-  // always at least O2
+  // internal default
   PassBuilder::OptimizationLevel OptLevel = PassBuilder::OptimizationLevel::O2;
   Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel).applyVal(OptLevel);
 
   ModulePassManager MPM;
   if (OptLevel != PassBuilder::OptimizationLevel::O0) {
     // we only apply optimizations if the level >= 0
-    auto LoopAnnotateErr = annotateLoops(Module, Knobs);
-    if (LoopAnnotateErr)
-      return LoopAnnotateErr;
 
-    MPM = PB.buildPerModuleDefaultPipeline(OptLevel, /*DebugLogging*/ Pr, /*LTOPreLink*/ false);
+    /////
+    // The code here is based on llvm::buildPerModuleDefaultPipeline
+
+    // Force any function attributes we want the rest of the pipeline to observe.
+    MPM.addPass(ForceFunctionAttrsPass());
+
+    // Pipeline Start EP callbacks would go here
+    spb::withPrintAfter(Pr, MPM,
+      createModuleToFunctionPassAdaptor(
+        createFunctionToLoopPassAdaptor(
+          LoopAnnotatorPass(Knobs))));
+
+    // Add the core simplification pipeline.
+    MPM.addPass(PB.buildModuleSimplificationPipeline(OptLevel, PassBuilder::ThinLTOPhase::None,
+                                                  /*DebugLogging*/ Pr));
+
+    // Now add the optimization pipeline.
+    MPM.addPass(PB.buildModuleOptimizationPipeline(OptLevel, /*DebugLogging*/ Pr, /*LTOPreLink*/ false));
   }
 
   spb::addPrintPass(Pr, MPM, "after optimization pipeline.");
@@ -303,7 +300,8 @@ Expected<CompilationPipeline::compile_result>
     }
   });
 
-  CodeGenOpt::Level CodeGenLevel = CodeGenOpt::Default;
+  // default llc optimization level, if nothing is set.
+  CodeGenOpt::Level CodeGenLevel = CodeGenOpt::Aggressive;
   Knobs.lookup<OptLvlKnob>(named_knob::CodegenLevel).applyCodegenLevel(CodeGenLevel);
   JTMB.setCodeGenOptLevel(CodeGenLevel);
 
