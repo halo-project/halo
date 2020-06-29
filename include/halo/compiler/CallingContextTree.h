@@ -3,6 +3,7 @@
 #include "boost/graph/adjacency_list.hpp"
 #include "llvm/ADT/Optional.h"
 #include "halo/nlohmann/json_fwd.hpp"
+#include "Logging.h"
 #include <ostream>
 #include <map>
 
@@ -140,10 +141,13 @@ public:
 
 
 // Profiling-based attributes of a function group.
-struct GroupPerf {
+struct TSPerf {
   double Hotness{0};
   double IPC{0};
   size_t SamplesSeen{0};
+  void dump() const {
+    clogs() << "hot = " << Hotness << ", ipc = " << IPC << ", samplesSeen = " << SamplesSeen << "\n";
+  }
 };
 
 
@@ -211,7 +215,7 @@ public:
   llvm::Optional<std::list<VertexID>> shortestPath(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const;
 
   /// Gather some performance information about this function group. Optionally, for a specific library version
-  GroupPerf currentPerf(FunctionGroup const& FuncGroup, llvm::Optional<std::string> Lib);
+  TSPerf currentPerf(FunctionGroup const& FuncGroup, llvm::Optional<std::string> Lib);
 
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);

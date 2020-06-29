@@ -86,7 +86,9 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   deploy(State, Deployed);
 
   // first, check for fresh perf info
-  GroupPerf Perf = TS->Profile.currentPerf(TS->FnGroup, Deployed);
+  TSPerf Perf = TS->Profile.currentPerf(TS->FnGroup, Deployed);
+
+  History.push_back(Perf);
 
   // no new samples in this library? can't make progress
   if (DeployedSampledSeen == Perf.SamplesSeen)
@@ -345,7 +347,15 @@ void Bakeoff::dump() const {
           << "\n\t\tSteps = " << Switches
           << "\n\t\tStepsUntilSwitch = " << StepsUntilSwitch
           << "\n\t\tCurrently Deployed = " << Deployed
-          << "\n\t}";
+          << "\n\t\tHistory = [\n";
+
+  for (auto const& Entry : History) {
+    clogs() << "\t\t\t";
+    Entry.dump();
+  }
+
+
+  clogs() << "\t\t]\n\t}";
 }
 
 

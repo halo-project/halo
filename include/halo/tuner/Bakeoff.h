@@ -9,6 +9,7 @@ namespace halo {
 
 class TuningSection;
 class GroupState;
+class TSPerf;
 
 struct BakeoffParameters {
   BakeoffParameters(nlohmann::json const& Config);
@@ -69,6 +70,8 @@ private:
 
   BakeoffParameters BP;
   TuningSection *TS;
+
+  std::vector<TSPerf> History;
 
   // name of the "new" library we're suppose to be testing
   std::string NEW_LIBNAME;

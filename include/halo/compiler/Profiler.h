@@ -25,7 +25,7 @@ public:
 
   /// given a set of functions that form sub-trees of the CCT,
   /// returns an IPC rating for the entire group, optionally, specific to a library.
-  GroupPerf currentPerf(FunctionGroup const&, llvm::Optional<std::string> LibName);
+  TSPerf currentPerf(FunctionGroup const&, llvm::Optional<std::string> LibName);
 
   /// updates the profiler with new performance data found in the clients
   /// and then decays the data by one time step.

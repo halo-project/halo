@@ -42,7 +42,7 @@ void Profiler::decay() {
   CCT.decay();
 }
 
-GroupPerf Profiler::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> LibName) {
+TSPerf Profiler::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> LibName) {
   return CCT.currentPerf(FnGroup, LibName);
 }
 

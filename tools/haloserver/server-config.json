@@ -16,10 +16,10 @@
     "ts-exploit-init": 10,
     "ts-exploit-min": 2,
 
-    "bakeoff-switch-rate": 5,
-    "bakeoff-max-switches": 10,
+    "bakeoff-switch-rate": 3,
+    "bakeoff-max-switches": 5,
     "bakeoff-confidence": 99,
-    "bakeoff-min-samples": 8,
+    "bakeoff-min-samples": 3,
 
     "pbtuner-batch-size": 5,
     "pbtuner-explore-ratio": 0.2,

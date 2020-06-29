@@ -853,7 +853,7 @@ AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
   return Result;
 }
 
-GroupPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> Lib) {
+TSPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> Lib) {
   // First, we need to collect all of the starting context vertex IDs.
   // Specifically, we find all vertices in the CCT that match the root fn.
   std::vector<VertexID> RootContexts;
@@ -898,7 +898,7 @@ GroupPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Op
   // NOTE: we ignore the hotness from this final norm.
   AttrPair TotalNorm = euclideanNorm(AllNorms);
 
-  GroupPerf Perf;
+  TSPerf Perf;
   Perf.IPC = TotalNorm.IPC;
   Perf.Hotness = TotalNorm.Hotness;
   Perf.SamplesSeen = TotalSamples;
