@@ -95,6 +95,11 @@
       "default": null
     },
     {
+      "kind": "flag",
+      "name": "ignore-loop-predicate-profitability",
+      "default": null
+    },
+    {
       "kind": "optlvl",
       "name": "optimize-pipeline-level",
       "default": "O3",

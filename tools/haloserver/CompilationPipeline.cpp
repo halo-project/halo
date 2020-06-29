@@ -26,6 +26,7 @@ extern cl::opt<bool> EnableUnrollAndJam;
 extern cl::opt<bool> EnableGVNSink;
 extern cl::opt<bool> RunNewGVN;
 extern cl::opt<bool> EnableGVNHoist;
+extern cl::opt<bool> LoopPredicationSkipProfitabilityChecks;
 
 namespace halo {
 
@@ -139,13 +140,14 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   bool Pr = true; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
 
-  // set all the CL options to defaults (from PassManagerBuilder) first
+  // set all the CL options to defaults (from PassManagerBuilder / LLVM) first
   AttributorRun = AttributorRunOption::NONE;
   RunPartialInlining = false;
   EnableUnrollAndJam = false;
   EnableGVNSink = false;
   RunNewGVN = false;
   EnableGVNHoist = false;
+  LoopPredicationSkipProfitabilityChecks = false;
 
   Knobs.lookup<FlagKnob>(named_knob::AttributorEnable).applyFlag([&](bool Flag) {
     if (Flag)
@@ -159,6 +161,7 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   Knobs.lookup<FlagKnob>(named_knob::GVNSinkEnable).applyFlag(EnableGVNSink);
   Knobs.lookup<FlagKnob>(named_knob::NewGVNEnable).applyFlag(RunNewGVN);
   Knobs.lookup<FlagKnob>(named_knob::NewGVNHoistEnable).applyFlag(EnableGVNHoist);
+  Knobs.lookup<FlagKnob>(named_knob::LoopPredicateProfit).applyFlag(LoopPredicationSkipProfitabilityChecks);
 
   // these options are tuned per-loop, so we need to tell the optimizer that
   // it should always consider it, unless we say otherwise for a particular loop.

@@ -33,6 +33,7 @@ namespace halo {
     static const ty GVNSinkEnable     = {"gvn-sink-enable",       Knob::KK_Flag};
     static const ty NewGVNEnable      = {"new-gvn-enable",        Knob::KK_Flag};
     static const ty NewGVNHoistEnable = {"new-gvn-hoist-enable",  Knob::KK_Flag};
+    static const ty LoopPredicateProfit = {"ignore-loop-predicate-profitability",  Knob::KK_Flag};
 
     static const ty InlineThreshold = {"inline-threshold-default", Knob::KK_Int};
 
@@ -79,6 +80,7 @@ namespace halo {
       GVNSinkEnable,
       NewGVNEnable,
       NewGVNHoistEnable,
+      LoopPredicateProfit,
 
       InlineThreshold,
 
