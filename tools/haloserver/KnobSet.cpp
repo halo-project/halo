@@ -55,6 +55,15 @@ void KnobSet::unsetAll() {
   }
 }
 
+size_t KnobSet::cardinality() const {
+  size_t Sz = 0;
+
+  for (auto const& Entry : Knobs)
+    Sz += Entry.second->cardinality();
+
+  return Sz;
+}
+
 
 ////////////////////////////
 // Knob spec parsing (from JSON) is below

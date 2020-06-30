@@ -46,8 +46,12 @@ namespace halo {
       assert(ticker_ != 0 && "exhausted the knob ticker!");
     }
     virtual ~Knob() = default;
+
     // a human-readable but unique name that idenifies this tunable knob
     virtual std::string const& getID() const = 0;
+
+    // the number of options this knob can be set to.
+    virtual size_t cardinality() const = 0;
 
     // a unique number relative to all knobs in the current process only.
     // suitable for use in the ID of a dynamically generated Knob
@@ -121,7 +125,7 @@ namespace halo {
   // depending on the constructor.
   class FlagKnob : public ScalarKnob<int> {
   private:
-    bool hadDefault; // cruft for loop knobs, sadly.
+    bool HadDefault; // cruft for loop knobs, sadly.
   public:
     static constexpr int TRUE = 1;
     static constexpr int FALSE = 0;
@@ -131,12 +135,12 @@ namespace halo {
     FlagKnob(std::string const& Name)
       : ScalarKnob<int>(KK_Flag, Name,
                         llvm::None, // current
-                        FALSE /*min*/,  TRUE /*max*/), hadDefault(false) {}
+                        FALSE /*min*/,  TRUE /*max*/), HadDefault(false) {}
 
     FlagKnob(std::string const& Name, bool dflt)
       : ScalarKnob<int>(KK_Flag, Name,
                         dflt ? TRUE : FALSE, // current
-                        FALSE /*min*/,  TRUE /*max*/), hadDefault(true) {}
+                        FALSE /*min*/,  TRUE /*max*/), HadDefault(true) {}
 
     // Performs an assignment to the reference passed in, only if the
     // flag is either true or false. No assignment occurs if the flag is 'neither'.
@@ -154,9 +158,14 @@ namespace halo {
       });
     }
 
-    bool twoValued() const { return hadDefault; }
+    bool hadDefault() const { return HadDefault; }
     bool isTrue() const { return Current.getValueOr(FALSE) == TRUE; }
     bool isNeither() const { return !hasVal(); }
+
+    size_t cardinality() const override {
+      // true, false, neither
+      return 2 + 1;
+    }
 
     static bool classof(const Knob *K) {
       return K->getKind() == KK_Flag;
@@ -199,6 +208,11 @@ namespace halo {
           default: fatal_error("impossible level");
         };
       });
+    }
+
+    size_t cardinality() const override {
+      // normal number of options + 1 for the "none" setting
+      return (asInt(getMax()) - asInt(getMin()) + 1) + 1;
     }
 
     static LevelTy parseLevel(std::string const& Level) {
@@ -293,6 +307,11 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
           AssignTo(Val);
         }
       });
+    }
+
+    size_t cardinality() const override {
+      // normal number of options, +1 for the none option
+      return (getMax() - getMin() + 1) + 1;
     }
 
     template <typename IntAssignable>

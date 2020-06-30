@@ -86,6 +86,9 @@ namespace halo {
     // for those that support it.
     void unsetAll();
 
+    // returns the size of the configuration space induced by this set of knobs.
+    size_t cardinality() const;
+
 
     auto begin() noexcept { return Knobs.begin(); }
     auto begin() const noexcept { return Knobs.cbegin(); }

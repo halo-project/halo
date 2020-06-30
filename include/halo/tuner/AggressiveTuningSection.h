@@ -3,10 +3,12 @@
 #include "halo/tuner/TuningSection.h"
 #include "halo/tuner/PseudoBayesTuner.h"
 #include "halo/tuner/Bakeoff.h"
+#include "halo/tuner/StatisticalStopper.h"
 
 namespace halo {
 
-/// haven't decided on what this should do yet.
+/// The main one with the fancy stuff. The name is inaccurate
+/// and a hold-over from what it use to be.
 class AggressiveTuningSection : public TuningSection {
 public:
   AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc);
@@ -15,18 +17,20 @@ public:
 
 private:
   enum class ActivityState {
-    Ready,
-    Paused,   // basically, exploiting
-    WaitingForCompile,
-    TestingNewLib
+    Experiment,
+    ConsiderStopping,
+    Compiling,
+    Bakeoff,
+    Stopped
   };
 
   std::string stateToString(ActivityState S) const {
     switch(S) {
-      case ActivityState::Ready:                return "READY";
-      case ActivityState::Paused:               return "PAUSED";
-      case ActivityState::WaitingForCompile:    return "COMPILING";
-      case ActivityState::TestingNewLib:        return "BAKEOFF";
+      case ActivityState::Experiment:         return "EXPERIMENT";
+      case ActivityState::ConsiderStopping:   return "CONSIDER_STOPPING";
+      case ActivityState::Compiling:          return "COMPILING";
+      case ActivityState::Bakeoff:            return "BAKEOFF";
+      case ActivityState::Stopped:             return "STOPPED";
     };
     return "?";
   }
@@ -37,9 +41,8 @@ private:
   void adjustAfterBakeoff(Bakeoff::Result);
 
   PseudoBayesTuner PBT;
+  StatisticalStopper Stopper;
 
-  uint64_t ExploitSteps{1}; // the count-down for steps remaining to perform that "exploit"
-  size_t SamplesLastTime{0};
   unsigned DuplicateCompilesInARow{0};
 
   // statistics for myself during development!!
@@ -51,17 +54,11 @@ private:
 
   BakeoffParameters BP;
   llvm::Optional<Bakeoff> Bakery;
-  ActivityState Status{ActivityState::Ready};
+  ActivityState Status{ActivityState::Experiment};
   std::string BestLib;
 
   // for choosing a new code version
   const unsigned MAX_DUPES_IN_ROW; // max duplicate compiles in a row before we give up.
-
-  // for managing explore-exploit tradeoff
-  const float EXPLOIT_LEARNING_RATE;
-  const float MAX_TGT_FACTOR;
-  const float MIN_TGT_FACTOR;
-  float ExploitFactor; // the number of steps to be taken in the next "exploit" phase
 };
 
 } // namespace halo

@@ -17,8 +17,10 @@ namespace halo {
     // for two-valued flags: {!"option.name"} or deletion of that option
     // for three-valued flags: {!"option.name", i1 1}, {!"option.name", i1 0}, or deletion of that option
     llvm::MDNode* setFlagOption(llvm::MDNode *LMD, FlagKnob const& FK, llvm::StringRef OptName) {
-
-      if (FK.twoValued()) {
+      // if the JSON file had specified either true/false as the
+      // default value for the loop knob, we assume they want a
+      // "two-valued" style flag.
+      if (FK.hadDefault()) {
         if (FK.isTrue()) // add the option
           return updateLMD(LMD, OptName, nullptr);
         else // delete any such options, if present

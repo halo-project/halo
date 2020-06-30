@@ -21,6 +21,12 @@ public:
   // in case you need an RNG in a pinch, this one is seeded correctly!
   std::mt19937_64& getRNG() { return RNG; }
 
+  // returns true iff the next config returned by getConfig has already been
+  // determined, i.e., further profiling data / bakeoffs will not influence the
+  // next config. This is useful if you'd like to get a head-start on
+  // compiling configs.
+  bool nextIsPredetermined() const { return GeneratedConfigs.size() > 0; }
+
 private:
   KnobSet const& BaseKnobs;
   std::unordered_map<std::string, CodeVersion> &Versions;

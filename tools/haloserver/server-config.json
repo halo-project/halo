@@ -11,10 +11,6 @@
     "cct-hotness-recentlyactive": 0.05,
 
     "ts-max-dupes-row": 10,
-    "ts-exploit-discount": 0.05,
-    "ts-exploit-max": 200,
-    "ts-exploit-init": 10,
-    "ts-exploit-min": 2,
 
     "bakeoff-switch-rate": 3,
     "bakeoff-max-switches": 5,
