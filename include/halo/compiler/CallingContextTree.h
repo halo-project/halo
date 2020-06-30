@@ -3,7 +3,6 @@
 #include "boost/graph/adjacency_list.hpp"
 #include "llvm/ADT/Optional.h"
 #include "halo/nlohmann/json_fwd.hpp"
-#include "Logging.h"
 #include <ostream>
 #include <map>
 
@@ -145,10 +144,10 @@ struct TSPerf {
   double Hotness{0};
   double IPC{0};
   size_t SamplesSeen{0};
-  void dump() const {
-    clogs() << "hot = " << Hotness << ", ipc = " << IPC << ", samplesSeen = " << SamplesSeen << "\n";
-  }
+  void dump() const;
 };
+
+bool operator==(TSPerf const& A, TSPerf const& B);
 
 
 /// A container for context-sensitive profiling data.

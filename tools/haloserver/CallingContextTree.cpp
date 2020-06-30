@@ -23,6 +23,17 @@ namespace halo {
   using Graph = CallingContextTree::Graph;
 
 
+void TSPerf::dump() const {
+  clogs() << "hot = " << Hotness << ", ipc = " << IPC << ", samplesSeen = " << SamplesSeen << "\n";
+}
+
+bool operator==(TSPerf const& A, TSPerf const& B) {
+  return std::tie(A.Hotness, A.IPC, A.SamplesSeen)
+      == std::tie(B.Hotness, B.IPC, B.SamplesSeen);
+}
+
+
+
 // maintains a stack of ancestors for use during CCT modification operations.
 class Ancestors {
 public:

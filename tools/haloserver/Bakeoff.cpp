@@ -1,11 +1,12 @@
 #include "halo/tuner/Bakeoff.h"
 #include "halo/tuner/TuningSection.h"
 #include "halo/tuner/CodeVersion.h"
+#include "halo/server/ClientGroup.h"
 #include "halo/nlohmann/util.hpp"
 
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_statistics_double.h>
+#include <gsl/gsl_rstat.h>
 #include <cmath>
+#include <algorithm>
 
 namespace halo {
 
@@ -29,8 +30,8 @@ BakeoffParameters::BakeoffParameters(nlohmann::json const& Config) {
 
 Bakeoff::Bakeoff(GroupState &State, TuningSection *TS, BakeoffParameters BP, std::string Current, std::string New)
     : BP(BP), TS(TS),
-    NEW_LIBNAME(New), Deployed(Current), Other(New),
-    Status(Result::InProgress), DeployedSampledSeen(0) {
+    NEW_LIBNAME(New), Deployed(Current, {}), Other(New, {}),
+    Status(Result::InProgress) {
 
   assert(Deployed != Other);
   assert(TS->Versions.find(Current) != TS->Versions.end() && "Current not in version database?");
@@ -48,7 +49,7 @@ Bakeoff::Bakeoff(GroupState &State, TuningSection *TS, BakeoffParameters BP, std
   NewIPC.clear();
 
   // make sure the clients are in the state we expect
-  deploy(State, Deployed);
+  deploy(State, Deployed.first);
 }
 
 llvm::Optional<std::string> Bakeoff::getWinner() const {
@@ -65,56 +66,141 @@ void Bakeoff::deploy(GroupState &State, std::string const& Name) {
 
 
 void Bakeoff::switchVersions(GroupState &State) {
-  // swap
-  std::string Temp = Deployed;
-  Deployed = Other;
-  Other = Temp;
+  std::swap(Deployed, Other);
 
-  DeployedSampledSeen = 0;
   Switches += 1;
   StepsUntilSwitch = BP.SWITCH_RATE;
 
-  deploy(State, Deployed);
+  deploy(State, Deployed.first);
+}
+
+
+Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
+  // turns off sampling asap.
+  ClientGroup::broadcastSamplingPeriod(State, 0);
+
+  // FIXME:
+  // 1. this calculation assumes that 100% of time is spent executing the function in
+  //    the future. We could figure out what % of time is actually spent executing here
+  //    by looking at ratio of total samples to samples in the lib. This would increase
+  //    the number of steps left to repay, I think.
+  //    For now, all of my benchmarks focus solely on basically one TS.
+  //
+  // 2. We could slightly discount the observations in TotalAvg to account for overhead
+  //    of switching in the bakeoff. So far that seems unnessecary.
+  //
+
+  gsl_rstat_workspace *stats = gsl_rstat_alloc();
+
+  // First, lets find the avg of the winner
+  for (auto const& Entry : History)
+    if (Entry.first == Winner)
+      gsl_rstat_add(Entry.second.IPC, stats);
+
+  // t_best, average IPC of the best library during bakeoff
+  double BestAvg = gsl_rstat_mean(stats);
+
+  // next lets add the remaining observed IPCs
+  // to determine how far behind we are on work.
+
+  for (auto const& Entry : History)
+    if (Entry.first != Winner)
+      gsl_rstat_add(Entry.second.IPC, stats);
+
+  // x_bar, average IPC during the entire bakeoff
+  double TotalAvg = gsl_rstat_mean(stats);
+
+  // N, the number of IPC observations during the bakeoff
+  // double N = gsl_rstat_n(stats);
+
+  double Delta = BestAvg - TotalAvg;
+  while (std::abs(Delta) > 0.5) { // TODO: maybe this is a parameter? or a percentage of the best IPC?
+    // simulate what IPC might be like after one time-step using best lib
+    PaymentsRemaining++;
+    gsl_rstat_add(BestAvg, stats);
+
+    // how far behind are we now?
+    Delta = BestAvg - gsl_rstat_mean(stats);
+  }
+
+  gsl_rstat_free(stats);
+  Status = Result::PayingDebt;
+  return Status;
+}
+
+
+Bakeoff::Result Bakeoff::debt_payment_step(GroupState &State) {
+  assert(Status == Result::PayingDebt);
+
+  // make sure sampling is off
+  ClientGroup::broadcastSamplingPeriod(State, 0);
+
+  PaymentsRemaining--;
+
+  if (PaymentsRemaining)
+    return Status;
+
+  // done paying debt! announce winner
+  if (Winner.hasValue())
+    Status = (Winner.getValue() == NEW_LIBNAME
+                ? Result::NewIsBetter
+                : Result::CurrentIsBetter);
+  else
+    Status = Result::Timeout;
+
+  return Status;
 }
 
 
 Bakeoff::Result Bakeoff::take_step(GroupState &State) {
+
+  // make sure all clients, including those who just connected, are participating
+  deploy(State, Deployed.first);
+
+  if (Status == Result::PayingDebt)
+    return debt_payment_step(State);
+
   if (Status != Result::InProgress)
     return Status;
 
-  // make sure all clients, including those who just connected, are participating
-  deploy(State, Deployed);
+  assert(Status == Result::InProgress);
+
+  // make sure all clients are sampling right now
+  ClientGroup::broadcastSamplingPeriod(State, TS->Profile.getSamplePeriod());
+
+    // update CCT etc
+  TS->Profile.consumePerfData(State);
 
   // first, check for fresh perf info
-  TSPerf Perf = TS->Profile.currentPerf(TS->FnGroup, Deployed);
-
-  History.push_back(Perf);
+  TSPerf Perf = TS->Profile.currentPerf(TS->FnGroup, Deployed.first);
 
   // no new samples in this library? can't make progress
-  if (DeployedSampledSeen == Perf.SamplesSeen)
+  if (Deployed.second.SamplesSeen == Perf.SamplesSeen) {
+    info("Bakeoff can't make progress b/c no samples observed in the deployed library.");
     return Status;
-  else
-    DeployedSampledSeen = Perf.SamplesSeen;
+  } else {
+    Deployed.second = Perf;
+  }
 
+  History.emplace_back(Deployed.first, Perf);
 
-  auto &DeployedIPC = TS->Versions.at(Deployed).getIPC();
-  auto &OtherIPC = TS->Versions.at(Other).getIPC();
+  auto &DeployedIPC = TS->Versions.at(Deployed.first).getIPC();
+  auto &OtherIPC = TS->Versions.at(Other.first).getIPC();
 
   // add the new IPC reading
   DeployedIPC.observe(Perf.IPC);
 
-
   // try to determine a winner
   switch(compare_ttest(DeployedIPC, OtherIPC)) {
     case ComparisonResult::GreaterThan: {
-      Winner = Deployed;
-      Status = (Winner == NEW_LIBNAME ? Result::NewIsBetter : Result::CurrentIsBetter);
+      Winner = Deployed.first;
+      return transition_to_debt_repayment(State);
     }; break;
 
     case ComparisonResult::LessThan: {
-      Winner = Other;
+      Winner = Other.first;
       switchVersions(State);  // switch to better version.
-      Status = (Winner == NEW_LIBNAME ? Result::NewIsBetter : Result::CurrentIsBetter);
+      return transition_to_debt_repayment(State);
     }; break;
 
     case ComparisonResult::NoAnswer: {
@@ -124,11 +210,10 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
         // we give up... don't know which one is better!
 
         // prefer going back to the original one when timing out.
-        if (Deployed == NEW_LIBNAME)
+        if (Deployed.first == NEW_LIBNAME)
           switchVersions(State);
 
-        Status = Result::Timeout;
-        return Status;
+        return transition_to_debt_repayment(State);
       }
 
       StepsUntilSwitch -= 1;
@@ -346,12 +431,13 @@ void Bakeoff::dump() const {
   clogs() << "\tBakeoff: {"
           << "\n\t\tSteps = " << Switches
           << "\n\t\tStepsUntilSwitch = " << StepsUntilSwitch
-          << "\n\t\tCurrently Deployed = " << Deployed
+          << "\n\t\tCurrently Deployed = " << Deployed.first
+          << "\n\t\tPaymentsRemaining = " << PaymentsRemaining
           << "\n\t\tHistory = [\n";
 
   for (auto const& Entry : History) {
-    clogs() << "\t\t\t";
-    Entry.dump();
+    clogs() << "\t\t\t" << Entry.first << " : ";
+    Entry.second.dump();
   }
 
 

@@ -74,20 +74,19 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
   /////////////////////////// BAKEOFF
   if (Status == ActivityState::TestingNewLib) {
-    // make sure all clients are sampling right now
-    ClientGroup::broadcastSamplingPeriod(State, Profile.getSamplePeriod());
-
-    // update CCT etc
-    Profile.consumePerfData(State);
-
     assert(Bakery.hasValue() && "no bakery when trying to test a lib?");
     auto &Bakeoff = Bakery.getValue();
 
     auto Result = Bakeoff.take_step(State);
-    adjustAfterBakeoff(Result);
+
+    // TODO: remove the old way to pay off debt!
+    // I think we want to repurpose "paused" state to include the stopping-condition
+    // test, in conjunction with the duplicate compiles businesses.
+    // adjustAfterBakeoff(Result);
 
     switch (Result) {
       case Bakeoff::Result::InProgress:
+      case Bakeoff::Result::PayingDebt:
         return transitionTo(ActivityState::TestingNewLib);
 
       case Bakeoff::Result::NewIsBetter:
@@ -98,7 +97,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
         BestLib = NewBest.getValue();
 
         Bakery = llvm::None;
-        return transitionTo(ActivityState::Paused);
+        return transitionTo(ActivityState::Ready);
       };
 
       case Bakeoff::Result::Timeout: {
@@ -115,7 +114,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
         Versions.erase(Other);
 
         Bakery = llvm::None;
-        return transitionTo(ActivityState::Paused);
+        return transitionTo(ActivityState::Ready);
       };
     };
     fatal_error("unhandled bakeoff case");

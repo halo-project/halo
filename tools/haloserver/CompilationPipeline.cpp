@@ -137,7 +137,7 @@ Error doCleanup(Module &Module, std::string const& RootFunc, std::unordered_set<
 
 
 Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
-  bool Pr = true; // printing?
+  bool Pr = false; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
 
   // set all the CL options to defaults (from PassManagerBuilder / LLVM) first

@@ -3,13 +3,13 @@
 #include <string>
 #include "llvm/ADT/Optional.h"
 #include "halo/tuner/RandomQuantity.h"
+#include "halo/compiler/CallingContextTree.h"
 #include "halo/nlohmann/json_fwd.hpp"
 
 namespace halo {
 
 class TuningSection;
 class GroupState;
-class TSPerf;
 
 struct BakeoffParameters {
   BakeoffParameters(nlohmann::json const& Config);
@@ -32,7 +32,8 @@ public:
     CurrentIsBetter,  // finished
     NewIsBetter,      // finished
     Timeout,          // finished (but no winner!)
-    InProgress
+    InProgress,
+    PayingDebt
   };
 
   // if the bakeoff has finished, then this function returns the winner.
@@ -41,10 +42,10 @@ public:
   Result lastResult() const { return Status; }
 
   // returns the name of the library that's currently deployed in this bake-off
-  std::string getDeployed() const { return Deployed; }
+  std::string getDeployed() const { return Deployed.first; }
 
   // the NOT deployed one.
-  std::string getOther() const { return Other; }
+  std::string getOther() const { return Other.first; }
 
   // makes progress on the bakeoff
   Result take_step(GroupState&);
@@ -52,6 +53,11 @@ public:
   void dump() const;
 
 private:
+
+  using Snapshot = std::pair<std::string, TSPerf>;
+
+  Bakeoff::Result transition_to_debt_repayment(GroupState &);
+  Bakeoff::Result debt_payment_step(GroupState &);
 
   void deploy(GroupState&, std::string const& LibName);
   void switchVersions(GroupState&);
@@ -71,20 +77,20 @@ private:
   BakeoffParameters BP;
   TuningSection *TS;
 
-  std::vector<TSPerf> History;
+  std::vector<Snapshot> History;
 
   // name of the "new" library we're suppose to be testing
   std::string NEW_LIBNAME;
 
   // manages the switches between libs
-  std::string Deployed;
-  std::string Other;
+  Snapshot Deployed;
+  Snapshot Other;
 
   llvm::Optional<std::string> Winner;
   Result Status;
-  size_t DeployedSampledSeen{0};
   size_t StepsUntilSwitch;
   size_t Switches{0};
+  size_t PaymentsRemaining{0};
 };
 
 
