@@ -104,33 +104,45 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
       gsl_rstat_add(Entry.second.IPC, deployedStats);
   }
 
-  // t_best, average IPC of the best library during bakeoff
-  double BestAvg = gsl_rstat_mean(deployedStats);
+  // t_deployed, average IPC of the library to be used after the bakeoff
+  const double DeployedAvg = gsl_rstat_mean(deployedStats);
 
   // x_bar, average IPC during the entire bakeoff
-  double TotalAvg = gsl_rstat_mean(stats);
+  const double TotalAvg = gsl_rstat_mean(stats);
 
   // due to overheads involving switching and sampling,
   // we apply a simulated penalty to the total avg
-  TotalAvg *= 0.9;  // TODO: maybe this is a parameter?
+  const double AvgIPC = TotalAvg * 0.9;  // TODO: maybe this is a parameter?
+  assert(TotalAvg > AvgIPC);
 
   // N, the number of IPC observations during the bakeoff
   // double N = gsl_rstat_n(stats);
 
-  assert(BestAvg > TotalAvg);
-  double Delta = BestAvg - TotalAvg;
+  double GoalIPC = DeployedAvg;
+
+  // in some time-outs, the deployed library has a lower
+  // IPC than the overall average, i.e., the other one
+  // technically has a higher average IPC, but not in a statistically
+  // significant capacity. In that case we pretend the deployed IPC
+  // will exhibit the non-penalized avg.
+  if (GoalIPC < AvgIPC)
+    GoalIPC = TotalAvg; // non-penalized avg
+
+  assert(GoalIPC > AvgIPC);
+
+  double Delta = GoalIPC - AvgIPC;
 
   clogs() << "Bakeoff Debt Calculation: Delta = " << Delta
-          << ", BestAvg = " << BestAvg
-          << ", TotalAvg = " << TotalAvg << "\n";
+          << ", GoalIPC = " << GoalIPC
+          << ", AvgIPC = " << AvgIPC << "\n";
 
   while (Delta > 0.5) { // TODO: maybe this is a parameter? or a percentage of the best IPC?
     // simulate what IPC might be like after one time-step using best lib
     PaymentsRemaining++;
-    gsl_rstat_add(BestAvg, stats);
+    gsl_rstat_add(GoalIPC, stats);
 
     // how far behind are we now?
-    Delta = BestAvg - gsl_rstat_mean(stats);
+    Delta = GoalIPC - gsl_rstat_mean(stats);
   }
 
   // NOTE: no matter what we end up waiting one step
