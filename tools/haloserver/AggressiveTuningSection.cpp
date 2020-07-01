@@ -132,11 +132,20 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
   //////////////////////////// COMPILING
   if (Status == ActivityState::Compiling) {
+checkAgain:
+    // if we ran out of jobs because they were all duplicates,
+    // go back to experimenting to queue-up new configurations
+    if (Compiler.jobsInFlight() == 0)
+      return transitionTo(ActivityState::Experiment);
+
+    // we have a job, but is it done compiling?
     auto CompileDone = Compiler.dequeueCompilation();
-    if (!CompileDone)
-      return;
+    if (!CompileDone) // we'll wait for it
+      return transitionTo(ActivityState::Compiling);
 
     CodeVersion NewCV {std::move(CompileDone.getValue())};
+
+    NewCV.getConfigs().front().dump();
 
     // check if this is a duplicate
     bool Dupe = false;
@@ -151,7 +160,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
       DuplicateCompiles++; DuplicateCompilesInARow++;
 
       if (DuplicateCompilesInARow < MAX_DUPES_IN_ROW)
-        goto retryExperiment;
+        goto checkAgain;
 
       DuplicateCompilesInARow = 0; // reset
 
@@ -178,14 +187,15 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
 
 
-  ///////////////////////////////// READY
+  ///////////////////////////////// EXPERIMENT
   assert(Status == ActivityState::Experiment);
 
-  // experiment!
-retryExperiment:
-  KnobSet NewKnobs = std::move(PBT.getConfig(BestLib));
-  NewKnobs.dump();
-  Compiler.enqueueCompilation(*Bitcode, std::move(NewKnobs));
+  // Ask for one config initially, and then keep enqueuing more
+  // if it has already pre-determined the next few.
+  do {
+    Compiler.enqueueCompilation(*Bitcode, std::move(PBT.getConfig(BestLib)));
+  } while (PBT.nextIsPredetermined());
+
   transitionTo(ActivityState::Compiling);
 }
 

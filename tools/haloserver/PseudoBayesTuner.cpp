@@ -36,19 +36,27 @@ PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& 
 KnobSet PseudoBayesTuner::getConfig(std::string CurrentLib) {
   if (Manager.sizeTop() == 0) {
     auto Error = generateConfigs(CurrentLib);
+
     if (Error) {
       // log it. an error can happen if we have an insufficient prior.
       info(Error);
-      llvm::consumeError(std::move(Error));
+
+      // if we have insufficient prior, give a random one
+      if (Manager.size() < MIN_PRIOR) {
+        llvm::consumeError(std::move(Error));
+        return Manager.genRandom(BaseKnobs, RNG);
+      }
+
+      fatal_error("some other issue occurred");
     }
 
-    // we always want to make sure we're not overfitting to what we already know.
+    // we always want to make sure we're not overfitting to what we already know,
+    // so we fill the remaining up to the batch size with random ones.
     while (Manager.sizeTop() < TotalBatchSz)
       Manager.addTop(Manager.genRandom(BaseKnobs, RNG));
   }
 
   assert(Manager.sizeTop() > 0);
-
   return Manager.popTop();
 }
 ////////////////////////////////////////////////////////////////////////////////////
@@ -261,8 +269,8 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
       double actual = validateData.getResult(i);
       double guess = predict[i];
 
-      clogs() << "actual = " << actual
-                << ", guess = " << guess << "\n";
+      // clogs() << "actual = " << actual
+      //           << ", guess = " << guess << "\n";
 
       err += std::pow(actual - guess, 2) / validateRows;
     }
@@ -396,7 +404,7 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
 
     Manager.setPredictedQuality(searchConfig.at(i), predictedIPC);
 
-    clogs() << "prediction[" << i << "]=" << predictedIPC << "\n";
+    // clogs() << "prediction[" << i << "]=" << predictedIPC << "\n";
 
     // we don't want to return previous configurations, which are
     // put at the front of the matrix.

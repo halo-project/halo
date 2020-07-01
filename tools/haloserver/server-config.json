@@ -10,16 +10,16 @@
     "cct-hotness-ipsample": 1,
     "cct-hotness-recentlyactive": 0.05,
 
-    "ts-max-dupes-row": 10,
+    "ts-max-dupes-row": 25,
 
     "bakeoff-switch-rate": 3,
     "bakeoff-max-switches": 5,
     "bakeoff-confidence": 99,
     "bakeoff-min-samples": 3,
 
-    "pbtuner-batch-size": 5,
+    "pbtuner-batch-size": 10,
     "pbtuner-explore-ratio": 0.2,
-    "pbtuner-surrogate-batch-size": 200,
+    "pbtuner-surrogate-batch-size": 256,
     "pbtuner-surrogate-explore-ratio": 0.5,
     "pbtuner-min-prior": 5,
     "pbtuner-heldout-ratio": 0.2,

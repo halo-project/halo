@@ -46,6 +46,8 @@ class CompilationManager {
         })));
     }
 
+    size_t jobsInFlight() const { return InFlight.size(); }
+
     llvm::Optional<FinishedJob> dequeueCompilation() {
       if (InFlight.size() == 0)
         return llvm::None;
