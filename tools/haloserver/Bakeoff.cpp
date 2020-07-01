@@ -90,31 +90,41 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
   //    of switching in the bakeoff. So far that seems unnessecary.
   //
 
-  gsl_rstat_workspace *stats = gsl_rstat_alloc();
+  // if there is a winner, make sure its the one that's currently deployed
+  // in the case of a tie, we consider the deployed library to be the "best"
+  assert(!Winner.hasValue() || Winner.getValue() == Deployed.first);
 
-  // First, lets find the avg of the winner
-  for (auto const& Entry : History)
-    if (Entry.first == Winner)
-      gsl_rstat_add(Entry.second.IPC, stats);
+  gsl_rstat_workspace *stats = gsl_rstat_alloc(); // total IPC statistics
+  gsl_rstat_workspace *deployedStats = gsl_rstat_alloc();
+
+  // gather info
+  for (auto const& Entry : History) {
+    gsl_rstat_add(Entry.second.IPC, stats);
+    if (Entry.first == Deployed.first)
+      gsl_rstat_add(Entry.second.IPC, deployedStats);
+  }
 
   // t_best, average IPC of the best library during bakeoff
-  double BestAvg = gsl_rstat_mean(stats);
-
-  // next lets add the remaining observed IPCs
-  // to determine how far behind we are on work.
-
-  for (auto const& Entry : History)
-    if (Entry.first != Winner)
-      gsl_rstat_add(Entry.second.IPC, stats);
+  double BestAvg = gsl_rstat_mean(deployedStats);
 
   // x_bar, average IPC during the entire bakeoff
   double TotalAvg = gsl_rstat_mean(stats);
 
+  // due to overheads involving switching and sampling,
+  // we apply a simulated penalty to the total avg
+  TotalAvg *= 0.9;  // TODO: maybe this is a parameter?
+
   // N, the number of IPC observations during the bakeoff
   // double N = gsl_rstat_n(stats);
 
+  assert(BestAvg > TotalAvg);
   double Delta = BestAvg - TotalAvg;
-  while (std::abs(Delta) > 0.5) { // TODO: maybe this is a parameter? or a percentage of the best IPC?
+
+  clogs() << "Bakeoff Debt Calculation: Delta = " << Delta
+          << ", BestAvg = " << BestAvg
+          << ", TotalAvg = " << TotalAvg << "\n";
+
+  while (Delta > 0.5) { // TODO: maybe this is a parameter? or a percentage of the best IPC?
     // simulate what IPC might be like after one time-step using best lib
     PaymentsRemaining++;
     gsl_rstat_add(BestAvg, stats);
@@ -123,7 +133,13 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
     Delta = BestAvg - gsl_rstat_mean(stats);
   }
 
+  // NOTE: no matter what we end up waiting one step
+  // to announce the winner, even if PaymentsRemaining == 0,
+  // because during the time to calculate the debt here,
+  // we're already making a "payment".
+
   gsl_rstat_free(stats);
+  gsl_rstat_free(deployedStats);
   Status = Result::PayingDebt;
   return Status;
 }
@@ -135,10 +151,10 @@ Bakeoff::Result Bakeoff::debt_payment_step(GroupState &State) {
   // make sure sampling is off
   ClientGroup::broadcastSamplingPeriod(State, 0);
 
-  PaymentsRemaining--;
-
-  if (PaymentsRemaining)
+  if (PaymentsRemaining) {
+    PaymentsRemaining--;
     return Status;
+  }
 
   // done paying debt! announce winner
   if (Winner.hasValue())
@@ -175,8 +191,8 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   TSPerf Perf = TS->Profile.currentPerf(TS->FnGroup, Deployed.first);
 
   // no new samples in this library? can't make progress
-  if (Deployed.second.SamplesSeen == Perf.SamplesSeen) {
-    info("Bakeoff can't make progress b/c no samples observed in the deployed library.");
+  if ((Perf.SamplesSeen - Deployed.second.SamplesSeen) < 2 || Perf.IPC <= 0) {
+    info("Bakeoff can't make progress b/c insufficient samples observed in the deployed library.");
     return Status;
   } else {
     Deployed.second = Perf;
