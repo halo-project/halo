@@ -14,6 +14,7 @@ namespace halo {
 PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& BaseKnobs,  std::unordered_map<std::string, CodeVersion> &Versions)
   : BaseKnobs(BaseKnobs), Versions(Versions),
     RNG(config::getServerSetting<uint64_t>("seed", Config)),
+    MaxLearnIters(config::getServerSetting<size_t>("pbtuner-learn-iter-max", Config)),
     TotalBatchSz(config::getServerSetting<size_t>("pbtuner-batch-size", Config)),
     SearchSz(config::getServerSetting<size_t>("pbtuner-surrogate-batch-size", Config)),
     MIN_PRIOR(config::getServerSetting<size_t>("pbtuner-min-prior", Config)),
@@ -218,7 +219,7 @@ void initBooster(const DMatrixHandle dmats[],
 ////////////////////////////////////////////////////////////////////////////////////
 // the training step. returns the best model learned (in a serialized form)
 std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const& validateData,
-                  unsigned MaxLearnIters=500, unsigned MaxLearnPastBest=0) {
+                  unsigned MaxLearnIters, unsigned MaxLearnPastBest=0) {
 
   // must be an array. not sure why.
   // this thing manages the XGBoost view of the config matrix.
@@ -276,7 +277,7 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
     }
     err = std::sqrt(err);
 
-    clogs() << "RMSE = " << err << "\n\n";
+    // clogs() << "RMSE = " << err << "\n\n";
 
     // is this model better than we've seen before?
     if (err <= bestErr || bestModel.size() == 0) {
@@ -532,7 +533,7 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
     // at this point, we're done with the allConfigs.
     allConfigs.clear();
 
-    surrogateModel = runTraining(trainData, validateData);
+    surrogateModel = runTraining(trainData, validateData, MaxLearnIters);
   }
 
   ///////////

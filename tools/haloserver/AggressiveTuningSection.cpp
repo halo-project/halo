@@ -145,7 +145,7 @@ checkAgain:
 
     CodeVersion NewCV {std::move(CompileDone.getValue())};
 
-    NewCV.getConfigs().front().dump();
+    // NewCV.getConfigs().front().dump();
 
     // check if this is a duplicate
     bool Dupe = false;

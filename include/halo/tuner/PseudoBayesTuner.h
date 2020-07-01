@@ -37,12 +37,13 @@ private:
 
   // various hyperparameters of the tuner, which are initialized from the config file.
   // these affect the generateConfig process.
-  size_t TotalBatchSz;    // total number of configurations to generate every time we run out
-  size_t SearchSz;  // the number of configurations to evaluate with the surrogate when generating new configs.
+  const size_t MaxLearnIters; // max number of iterations to learn in the model before stopping. helps prevent run-away overfitting.
+  const size_t TotalBatchSz;    // total number of configurations to generate every time we run out
+  const size_t SearchSz;  // the number of configurations to evaluate with the surrogate when generating new configs.
   const size_t MIN_PRIOR; // the minimum number of <config,IPC> observations required in order to perform training.
   const float HELDOUT_RATIO;  // (0,1) indicates how much of the dataset should be held-out during training, for validation purposes.
-  float ExploreRatio; // [0,1] indicates how much to "explore", with the remaining percent used to "exploit".
-  float EnergyLvl; // [0, 100] energy level to be used to perturb the best configuration when exploiting.
+  const float ExploreRatio; // [0,1] indicates how much to "explore", with the remaining percent used to "exploit".
+  const float EnergyLvl; // [0, 100] energy level to be used to perturb the best configuration when exploiting.
   size_t ExploitBatchSz;  // the top N predictions that will be saved to be tested for real.
 
   ConfigManager Manager;
