@@ -52,6 +52,7 @@ add_executable(${SERVER_BIN}
   CodeRegionInfo.cpp
   CodeVersion.cpp
   CompilationPipeline.cpp
+  ConfigManager.cpp
   HaloServer.cpp
   Knob.cpp
   KnobSet.cpp

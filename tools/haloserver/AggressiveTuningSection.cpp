@@ -118,7 +118,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   //////////////////////////// CHECK IF WE SHOULD STOP
   if (Status == ActivityState::ConsiderStopping) {
 
-    if (Stopper.shouldStop(BestLib, Versions)) {
+    if (Stopper.shouldStop(BestLib, Versions, PBT.getConfigManager())) {
       // make sure all clients are not sampling right now
       ClientGroup::broadcastSamplingPeriod(State, 0);
       return transitionTo(ActivityState::Stopped);
@@ -213,6 +213,7 @@ void AggressiveTuningSection::dump() const {
           << "\n\tBakeoff Timeout Rate = " << TimeoutRate << "%"
           << "\n\tExperiment Success Rate = " << SuccessRate << "%"
           << "\n\tDuplicateCompiles = " << DuplicateCompiles
+          << "\n\tDB Size = " << PBT.getConfigManager().size()
           << "\n";
 
   if (Bakery.hasValue())

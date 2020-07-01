@@ -34,7 +34,7 @@ PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& 
 ////////////////////////////////////////////////////////////////////////////////////
 // obtains a config, generating them if we've run out of cached ones
 KnobSet PseudoBayesTuner::getConfig(std::string CurrentLib) {
-  if (GeneratedConfigs.size() == 0) {
+  if (Manager.sizeTop() == 0) {
     auto Error = generateConfigs(CurrentLib);
     if (Error) {
       // log it. an error can happen if we have an insufficient prior.
@@ -43,15 +43,13 @@ KnobSet PseudoBayesTuner::getConfig(std::string CurrentLib) {
     }
 
     // we always want to make sure we're not overfitting to what we already know.
-    while (GeneratedConfigs.size() < TotalBatchSz)
-      GeneratedConfigs.push_back(RandomTuner::randomFrom(KnobSet(BaseKnobs), RNG));
+    while (Manager.sizeTop() < TotalBatchSz)
+      Manager.addTop(Manager.genRandom(BaseKnobs, RNG));
   }
 
-  assert(GeneratedConfigs.size() > 0);
+  assert(Manager.sizeTop() > 0);
 
-  KnobSet KS = GeneratedConfigs.front();
-  GeneratedConfigs.pop_front();
-  return KS;
+  return Manager.popTop();
 }
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -325,13 +323,22 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
   // search by first generating a bunch of configurations
   size_t ExploreSz = std::round(ExploreRatio * SearchSz);
   size_t ExploitSz = SearchSz - ExploreSz;
+  size_t UpdateSz = SearchSz / 8;
 
-  ConfigMatrix searchMatrix(SearchSz, knobsPerConfig, KnobToCol);
+  ConfigMatrix searchMatrix(SearchSz + UpdateSz, knobsPerConfig, KnobToCol);
   std::vector<KnobSet> searchConfig;
+
+
+  { // GET FRESH PREDICTIONS FOR PREVIOUSLY GENERATED CONFIGS
+    for (size_t i = 0; i < UpdateSz; i++) {
+      searchConfig.push_back(Manager.genPrevious(RNG));
+      searchMatrix.emplace_back(&searchConfig.back());
+    }
+  }
 
   { // EXPLORE
     for (size_t i = 0; i < ExploreSz; i++) {
-      searchConfig.push_back(RandomTuner::randomFrom(KnobSet(BaseKnobs), RNG));
+      searchConfig.push_back(Manager.genRandom(BaseKnobs, RNG));
       searchMatrix.emplace_back(&(searchConfig.back()));
     }
   }
@@ -343,7 +350,7 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
       KnobSet GoodConfig = SimilarConfigs[Chooser(RNG)];
       GoodConfig.copyingUnion(BaseKnobs); // we want to expand this good config with all possible tuning knobs.
 
-      searchConfig.push_back(RandomTuner::nearby(std::move(GoodConfig), RNG, EnergyLvl));
+      searchConfig.push_back(Manager.genNearby(GoodConfig, RNG, EnergyLvl));
       searchMatrix.emplace_back(&(searchConfig.back()));
     }
   }
@@ -379,14 +386,24 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
   // _anything_ is better than what we've got, and we should return an error
   // in that case so the tuner generates a random one instead.
 
-  // the IPCs contained in this set are the negative of the predicted IPC.
+  // the IPCs contained in this multiset are the negative of the predicted IPC.
   // this is done so that the multiset works for us in keeping the smallest N
   // elements, where the smallest negative IPC = largest IPC
   std::multiset<SetKey, lessThan> Best;
-  for (size_t i = 0; i < searchMatrix.rows()-1; i++) {
+
+  for (size_t i = 0; i < searchMatrix.rows(); i++) {
     float predictedIPC = out[i];
 
+    Manager.setPredictedQuality(searchConfig.at(i), predictedIPC);
+
     clogs() << "prediction[" << i << "]=" << predictedIPC << "\n";
+
+    // we don't want to return previous configurations, which are
+    // put at the front of the matrix.
+    // we just added them to the matrix to update their predicted quality.
+    // to help the StatisticalStopper.
+    if (i < UpdateSz)
+      continue;
 
     auto Cur = std::make_pair(i, -predictedIPC);
 
@@ -409,14 +426,14 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
     clogs() << "chose config " << Chosen
             << " with estimated IPC " << -Entry.second
             << "\n";
-    GeneratedConfigs.push_back(searchConfig[Chosen]);
+    Manager.addTop(searchConfig[Chosen]);
   }
 
   // cleanup
   XGBoosterFree(model);
   XGDMatrixFree(h_test);
 
-  if (GeneratedConfigs.size() == 0)
+  if (Manager.sizeTop() == 0)
     return makeError("pbtuner failed to find any good configurations");
 
   return llvm::Error::success();

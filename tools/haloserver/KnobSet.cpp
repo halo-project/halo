@@ -3,6 +3,8 @@
 #include "llvm/ADT/Optional.h"
 #include "halo/nlohmann/util.hpp"
 
+#include <boost/functional/hash.hpp>
+
 #include "Logging.h"
 
 #include <type_traits>
@@ -56,10 +58,12 @@ void KnobSet::unsetAll() {
 }
 
 size_t KnobSet::cardinality() const {
-  size_t Sz = 0;
+  if (Knobs.size() == 0)
+    return 0;
 
+  size_t Sz = 1;
   for (auto const& Entry : Knobs)
-    Sz += Entry.second->cardinality();
+    Sz *= Entry.second->cardinality();
 
   return Sz;
 }
@@ -200,3 +204,70 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
 
 
 } // end namespace halo
+
+namespace std {
+
+  // this implementation only cares about comparing the knobs w.r.t. their current
+  // values in these sets. not other aspects of knobs. This is why I have not defined
+  // equality recursively in terms of Knob equality.
+  size_t hash<halo::KnobSet>::operator()(halo::KnobSet const& KS) const {
+    size_t seed = KS.NumLoopIDs;
+    for (auto const& Entry : KS.Knobs)
+      boost::hash_combine(seed, Entry.second->hashCode());
+    return seed;
+  }
+
+
+  // this implementation only cares about comparing the knobs w.r.t. their current
+  // values in these sets. not other aspects of knobs. This is why I have not defined
+  // equality recursively in terms of Knob equality.
+  bool equal_to<halo::KnobSet>::operator()(halo::KnobSet const& A, halo::KnobSet const& B) const {
+    if (A.NumLoopIDs != B.NumLoopIDs)
+      return false;
+
+    if (A.size() != B.size())
+      return false;
+
+    for (auto const& EntryA : A.Knobs) {
+      auto ResultB = B.Knobs.find(EntryA.first);
+
+      if (ResultB == B.Knobs.end())
+        return false;
+
+      halo::Knob const* PtrA = EntryA.second.get();
+      halo::Knob const* PtrB = ResultB->second.get();
+
+      if (PtrA->getKind() != PtrB->getKind())
+        return false;
+
+      if (halo::IntKnob const* IK_A = llvm::dyn_cast<halo::IntKnob>(PtrA))
+        if (halo::IntKnob const* IK_B = llvm::dyn_cast<halo::IntKnob>(PtrB)) {
+          if (IK_A->sameValAs(IK_B))
+            continue;
+          else
+            return false;
+        }
+
+      if (halo::FlagKnob const* FK_A = llvm::dyn_cast<halo::FlagKnob>(PtrA))
+        if (halo::FlagKnob const* FK_B = llvm::dyn_cast<halo::FlagKnob>(PtrB)) {
+          if (FK_A->sameValAs(FK_B))
+            continue;
+          else
+            return false;
+        }
+
+
+      if (halo::OptLvlKnob const* OK_A = llvm::dyn_cast<halo::OptLvlKnob>(PtrA))
+        if (halo::OptLvlKnob const* OK_B = llvm::dyn_cast<halo::OptLvlKnob>(PtrB)) {
+          if (OK_A->sameValAs(OK_B))
+            continue;
+          else
+            return false;
+        }
+
+      halo::fatal_error("Knob kinds are identical but dyn_casts failed? Perhaps you forgot to update std::equal_to");
+    }
+
+    return true;
+  }
+} // namespace std

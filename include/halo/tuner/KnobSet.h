@@ -6,8 +6,31 @@
 #include "Logging.h"
 
 #include <unordered_map>
+#include <functional>
 
 using JSON = nlohmann::json;
+
+namespace halo {
+  class KnobSet;
+} // namespace halo
+
+
+// these comparison and hash functions only care about the
+// current setting of each knob in the set to help deduplicate
+// identical configurations of knobs. They're not
+// useful for deep equality of configuration spaces (to save time).
+namespace std {
+  template<>
+  struct hash<halo::KnobSet> {
+    size_t operator()(halo::KnobSet const&) const;
+  };
+
+  template<>
+  struct equal_to<halo::KnobSet> {
+    bool operator()(halo::KnobSet const&, halo::KnobSet const&) const;
+  };
+} // namespace std
+
 
 namespace halo {
 
@@ -102,6 +125,9 @@ namespace halo {
 
     static void InitializeKnobs(JSON const&, KnobSet&, unsigned NumLoopIDs);
 
+    friend size_t std::hash<KnobSet>::operator()(KnobSet const&) const;
+    friend bool std::equal_to<KnobSet>::operator()(KnobSet const&, KnobSet const&) const;
+
   };
 
-}
+} // namespace halo

@@ -59,6 +59,10 @@ namespace halo {
 
     KnobKind getKind() const { return kind_; }
 
+    // returns a hashed value of the current knob's setting
+    // that is suitable for use in STL unordered containers
+    virtual size_t hashCode() const = 0;
+
     // the knob's current value as a string (for debugging).
     virtual std::string dump() const { return "?"; }
 
@@ -114,6 +118,12 @@ namespace halo {
 
     bool hasVal() const { return Current.hasValue(); }
 
+    // compares the given knob's current setting for equality
+    // with this knob's current setting.
+    bool sameValAs(ScalarKnob<ValTy> const* Other) const {
+      return Current == Other->Current;
+    }
+
     // inclusive ranges
     ValTy getMin() const { return Min; }
     ValTy getMax() const { return Max; }
@@ -167,6 +177,10 @@ namespace halo {
       return 2 + 1;
     }
 
+    size_t hashCode() const override {
+      return Current.getValueOr(getMax()+1);
+    }
+
     static bool classof(const Knob *K) {
       return K->getKind() == KK_Flag;
     }
@@ -213,6 +227,12 @@ namespace halo {
     size_t cardinality() const override {
       // normal number of options + 1 for the "none" setting
       return (asInt(getMax()) - asInt(getMin()) + 1) + 1;
+    }
+
+    size_t hashCode() const override {
+      if (Current.hasValue())
+        return asInt(Current.getValue());
+      return -1;
     }
 
     static LevelTy parseLevel(std::string const& Level) {
@@ -312,6 +332,10 @@ bool operator <= (OptLvlKnob::LevelTy const& a, OptLvlKnob::LevelTy const& b);
     size_t cardinality() const override {
       // normal number of options, +1 for the none option
       return (getMax() - getMin() + 1) + 1;
+    }
+
+    size_t hashCode() const override {
+      return Current.getValueOr(getMax()+1);
     }
 
     template <typename IntAssignable>

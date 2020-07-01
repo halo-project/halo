@@ -6,6 +6,8 @@
 
 namespace halo {
 
+class ConfigManager;
+
 // Based on work by:
 //
 // Vuduc, Richard, Jeff Bilmes, and James Demmel. 2000.
@@ -22,7 +24,9 @@ public:
   StatisticalStopper(KnobSet const& ConfigSpace, FloatTy alpha=0.1, FloatTy epsilon=0.05)
     : Alpha(alpha), Epsilon(epsilon), N(ConfigSpace.cardinality()) {}
 
-  bool shouldStop(std::string const& BestLib, std::unordered_map<std::string, CodeVersion> const&) const;
+  bool shouldStop(std::string const& BestLib,
+                  std::unordered_map<std::string, CodeVersion> const&,
+                  ConfigManager const&) const;
 
 private:
   // [0, 1], the probability of error the user will tolerate

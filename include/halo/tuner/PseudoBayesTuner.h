@@ -2,6 +2,7 @@
 
 #include "halo/tuner/KnobSet.h"
 #include "halo/tuner/CodeVersion.h"
+#include "halo/tuner/ConfigManager.h"
 #include "halo/nlohmann/json_fwd.hpp"
 #include "llvm/Support/Error.h"
 #include "llvm/ADT/Optional.h"
@@ -25,7 +26,9 @@ public:
   // determined, i.e., further profiling data / bakeoffs will not influence the
   // next config. This is useful if you'd like to get a head-start on
   // compiling configs.
-  bool nextIsPredetermined() const { return GeneratedConfigs.size() > 0; }
+  bool nextIsPredetermined() const { return Manager.sizeTop() > 0; }
+
+  ConfigManager const& getConfigManager() const { return Manager; }
 
 private:
   KnobSet const& BaseKnobs;
@@ -42,7 +45,7 @@ private:
   float EnergyLvl; // [0, 100] energy level to be used to perturb the best configuration when exploiting.
   size_t ExploitBatchSz;  // the top N predictions that will be saved to be tested for real.
 
-  std::list<KnobSet> GeneratedConfigs;
+  ConfigManager Manager;
 
   // adds more configurations to the list of generated configs
   // using the pseudo-bayes tuner, based on the current state of
