@@ -9,6 +9,16 @@
 #include <algorithm>
 #include <set>
 
+// checks the return value of calls to XGBoost C API
+#define safe_xgboost(call) {                                                \
+int err = (call);                                                           \
+if (err != 0) {                                                             \
+  halo::fatal_error(std::string(__FILE__) + ":" + std::to_string(__LINE__)  \
+                      + " during " + #call + ": " + XGBGetLastError());     \
+}                                                                           \
+}
+
+
 namespace halo {
 
 PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& BaseKnobs,  std::unordered_map<std::string, CodeVersion> &Versions)
@@ -184,33 +194,29 @@ void initBooster(const DMatrixHandle dmats[],
                       bst_ulong len,
                       BoosterHandle *out) {
 
-  auto chk = [](int Result) {
-    if (Result != 0)
-      fatal_error("bad XGBooster parameter setting.");
-  };
-
-  XGBoosterCreate(dmats, len, out);
+  safe_xgboost(XGBoosterCreate(dmats, len, out));
 
   // NOTE: all of the char*'s passed to XGB here need to have a lifetime
-  // that exceeds the lifetime of this function call.
+  // that exceeds the lifetime of this function call. It basically has
+  // to be a string literal that is passed in.
 
 #ifdef NDEBUG
   // 0 = silent, 1 = warning, 2 = info, 3 = debug. default is 1
-  chk(XGBoosterSetParam(*out, "verbosity", "0"));
+  safe_xgboost(XGBoosterSetParam(*out, "verbosity", "0"));
 #endif
 
   // FIXME: all of these settings were picked arbitrarily and/or with specific machines in mind!
   // Read here for info: https://xgboost.readthedocs.io/en/latest/parameter.html
-  chk(XGBoosterSetParam(*out, "booster", "gbtree"));
-  chk(XGBoosterSetParam(*out, "nthread", "2"));
-  chk(XGBoosterSetParam(*out, "objective", "reg:squarederror"));
-  chk(XGBoosterSetParam(*out, "max_depth", "10"));
+  safe_xgboost(XGBoosterSetParam(*out, "booster", "gbtree"));
+  safe_xgboost(XGBoosterSetParam(*out, "nthread", "2"));
+  safe_xgboost(XGBoosterSetParam(*out, "objective", "reg:squarederror"));
+  safe_xgboost(XGBoosterSetParam(*out, "max_depth", "10"));
   // Step size shrinkage used in update to prevents overfitting. Default = 0.3
-  chk(XGBoosterSetParam(*out, "eta", "0.3"));
-  chk(XGBoosterSetParam(*out, "min_child_weight", "1"));
-  chk(XGBoosterSetParam(*out, "subsample", "0.75"));
-  chk(XGBoosterSetParam(*out, "colsample_bytree", "1"));
-  chk(XGBoosterSetParam(*out, "num_parallel_tree", "4"));
+  safe_xgboost(XGBoosterSetParam(*out, "eta", "0.3"));
+  safe_xgboost(XGBoosterSetParam(*out, "min_child_weight", "1"));
+  safe_xgboost(XGBoosterSetParam(*out, "subsample", "0.75"));
+  safe_xgboost(XGBoosterSetParam(*out, "colsample_bytree", "1"));
+  safe_xgboost(XGBoosterSetParam(*out, "num_parallel_tree", "4"));
 }
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -224,17 +230,13 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
   // must be an array. not sure why.
   // this thing manages the XGBoost view of the config matrix.
   DMatrixHandle train[1];
-  {
-    // add config data
-    if (XGDMatrixCreateFromMat(trainData.getCFG(),
-                                trainData.rows(), trainData.cols(),
-                                ConfigMatrix::MISSING_VAL, &train[0]))
-      fatal_error("XGDMatrixCreateFromMat failed.");
+  // add config data
+  safe_xgboost(XGDMatrixCreateFromMat(trainData.getCFG(),
+                              trainData.rows(), trainData.cols(),
+                              ConfigMatrix::MISSING_VAL, &train[0]));
 
     // add labels, aka, IPCs corresponding to each configuration
-    if (XGDMatrixSetFloatInfo(train[0], "label", trainData.getResults(), trainData.rows()))
-      fatal_error("XGDMatrixSetFloatInfo failed.");
-  }
+  safe_xgboost(XGDMatrixSetFloatInfo(train[0], "label", trainData.getResults(), trainData.rows()));
 
   // make a boosted model so we can start training
   BoosterHandle booster;
@@ -244,24 +246,22 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
   // setup validation dataset
   const size_t validateRows = validateData.rows();
   DMatrixHandle h_validate;
-  XGDMatrixCreateFromMat(validateData.getCFG(),
+  safe_xgboost(XGDMatrixCreateFromMat(validateData.getCFG(),
                          validateData.rows(), validateData.cols(),
-                         ConfigMatrix::MISSING_VAL, &h_validate);
+                         ConfigMatrix::MISSING_VAL, &h_validate));
 
   double bestErr = std::numeric_limits<double>::max();
   std::vector<char> bestModel;
   unsigned bestIter;
   for (unsigned i = 0; i < MaxLearnIters; i++) {
-    int rv = XGBoosterUpdateOneIter(booster, i, train[0]);
-    assert(rv == 0 && "learn step failed");
+    safe_xgboost(XGBoosterUpdateOneIter(booster, i, train[0]));
 
 
     // evaluate this new model
     bst_ulong out_len;
     const float *predict;
-    rv = XGBoosterPredict(booster, h_validate, 0, 0, &out_len, &predict);
+    safe_xgboost(XGBoosterPredict(booster, h_validate, 0, 0, &out_len, &predict));
 
-    assert(rv == 0 && "predict failed");
     assert(out_len == validateRows && "doesn't make sense!");
 
     // calculate Root Mean Squared Error (RMSE) of predicting our held-out set
@@ -283,8 +283,7 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
     if (err <= bestErr || bestModel.size() == 0) {
       const char* ro_view;
       bst_ulong ro_len;
-      rv = XGBoosterGetModelRaw(booster, &ro_len, &ro_view);
-      assert(rv == 0 && "can't view model");
+      safe_xgboost(XGBoosterGetModelRaw(booster, &ro_len, &ro_view));
 
       // save this new best model
       bestErr = err;
@@ -311,9 +310,9 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
   clogs() << "Learned model with error: " << bestErr << "\n";
 
   // clean-up!
-  XGBoosterFree(booster);
-  XGDMatrixFree(train[0]);
-  XGDMatrixFree(h_validate);
+  safe_xgboost(XGBoosterFree(booster));
+  safe_xgboost(XGDMatrixFree(train[0]));
+  safe_xgboost(XGDMatrixFree(h_validate));
 
   return bestModel;
 }
@@ -366,16 +365,15 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
 
   // load the model
   BoosterHandle model;
-  XGBoosterCreate(NULL, 0, &model);
-  int rv = XGBoosterLoadModelFromBuffer(model, SerializedModel.data(), SerializedModel.size());
-  assert(rv == 0);
+  safe_xgboost(XGBoosterCreate(NULL, 0, &model));
+  safe_xgboost(XGBoosterLoadModelFromBuffer(model, SerializedModel.data(), SerializedModel.size()));
 
   // now, use the model to predict the quality of the configurations we generated.
   DMatrixHandle h_test;
-  XGDMatrixCreateFromMat(searchMatrix.getCFG(), searchMatrix.rows(), searchMatrix.cols(), ConfigMatrix::MISSING_VAL, &h_test);
+  safe_xgboost(XGDMatrixCreateFromMat(searchMatrix.getCFG(), searchMatrix.rows(), searchMatrix.cols(), ConfigMatrix::MISSING_VAL, &h_test));
   bst_ulong out_len;
   const float *out;
-  XGBoosterPredict(model, h_test, 0, 0, &out_len, &out); // predict!!
+  safe_xgboost(XGBoosterPredict(model, h_test, 0, 0, &out_len, &out)); // predict!!
   assert(out_len == searchMatrix.rows());
 
 
@@ -439,8 +437,8 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
   }
 
   // cleanup
-  XGBoosterFree(model);
-  XGDMatrixFree(h_test);
+  safe_xgboost(XGBoosterFree(model));
+  safe_xgboost(XGDMatrixFree(h_test));
 
   if (Manager.sizeTop() == 0)
     return makeError("pbtuner failed to find any good configurations");
