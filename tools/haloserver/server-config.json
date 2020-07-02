@@ -24,7 +24,7 @@
     "pbtuner-min-prior": 5,
     "pbtuner-heldout-ratio": 0.2,
     "pbtuner-energy-level": 30,
-    "pbtuner-learn-iter-max": 50
+    "pbtuner-learn-iters": 10
 
   },
 

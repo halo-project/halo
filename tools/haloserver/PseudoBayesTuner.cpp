@@ -24,7 +24,7 @@ namespace halo {
 PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& BaseKnobs,  std::unordered_map<std::string, CodeVersion> &Versions)
   : BaseKnobs(BaseKnobs), Versions(Versions),
     RNG(config::getServerSetting<uint64_t>("seed", Config)),
-    MaxLearnIters(config::getServerSetting<size_t>("pbtuner-learn-iter-max", Config)),
+    LearnIters(config::getServerSetting<size_t>("pbtuner-learn-iters", Config)),
     TotalBatchSz(config::getServerSetting<size_t>("pbtuner-batch-size", Config)),
     SearchSz(config::getServerSetting<size_t>("pbtuner-surrogate-batch-size", Config)),
     MIN_PRIOR(config::getServerSetting<size_t>("pbtuner-min-prior", Config)),
@@ -221,98 +221,58 @@ void initBooster(const DMatrixHandle dmats[],
 ////////////////////////////////////////////////////////////////////////////////////
 
 
+void initializeDMatrixHandle(DMatrixHandle *handle, ConfigMatrix const& Data) {
+  // add config data
+  safe_xgboost(XGDMatrixCreateFromMat(Data.getCFG(),
+                              Data.rows(), Data.cols(),
+                              ConfigMatrix::MISSING_VAL, handle));
+
+  // add labels, aka, IPCs corresponding to each configuration
+  safe_xgboost(XGDMatrixSetFloatInfo(*handle, "label", Data.getResults(), Data.rows()));
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // the training step. returns the best model learned (in a serialized form)
+// See here for reference: https://github.com/dmlc/xgboost/blob/master/demo/c-api/c-api-demo.c
+// since the C API is quite poorly documented.
 std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const& validateData,
-                  unsigned MaxLearnIters, unsigned MaxLearnPastBest=0) {
+                  unsigned LearnIters) {
 
-  // must be an array. not sure why.
-  // this thing manages the XGBoost view of the config matrix.
-  DMatrixHandle train[1];
-  // add config data
-  safe_xgboost(XGDMatrixCreateFromMat(trainData.getCFG(),
-                              trainData.rows(), trainData.cols(),
-                              ConfigMatrix::MISSING_VAL, &train[0]));
+  // load the data
+  DMatrixHandle dtrain, dtest;
+  initializeDMatrixHandle(&dtrain, trainData);
+  initializeDMatrixHandle(&dtest, validateData);
 
-    // add labels, aka, IPCs corresponding to each configuration
-  safe_xgboost(XGDMatrixSetFloatInfo(train[0], "label", trainData.getResults(), trainData.rows()));
-
-  // make a boosted model so we can start training
+  // create the booster
+  const unsigned NUM_DMATS = 2;
   BoosterHandle booster;
-  initBooster(train, 1, &booster);
+  DMatrixHandle eval_dmats[NUM_DMATS] = {dtrain, dtest};
+  initBooster(eval_dmats, NUM_DMATS, &booster);
 
-
-  // setup validation dataset
-  const size_t validateRows = validateData.rows();
-  DMatrixHandle h_validate;
-  safe_xgboost(XGDMatrixCreateFromMat(validateData.getCFG(),
-                         validateData.rows(), validateData.cols(),
-                         ConfigMatrix::MISSING_VAL, &h_validate));
-
-  double bestErr = std::numeric_limits<double>::max();
-  std::vector<char> bestModel;
-  unsigned bestIter;
-  for (unsigned i = 0; i < MaxLearnIters; i++) {
-    safe_xgboost(XGBoosterUpdateOneIter(booster, i, train[0]));
-
-
-    // evaluate this new model
-    bst_ulong out_len;
-    const float *predict;
-    safe_xgboost(XGBoosterPredict(booster, h_validate, 0, 0, &out_len, &predict));
-
-    assert(out_len == validateRows && "doesn't make sense!");
-
-    // calculate Root Mean Squared Error (RMSE) of predicting our held-out set
-    double err = 0.0;
-    for (size_t i = 0; i < validateRows; i++) {
-      double actual = validateData.getResult(i);
-      double guess = predict[i];
-
-      // clogs() << "actual = " << actual
-      //           << ", guess = " << guess << "\n";
-
-      err += std::pow(actual - guess, 2) / validateRows;
-    }
-    err = std::sqrt(err);
-
-    // clogs() << "RMSE = " << err << "\n\n";
-
-    // is this model better than we've seen before?
-    if (err <= bestErr || bestModel.size() == 0) {
-      const char* ro_view;
-      bst_ulong ro_len;
-      safe_xgboost(XGBoosterGetModelRaw(booster, &ro_len, &ro_view));
-
-      // save this new best model
-      bestErr = err;
-      bestIter = i;
-
-      // drop the old model
-      bestModel.clear();
-
-      // copy the read-only view of the model to our vector
-      for (size_t i = 0; i < ro_len; i++)
-        bestModel.push_back(ro_view[i]);
-
-    } else if (i - bestIter < MaxLearnPastBest) {
-          // we're willing to go beyond the minima so-far.
-          clogs() << "going beyond best-seen";
-    }  else {
-      // stop training, since it's not any getting better
-      break;
-    }
+  // train and evaluate for 10 iterations
+  int n_trees = LearnIters;
+  const char* eval_names[NUM_DMATS] = {"train", "test"};
+  const char* eval_result = nullptr;
+  for (int i = 0; i < n_trees; ++i) {
+    safe_xgboost(XGBoosterUpdateOneIter(booster, i, dtrain));
+    safe_xgboost(XGBoosterEvalOneIter(booster, i, eval_dmats, eval_names, NUM_DMATS, &eval_result));
+    info(eval_result);
   }
 
-  assert(bestModel.size() != 0 && "training failed?");
+  // save the model. we copy the read-only view of the model to a vector
+  std::vector<char> bestModel;
+  const char* ro_view;
+  bst_ulong ro_len;
+  safe_xgboost(XGBoosterGetModelRaw(booster, &ro_len, &ro_view));
+  for (size_t i = 0; i < ro_len; i++)
+    bestModel.push_back(ro_view[i]);
 
-  clogs() << "Learned model with error: " << bestErr << "\n";
 
   // clean-up!
   safe_xgboost(XGBoosterFree(booster));
-  safe_xgboost(XGDMatrixFree(train[0]));
-  safe_xgboost(XGDMatrixFree(h_validate));
+  safe_xgboost(XGDMatrixFree(dtrain));
+  safe_xgboost(XGDMatrixFree(dtest));
 
   return bestModel;
 }
@@ -531,7 +491,7 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
     // at this point, we're done with the allConfigs.
     allConfigs.clear();
 
-    surrogateModel = runTraining(trainData, validateData, MaxLearnIters);
+    surrogateModel = runTraining(trainData, validateData, LearnIters);
   }
 
   ///////////

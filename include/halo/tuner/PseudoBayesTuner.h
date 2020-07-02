@@ -37,7 +37,7 @@ private:
 
   // various hyperparameters of the tuner, which are initialized from the config file.
   // these affect the generateConfig process.
-  const size_t MaxLearnIters; // max number of iterations to learn in the model before stopping. helps prevent run-away overfitting.
+  const size_t LearnIters; // number of iterations to learn in the model before stopping.
   const size_t TotalBatchSz;    // total number of configurations to generate every time we run out
   const size_t SearchSz;  // the number of configurations to evaluate with the surrogate when generating new configs.
   const size_t MIN_PRIOR; // the minimum number of <config,IPC> observations required in order to perform training.
