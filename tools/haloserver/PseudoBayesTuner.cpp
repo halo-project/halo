@@ -9,6 +9,8 @@
 #include <cmath>
 #include <algorithm>
 #include <set>
+#include <regex>
+
 
 // checks the return value of calls to XGBoost C API
 #define safe_xgboost(call) {                                                \
@@ -277,26 +279,60 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
   DMatrixHandle eval_dmats[NUM_DMATS] = {dtrain, dtest};
   initBooster(eval_dmats, NUM_DMATS, &booster, Options);
 
-  // TODO: (1) early stopping for training
+  // We have to manually implement early-stopping here because in XGB, the
+  // early-stopping training loop is implemented in Python:
+  // https://github.com/dmlc/xgboost/blob/eb067c1c34d03950f6c7e195b852fc709e313df3/python-package/xgboost/callback.py#L149
+  //
+  // ours differs in that we stop the first time the error is not decreasing.
 
-  // train and evaluate for 10 iterations
-  int n_trees = LearnIters;
+  std::vector<char> bestModel;
+  float bestErr = std::numeric_limits<float>::max();
+
+  // yes, sadly, we have to parse the error out of the string! The XGBoost C API is barren and stringy.
+  // based on example from  https://en.cppreference.com/w/cpp/regex/regex_match
+  const std::regex TestErrorRegex(".*test-.*:(.+)$");
+  std::smatch pieces_match;
+
+  const int MAX_ITERS = LearnIters;
   const char* eval_names[NUM_DMATS] = {"train", "test"};
   const char* eval_result = nullptr;
-  for (int i = 0; i < n_trees; ++i) {
+  for (int i = 0; i < MAX_ITERS; ++i) {
+    // learn and evaluate
     safe_xgboost(XGBoosterUpdateOneIter(booster, i, dtrain));
     safe_xgboost(XGBoosterEvalOneIter(booster, i, eval_dmats, eval_names, NUM_DMATS, &eval_result));
+
     info(eval_result);
+    std::string ResultStr(eval_result);
+
+    if (!std::regex_match(ResultStr, pieces_match, TestErrorRegex))
+      fatal_error("failed to parse test error from eval_result");
+
+    std::ssub_match sub_match = pieces_match[1];
+    std::string piece = sub_match.str();
+
+    // clogs() << "parsed test error = \"" << piece << "\"\n";
+    float testErr = std::stof(piece);
+
+    // now compare the error with best so far
+    if (testErr <= bestErr) {
+      // this one is better
+      bestErr = testErr;
+
+      // save the model. we copy the read-only view of the model to a vector
+      bestModel.clear();
+      const char* ro_view;
+      bst_ulong ro_len;
+      safe_xgboost(XGBoosterGetModelRaw(booster, &ro_len, &ro_view));
+      for (size_t i = 0; i < ro_len; i++)
+        bestModel.push_back(ro_view[i]);
+
+    } else {
+      info("Early stop!");
+      break;
+    }
   }
 
-  // save the model. we copy the read-only view of the model to a vector
-  std::vector<char> bestModel;
-  const char* ro_view;
-  bst_ulong ro_len;
-  safe_xgboost(XGBoosterGetModelRaw(booster, &ro_len, &ro_view));
-  for (size_t i = 0; i < ro_len; i++)
-    bestModel.push_back(ro_view[i]);
-
+  assert(bestModel.size() > 0);
 
   // clean-up!
   safe_xgboost(XGBoosterFree(booster));
