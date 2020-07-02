@@ -3,6 +3,7 @@
 #include "halo/nlohmann/util.hpp"
 
 #include <xgboost/c_api.h>
+#include <gsl/gsl_rstat.h>
 
 #include <cstdlib>
 #include <cmath>
@@ -40,6 +41,8 @@ PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& 
       assert(0 <= MainBatchExploreRatio && MainBatchExploreRatio <= 1.0f);
 
       ExploitBatchSz = TotalBatchSz - std::floor(MainBatchExploreRatio * TotalBatchSz);
+
+      InitializeBoosterParams(Options);
   }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -190,36 +193,22 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Creates an initial XGB Booster
-void initBooster(const DMatrixHandle dmats[],
-                      bst_ulong len,
-                      BoosterHandle *out) {
 
-  safe_xgboost(XGBoosterCreate(dmats, len, out));
-
-  // NOTE: all of the char*'s passed to XGB here need to have a lifetime
-  // that exceeds the lifetime of this function call. It basically has
-  // to be a string literal that is passed in.
-
+void PseudoBayesTuner::InitializeBoosterParams(BoosterParams& Options) {
 #ifdef NDEBUG
   // 0 = silent, 1 = warning, 2 = info, 3 = debug. default is 1
-  safe_xgboost(XGBoosterSetParam(*out, "verbosity", "0"));
+  Options.insert({"verbosity", "0"});
 #endif
 
-  // TODO: (1) early stopping for training
-  //
-  //       (2) start with appropriate constants. set "base_score" to be the mean of all instances
-  //           this one is less important than early stopping. it helps you see if you're actually learning
-  //           or predicting a constant.
-
-  // FIXME: all of these settings were picked arbitrarily and/or with specific machines in mind!
   // Read here for info: https://xgboost.readthedocs.io/en/latest/parameter.html
-  safe_xgboost(XGBoosterSetParam(*out, "booster", "gbtree"));
-  safe_xgboost(XGBoosterSetParam(*out, "nthread", "2")); // TODO: maybe just use 1 thread for speed lol.
-  safe_xgboost(XGBoosterSetParam(*out, "objective", "reg:squarederror"));
-  safe_xgboost(XGBoosterSetParam(*out, "max_depth", "3"));  // somewhere between 2 and 5 for our data set size
+
+  Options.insert({"booster", "gbtree"});
+  Options.insert({"nthread", "2"}); // TODO: maybe just use 1 thread for speed l}l.
+  Options.insert({"objective", "reg:squarederror"});
+  Options.insert({"max_depth", "3"});  // somewhere between 2 and 5 for our data set s}ze
 
   // Step size shrinkage used in update to prevents overfitting. Default = 0.3
-  safe_xgboost(XGBoosterSetParam(*out, "eta", "0.3"));
+  Options.insert({"eta", "0.3"});
 
   // most important parameter, how minimum number of datapoints in a leaf.
   //
@@ -233,12 +222,28 @@ void initBooster(const DMatrixHandle dmats[],
   // The larger min_child_weight is, the more conservative the algorithm will be.
   //
   // brian suggests at least 2.
-  safe_xgboost(XGBoosterSetParam(*out, "min_child_weight", "2"));
+  Options.insert({"min_child_weight", "2"});
 
-  safe_xgboost(XGBoosterSetParam(*out, "subsample", "0.75"));
-  safe_xgboost(XGBoosterSetParam(*out, "colsample_bytree", "1"));
-  safe_xgboost(XGBoosterSetParam(*out, "num_parallel_tree", "4"));
+  Options.insert({"subsample", "0.75"});
+  Options.insert({"colsample_bytree", "1"});
+  Options.insert({"num_parallel_tree", "4"});
+}
 
+
+// NOTE: all of the strings in the Options must have a lifetime
+// that exceeds the lifetime of the BoosterHandle!
+void initBooster(const DMatrixHandle dmats[],
+                      bst_ulong len,
+                      BoosterHandle *out,
+                      PseudoBayesTuner::BoosterParams const& Options) {
+
+  safe_xgboost(XGBoosterCreate(dmats, len, out));
+
+  clogs() << "BoosterParams:\n";
+  for (auto const& Entry : Options) {
+    clogs() << Entry.first << " = " << Entry.second << "\n";
+    safe_xgboost(XGBoosterSetParam(*out, Entry.first.c_str(), Entry.second.c_str()));
+  }
 }
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -259,7 +264,7 @@ void initializeDMatrixHandle(DMatrixHandle *handle, ConfigMatrix const& Data) {
 // See here for reference: https://github.com/dmlc/xgboost/blob/master/demo/c-api/c-api-demo.c
 // since the C API is quite poorly documented.
 std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const& validateData,
-                  unsigned LearnIters) {
+                  PseudoBayesTuner::BoosterParams const& Options, unsigned LearnIters) {
 
   // load the data
   DMatrixHandle dtrain, dtest;
@@ -270,7 +275,9 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
   const unsigned NUM_DMATS = 2;
   BoosterHandle booster;
   DMatrixHandle eval_dmats[NUM_DMATS] = {dtrain, dtest};
-  initBooster(eval_dmats, NUM_DMATS, &booster);
+  initBooster(eval_dmats, NUM_DMATS, &booster, Options);
+
+  // TODO: (1) early stopping for training
 
   // train and evaluate for 10 iterations
   int n_trees = LearnIters;
@@ -387,13 +394,6 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
 
     // clogs() << "prediction[" << i << "]=" << predictedIPC << "\n";
 
-    // we don't want to return previous configurations, which are
-    // put at the front of the matrix.
-    // we just added them to the matrix to update their predicted quality.
-    // to help the StatisticalStopper.
-    if (i < UpdateSz)
-      continue;
-
     auto Cur = std::make_pair(i, -predictedIPC);
 
     if (Best.size() < ExploitBatchSz) {
@@ -502,7 +502,8 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
     // shuffle the data so validation and training sets are allocated at random
     std::shuffle(allConfigs.begin(), allConfigs.end(), RNG);
 
-    // partition
+    // partition and compute the base score, i.e., the initial prediction score of all instances, global bias
+
     auto I = allConfigs.cbegin();
     for (size_t cnt = 0; cnt < validateRows; I++, cnt++)
       validateData.emplace_back(I->first, I->second);
@@ -513,7 +514,26 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
     // at this point, we're done with the allConfigs.
     allConfigs.clear();
 
-    surrogateModel = runTraining(trainData, validateData, LearnIters);
+    {
+      gsl_rstat_workspace *stats = gsl_rstat_alloc();
+      // Compute the Booster's base_score. we do it separately in two loops here because
+      // we want to avoid calling RandomQuantity::mean() twice because
+      // currently it recomputes the mean on every call.
+      //
+      // The base_score is the initial prediction score of all instances, i.e., the global bias.
+      // As Brian suggested, we set it to be the mean of all the data we have.
+
+      for (size_t i = 0; i < validateData.rows(); i++)
+        gsl_rstat_add(validateData.getResult(i), stats);
+
+      for (size_t i = 0; i < trainData.rows(); i++)
+        gsl_rstat_add(trainData.getResult(i), stats);
+
+      Options.insert({"base_score", std::to_string(gsl_rstat_mean(stats))});
+      gsl_rstat_free(stats);
+    }
+
+    surrogateModel = runTraining(trainData, validateData, Options, LearnIters);
   }
 
   ///////////

@@ -20,6 +20,7 @@ public:
   // adds a config to the end of the top-configs buffer.
   void addTop(KnobSet const& KS) {
     Top.push_back(KS);
+    Database[KS].BeenInTop = true;
   }
 
   // removes the first config from the top-configs buffer.
@@ -38,10 +39,12 @@ public:
 
   // randomly picks a previously generated knob and returns it. If the
   // manager is empty, raises an error.
-  KnobSet genPrevious(std::mt19937_64 &RNG);
+  // ExcludeTop means that the configuration returned will be one that has
+  // not already been enqueued into the Top queue.
+  KnobSet genPrevious(std::mt19937_64 &RNG, bool ExcludeTop=true);
 
   void setPredictedQuality(KnobSet const& KS, float Quality) {
-    Database[KS] = Quality;
+    Database[KS].IPC = Quality;
   }
 
   // returns ConfigManager::MISSING_QUALITY for unseen KnobSets.
@@ -49,7 +52,7 @@ public:
     if (Database.count(KS) == 0)
       return MISSING_QUALITY;
 
-    return Database.at(KS);
+    return Database.at(KS).IPC;
   }
 
   size_t size() const { return Database.size(); }
@@ -61,8 +64,18 @@ public:
   auto end() const noexcept { return Database.cend(); }
 
 private:
+
+  struct Metadata {
+    float IPC = ConfigManager::MISSING_QUALITY;
+    bool BeenInTop = false;
+  };
+
+  KnobSet retryLoop(KnobSet const& Initial,
+                  std::function<KnobSet(KnobSet&&)> &&Generator,
+                  unsigned Limit=3);
+
   std::list<KnobSet> Top;
-  std::unordered_map<KnobSet, float> Database;
+  std::unordered_map<KnobSet, Metadata> Database;
 };
 
 } // namespace halo

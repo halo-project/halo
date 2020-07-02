@@ -8,12 +8,15 @@
 #include "llvm/ADT/Optional.h"
 #include <random>
 #include <list>
+#include <map>
 
 
 namespace halo {
 
 class PseudoBayesTuner {
 public:
+  using BoosterParams = std::map<std::string, std::string>;
+
   PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& BaseKnobs, std::unordered_map<std::string, CodeVersion> &Versions);
 
   // obtains a configuration that the tuner believes should be tried next.
@@ -47,6 +50,11 @@ private:
   size_t ExploitBatchSz;  // the top N predictions that will be saved to be tested for real.
 
   ConfigManager Manager;
+
+  BoosterParams Options;
+
+  // sets the basic learning parameters that will not be changing
+  static void InitializeBoosterParams(BoosterParams&);
 
   // adds more configurations to the list of generated configs
   // using the pseudo-bayes tuner, based on the current state of
