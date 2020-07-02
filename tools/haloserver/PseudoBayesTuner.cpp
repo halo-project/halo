@@ -91,7 +91,7 @@ public:
   static constexpr FloatTy MISSING_VAL = std::numeric_limits<FloatTy>::quiet_NaN();
 
   ConfigMatrix(size_t numRows, size_t numCols, std::unordered_map<std::string, size_t> const& KnobToCol)
-    : nextFree(0), NUM_ROWS(numRows), NUM_COLS(numCols), KnobToCol(KnobToCol),
+    : nextFree(0), NUM_ROWS(numRows), NUM_COLS(numCols), FeatureMap(KnobToCol),
       cfg((FloatTy*) std::malloc(sizeof(FloatTy) * NUM_ROWS * NUM_COLS), std::free),
       result((FloatTy*) std::malloc(sizeof(FloatTy) * NUM_ROWS), std::free) {
 
@@ -129,8 +129,8 @@ public:
 
     // fill the columns of the row in the cfg matrix
     for (auto const& Entry : *Config) {
-      assert(KnobToCol.find(Entry.first) != KnobToCol.end() && "knob hasn't been assigned to a column.");
-      FloatTy *cell = row + KnobToCol.at(Entry.first);
+      assert(FeatureMap.find(Entry.first) != FeatureMap.end() && "knob hasn't been assigned to a column.");
+      FloatTy *cell = row + FeatureMap.at(Entry.first);
 
       Knob const* Knob = Entry.second.get();
 
@@ -174,6 +174,8 @@ public:
   // get a specific result from the results array
   FloatTy getResult(size_t row) const { return result.get()[row]; }
 
+  auto const& getFeatureMap() const { return FeatureMap; }
+
 private:
 
   void setResult(size_t row, FloatTy v) { result.get()[row] = v; }
@@ -185,7 +187,7 @@ private:
   size_t nextFree;  // in terms of rows
   const size_t NUM_ROWS;
   const size_t NUM_COLS;
-  std::unordered_map<std::string, size_t> const& KnobToCol;
+  std::unordered_map<std::string, size_t> const& FeatureMap;
   Array cfg;  // cfg[rowNum][i]  must be written as  cfg[(rowNum * ncol) + i]
   Array result;
 };
@@ -258,6 +260,48 @@ void initializeDMatrixHandle(DMatrixHandle *handle, ConfigMatrix const& Data) {
 
   // add labels, aka, IPCs corresponding to each configuration
   safe_xgboost(XGDMatrixSetFloatInfo(*handle, "label", Data.getResults(), Data.rows()));
+}
+
+// In the Python bindings, various measures of feature importance is obtained through get_score:
+//
+//    https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.Booster.get_score
+//
+// The way it's implemented is through parsing the string dump of the model:
+//
+//    https://github.com/dmlc/xgboost/blob/02884b08aa3d3000baf4db47fc6c5cef90820a5d/python-package/xgboost/core.py#L1608
+//
+//  ... ugh.
+void analyzeFeatureImportance(BoosterHandle booster, std::unordered_map<std::string, size_t> const& FeatureMap) {
+  // first, we need to sort the features by column number (increasing order)
+  using Pair = std::pair<llvm::StringRef, size_t>;
+  std::vector<Pair> OrderedMap;
+  for (auto const& Entry : FeatureMap)
+    OrderedMap.push_back({Entry.first.c_str(), Entry.second});
+
+  std::sort(OrderedMap.begin(), OrderedMap.end(),
+    [](Pair const& A, Pair const& B) {
+      return A.second < B.second;
+  });
+
+  // type names from here: https://github.com/dmlc/xgboost/blob/1d22a9be1cdeb53dfa9322c92541bc50e82f3c43/include/xgboost/feature_map.h#L79
+  std::vector<const char*> FeatureTypes;
+  std::vector<const char*> FeatureNames;
+
+  for (auto const& Entry : OrderedMap) {
+    logs() << Entry.second << " --> " << Entry.first << "\n";
+    FeatureNames.push_back(Entry.first.data());
+    FeatureTypes.push_back("float");
+  }
+
+  bst_ulong out_len;
+  const char **out_models;
+  safe_xgboost(XGBoosterDumpModelWithFeatures(booster,
+      FeatureNames.size(), FeatureNames.data(), FeatureTypes.data(), /*with_stats=*/ 1, &out_len, &out_models));
+
+  for (unsigned i = 0; i < out_len; ++i)
+    clogs() << out_models[i];
+
+  // TODO: Parse the dump to calculate importance metric that we care to know about.
 }
 
 
@@ -333,6 +377,8 @@ std::vector<char> runTraining(ConfigMatrix const& trainData, ConfigMatrix const&
   }
 
   assert(bestModel.size() > 0);
+
+  analyzeFeatureImportance(booster, trainData.getFeatureMap());
 
   // clean-up!
   safe_xgboost(XGBoosterFree(booster));
