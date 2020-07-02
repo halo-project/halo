@@ -53,8 +53,12 @@ KnobSet ConfigManager::genPrevious(std::mt19937_64 &RNG, bool ExcludeTop) {
 
     // sadly O(Sz)
     for (; I != Database.end(); ++I, --Chosen)
-      if (Chosen == 0 && (!ExcludeTop || !I->second.BeenInTop))
-        return I->first;
+      if (Chosen == 0) {
+        if (!ExcludeTop || !I->second.BeenInTop)
+          return I->first;
+        else
+          break;
+      }
 
     MaxTries--;
   } while (MaxTries > 0);
