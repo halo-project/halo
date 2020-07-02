@@ -205,18 +205,40 @@ void initBooster(const DMatrixHandle dmats[],
   safe_xgboost(XGBoosterSetParam(*out, "verbosity", "0"));
 #endif
 
+  // TODO: (1) early stopping for training
+  //
+  //       (2) start with appropriate constants. set "base_score" to be the mean of all instances
+  //           this one is less important than early stopping. it helps you see if you're actually learning
+  //           or predicting a constant.
+
   // FIXME: all of these settings were picked arbitrarily and/or with specific machines in mind!
   // Read here for info: https://xgboost.readthedocs.io/en/latest/parameter.html
   safe_xgboost(XGBoosterSetParam(*out, "booster", "gbtree"));
-  safe_xgboost(XGBoosterSetParam(*out, "nthread", "2"));
+  safe_xgboost(XGBoosterSetParam(*out, "nthread", "2")); // TODO: maybe just use 1 thread for speed lol.
   safe_xgboost(XGBoosterSetParam(*out, "objective", "reg:squarederror"));
-  safe_xgboost(XGBoosterSetParam(*out, "max_depth", "10"));
+  safe_xgboost(XGBoosterSetParam(*out, "max_depth", "3"));  // somewhere between 2 and 5 for our data set size
+
   // Step size shrinkage used in update to prevents overfitting. Default = 0.3
   safe_xgboost(XGBoosterSetParam(*out, "eta", "0.3"));
-  safe_xgboost(XGBoosterSetParam(*out, "min_child_weight", "1"));
+
+  // most important parameter, how minimum number of datapoints in a leaf.
+  //
+  // from docs:
+  //
+  // Minimum sum of instance weight (hessian) needed in a child.
+  // If the tree partition step results in a leaf node with the sum
+  // of instance weight less than min_child_weight, then the building
+  // process will give up further partitioning. In linear regression task,
+  // this simply corresponds to minimum number of instances needed to be in each node.
+  // The larger min_child_weight is, the more conservative the algorithm will be.
+  //
+  // brian suggests at least 2.
+  safe_xgboost(XGBoosterSetParam(*out, "min_child_weight", "2"));
+
   safe_xgboost(XGBoosterSetParam(*out, "subsample", "0.75"));
   safe_xgboost(XGBoosterSetParam(*out, "colsample_bytree", "1"));
   safe_xgboost(XGBoosterSetParam(*out, "num_parallel_tree", "4"));
+
 }
 ////////////////////////////////////////////////////////////////////////////////////
 
