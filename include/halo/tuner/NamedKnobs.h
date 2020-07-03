@@ -24,9 +24,6 @@ namespace halo {
 
     static const ty NativeCPU       = {"native-cpu",       Knob::KK_Flag};
     static const ty IPRA            = {"ipra",             Knob::KK_Flag};
-    static const ty FastISel        = {"fast-isel",        Knob::KK_Flag};
-    static const ty InlineFullCost  = {"inline-computefullcost", Knob::KK_Flag};
-    static const ty SLPVectorizeEnable  = {"slp-vectorize-enable", Knob::KK_Flag};
     static const ty AttributorEnable    = {"attributor-enable",           Knob::KK_Flag};
     static const ty PartialInlineEnable = {"partial-inliner-enable",      Knob::KK_Flag};
     static const ty UnrollAndJamEnable  = {"unroll-and-jam-pass-enable",  Knob::KK_Flag};
@@ -36,6 +33,7 @@ namespace halo {
     static const ty LoopPredicateProfit = {"ignore-loop-predicate-profitability",  Knob::KK_Flag};
 
     static const ty InlineThreshold = {"inline-threshold-default", Knob::KK_Int};
+    static const ty SLPThreshold = {"slp-vectorize-threshold", Knob::KK_Int};
 
     static const ty OptimizeLevel = {"optimize-pipeline-level", Knob::KK_OptLvl};
     static const ty CodegenLevel = {"codegen-optimize-level", Knob::KK_OptLvl};
@@ -71,9 +69,6 @@ namespace halo {
     static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
       NativeCPU,
       IPRA,
-      FastISel,
-      InlineFullCost,
-      SLPVectorizeEnable,
       AttributorEnable,
       PartialInlineEnable,
       UnrollAndJamEnable,
@@ -83,6 +78,7 @@ namespace halo {
       LoopPredicateProfit,
 
       InlineThreshold,
+      SLPThreshold,
 
       OptimizeLevel,
       CodegenLevel,

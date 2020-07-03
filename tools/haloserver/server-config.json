@@ -39,11 +39,6 @@
       "default": false
     },
     {
-      "kind": "flag",
-      "name": "fast-isel",
-      "default": false
-    },
-    {
       "kind": "int",
       "name": "inline-threshold-default",
       "scale": "1/100",
@@ -52,14 +47,12 @@
       "max": 30
     },
     {
-      "kind": "flag",
-      "name": "inline-computefullcost",
-      "default": true
-    },
-    {
-      "kind": "flag",
-      "name": "slp-vectorize-enable",
-      "default": true
+      "kind": "int",
+      "name": "slp-vectorize-threshold",
+      "scale": "1/1",
+      "default": 0,
+      "min": -50,
+      "max": 50
     },
     {
       "kind": "flag",

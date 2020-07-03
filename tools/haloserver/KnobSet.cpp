@@ -138,7 +138,7 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
       Scale = IntKnob::Scale::Hundredth;
     } else if (ScaleName == "log") {
       Scale = IntKnob::Scale::Log;
-    } else if (ScaleName == "none") {
+    } else if (ScaleName == "none" || ScaleName == "1/1" || ScaleName == "1") {
       Scale = IntKnob::Scale::None;
     } else {
       config::parseError("int knob " + Name + " has invalid 'scale' argument " + ScaleName);

@@ -27,6 +27,7 @@ extern cl::opt<bool> EnableGVNSink;
 extern cl::opt<bool> RunNewGVN;
 extern cl::opt<bool> EnableGVNHoist;
 extern cl::opt<bool> LoopPredicationSkipProfitabilityChecks;
+extern cl::opt<int> SLPCostThreshold;
 
 namespace halo {
 
@@ -140,7 +141,7 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   bool Pr = false; // printing?
   PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
 
-  // set all the CL options to defaults (from PassManagerBuilder / LLVM) first
+  // set all the CL options to defaults (from PassManagerBuilder / LLVM source code) first
   AttributorRun = AttributorRunOption::NONE;
   RunPartialInlining = false;
   EnableUnrollAndJam = false;
@@ -148,6 +149,7 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   RunNewGVN = false;
   EnableGVNHoist = false;
   LoopPredicationSkipProfitabilityChecks = false;
+  SLPCostThreshold = 0;   // N means it it gains N in performance / profit. So negative numbers make it more willing to vectorize.
 
   Knobs.lookup<FlagKnob>(named_knob::AttributorEnable).applyFlag([&](bool Flag) {
     if (Flag)
@@ -163,16 +165,17 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   Knobs.lookup<FlagKnob>(named_knob::NewGVNHoistEnable).applyFlag(EnableGVNHoist);
   Knobs.lookup<FlagKnob>(named_knob::LoopPredicateProfit).applyFlag(LoopPredicationSkipProfitabilityChecks);
 
+  Knobs.lookup<IntKnob>(named_knob::SLPThreshold).applyScaledVal(SLPCostThreshold);
+
   // these options are tuned per-loop, so we need to tell the optimizer that
   // it should always consider it, unless we say otherwise for a particular loop.
   PTO.LoopUnrolling = true;
   PTO.LoopInterleaving = true;
   PTO.LoopVectorization = true;
 
-  // TODO: expose more tuning options in LLVM through the PTO struct or new pases at
-  // extension points.
+  // SLP vectorization is controlled via its cost threshold.
+  PTO.SLPVectorization = true;
 
-  Knobs.lookup<FlagKnob>(named_knob::SLPVectorizeEnable).applyFlag(PTO.SLPVectorization);
 
   /// NOTE: IP.OptSizeThreshold and IP.OptMinSizeThreshold
   /// are not currently set. If you end up using / not deleting optsize & minsize attributes
@@ -193,7 +196,9 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   /// the threshold after simplifications.
   ///
   /// Thus, since compile time doesn't matter for us, maybe we should just always set it to true?
-  Knobs.lookup<FlagKnob>(named_knob::InlineFullCost).applyFlag(IP.ComputeFullInlineCost);
+  //
+  // NOTE: I've decided that it's not worth setting true or false. just let it do the default stuff.
+  // Knobs.lookup<FlagKnob>(named_knob::InlineFullCost).applyFlag(IP.ComputeFullInlineCost);
 
   PTO.Inlining = IP;
 
@@ -322,7 +327,8 @@ Expected<CompilationPipeline::compile_result>
 
   Knobs.lookup<FlagKnob>(named_knob::IPRA).applyFlag([&](bool Flag) { TO.EnableIPRA = Flag; });
 
-  Knobs.lookup<FlagKnob>(named_knob::FastISel).applyFlag([&](bool Flag) { TO.EnableFastISel = Flag; });
+  // Knobs.lookup<FlagKnob>(named_knob::FastISel).applyFlag([&](bool Flag) { TO.EnableFastISel = Flag; });
+  TO.EnableFastISel = false; // FastISel specifically generates poor code for speed. Doesn't make sense to tune it.
 
   // NOTE: global isel doesn't seem to be ready for use yet; it creates malformed call instructions sometimes.
   // TO.EnableGlobalISel = Knobs.lookup<FlagKnob>(named_knob::GlobalISel).getFlag();
