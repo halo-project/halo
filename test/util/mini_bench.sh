@@ -62,8 +62,8 @@ declare -a AOT_OPTS=(
 declare -a OPTIONS=(
   "none"
   "-fhalo"
-  "withserver -fhalo;--halo-strategy=aggressive"
-  "withserver -fhalo;--halo-strategy=jitonce"
+  "withserver -fhalo;--halo-strategy=aggressive --halo-threads=2"
+  "withserver -fhalo;--halo-strategy=jitonce --halo-threads=2"
 )
 
 # overwrite and create the file

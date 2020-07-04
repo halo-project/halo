@@ -56,16 +56,18 @@ class CompilationManager {
 
     size_t jobsInFlight() const { return InFlight.size(); }
 
+    // Dequeues and returns any finished job, if one is available.
     llvm::Optional<FinishedJob> dequeueCompilation() {
       if (InFlight.size() == 0)
         return llvm::None;
 
-      auto &Front = InFlight.front();
-      auto &Future = Front.Promise;
-      if (Future.valid() && get_status(Future) == std::future_status::ready) {
-        FinishedJob Result(Front.UniqueName, std::move(Front.Config), std::move(Future.get()));
-        InFlight.pop_front();
-        return Result;
+      for (auto I = InFlight.begin(); I != InFlight.end(); ++I) {
+        auto &Future = I->Promise;
+        if (Future.valid() && get_status(Future) == std::future_status::ready) {
+          FinishedJob Result(I->UniqueName, std::move(I->Config), std::move(Future.get()));
+          InFlight.erase(I);
+          return Result;
+        }
       }
 
       return llvm::None;
