@@ -44,7 +44,8 @@ ClientRegistrar::ClientRegistrar(asio::io_service &service, JSON config)
       IOService(service),
       Endpoint(ip::tcp::v4(), Port),
       Acceptor(IOService, Endpoint),
-      Pool(CL_NumThreads) {
+      Pool(0), // unlimited threads for non-compilation tasks.
+      CompilerPool(CL_NumThreads) {
         accept_loop();
         logs() << "Started Halo Server.\nListening on port " << Port << "\n";
       }
@@ -153,7 +154,7 @@ void ClientRegistrar::register_loop(ClientSession *CS) {
 
       if (!Added) {
         // we've not seen a client like this before.
-        Groups.emplace_back(ServerConfig, Pool, CS, Hash);
+        Groups.emplace_back(ServerConfig, Pool, CompilerPool, CS, Hash);
       }
 
       info("Client has successfully registered.");

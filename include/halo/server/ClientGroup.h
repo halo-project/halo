@@ -52,7 +52,7 @@ public:
   std::atomic<size_t> ServiceIterationRate; // minimum pause-time in milliseconds between each service iteration.
 
   // Construct a singleton client group based on its initial member.
-  ClientGroup(JSON const& Config, ThreadPool &Pool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);
+  ClientGroup(JSON const& Config, ThreadPool &Pool, ThreadPool &CompilerPool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);
 
   // returns true if the session became a member of the group.
   bool tryAdd(ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1);
@@ -89,6 +89,7 @@ private:
   void end_service_iteration();
 
   ThreadPool &Pool;
+  ThreadPool &CompilerPool;
   JSON const& Config;
   CompilationPipeline Pipeline;
   Profiler Profile;

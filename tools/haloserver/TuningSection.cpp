@@ -62,7 +62,7 @@ llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(TuningSecti
 
 
 TuningSection::TuningSection(TuningSectionInitializer TSI, std::string RootFunc)
-    : FnGroup(RootFunc), Compiler(TSI.Pool, TSI.Pipeline), Profile(TSI.Profile) {
+    : FnGroup(RootFunc), Compiler(TSI.CompilerPool, TSI.Pipeline), Profile(TSI.Profile) {
   ////////////
   // Choose the set of all funcs in this tuning section.
 

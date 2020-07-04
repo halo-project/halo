@@ -34,6 +34,14 @@ class CompilationManager {
     void enqueueCompilation(llvm::MemoryBuffer& Bitcode, KnobSet Knobs) {
       InFlight.emplace_back(genName(), Knobs,
           std::move(Pool.asyncRet([this,&Bitcode,Knobs] () -> CompilationPipeline::compile_expected {
+
+            // We want to compile jobs to have low priority. Two reasons for this:
+            // (1) We want the other thread pool that manages everything else to remain reponsive.
+            // (2) Just in case the server is being run on the same machine as the client,
+            //     we don't want to bog down the client with long-running compile jobs.
+
+            llvm::set_thread_priority(llvm::ThreadPriority::Background);
+
             auto Start = std::chrono::system_clock::now();
 
             auto Result = Pipeline.run(Bitcode, Knobs);

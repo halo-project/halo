@@ -24,7 +24,7 @@ class ThreadPool;
 /// There's a lot of junk needed to initialize one of these tuning sections.
 struct TuningSectionInitializer {
   JSON const& Config;
-  ThreadPool &Pool;
+  ThreadPool &CompilerPool;
   CompilationPipeline &Pipeline;
   Profiler &Profile;
   llvm::MemoryBuffer &OriginalBitcode;

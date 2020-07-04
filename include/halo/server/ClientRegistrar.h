@@ -39,6 +39,7 @@ private:
   ip::tcp::endpoint Endpoint;
   ip::tcp::acceptor Acceptor;
   ThreadPool Pool;
+  ThreadPool CompilerPool;
 
   // these fields must only be accessed by the IOService's thread.
   // TODO: Groups needs to be accessed in parallel. I don't want to have
