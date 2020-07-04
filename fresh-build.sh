@@ -5,16 +5,18 @@ set -ex
 # first arg is the build environment nickname
 ENV_KIND=$1
 
-ENV_KIND_OPTIONS="local, docker, docker-debug, rpi, kavon, kavon-debug"
+ENV_KIND_OPTIONS="Options are: local, docker, rpi, kavon. You can also append -debug or -bench to those for different purposes."
 
 if (( $# != 1 )); then
-    echo "Must provide a build kind as first arg: $ENV_KIND_OPTIONS"
-    exit 1
+  set +x
+  echo "Must provide a build kind as first arg: $ENV_KIND_OPTIONS"
+  exit 1
 fi
 
 #################
 # check asssumption
 if ! echo ./* | grep -q fresh-build.sh; then
+  set +x
   echo "Must run this script in the same directory that it resides in."
   exit 1
 fi
@@ -43,7 +45,6 @@ popd || exit 1
 #########
 # default build options and setup
 BACKENDS="AArch64;AMDGPU;ARM;NVPTX;PowerPC;X86"  # all those that support JIT
-TYPE="Release"
 PROJECTS="clang;compiler-rt"
 OPTIONS="-DCMAKE_INSTALL_PREFIX=../install"
 BUILD_TARGETS="install-haloserver install-halomon install-clang install-clang-resource-headers"
@@ -52,34 +53,37 @@ BUILD_TARGETS="install-haloserver install-halomon install-clang install-clang-re
 OURSELVES="-DLLVM_EXTERNAL_PROJECTS=haloserver -DLLVM_EXTERNAL_HALOSERVER_SOURCE_DIR=$(pwd)"
 NETWORK_DIR="-DHALO_NET_DIR=$(pwd)/net"
 
+# without any dash-option appended, we compile Release + Asserts
+TYPE="Release"
+DEVELOPMENT_FLAGS="-DLLVM_ENABLE_ASSERTIONS=ON"
+
+# handle variants of build
+if [[ ${ENV_KIND} =~ .*-debug ]]; then
+  TYPE="Debug"  # NOTE: this will make linking a lot harder, so avoid it on low RAM machines!
+  DEVELOPMENT_FLAGS="$DEVELOPMENT_FLAGS -DHALOSERVER_VERBOSE=ON -DHALOMON_VERBOSE=ON"
+elif [[ ${ENV_KIND} =~ .*-bench ]]; then
+  DEVELOPMENT_FLAGS="-DLLVM_ENABLE_ASSERTIONS=OFF -DHALOSERVER_VERBOSE=OFF"
+fi
+
 # environment specific build options / overrides
-if [ "${ENV_KIND}" == "docker" ]; then
+if [[ ${ENV_KIND} =~ docker.* ]]; then
   # want to install system-wide, so we overwrite the existing OPTIONS
-  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=3 -DLLVM_CCACHE_BUILD=ON \
-           -DLLVM_ENABLE_ASSERTIONS=ON"
+  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=3 -DLLVM_CCACHE_BUILD=ON $DEVELOPMENT_FLAGS"
 
-elif [ "${ENV_KIND}" == "docker-debug" ]; then
-  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=3 -DLLVM_CCACHE_BUILD=ON \
-           -DLLVM_ENABLE_ASSERTIONS=ON -DHALOSERVER_VERBOSE=ON -DHALOMON_VERBOSE=ON"
+elif [[ ${ENV_KIND} =~ local.* ]]; then
+  # install locally
+  OPTIONS="${OPTIONS} $DEVELOPMENT_FLAGS"
 
-elif [ "${ENV_KIND}" == "local" ]; then
-  # by default, we install locally anyways.
-  :
-elif [ "${ENV_KIND}" == "rpi" ]; then
+elif [[ ${ENV_KIND} =~ rpi.* ]]; then
   BACKENDS="Native"
-  OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=lld -DLLVM_PARALLEL_LINK_JOBS=1 -DLLVM_PARALLEL_COMPILE_JOBS=2"
+  OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=lld -DLLVM_PARALLEL_LINK_JOBS=1 -DLLVM_PARALLEL_COMPILE_JOBS=2 $DEVELOPMENT_FLAGS"
 
-elif [ "${ENV_KIND}" == "kavon-debug" ]; then
+elif [[ ${ENV_KIND} =~ kavon.* ]]; then
   BACKENDS="Native"
-  OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=gold -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON \
-          -DHALOSERVER_VERBOSE=ON -DHALOMON_VERBOSE=ON"
-
-elif [ "${ENV_KIND}" == "kavon" ]; then
-  BACKENDS="Native"
-  OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=gold -DLLVM_ENABLE_ASSERTIONS=ON -DLLVM_CCACHE_BUILD=ON \
-          -DHALOSERVER_VERBOSE=ON"
+  OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=gold -DLLVM_CCACHE_BUILD=ON $DEVELOPMENT_FLAGS"
 
 else
+  set +x
   echo "Unknown build kind '${ENV_KIND}'. Options are: $ENV_KIND_OPTIONS"
   exit 1
 fi
@@ -93,8 +97,9 @@ cmake -G "$GENERATOR" ${OURSELVES} ${NETWORK_DIR} -DLLVM_BUILD_LLVM_DYLIB=ON \
     -DLLVM_ENABLE_PROJECTS="$PROJECTS" -DLLVM_TARGETS_TO_BUILD="$BACKENDS" ${OPTIONS} \
     -DCMAKE_BUILD_TYPE=${TYPE} ../llvm-project/llvm
 
-if [ "${ENV_KIND}" == "kavon" ] || [ "${ENV_KIND}" == "kavon-debug" ]; then
-  echo "CMake configuration complete. Invoke build targets yourself in build dir."
+if [[ ${ENV_KIND} =~ kavon.* ]]; then
+  set +x
+  echo "CMake configuration complete, Kavon. Invoke build targets yourself in build dir."
   exit 0  # only want to configure
 fi
 
