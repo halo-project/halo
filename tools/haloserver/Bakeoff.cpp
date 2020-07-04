@@ -14,11 +14,14 @@ BakeoffParameters::BakeoffParameters(nlohmann::json const& Config) {
   SWITCH_RATE = config::getServerSetting<size_t>("bakeoff-switch-rate", Config);
   MAX_SWITCHES = config::getServerSetting<size_t>("bakeoff-max-switches", Config);
   MIN_SAMPLES = config::getServerSetting<size_t>("bakeoff-min-samples", Config);
+  ASSUMED_OVERHEAD = config::getServerSetting<float>("bakeoff-assumed-overhead", Config);
 
   assert(MIN_SAMPLES >= 2);
   assert(MAX_SWITCHES > 0);
   assert(SWITCH_RATE > 0);
+  assert(0 <= ASSUMED_OVERHEAD && ASSUMED_OVERHEAD < 1);
 
+  // we have to precisely give the right float constant, so we interpret as an int
   size_t confidenceInt = config::getServerSetting<size_t>("bakeoff-confidence", Config);
   if (confidenceInt == 95)
     CONFIDENCE = 0.95f;
@@ -112,7 +115,7 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
 
   // due to overheads involving switching and sampling,
   // we apply a simulated penalty to the total avg
-  const double AvgIPC = TotalAvg * 0.9;  // TODO: maybe this is a parameter?
+  const double AvgIPC = TotalAvg * (1.0f - BP.ASSUMED_OVERHEAD);
   assert(TotalAvg > AvgIPC);
 
   // N, the number of IPC observations during the bakeoff

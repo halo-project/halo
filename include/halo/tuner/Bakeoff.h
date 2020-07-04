@@ -18,6 +18,7 @@ struct BakeoffParameters {
   size_t MAX_SWITCHES; // the timeout threshold.
   size_t MIN_SAMPLES;
   float CONFIDENCE;    // must be a float constant like 0.95f, with f suffix
+  float ASSUMED_OVERHEAD; // [0, 1) as a porportion of total running time
 };
 
 /// an online comparison of two versions of the same code.
