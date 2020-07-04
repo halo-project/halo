@@ -23,30 +23,34 @@ using JSON = nlohmann::json;
 
 /////////////
 // Command-line Options
-cl::opt<uint32_t> CL_Port("port",
-                       cl::desc("TCP port to listen on."),
+static cl::opt<uint32_t> CL_Port("halo-port",
+                       cl::desc("TCP port to listen on. (default = 29000)"),
                        cl::init(29000));
 
 //////////
 // These options are mainly to aid in building a test suite.
 
-cl::opt<bool> CL_NoPersist("no-persist",
-                      cl::desc("Gracefully quit once all clients have disconnected."),
+static cl::opt<bool> CL_NoPersist("halo-no-persist",
+                      cl::desc("Gracefully quit once all clients have disconnected. (default = false)"),
                       cl::init(false));
 
 // NOTE: the timeout is really "at least N seconds". This is meant to prevent the
 // test suite from running forever, so set it much higher than you expect to need.
-cl::opt<uint32_t> CL_TimeoutSec("timeout",
-                      cl::desc("Quit with non-zero exit code if N seconds have elapsed. Zero means disabled."),
+static cl::opt<uint32_t> CL_TimeoutSec("halo-timeout",
+                      cl::desc("Quit with non-zero exit code if N seconds have elapsed. (default = 0 which means disabled)"),
                       cl::init(0));
 
-cl::opt<std::string> CL_ConfigPath("config",
-                      cl::desc("Path to the JSON-formatted configuration file."),
+static cl::opt<std::string> CL_ConfigPath("halo-config",
+                      cl::desc("Specify path to the JSON-formatted configuration file. By default searches for server-config.json next to executable."),
                       cl::init(""));
 
-cl::opt<std::string> CL_Strategy("strategy",
-                      cl::desc("The TuningSection strategy to be used."),
+static cl::opt<std::string> CL_Strategy("halo-strategy",
+                      cl::desc("The TuningSection strategy to use. (options are: aggressive, jitonce)"),
                       cl::init("aggressive"));
+
+static cl::opt<unsigned> CL_NumThreads("halo-threads",
+                      cl::desc("Maximum number of threads to use. (default = 0 means use all available)"),
+                      cl::init(0));
 
 namespace halo {
 
@@ -119,7 +123,7 @@ int main(int argc, char* argv[]) {
 
   halo::config::setServerSetting("strategy", CL_Strategy, ServerConfig);
 
-  halo::ClientRegistrar CR(IOService, CL_Port, CL_NoPersist, ServerConfig);
+  halo::ClientRegistrar CR(IOService, CL_Port, CL_NoPersist, CL_NumThreads, ServerConfig);
 
   std::thread io_thread([&](){ IOService.run(); });
 

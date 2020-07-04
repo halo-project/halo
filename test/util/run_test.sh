@@ -30,7 +30,7 @@ ulimit -c unlimited
 
 # NOTE: the timeout is the maximum time (in secs) the server will stay up,
 # no matter what! 30min = 1800s
-${SERVER_EXE} --no-persist --timeout 1800 > "$SERV_OUT" 2>&1 &
+${SERVER_EXE} --halo-no-persist --halo-timeout 1800 > "$SERV_OUT" 2>&1 &
 SERVER_PID=$!
 sleep 2s
 

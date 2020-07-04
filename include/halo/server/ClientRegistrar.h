@@ -24,13 +24,14 @@ namespace halo {
 
 class ClientRegistrar {
 public:
-  ClientRegistrar(asio::io_service &service, uint32_t port, bool nopersist, JSON config)
+  ClientRegistrar(asio::io_service &service, uint32_t port, bool nopersist, unsigned NumThreads, JSON config)
       : NoPersist(nopersist),
         Port(port),
         ServerConfig(config),
         IOService(service),
         Endpoint(ip::tcp::v4(), Port),
-        Acceptor(IOService, Endpoint) {
+        Acceptor(IOService, Endpoint),
+        Pool(NumThreads) {
           accept_loop();
         }
 

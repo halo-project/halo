@@ -18,7 +18,7 @@ namespace halo {
 // A ThreadPool that supports submitting tasks that return a value.
 // See asyncRet
 class ThreadPool : public llvm::ThreadPool {
-
+private:
   // TODO: why not use std::packaged_task ??
 
   // Based on llvm/Support/TaskQueue::Task.
@@ -52,6 +52,9 @@ class ThreadPool : public llvm::ThreadPool {
   std::atomic<uint64_t> Ticket{0};
 
 public:
+
+  // NumThreads = 0 means use all available threads.
+  ThreadPool(unsigned NumThreads) : llvm::ThreadPool(llvm::hardware_concurrency(NumThreads)) {}
 
   /// @returns a thread-safe way to generate a per-ThreadPool unique integer.
   uint64_t genTicket() { return Ticket.fetch_add(1);}

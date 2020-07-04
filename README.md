@@ -83,6 +83,7 @@ $ docker run registry.gitlab.com/kavon1/halo:latest # <arguments to haloserver>
 ```
 
 Pass `--help` to `haloserver` to get information about some of its options.
+Look for the flags starting with `--halo-*`.
 
 If you want to compile and run a Halo-enabled binary within the Docker
 container, you'll need to provide extra permissions, `--cap-add sys_admin` when
@@ -126,4 +127,4 @@ Upon launching the `program`, a thread for the Halo Monitor will be spawned prio
 If the monitor does not find the Halo Server at `127.0.0.1:29000` (currently, [over an unencrypted TCP connection](https://github.com/halo-project/halo/issues/2)) then the monitor goes inactive.
 Thus, you will want to have the Halo Server running ahead of time.
 
-Generally you can run `haloserver` with no arguments, but see `--help` for more options.
+Generally you can run `haloserver` with no arguments, but see the `--halo-*` flags under `--help` for more options.
