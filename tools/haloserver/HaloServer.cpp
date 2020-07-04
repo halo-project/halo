@@ -4,11 +4,8 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 
-#include "halo/nlohmann/util.hpp"
-
-#include "boost/asio.hpp"
-
 #include "halo/server/ClientRegistrar.h"
+#include "halo/server/ClientGroup.h"
 
 #include <cinttypes>
 #include <fstream>
@@ -23,16 +20,6 @@ using JSON = nlohmann::json;
 
 /////////////
 // Command-line Options
-static cl::opt<uint32_t> CL_Port("halo-port",
-                       cl::desc("TCP port to listen on. (default = 29000)"),
-                       cl::init(29000));
-
-//////////
-// These options are mainly to aid in building a test suite.
-
-static cl::opt<bool> CL_NoPersist("halo-no-persist",
-                      cl::desc("Gracefully quit once all clients have disconnected. (default = false)"),
-                      cl::init(false));
 
 // NOTE: the timeout is really "at least N seconds". This is meant to prevent the
 // test suite from running forever, so set it much higher than you expect to need.
@@ -43,14 +30,6 @@ static cl::opt<uint32_t> CL_TimeoutSec("halo-timeout",
 static cl::opt<std::string> CL_ConfigPath("halo-config",
                       cl::desc("Specify path to the JSON-formatted configuration file. By default searches for server-config.json next to executable."),
                       cl::init(""));
-
-static cl::opt<std::string> CL_Strategy("halo-strategy",
-                      cl::desc("The TuningSection strategy to use. (options are: aggressive, jitonce)"),
-                      cl::init("aggressive"));
-
-static cl::opt<unsigned> CL_NumThreads("halo-threads",
-                      cl::desc("Maximum number of threads to use. (default = 0 means use all available)"),
-                      cl::init(0));
 
 namespace halo {
 
@@ -121,14 +100,9 @@ int main(int argc, char* argv[]) {
 
   asio::io_service IOService;
 
-  halo::config::setServerSetting("strategy", CL_Strategy, ServerConfig);
-
-  halo::ClientRegistrar CR(IOService, CL_Port, CL_NoPersist, CL_NumThreads, ServerConfig);
+  halo::ClientRegistrar CR(IOService, ServerConfig);
 
   std::thread io_thread([&](){ IOService.run(); });
-
-  halo::logs() << "Started Halo Server.\nListening on port "
-            << CL_Port << "\n";
 
   // This rate controls how rapidly the entire system takes actions
   const size_t BeatsPerSecond = halo::config::getServerSetting<size_t>("heartbeats-per-second", ServerConfig);

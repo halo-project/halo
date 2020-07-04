@@ -6,6 +6,17 @@
 #include "halo/tuner/NamedKnobs.h"
 #include "halo/nlohmann/util.hpp"
 
+#include "llvm/Support/CommandLine.h"
+
+namespace cl = llvm::cl;
+
+static cl::opt<halo::Strategy::Kind> CL_Strategy(
+  "halo-strategy",
+  cl::desc("The strategy to use when optimizing hot code regions."),
+  cl::init(halo::Strategy::Aggressive),
+  cl::values(clEnumValN(halo::Strategy::Aggressive, "aggressive", "The main tuning strategy that uses the PseudoBayesTuner."),
+             clEnumValN(halo::Strategy::JitOnce, "jitonce", "Does not tune. Instead compiles the hot code once at high default optimization.")));
+
 namespace halo {
 
 
@@ -30,19 +41,20 @@ llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(TuningSecti
   }
 
   TuningSection *TS = nullptr;
-  const std::string Strat = config::getServerSetting<std::string>("strategy", TSI.Config);
 
-  if (Strat == "aggressive")
-    TS = new AggressiveTuningSection(TSI, PatchableAncestorName);
+  switch (CL_Strategy) {
+    case Strategy::Aggressive: {
+      TS = new AggressiveTuningSection(TSI, PatchableAncestorName);
+    } break;
 
-  else if (Strat == "jitonce")
-    TS = new CompileOnceTuningSection(TSI, PatchableAncestorName);
+    case Strategy::JitOnce: {
+      TS = new CompileOnceTuningSection(TSI, PatchableAncestorName);
+    } break;
 
-  else
-    fatal_error("unknown tuning section strategy: " + Strat);
+    default: fatal_error("unhandled tuning section strategy");
+  };
 
-  if (TS == nullptr)
-    fatal_error("unknown / unrecognized TuningSection strategy.");
+  assert(TS != nullptr);
 
   return std::unique_ptr<TuningSection>(TS);
 }

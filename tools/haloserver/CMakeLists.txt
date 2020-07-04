@@ -49,6 +49,7 @@ add_executable(${SERVER_BIN}
   CallingContextTree.cpp
   ClientGroup.cpp
   ClientSession.cpp
+  ClientRegistrar.cpp
   CodeRegionInfo.cpp
   CodeVersion.cpp
   CompilationPipeline.cpp

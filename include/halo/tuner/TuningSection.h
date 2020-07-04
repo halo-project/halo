@@ -31,6 +31,12 @@ struct TuningSectionInitializer {
   BuildSettings &OriginalSettings;
 };
 
+namespace Strategy {
+  enum Kind {
+    Aggressive,
+    JitOnce
+  };
+}
 
 
 class TuningSection {
