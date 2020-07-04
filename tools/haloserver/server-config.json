@@ -55,6 +55,22 @@
       "max": 50
     },
     {
+      "kind": "int",
+      "name": "loop-versioning-pct-invariant-threshold",
+      "scale": "1/1",
+      "default": 25,
+      "min": 0,
+      "max": 100
+    },
+    {
+      "kind": "int",
+      "name": "jump-threading-threshold",
+      "scale": "1/1",
+      "default": 6,
+      "min": 0,
+      "max": 100
+    },
+    {
       "kind": "flag",
       "name": "attributor-enable",
       "default": null
@@ -82,11 +98,6 @@
     {
       "kind": "flag",
       "name": "new-gvn-hoist-enable",
-      "default": null
-    },
-    {
-      "kind": "flag",
-      "name": "ignore-loop-predicate-profitability",
       "default": null
     },
     {

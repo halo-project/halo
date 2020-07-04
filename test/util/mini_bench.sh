@@ -60,7 +60,7 @@ declare -a AOT_OPTS=(
 )
 
 declare -a OPTIONS=(
-  "none -fexperimental-new-pass-manager"
+  "none"
   "-fhalo"
   "withserver -fhalo;--strategy=aggressive"
   "withserver -fhalo;--strategy=jitonce"

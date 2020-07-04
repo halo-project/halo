@@ -13,7 +13,9 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/IR/DebugInfo.h"
 #include "llvm/Transforms/IPO/Attributor.h"
-#include "llvm/Transforms/IPO/ForceFunctionAttrs.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+#include "llvm/Support/PrettyStackTrace.h"
+#include "llvm/Support/TimeProfiler.h"
 
 #include "Logging.h"
 
@@ -26,10 +28,47 @@ extern cl::opt<bool> EnableUnrollAndJam;
 extern cl::opt<bool> EnableGVNSink;
 extern cl::opt<bool> RunNewGVN;
 extern cl::opt<bool> EnableGVNHoist;
-extern cl::opt<bool> LoopPredicationSkipProfitabilityChecks;
-extern cl::opt<int> SLPCostThreshold;
+extern cl::opt<int> SLPCostThreshold; // N means it it gains N in performance / profit. So negative numbers make it more willing to vectorize.
+extern cl::opt<unsigned> BBDuplicateThreshold; // max number of instructions in BB for jump-threading
+
+// these two are related but in separate parts of LLVM
+extern cl::opt<bool> UseLoopVersioningLICM;
+extern cl::opt<float> LVInvarThreshold;   // the minimum percent of loop invariant loads/stores in the loop body
 
 namespace halo {
+
+void setCLOptions(KnobSet const& Knobs) {
+  // set all the CL options to defaults, since if the knob is unset that means use default.
+  // These values were copied from the LLVM source code, because setDefault is private.
+  AttributorRun = AttributorRunOption::NONE;
+  RunPartialInlining = false;
+  EnableUnrollAndJam = false;
+  EnableGVNSink = false;
+  RunNewGVN = false;
+  EnableGVNHoist = false;
+  SLPCostThreshold = 0;
+  BBDuplicateThreshold = 6;
+  LVInvarThreshold = 25;
+
+  Knobs.lookup<FlagKnob>(named_knob::AttributorEnable).applyFlag([&](bool Flag) {
+    if (Flag)
+      AttributorRun = AttributorRunOption::ALL;
+    else
+      AttributorRun = AttributorRunOption::NONE;
+  });
+
+  Knobs.lookup<FlagKnob>(named_knob::PartialInlineEnable).applyFlag(RunPartialInlining);
+  Knobs.lookup<FlagKnob>(named_knob::UnrollAndJamEnable).applyFlag(EnableUnrollAndJam);
+  Knobs.lookup<FlagKnob>(named_knob::GVNSinkEnable).applyFlag(EnableGVNSink);
+  Knobs.lookup<FlagKnob>(named_knob::NewGVNEnable).applyFlag(RunNewGVN);
+  Knobs.lookup<FlagKnob>(named_knob::NewGVNHoistEnable).applyFlag(EnableGVNHoist);
+
+  Knobs.lookup<IntKnob>(named_knob::SLPThreshold).applyScaledVal(SLPCostThreshold);
+  Knobs.lookup<IntKnob>(named_knob::JumpThreadingThreshold).applyScaledVal(BBDuplicateThreshold);
+
+  UseLoopVersioningLICM = true; // We want it always on cause we tune the threshold instead.
+  Knobs.lookup<IntKnob>(named_knob::LoopVersioningLICMThreshold).applyScaledVal(LVInvarThreshold);
+}
 
 Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
   // NOTE: their object cache ignores the TargetMachine's configuration, so we
@@ -137,105 +176,136 @@ Error doCleanup(Module &Module, std::string const& RootFunc, std::unordered_set<
 }
 
 
-Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
-  bool Pr = false; // printing?
-  PipelineTuningOptions PTO; // this is a very nice and extensible way to tune the pipeline.
-
-  // set all the CL options to defaults (from PassManagerBuilder / LLVM source code) first
-  AttributorRun = AttributorRunOption::NONE;
-  RunPartialInlining = false;
-  EnableUnrollAndJam = false;
-  EnableGVNSink = false;
-  RunNewGVN = false;
-  EnableGVNHoist = false;
-  LoopPredicationSkipProfitabilityChecks = false;
-  SLPCostThreshold = 0;   // N means it it gains N in performance / profit. So negative numbers make it more willing to vectorize.
-
-  Knobs.lookup<FlagKnob>(named_knob::AttributorEnable).applyFlag([&](bool Flag) {
-    if (Flag)
-      AttributorRun = AttributorRunOption::ALL;
-    else
-      AttributorRun = AttributorRunOption::NONE;
-  });
-
-  Knobs.lookup<FlagKnob>(named_knob::PartialInlineEnable).applyFlag(RunPartialInlining);
-  Knobs.lookup<FlagKnob>(named_knob::UnrollAndJamEnable).applyFlag(EnableUnrollAndJam);
-  Knobs.lookup<FlagKnob>(named_knob::GVNSinkEnable).applyFlag(EnableGVNSink);
-  Knobs.lookup<FlagKnob>(named_knob::NewGVNEnable).applyFlag(RunNewGVN);
-  Knobs.lookup<FlagKnob>(named_knob::NewGVNHoistEnable).applyFlag(EnableGVNHoist);
-  Knobs.lookup<FlagKnob>(named_knob::LoopPredicateProfit).applyFlag(LoopPredicationSkipProfitabilityChecks);
-
-  Knobs.lookup<IntKnob>(named_knob::SLPThreshold).applyScaledVal(SLPCostThreshold);
-
-  // these options are tuned per-loop, so we need to tell the optimizer that
-  // it should always consider it, unless we say otherwise for a particular loop.
-  PTO.LoopUnrolling = true;
-  PTO.LoopInterleaving = true;
-  PTO.LoopVectorization = true;
-
-  // SLP vectorization is controlled via its cost threshold.
-  PTO.SLPVectorization = true;
-
-
-  /// NOTE: IP.OptSizeThreshold and IP.OptMinSizeThreshold
-  /// are not currently set. If you end up using / not deleting optsize & minsize attributes
-  /// then they may be worth using, though they will have an affect on optimizations other than inlining.
-
-  // internally we default to aggressive inlining thresholds.
-  int Threshold = llvm::InlineConstants::OptAggressiveThreshold;
-  Knobs.lookup<IntKnob>(named_knob::InlineThreshold).applyScaledVal(Threshold);
-  InlineParams IP = llvm::getInlineParams(Threshold);
-
-  /// NOTE: I use to think this was worth tuning, but I believe it is just pessimistically
-  /// stopping the cost estimation before it's been fully computed to limit compile time
-  /// and thus makes the analysis imprecise.
-  //
-  /// Specifically, the cost analysis essentially simulates what the resulting function will look like
-  /// after inlining + simplification, but the moment the cost exceeds the threshold it
-  /// pessimistically stops early if this is set to false, even though it may go back down below
-  /// the threshold after simplifications.
-  ///
-  /// Thus, since compile time doesn't matter for us, maybe we should just always set it to true?
-  //
-  // NOTE: I've decided that it's not worth setting true or false. just let it do the default stuff.
-  // Knobs.lookup<FlagKnob>(named_knob::InlineFullCost).applyFlag(IP.ComputeFullInlineCost);
-
-  PTO.Inlining = IP;
-
-  // PGOOptions PGO; // TODO: would maybe want to use this later.
-  SimplePassBuilder PB(&TM, PTO);
-
-
-  // internal default
-  PassBuilder::OptimizationLevel OptLevel = PassBuilder::OptimizationLevel::O2;
-  Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel).applyVal(OptLevel);
-
+void annotateLoops(Module &Module, TargetMachine &TM, KnobSet const& Knobs, bool Pr=false) {
+  SimplePassBuilder PB(&TM);
   ModulePassManager MPM;
-  if (OptLevel != PassBuilder::OptimizationLevel::O0) {
-    // we only apply optimizations if the level >= 0
 
-    /////
-    // The code here is based on llvm::buildPerModuleDefaultPipeline
-
-    // Force any function attributes we want the rest of the pipeline to observe.
-    MPM.addPass(ForceFunctionAttrsPass());
-
-    // Pipeline Start EP callbacks would go here
-    spb::withPrintAfter(Pr, MPM,
+  spb::withPrintAfter(Pr, MPM,
       createModuleToFunctionPassAdaptor(
         createFunctionToLoopPassAdaptor(
           LoopAnnotatorPass(Knobs))));
 
-    // Add the core simplification pipeline.
-    MPM.addPass(PB.buildModuleSimplificationPipeline(OptLevel, PassBuilder::ThinLTOPhase::None,
-                                                  /*DebugLogging*/ Pr));
+  MPM.run(Module, PB.getAnalyses(Triple(Module.getTargetTriple())));
+}
 
-    // Now add the optimization pipeline.
-    MPM.addPass(PB.buildModuleOptimizationPipeline(OptLevel, /*DebugLogging*/ Pr, /*LTOPreLink*/ false));
+
+/// Implementation is based on Clang's EmitAssemblyHelper::EmitAssembly
+// which uses the Legacy / Old Pass Manager. I had to use the old pass
+// manager because some of the passes I want to run were not updated for
+// the new PM. See issue #38
+Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
+  bool Pr = false; // printing?
+
+  // Before optimizing the module, we need to annotate loops.
+  annotateLoops(Module, TM, Knobs, Pr);
+
+  // Apply knob settings to cl::opt globals.
+  setCLOptions(Knobs);
+
+  ////////
+  // Set-up the PassManagerBuilder
+
+  PassManagerBuilder PMBuilder;
+
+  Module.setDataLayout(TM.createDataLayout());
+
+  // Figure out TargetLibraryInfo.  This needs to be added to MPM and FPM
+  // manually (and not via PMBuilder), since some passes (eg. InstrProfiling)
+  // are inserted before PMBuilder ones - they'd get the default-constructed
+  // TLI with an unknown target otherwise.
+  Triple TargetTriple(Module.getTargetTriple());
+  auto TLII = std::make_unique<TargetLibraryInfoImpl>(TargetTriple);
+
+  legacy::PassManager MPM;
+  MPM.add(createTargetTransformInfoWrapperPass(TM.getTargetIRAnalysis()));
+
+  legacy::FunctionPassManager FPM(&Module);
+  FPM.add(createTargetTransformInfoWrapperPass(TM.getTargetIRAnalysis()));
+
+  { // INLINER
+
+    // internally we default to aggressive inlining thresholds.
+    int Threshold = llvm::InlineConstants::OptAggressiveThreshold;
+    Knobs.lookup<IntKnob>(named_knob::InlineThreshold).applyScaledVal(Threshold);
+    InlineParams IP = llvm::getInlineParams(Threshold);
+
+    /// NOTE: I use to think this was worth tuning, but I believe it is just pessimistically
+    /// stopping the cost estimation before it's been fully computed to limit compile time
+    /// and thus makes the analysis imprecise.
+    //
+    /// Specifically, the cost analysis essentially simulates what the resulting function will look like
+    /// after inlining + simplification, but the moment the cost exceeds the threshold it
+    /// pessimistically stops early if this is set to false, even though it may go back down below
+    /// the threshold after simplifications.
+    ///
+    /// Thus, since compile time doesn't matter for us, maybe we should just always set it to true?
+    //
+    // NOTE: I've decided that it's not worth setting true or false. just let it do the default stuff.
+    // Knobs.lookup<FlagKnob>(named_knob::InlineFullCost).applyFlag(IP.ComputeFullInlineCost);
+    PMBuilder.Inliner = createFunctionInliningPass(IP);
   }
 
-  spb::addPrintPass(Pr, MPM, "after optimization pipeline.");
-  MPM.run(Module, PB.getAnalyses(Triple(Module.getTargetTriple())));
+  PMBuilder.OptLevel = 2; // internal default
+
+  Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel)
+       .applyVal([&](OptLvlKnob::LevelTy Lvl) {
+         PMBuilder.OptLevel = OptLvlKnob::asInt(Lvl);
+       });
+
+  PMBuilder.SizeLevel = 0; // 0 = none
+  PMBuilder.SLPVectorize = true;
+  PMBuilder.LoopVectorize = true;
+
+  PMBuilder.DisableUnrollLoops = false; // we want loop unrolling
+  // Loop interleaving in the loop vectorizer has historically been set to be
+  // enabled when loop unrolling is enabled.
+  PMBuilder.LoopsInterleaved = !PMBuilder.DisableUnrollLoops;
+  PMBuilder.MergeFunctions = true; // why not? we have the time.
+  PMBuilder.PrepareForThinLTO = false;
+  PMBuilder.PrepareForLTO = false;
+  PMBuilder.RerollLoops = false; // off just because we already do this in cleanup
+
+  MPM.add(new TargetLibraryInfoWrapperPass(*TLII));
+
+  TM.adjustPassManager(PMBuilder);
+
+  // NOTE: Here is where we would add extensions to the PM, i.e.,
+  // calling PMBuilder.addExtension(...) to add passes in certian places.
+
+  // Set up the per-function pass manager.
+  FPM.add(new TargetLibraryInfoWrapperPass(*TLII));
+  // FPM.add(createVerifierPass());
+
+  // < A lot of stuff dealing with instrumentation-based profiling
+  // and other odd codegen things were here >
+
+  PMBuilder.populateFunctionPassManager(FPM);
+  PMBuilder.populateModulePassManager(MPM);
+
+  spb::legacy::addPrintPass(Pr, MPM, "after optimization pipeline");
+
+  // Before executing passes, print the final values of the LLVM options.
+  cl::PrintOptionValues();
+
+  // Run passes. For now we do all passes at once, but eventually we
+  // would like to have the option of streaming code generation.
+
+  {
+    PrettyStackTraceString CrashInfo("Per-function optimization");
+    llvm::TimeTraceScope TimeScope("PerFunctionPasses");
+
+    FPM.doInitialization();
+    for (Function &F : Module)
+      if (!F.isDeclaration())
+        FPM.run(F);
+    FPM.doFinalization();
+  }
+
+  {
+    PrettyStackTraceString CrashInfo("Per-module optimization passes");
+    llvm::TimeTraceScope TimeScope("PerModulePasses");
+    MPM.run(Module);
+  }
 
   return Error::success();
 }
