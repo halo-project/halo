@@ -439,6 +439,12 @@ llvm::Expected<std::unique_ptr<llvm::Module>>
 void CompilationPipeline::analyzeForProfiling(Profiler &Profile, llvm::MemoryBuffer &Bitcode) {
   llvm::LLVMContext Cxt;
 
+#ifndef HALO_VERBOSE
+  // silence dianogistic output
+  Cxt.setDiagnosticHandler(std::make_unique<DiagnosticSilencer>());
+  Cxt.setDiagnosticsHotnessThreshold(~0);
+#endif
+
   // Parse the bitcode
   auto MaybeModule = _parseBitcode(Cxt, Bitcode);
   if (!MaybeModule) {

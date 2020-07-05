@@ -6,7 +6,7 @@
 namespace boost {
 
 void throw_exception(std::exception const& ex) {
-  halo::clogs() << "uncaught exception: " << ex.what() << "\n";
+  halo::clogs(halo::LC_Error) << "uncaught exception: " << ex.what() << "\n";
   std::exit(EXIT_FAILURE);
 }
 
@@ -25,16 +25,20 @@ namespace halo {
     return makeError(msg.str());
   }
 
+  const char* WarnTag = "halo warning: ";
+  const char* InfoTag = "halo info: ";
+  const char* ServerInfoTag = "haloserver: ";
+  const char* ErrorTag = "halo fatal error: ";
+
   [[ noreturn ]] void fatal_error(const std::string &msg) {
-    llvm::report_fatal_error(makeError(msg));
+    clogs(LC_Error) << ErrorTag << msg << "\n";
+    std::exit(EXIT_FAILURE);
   }
 
   [[ noreturn ]] void fatal_error(llvm::Error &&Error) {
-    llvm::report_fatal_error(std::forward<llvm::Error>(Error));
+    logs(LC_Error) << ErrorTag << Error << "\n";
+    std::exit(EXIT_FAILURE);
   }
-
-  const char* WarnTag = "halo warning: ";
-  const char* InfoTag = "halo info: ";
 
   void warning(llvm::Error const& err) {
     logs(LC_Warning) << WarnTag << err << "\n";
@@ -54,6 +58,14 @@ namespace halo {
 
   void info(const std::string &msg) {
     clogs(LC_Info) << InfoTag << msg << "\n";
+  }
+
+  void server_info(const char *msg) {
+    clogs(LC_Server) << ServerInfoTag << msg << "\n";
+  }
+
+  void server_info(const std::string &msg) {
+    clogs(LC_Server) << ServerInfoTag << msg << "\n";
   }
 
   namespace __logging {

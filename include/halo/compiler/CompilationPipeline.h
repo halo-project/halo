@@ -9,6 +9,7 @@
 #include "llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h"
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/DiagnosticHandler.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/SmallVectorMemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
@@ -26,6 +27,17 @@ namespace halo {
 
   class Profiler;
 
+#ifndef HALO_VERBOSE
+  class DiagnosticSilencer : public llvm::DiagnosticHandler {
+  public:
+    DiagnosticSilencer() {}
+    bool handleDiagnostics(const llvm::DiagnosticInfo &DI) override { return true; }
+    bool isAnalysisRemarkEnabled(llvm::StringRef PassName) const override { return false; }
+    bool isMissedOptRemarkEnabled(llvm::StringRef PassName) const override { return false; }
+    bool isPassedOptRemarkEnabled(llvm::StringRef PassName) const override { return false; }
+  }; // end class
+#endif
+
   // Performs the optimization and compilation of a module
   // given a configuration. Thread-safe.
   class CompilationPipeline {
@@ -41,6 +53,12 @@ namespace halo {
     // It returns the new bitcode and the number of loop IDs assigned.
     llvm::Optional<std::pair<compile_result, unsigned>> cleanup(llvm::MemoryBuffer &Bitcode, std::string RootFunc, std::unordered_set<std::string> TunedFuncs) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
+
+    #ifndef HALO_VERBOSE
+      // silence dianogistic output
+      Cxt.setDiagnosticHandler(std::make_unique<DiagnosticSilencer>());
+      Cxt.setDiagnosticsHotnessThreshold(~0);
+    #endif
 
       assert(TunedFuncs.find(RootFunc) != TunedFuncs.end() && "root must be in the tuned funcs set!");
 
@@ -83,6 +101,12 @@ namespace halo {
     compile_expected run(llvm::MemoryBuffer &Bitcode, KnobSet Knobs) {
       llvm::LLVMContext Cxt; // need a new context for each thread.
 
+    #ifndef HALO_VERBOSE
+      // silence dianogistic output
+      Cxt.setDiagnosticHandler(std::make_unique<DiagnosticSilencer>());
+      Cxt.setDiagnosticsHotnessThreshold(~0);
+    #endif
+
       auto MaybeModule = _parseBitcode(Cxt, Bitcode);
       if (!MaybeModule) {
         logs() << "Compilation Error: " << MaybeModule.takeError() << "\n";
@@ -95,7 +119,7 @@ namespace halo {
       if (Result)
         return std::move(Result.get());
 
-      logs() << "Compilation Error: " << Result.takeError() << "\n";
+      logs(LC_Warning) << "Compilation Error: " << Result.takeError() << "\n";
 
       return llvm::None;
     }

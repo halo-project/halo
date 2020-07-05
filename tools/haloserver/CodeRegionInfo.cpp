@@ -157,8 +157,11 @@ void CodeRegionInfo::addRegion(FunctionDefinition const& Def, bool Absolute) {
 
   if (AddrResult != AddrMap.end()) {
     // it overlaps!
+
+  #ifndef NDEBUG
     auto Lower = AddrResult->first.lower();
     auto Upper = AddrResult->first.upper();
+  #endif
 
     // clogs() << Def.Name << " @ [" << Start << ", " << End << ")" << "\n intersects with \n"
     //         << "existing func @ [" << Lower << ", " << Upper << ")\n----\n";

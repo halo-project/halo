@@ -41,10 +41,8 @@ JSON ReadConfigFile(const char* Path) {
   // Read the configuration file.
   std::ifstream file(Path);
 
-  if (!file.is_open()) {
-    clogs() << "Unable to open server config file: " << Path << std::endl;
-    halo::fatal_error("exiting due to previous error");
-  }
+  if (!file.is_open())
+    halo::fatal_error("Unable to open server config file: " + std::string(Path));
 
   JSON ServerConfig = JSON::parse(file, nullptr, false);
   if (ServerConfig.is_discarded()) {
@@ -53,7 +51,7 @@ JSON ReadConfigFile(const char* Path) {
     halo::fatal_error("syntax error in JSON file");
   }
 
-  logs() << "Using the server config: " << Path << "\n";
+  server_info("Using the server config: " + std::string(Path));
             // << std::setw(2) << ServerConfig << std::endl;
 
   return ServerConfig;

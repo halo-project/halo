@@ -47,7 +47,7 @@ ClientRegistrar::ClientRegistrar(asio::io_service &service, JSON config)
       Pool(0), // unlimited threads for non-compilation tasks.
       CompilerPool(CL_NumThreads) {
         accept_loop();
-        logs() << "Started Halo Server.\nListening on port " << Port << "\n";
+        server_info("Started Halo Server. Listening on port " + std::to_string(Port));
       }
 
 // only safe to call within the IOService. Use io_service::dispatch.
@@ -109,7 +109,7 @@ void ClientRegistrar::accept_loop() {
   Acceptor.async_accept(Socket,
     [this,CS](boost::system::error_code Err) {
       if(!Err) {
-        info("Received a new connection request.");
+        server_info("Received a new connection request.");
 
         TotalSessions++; UnregisteredSessions++;
         CS->Status = Active;
@@ -130,7 +130,7 @@ void ClientRegistrar::register_loop(ClientSession *CS) {
   Chan.async_recv([this,CS](msg::Kind Kind, std::vector<char>& Body) {
     if (Kind == msg::Shutdown) {
       // It never made it into a group, so we clean it up.
-      info("Client shutdown before finishing registration.\n");
+      server_info("Client shutdown before finishing registration.\n");
       CS->shutdown();
       delete CS;
       UnregisteredSessions--;
@@ -157,7 +157,7 @@ void ClientRegistrar::register_loop(ClientSession *CS) {
         Groups.emplace_back(ServerConfig, Pool, CompilerPool, CS, Hash);
       }
 
-      info("Client has successfully registered.");
+      server_info("Client has successfully registered.");
 
       UnregisteredSessions--;
 

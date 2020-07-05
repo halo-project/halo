@@ -50,7 +50,9 @@ namespace halo {
     LC_Channel,
     LC_Compiler,
     LC_Info,
-    LC_Warning
+    LC_Warning,
+    LC_Error,
+    LC_Server
   };
 
   // master controller of what type of logging output you desire.
@@ -58,15 +60,20 @@ namespace halo {
     switch(LC) {
       // EXPLICITLY ENABLED CONTEXTS
       case LC_Anywhere:
-      case LC_Info:
-      case LC_Warning:
       // case LC_CCT_DUMP:
       // case LC_CCT:
       // case LC_CallGraph:
       // case LC_MonitorState:
       case LC_Compiler:
       case LC_Channel:
+      case LC_Info:
         return __logging::NOISY;
+
+      // always enabled
+      case LC_Server:
+      case LC_Warning:
+      case LC_Error:
+        return true;
 
       default:
         break;
@@ -91,6 +98,9 @@ namespace halo {
   void info(llvm::Error const& err);
   void info(const std::string &msg);
   void info(const char *msg);
+
+  void server_info(const std::string &msg);
+  void server_info(const char *msg);
 
   void warning(llvm::Error const& Error);
   void warning(const std::string &msg);

@@ -83,10 +83,8 @@ namespace halo {
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
 
-      if (State.Clients.size() == 0) {
-        info("no clients connected");
+      if (State.Clients.size() == 0)
         return end_service_iteration();
-      }
 
       // Do we need to create a tuning section?
       if (TS == nullptr) {
@@ -116,9 +114,11 @@ void ClientGroup::cleanup_async() {
     auto it = Clients.begin();
     size_t removed = 0;
     while(it != Clients.end()) {
-      if ((*it)->Status == Dead)
-        { it = Clients.erase(it); removed++; }
-      else
+      if ((*it)->Status == Dead) {
+          it = Clients.erase(it);
+          removed++;
+          server_info("Client disconnected gracefully.");
+      } else
         it++;
     }
     if (removed)
