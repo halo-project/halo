@@ -96,6 +96,10 @@ DO_SHUTDOWN:
     while (Group.ServiceLoopActive)
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
+  // flush out work, in the right order!
+  Pool.wait();
+  CompilerPool.wait();
+
   // Kill all connections. This will send an RST packet to clients.
   IOService.stop();
   return true;
