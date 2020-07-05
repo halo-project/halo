@@ -4,8 +4,10 @@
 
 #include "workload.h"
 
-#ifdef SMALL_PROBLEM_SIZE
+#if defined(SMALL_PROBLEM_SIZE)
   #define ITERS 160
+#elif defined(VALGRIND) // we need a long-running client when using valgrind on server.
+  #define ITERS 10000
 #else
   #define ITERS 320
 #endif
