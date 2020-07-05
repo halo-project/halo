@@ -43,7 +43,9 @@ namespace halo {
         Msg.push_back(asio::buffer(Blob));
 
         boost::system::error_code Err;
+      #ifndef NDEBUG
         size_t BytesWritten =
+      #endif
             asio::write(Sock, Msg, Err);
 
         if (Err) {
@@ -69,7 +71,9 @@ namespace halo {
         msg::encode(Hdr);
 
         boost::system::error_code Err;
+      #ifndef NDEBUG
         size_t BytesWritten =
+      #endif
             asio::write(Sock, asio::buffer(&Hdr, sizeof(Hdr)), Err);
 
         if (Err) {
@@ -92,7 +96,9 @@ namespace halo {
         msg::Header Hdr;
         boost::system::error_code Err1;
 
+      #ifndef NDEBUG
         size_t BytesRead =
+      #endif
           asio::read(Sock, asio::buffer(&Hdr, sizeof(msg::Header)), Err1);
 
         if (Err1)
@@ -145,7 +151,9 @@ namespace halo {
       // This one is synchronous since the body should already be here.
       Body.resize(PayloadSz);
       boost::system::error_code Err2;
+    #ifndef NDEBUG
       size_t BytesRead =
+    #endif
         asio::read(Sock, asio::buffer(Body), Err2);
 
       if (Err2)

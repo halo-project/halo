@@ -400,12 +400,15 @@ skipThisCallee:
 
 
 epilogue:
+
 #ifndef NDEBUG
   if (isMalformed()) {
     dumpDOT(clogs(LC_CCT));
     fatal_error("malformed calling-context tree!");
   }
 #endif
+
+  return;
 }
 
 /// We walk through the branch history in reverse order (recent to oldest; and to -> from) to

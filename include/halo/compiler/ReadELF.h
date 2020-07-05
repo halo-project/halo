@@ -36,8 +36,10 @@ namespace halo {
 
       auto Name = MaybeName.get();
 
+    #ifndef NDEBUG
       auto ELFBinding = Symb.getBinding();
       bool ELFVisible = (ELFBinding == STB_GLOBAL) || (ELFBinding == STB_WEAK);
+    #endif
 
       // All function symbols in the ELF are expected to be externally visible.
       // This is needed because the JIT dynamic linker respects the visibility of
