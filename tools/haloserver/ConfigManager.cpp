@@ -1,6 +1,7 @@
 #include "halo/tuner/ConfigManager.h"
 #include "halo/tuner/RandomTuner.h"
 #include "Logging.h"
+#include <utility>
 
 namespace halo {
 
@@ -18,7 +19,7 @@ KnobSet ConfigManager::retryLoop(KnobSet const& Initial,
   if (Database.count(KS) != 0)  // not unique?
     return KS; // just return this knob set that is already in the DB.
 
-  Database.insert({KS, {}});
+  Database.insert(std::make_pair<KnobSet, ConfigManager::Metadata>(KnobSet(KS), {}));
   return KS;
 }
 
