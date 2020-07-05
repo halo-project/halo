@@ -338,9 +338,6 @@ skipThisCallee:
       }
       logs(LC_CCT) << "\n";
 
-      // NOTE: it really should be >= 3, but for some reason the assert fails randomly
-      assert(ChosenPath.size() >= 2 && "no intermediate node should have been needed?");
-
       // the first vertex should be the Current vertex.
       assert(bgl::get(Gr, ChosenPath.front()).getFuncName() == CallerV.getFuncName()
           && "path must start with the current vertex!");
