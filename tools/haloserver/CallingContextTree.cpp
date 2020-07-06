@@ -223,6 +223,14 @@ void CallingContextTree::observe(CallGraph const& CG, ClientID ID, CodeRegionInf
     dumpDOT(clogs(LC_CCT_DUMP));
 }
 
+void printPath(Graph Gr, std::list<VertexID> const& Path, LoggingContext LC) {
+  for (auto ID : Path) {
+    auto &Info = bgl::get(Gr, ID);
+    logs(LC) << Info.getFuncName() << " [" << ID << "]" << " -> ";
+  }
+  logs(LC) << ".\n";
+}
+
 void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegionInfo const& CRI, pb::RawSample const& Sample) {
   ///////////
   // STEP 1
@@ -331,12 +339,19 @@ skipThisCallee:
 
       auto ChosenPath = MaybePath.getValue();
 
-      logs(LC_CCT) << "\t\tUsing path: ";
-      for (auto ID : ChosenPath) {
-        auto &Info = bgl::get(Gr, ID);
-        logs(LC_CCT) << Info.getFuncName() << " [" << ID << "]" << " -> ";
+      if (ChosenPath.size() < 3) {
+        logs(LC_Error) << "Shortest-path returned an invalid path from "
+                        << CallerV.getFuncName()
+                        << " [" << CallerVID << "] --> "
+                        << Callee->getCanonicalName() << "\n";
+        printPath(Gr, ChosenPath, LC_Error);
+        logs(LC_Error) << "CCT is:\n";
+        dumpDOT(clogs(LC_Error));
+        fatal_error("See above for failure information.");
       }
-      logs(LC_CCT) << "\n";
+
+      logs(LC_CCT) << "\t\tUsing path: ";
+      printPath(Gr, ChosenPath, LC_CCT);
 
       // the first vertex should be the Current vertex.
       assert(bgl::get(Gr, ChosenPath.front()).getFuncName() == CallerV.getFuncName()
@@ -771,20 +786,34 @@ llvm::Optional<std::list<VertexID>> CallingContextTree::shortestPath(VertexID St
 std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const {
   class PathSearch : public boost::default_dfs_visitor {
   public:
-    PathSearch(VertexID src, std::shared_ptr<FunctionInfo> const& tgt, std::list<std::list<VertexID>>& p) : Source(src), Target(tgt), Paths(p) {}
+    PathSearch(VertexID src, std::shared_ptr<FunctionInfo> const& tgt, std::list<std::list<VertexID>>& p)
+      : Source(src), Target(tgt), Paths(p) {}
+
+    void start_vertex(VertexID u, const Graph& g) {
+      if (Source == u)
+        CurPath.push_back(u);
+    }
 
     // invoked on each vertex at the start of DFS-VISIT
     void discover_vertex(VertexID u, const Graph& g) {
+      if (CurPath.front() != Source)
+        return; // then we're not in the sub-tree
+
+      if (Source == u)
+        return; // we've already accounted for it in start_vertex
+
       CurPath.push_back(u);
 
-      auto &Info = bgl::get(g, u);
-      if (CurPath.front() == Source && Target->knownAs(Info.getFuncName())) {
-        // we've found a new path.
+      // we've found a new path?
+      auto &UInfo = bgl::get(g, u);
+      if (Target->knownAs(UInfo.getFuncName()))
         Paths.push_back(CurPath);
-      }
     }
 
     void finish_vertex(VertexID u, const Graph& g) {
+      if (CurPath.front() != Source)
+        return;
+
       CurPath.pop_back();
     }
 
@@ -797,11 +826,7 @@ std::list<std::list<VertexID>> CallingContextTree::allPaths(VertexID Start, std:
 
   std::list<std::list<VertexID>> Paths;
   PathSearch Searcher(Start, Tgt, Paths);
-  // We have to make a ColorMap because we want the DFS to start at a specific
-  // vertex and the API is poorly designed for this case!
-  auto IndexMap = boost::get(boost::vertex_index, Gr);
-  auto ColorMap = boost::make_vector_property_map<boost::default_color_type>(IndexMap);
-  boost::depth_first_search(Gr, Searcher, ColorMap, Start);
+  boost::depth_first_search(Gr, boost::visitor(Searcher).root_vertex(Start));
 
   return Paths;
 }
