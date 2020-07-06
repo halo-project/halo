@@ -5,6 +5,10 @@
 
 namespace halo {
 
+void ConfigManager::insert(KnobSet const& KS) {
+  Database.insert(std::make_pair<KnobSet, ConfigManager::Metadata>(KnobSet(KS), {}));
+}
+
 KnobSet ConfigManager::retryLoop(KnobSet const& Initial,
                   std::function<KnobSet(KnobSet&&)> &&Generator,
                   unsigned Limit) {
@@ -19,7 +23,7 @@ KnobSet ConfigManager::retryLoop(KnobSet const& Initial,
   if (Database.count(KS) != 0)  // not unique?
     return KS; // just return this knob set that is already in the DB.
 
-  Database.insert(std::make_pair<KnobSet, ConfigManager::Metadata>(KnobSet(KS), {}));
+  insert(KS);
   return KS;
 }
 
@@ -66,6 +70,30 @@ KnobSet ConfigManager::genPrevious(std::mt19937_64 &RNG, bool ExcludeTop) {
 
   warning("lookup failure in genPrevious. returning an arbitrary previous config");
   return I->first;
+}
+
+llvm::Optional<KnobSet> ConfigManager::genExpertOpinion(KnobSet const& BaseKnobs) {
+  KnobSet KS(BaseKnobs);
+  KS.unsetAll();
+
+  switch(Opines) {
+    case 0: {
+      // just -O3
+      KS.lookup<OptLvlKnob>(named_knob::OptimizeLevel)
+        .setVal(llvm::PassBuilder::OptimizationLevel::O3);
+
+      KS.lookup<OptLvlKnob>(named_knob::CodegenLevel)
+        .setVal(llvm::PassBuilder::OptimizationLevel::O3);
+    } break;
+
+
+    default:
+      return llvm::None; // run out of ideas
+  };
+
+  Opines++;
+  insert(KS);
+  return KS;
 }
 
 } // namespace halo

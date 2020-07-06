@@ -43,6 +43,11 @@ public:
   // not already been enqueued into the Top queue.
   KnobSet genPrevious(std::mt19937_64 &RNG, bool ExcludeTop=true);
 
+  // get a knob set corresponding to a compiler-writer's opinion
+  // of what might be good to try next. Returns None when it's
+  // out of ideas.
+  llvm::Optional<KnobSet> genExpertOpinion(KnobSet const& BaseKnobs);
+
   void setPredictedQuality(KnobSet const& KS, float Quality) {
     Database[KS].IPC = Quality;
   }
@@ -74,8 +79,11 @@ private:
                   std::function<KnobSet(KnobSet&&)> &&Generator,
                   unsigned Limit=3);
 
+  void insert(KnobSet const&);
+
   std::list<KnobSet> Top;
   std::unordered_map<KnobSet, Metadata> Database;
+  unsigned Opines = 0;
 };
 
 } // namespace halo

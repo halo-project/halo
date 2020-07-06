@@ -114,7 +114,10 @@ namespace halo {
     }
 
     // assign or clear the current setting of this knob.
-    void setVal(llvm::Optional<ValTy> NewV) { Current = NewV; }
+    void setVal(llvm::Optional<ValTy> NewV) {
+      assert(!NewV.hasValue() || (getMin() <= NewV.getValue() && NewV.getValue() <= getMax()));
+      Current = NewV;
+    }
 
     bool hasVal() const { return Current.hasValue(); }
 

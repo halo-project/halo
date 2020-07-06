@@ -1,24 +1,19 @@
 #pragma once
 
 #include "halo/tuner/TuningSection.h"
+#include "halo/tuner/ConfigManager.h"
 
 namespace halo {
   class CompileOnceTuningSection : public TuningSection {
   public:
 
     CompileOnceTuningSection(TuningSectionInitializer TSI, std::string RootFunc) : TuningSection(TSI, RootFunc) {
-      // TODO: this would be better if it were just a knob set with one knob in it, and the pipeline
-      // skips settings for which there is a missing knob!
-      KnobSet Config(BaseKnobs);
-      Config.unsetAll();
+      auto MaybeConfig = Manager.genExpertOpinion(BaseKnobs);
 
-      auto FixedOptLevel = llvm::PassBuilder::OptimizationLevel::O3;
-      auto &OK = Config.lookup<OptLvlKnob>(named_knob::OptimizeLevel);
+      if (!MaybeConfig)
+        fatal_error("jitonce strategy failed: config manager has no expert opinion?");
 
-      assert(OK.getMin() <= FixedOptLevel && FixedOptLevel <= OK.getMax());
-      OK.setVal(FixedOptLevel);
-
-      Compiler.enqueueCompilation(*Bitcode, std::move(Config));
+      Compiler.enqueueCompilation(*Bitcode, std::move(MaybeConfig.getValue()));
       Status = ActivityState::WaitingForCompile;
     }
 
@@ -59,5 +54,6 @@ namespace halo {
 
     ActivityState Status;
     std::string LibName;
+    ConfigManager Manager;
   };
 } // end namespace

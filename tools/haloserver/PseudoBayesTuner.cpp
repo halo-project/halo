@@ -57,9 +57,16 @@ KnobSet PseudoBayesTuner::getConfig(std::string CurrentLib) {
       // log it. an error can happen if we have an insufficient prior.
       info(Error);
 
-      // if we have insufficient prior, give a random one
+      // do we have an insufficient prior?
       if (Manager.size() < MIN_PRIOR) {
         llvm::consumeError(std::move(Error));
+
+        // check for expert configs first.
+        auto MaybeExpertConfig = Manager.genExpertOpinion(BaseKnobs);
+        if (MaybeExpertConfig)
+          return MaybeExpertConfig.getValue();
+
+        // just give a random one then.
         return Manager.genRandom(BaseKnobs, RNG);
       }
 
