@@ -46,8 +46,8 @@ TEST_DIR="$SELF_DIR/.."
 
 declare -a BENCHMARKS=(
   "basic/fixed_workload.c"
-  "basic/random_workload.c"
-  "bench/c/almabench.c"
+  # "basic/random_workload.c"
+  # "bench/c/almabench.c"
   "bench/c/perlin.c"
   "bench/c/ReedSolomon.c"
 )
@@ -56,14 +56,15 @@ declare -a AOT_OPTS=(
   "-O0"
   "-O1"
   "-O2"
-  # "-O3"
+  "-O3"
 )
 
 declare -a OPTIONS=(
-  "none"
+  # "none"
   "-fhalo"
+  # "withserver -fhalo;--halo-strategy=aggressive"
   "withserver -fhalo;--halo-strategy=aggressive --halo-threads=2"
-  "withserver -fhalo;--halo-strategy=jitonce --halo-threads=2"
+  "withserver -fhalo;--halo-strategy=jitonce"
 )
 
 # overwrite and create the file
