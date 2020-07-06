@@ -4,15 +4,20 @@
 
 set -ex
 
+# the words "docker" and "full" are recognized in this string,
+# i.e, docker-full vs docker vs full vs ""
 KIND=$1
 
 pushd build
 
-# make sure relevant parts of LLVM are okay
-cmake --build . -- check-llvm-transforms
-cmake --build . -- check-llvm-codegen-x86
+if [[ ${KIND} =~ .*full.* ]]; then
+  # make sure relevant parts of LLVM are okay
+  cmake --build . -- check-llvm-transforms
+  cmake --build . -- check-llvm-codegen-x86
+  cmake --build . -- check-clang
+fi
+
 cmake --build . -- check-xray
-cmake --build . -- check-clang
 
 ####
 # FIXME: this fails on most tests with lli saying
@@ -33,7 +38,7 @@ popd
 
 ## we could then check the results of the benchmark for perf regressions
 
-if [ "${KIND}" == "docker" ]; then
+if [[ ${KIND} =~ .*docker.* ]]; then
   pushd test/util
   ./docker-post-install.sh
   popd
