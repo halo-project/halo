@@ -17,6 +17,7 @@
     "bakeoff-confidence": 99,
     "bakeoff-min-samples": 3,
     "bakeoff-assumed-overhead": 0.25,
+    "bakeoff-delta-pct": 0.98,
 
     "pbtuner-batch-size": 10,
     "pbtuner-explore-ratio": 0.2,

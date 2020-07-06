@@ -15,11 +15,13 @@ BakeoffParameters::BakeoffParameters(nlohmann::json const& Config) {
   MAX_SWITCHES = config::getServerSetting<size_t>("bakeoff-max-switches", Config);
   MIN_SAMPLES = config::getServerSetting<size_t>("bakeoff-min-samples", Config);
   ASSUMED_OVERHEAD = config::getServerSetting<float>("bakeoff-assumed-overhead", Config);
+  DELTA_PCT = config::getServerSetting<float>("bakeoff-delta-pct", Config);
 
   assert(MIN_SAMPLES >= 2);
   assert(MAX_SWITCHES > 0);
   assert(SWITCH_RATE > 0);
   assert(0 <= ASSUMED_OVERHEAD && ASSUMED_OVERHEAD < 1);
+  assert(0 <= DELTA_PCT && DELTA_PCT <= 1);
 
   // we have to precisely give the right float constant, so we interpret as an int
   size_t confidenceInt = config::getServerSetting<size_t>("bakeoff-confidence", Config);
@@ -139,7 +141,8 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
           << ", GoalIPC = " << GoalIPC
           << ", AvgIPC = " << AvgIPC << "\n";
 
-  while (Delta > 0.5) { // TODO: maybe this is a parameter? or a percentage of the best IPC?
+  const double MinimumDiff = (1.0f - BP.DELTA_PCT) * GoalIPC; // within x% of the goal.
+  while (Delta > MinimumDiff) {
     // simulate what IPC might be like after one time-step using best lib
     PaymentsRemaining++;
     gsl_rstat_add(GoalIPC, stats);

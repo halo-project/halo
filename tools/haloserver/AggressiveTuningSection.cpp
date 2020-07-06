@@ -95,7 +95,7 @@ void AggressiveTuningSection::take_step(GroupState &State) {
   }
 
 
-
+retryNonBakeoffStep:
   /////////////
   // Since we're not in a bakeoff, if any clients just
   // (re)joined, get them up-to-speed with the best one!
@@ -132,7 +132,6 @@ void AggressiveTuningSection::take_step(GroupState &State) {
 
   //////////////////////////// COMPILING
   if (Status == ActivityState::Compiling) {
-checkAgain:
     // if we ran out of jobs because they were all duplicates,
     // go back to experimenting to queue-up new configurations
     if (Compiler.jobsInFlight() == 0)
@@ -160,7 +159,7 @@ checkAgain:
       DuplicateCompiles++; DuplicateCompilesInARow++;
 
       if (DuplicateCompilesInARow < MAX_DUPES_IN_ROW)
-        goto checkAgain;
+        goto retryNonBakeoffStep;
 
       DuplicateCompilesInARow = 0; // reset
 
