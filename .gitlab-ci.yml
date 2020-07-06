@@ -33,7 +33,7 @@ mini-bench:
   stage: bench
   script:
     - docker pull $CONTAINER_TEST_IMAGE
-    - docker run --privileged -w /tmp/halo $CONTAINER_TEST_IMAGE ./minibench.sh docker
+    - docker run --privileged -w /tmp/halo $CONTAINER_TEST_IMAGE ./minibench.sh test
 
 release-image:
   stage: release

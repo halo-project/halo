@@ -3,4 +3,12 @@
 # quit if anything fails
 set -euo pipefail
 
-./test/util/mini_bench.sh ./build 4 20
+TRIALS=4
+TUNING_ITERS=20
+
+# limit running time when only doing regression testing
+if [[ $1 == "test" ]]; then
+  TRIALS=1
+fi
+
+./test/util/mini_bench.sh ./build $TRIALS $TUNING_ITERS
