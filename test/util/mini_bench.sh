@@ -45,6 +45,7 @@ SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TEST_DIR="$SELF_DIR/.."
 
 declare -a BENCHMARKS=(
+  "bench/cpp/matrix.cpp"
   "basic/fixed_workload.c"
   # "basic/random_workload.c"
   # "bench/c/almabench.c"
