@@ -68,7 +68,7 @@ fi
 # environment specific build options / overrides
 if [[ ${ENV_KIND} =~ docker.* ]]; then
   # want to install system-wide, so we overwrite the existing OPTIONS
-  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=3 -DLLVM_CCACHE_BUILD=ON $DEVELOPMENT_FLAGS"
+  OPTIONS="-DLLVM_USE_LINKER=gold -DLLVM_PARALLEL_LINK_JOBS=4 -DLLVM_CCACHE_BUILD=ON $DEVELOPMENT_FLAGS"
 
 elif [[ ${ENV_KIND} =~ local.* ]]; then
   # install locally
