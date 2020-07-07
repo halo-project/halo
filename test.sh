@@ -17,6 +17,7 @@ if [[ ${KIND} =~ .*full.* ]]; then
   cmake --build . -- check-clang
 fi
 
+cmake --build . -- llvm-xray
 cmake --build . -- check-xray
 
 ####
