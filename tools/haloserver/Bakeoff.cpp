@@ -4,7 +4,6 @@
 #include "halo/server/ClientGroup.h"
 #include "halo/nlohmann/util.hpp"
 
-#include <gsl/gsl_rstat.h>
 #include <cmath>
 #include <algorithm>
 
@@ -15,13 +14,11 @@ BakeoffParameters::BakeoffParameters(nlohmann::json const& Config) {
   MAX_SWITCHES = config::getServerSetting<size_t>("bakeoff-max-switches", Config);
   MIN_SAMPLES = config::getServerSetting<size_t>("bakeoff-min-samples", Config);
   ASSUMED_OVERHEAD = config::getServerSetting<float>("bakeoff-assumed-overhead", Config);
-  DELTA_PCT = config::getServerSetting<float>("bakeoff-delta-pct", Config);
 
   assert(MIN_SAMPLES >= 2);
   assert(MAX_SWITCHES > 0);
   assert(SWITCH_RATE > 0);
-  assert(0 <= ASSUMED_OVERHEAD && ASSUMED_OVERHEAD < 1);
-  assert(0 <= DELTA_PCT && DELTA_PCT <= 1);
+  assert(0 < ASSUMED_OVERHEAD);
 
   // we have to precisely give the right float constant, so we interpret as an int
   size_t confidenceInt = config::getServerSetting<size_t>("bakeoff-confidence", Config);
@@ -91,73 +88,54 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
   //    the number of steps left to repay, I think.
   //    For now, all of my benchmarks focus solely on basically one TS.
   //
-  // 2. We could slightly discount the observations in TotalAvg to account for overhead
-  //    of switching in the bakeoff. So far that seems unnessecary.
-  //
 
   // if there is a winner, make sure its the one that's currently deployed
   // in the case of a tie, we consider the deployed library to be the "best"
   assert(!Winner.hasValue() || Winner.getValue() == Deployed.first);
+  assert(History.size() > 1 && "can't compute debt with only one point.");
 
-  gsl_rstat_workspace *stats = gsl_rstat_alloc(); // total IPC statistics
-  gsl_rstat_workspace *deployedStats = gsl_rstat_alloc();
+  // we calculate the total performance during the bake-off, with all overheads,
+  // as the area under the curve formed by the IPCs observed over time.
+  // So each timestep forms the x-axis and is numbered from 0 ... N,
+  // with f(x) = "IPC observed at time-step x".
+  // We compute this definite integral approximately as a Riemann sum
+  // using the "midpoint rule".
 
-  // gather info
-  for (auto const& Entry : History) {
-    gsl_rstat_add(Entry.second.IPC, stats);
-    if (Entry.first == Deployed.first)
-      gsl_rstat_add(Entry.second.IPC, deployedStats);
+  auto updateBestIPC = [&](double &BestIPC, Bakeoff::Snapshot const& S) {
+    if (S.first == Deployed.first)
+      BestIPC = std::max(BestIPC, S.second.IPC);
+  };
+
+  // the maximum IPC for the deployed library
+  double DeployedMaxIPC = std::numeric_limits<double>::min();
+  updateBestIPC(DeployedMaxIPC, History[0]);
+
+  double ObservedPerf = 0.0;
+  for (size_t i = 1; i < History.size(); ++i) {
+    updateBestIPC(DeployedMaxIPC, History[i]);
+
+    const double left = History[i-1].second.IPC;
+    const double right = History[i].second.IPC;
+    const double y = (left + right) / 2; // take midpoint.
+    // x is always = 1, so x*y = y
+    ObservedPerf += y;
   }
 
-  // t_deployed, average IPC of the library to be used after the bakeoff
-  const double DeployedAvg = gsl_rstat_mean(deployedStats);
+  assert(DeployedMaxIPC != std::numeric_limits<double>::min());
 
-  // x_bar, average IPC during the entire bakeoff
-  const double TotalAvg = gsl_rstat_mean(stats);
+  // had we known earlier, we would have only deployed the best library.
+  // At best, we would have seen this performance instead.
+  // Note that this performance includes sampling overheads.
+  const double IdealPerf = DeployedMaxIPC * History.size();
 
-  // due to overheads involving switching and sampling,
-  // we apply a simulated penalty to the total avg
-  const double AvgIPC = TotalAvg * (1.0f - BP.ASSUMED_OVERHEAD);
-  assert(TotalAvg > AvgIPC);
+  // this is the amount we're behind by
+  const double Debt = IdealPerf - ObservedPerf;
 
-  // N, the number of IPC observations during the bakeoff
-  // double N = gsl_rstat_n(stats);
+  // figure out how many steps it would take to make-up the time so that we
+  // match the IdealPerf, where we only had sampling on and used the best one.
+  const double IPCNoOverhead = (1.0 + BP.ASSUMED_OVERHEAD) * DeployedMaxIPC;
+  PaymentsRemaining = std::ceil(Debt / (IPCNoOverhead - DeployedMaxIPC));
 
-  double GoalIPC = DeployedAvg;
-
-  // in some time-outs, the deployed library has a lower
-  // IPC than the overall average, i.e., the other one
-  // technically has a higher average IPC, but not in a statistically
-  // significant capacity. In that case we pretend the deployed IPC
-  // will exhibit the non-penalized avg.
-  if (GoalIPC < AvgIPC)
-    GoalIPC = TotalAvg; // non-penalized avg
-
-  assert(GoalIPC > AvgIPC);
-
-  double Delta = GoalIPC - AvgIPC;
-
-  clogs() << "Bakeoff Debt Calculation: Delta = " << Delta
-          << ", GoalIPC = " << GoalIPC
-          << ", AvgIPC = " << AvgIPC << "\n";
-
-  const double MinimumDiff = (1.0f - BP.DELTA_PCT) * GoalIPC; // within x% of the goal.
-  while (Delta > MinimumDiff) {
-    // simulate what IPC might be like after one time-step using best lib
-    PaymentsRemaining++;
-    gsl_rstat_add(GoalIPC, stats);
-
-    // how far behind are we now?
-    Delta = GoalIPC - gsl_rstat_mean(stats);
-  }
-
-  // NOTE: no matter what we end up waiting one step
-  // to announce the winner, even if PaymentsRemaining == 0,
-  // because during the time to calculate the debt here,
-  // we're already making a "payment".
-
-  gsl_rstat_free(stats);
-  gsl_rstat_free(deployedStats);
   Status = Result::PayingDebt;
   return Status;
 }

@@ -18,8 +18,8 @@ struct BakeoffParameters {
   size_t MAX_SWITCHES; // the timeout threshold.
   size_t MIN_SAMPLES;
   float CONFIDENCE;    // must be a float constant like 0.95f, with f suffix
-  float ASSUMED_OVERHEAD; // [0, 1) as a porportion of total running time
-  float DELTA_PCT; // [0, 1] how close to goal we must reach. 0.95 = make-up 95% of time
+  float ASSUMED_OVERHEAD; // (0, inf) as a porportion of total running time
+                          // lower the number, the greater the pause time to pay-off debt.
 };
 
 /// an online comparison of two versions of the same code.
