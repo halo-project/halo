@@ -129,7 +129,12 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
   const double IdealPerf = DeployedMaxIPC * History.size();
 
   // this is the amount we're behind by
-  const double Debt = IdealPerf - ObservedPerf;
+  double Debt = IdealPerf - ObservedPerf;
+
+  // if for some reason, the observed perf is _better_
+  // than the ideal perf. then just flip the debt around.
+  if (Debt < 0)
+    Debt = -Debt;
 
   // figure out how many steps it would take to make-up the time so that we
   // match the IdealPerf, where we only had sampling on and used the best one.
