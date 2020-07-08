@@ -7,7 +7,7 @@ TRIALS=4
 TUNING_ITERS=20
 
 # limit running time when only doing regression testing
-if [[ $# -gt 1 ]]; then
+if [[ $# -gt 0 ]]; then
   if [[ $1 == "test" ]]; then
     TRIALS=1
   fi
