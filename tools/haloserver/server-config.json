@@ -105,14 +105,14 @@
       "kind": "optlvl",
       "name": "optimize-pipeline-level",
       "default": "O3",
-      "min": "O1",
+      "min": "O2",
       "max": "O3"
     },
     {
       "kind": "optlvl",
       "name": "codegen-optimize-level",
       "default": "O3",
-      "min": "O1",
+      "min": "O2",
       "max": "O3"
     }
   ],
