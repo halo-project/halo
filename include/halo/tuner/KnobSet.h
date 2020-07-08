@@ -121,7 +121,7 @@ namespace halo {
 
     size_t size() const;
 
-    void dump() const;
+    void dump(LoggingContext LC=LC_Info) const;
 
     static void InitializeKnobs(JSON const&, KnobSet&, unsigned NumLoopIDs);
 

@@ -144,7 +144,8 @@ retryNonBakeoffStep:
 
     CodeVersion NewCV {std::move(CompileDone.getValue())};
 
-    // NewCV.getConfigs().front().dump();
+    clogs(LC_Info) << "config for library " << NewCV.getLibraryName() << "\n";
+    NewCV.getConfigs().front().dump();
 
     // check if this is a duplicate
     bool Dupe = false;

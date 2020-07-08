@@ -193,13 +193,13 @@ void addKnob(JSON const& Spec, KnobSet& Knobs, llvm::Optional<unsigned> LoopID) 
 
  }
 
- void KnobSet::dump() const {
-  logs() << "KnobSet: {\n";
+ void KnobSet::dump(LoggingContext LC) const {
+  logs(LC) << "KnobSet: {\n";
 
   for (auto const& Entry : *this)
-    logs() << "\t" << Entry.first << " = " << Entry.second->dump() << "\n";
+    logs(LC) << "\t" << Entry.first << " = " << Entry.second->dump() << "\n";
 
-  logs() << "}\n";
+  logs(LC) << "}\n";
  }
 
 
