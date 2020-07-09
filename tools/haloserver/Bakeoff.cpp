@@ -185,8 +185,7 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   // make sure all clients are sampling right now
   ClientGroup::broadcastSamplingPeriod(State, TS->Profile.getSamplePeriod());
 
-    // update CCT etc
-  TS->Profile.consumePerfData(State);
+  // decay CCT
   TS->Profile.decay();
 
   // first, check for fresh perf info

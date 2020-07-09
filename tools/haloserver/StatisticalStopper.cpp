@@ -1,5 +1,6 @@
 #include "halo/tuner/StatisticalStopper.h"
 #include "halo/tuner/ConfigManager.h"
+#include "halo/compiler/CodeRegionInfo.h"
 
 namespace halo {
 
@@ -12,6 +13,14 @@ using VersionMap = std::unordered_map<std::string, CodeVersion>;
 bool StatisticalStopper::shouldStop(std::string const& BestLib,
                                     VersionMap const& Versions,
                                     ConfigManager const& Manager) const {
+
+
+  // float IPCOrig = Versions.at(CodeRegionInfo::OriginalLib).getIPC().mean();
+  // float IPCCurrent = Versions.at(BestLib).getIPC().mean();
+
+  // float Diff = IPCCurrent - IPCOrig;
+  // if (Diff / IPCOrig > 0.2)
+  //   return true; // stop at 20% better.
 
 
   double ConfigsCompiled = 0, UniqueConfigs = 0;

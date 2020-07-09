@@ -18,6 +18,10 @@ namespace halo {
     }
 
     void take_step(GroupState &State) override {
+      // consume & decay so we don't leak memory.
+      Profile.consumePerfData(State);
+      Profile.decay();
+
       if (Status == ActivityState::WaitingForCompile) {
         auto Finished = Compiler.dequeueCompilation();
         if (!Finished)
