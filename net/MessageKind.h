@@ -22,8 +22,8 @@ namespace halo {
       LoadDyLib = 7,
       BakeoffResult = 8,
       ModifyFunction = 9,
-      FunctionMeasurements = 10,
-      DyLibInfo = 11
+      DyLibInfo = 10,
+      CallCountData = 11
 
     } Kind;
 
@@ -40,8 +40,8 @@ namespace halo {
         case LoadDyLib: return "LoadDyLib";
         case BakeoffResult: return "BakeoffResult";
         case ModifyFunction: return "ModifyFunction";
-        case FunctionMeasurements: return "FunctionMeasurements";
         case DyLibInfo: return "DyLibInfo";
+        case CallCountData: return "CallCountData";
         default: return "<unknown>";
       }
     }

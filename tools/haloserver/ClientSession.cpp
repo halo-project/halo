@@ -99,13 +99,13 @@ void ClientSession::listen()  {
 
         } break;
 
-        case msg::FunctionMeasurements: {
+        case msg::CallCountData: {
 
           Parent->withClientState(this, [this,Body](SessionState &State) {
-            pb::XRayProfileData PD;
+            pb::CallCountData CCD;
             llvm::StringRef Blob(Body.data(), Body.size());
-            PD.ParseFromString(Blob.str());
-            State.PerfData.add(PD);
+            CCD.ParseFromString(Blob.str());
+            State.PerfData.add(CCD);
           });
 
         } break;

@@ -3,7 +3,6 @@
 #include "halo/compiler/CodeRegionInfo.h"
 #include "Messages.pb.h"
 
-#include <list>
 #include <vector>
 
 namespace halo {
@@ -14,20 +13,20 @@ public:
   void add(std::vector<pb::RawSample> const& Samples);
   void add(pb::RawSample const& RS);
 
-  void add(pb::XRayProfileData const&);
+  void add(pb::CallCountData const&);
 
   auto& getSamples() { return Samples; }
-  auto& getEvents() { return Events; }
+  auto& getCallCounts() { return CallCounts; }
 
   auto const& getSamples() const { return Samples; }
-  auto const& getEvents() const { return Events; }
+  auto const& getCallCounts() const { return CallCounts; }
 
   // clears all data contained
   void clear();
 
 private:
   std::vector<pb::RawSample> Samples;
-  std::list<pb::XRayProfileData> Events;
+  std::vector<pb::CallCountData> CallCounts;
 };
 
 }

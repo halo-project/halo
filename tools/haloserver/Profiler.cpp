@@ -30,12 +30,14 @@ void Profiler::consumePerfData(GroupState &State) {
         return A.time() < B.time();
     });
 
+    // update CCT with perf sample data
     CCT.observe(CG, State.ID, State.CRI, State.PerfData);
+
+    // update execution time profiler with call counts
+    ETP.observe(State.ID, State.CRI, State.PerfData.getCallCounts());
+
     State.PerfData.clear();
   }
-
-  // age the data
-  decay();
 }
 
 void Profiler::decay() {

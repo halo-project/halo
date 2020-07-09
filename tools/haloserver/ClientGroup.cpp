@@ -63,6 +63,7 @@ namespace halo {
 
     broadcastSamplingPeriod(State, Profile.getSamplePeriod());
     Profile.consumePerfData(State);
+    Profile.decay();
 
     size_t TotalSamples = Profile.samplesConsumed();
 

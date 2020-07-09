@@ -187,6 +187,7 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
 
     // update CCT etc
   TS->Profile.consumePerfData(State);
+  TS->Profile.decay();
 
   // first, check for fresh perf info
   TSPerf Perf = TS->Profile.currentPerf(TS->FnGroup, Deployed.first);

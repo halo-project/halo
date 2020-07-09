@@ -13,13 +13,13 @@ namespace halo {
     Samples.push_back(RS);
   }
 
-  void PerformanceData::add(pb::XRayProfileData const& FM) {
-    Events.push_back(FM);
+  void PerformanceData::add(pb::CallCountData const& CCD) {
+    CallCounts.push_back(CCD);
   }
 
   void PerformanceData::clear() {
     Samples.clear();
-    Events.clear();
+    CallCounts.clear();
   }
 
 }

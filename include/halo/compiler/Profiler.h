@@ -3,6 +3,7 @@
 #include "llvm/ADT/Optional.h"
 #include "halo/compiler/CallingContextTree.h"
 #include "halo/compiler/CallGraph.h"
+#include "halo/compiler/ExecutionTimeProfiler.h"
 #include "halo/nlohmann/json_fwd.hpp"
 
 #include <utility>
@@ -76,6 +77,7 @@ private:
 
   CallingContextTree CCT;
   CallGraph CG;
+  ExecutionTimeProfiler ETP;
   size_t SamplesSeen{0};
 
 };

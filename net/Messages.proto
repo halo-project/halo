@@ -89,20 +89,9 @@ message RawSample {
   repeated BranchInfo branch = 6;
 }
 
-message FunctionData {
-  uint64 calls = 1;
-  SummaryStats call_frequency = 2;
-}
-
-message ThreadData {
-  uint64 total_calls = 1;
-  SummaryStats total_call_frequency = 2;
-  map<uint64, FunctionData> func_data = 3;
-}
-
-message XRayProfileData {
-  uint64 total_events = 1;
-  map<uint64, ThreadData> thread_data = 2;
+message CallCountData {
+  uint64 timestamp = 1;
+  map<uint64, uint64> function_counts = 2;
 }
 
 message DyLibInfo {
