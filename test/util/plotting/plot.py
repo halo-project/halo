@@ -72,8 +72,11 @@ def extrapolate_iters(df):
   return df
 
 
-def plot_progression(df, title, file_prefix):
+def plot_progression(df, title, file_prefix, zero):
   g = sns.lineplot(x='iter', y='time', hue='flags', data=df, legend='brief')
+
+  if zero:
+    plt.ylim(0, None)
 
   # https://stackoverflow.com/questions/51579215/remove-seaborn-lineplot-legend-title?rq=1
   handles, labels = g.get_legend_handles_labels()
@@ -88,7 +91,7 @@ def plot_progression(df, title, file_prefix):
   export_fig(g, file_prefix, [lgd])
 
 
-def plot_iter_progressions(df):
+def plot_iter_progressions(df, zero):
   ''' produces multiple plots showing tuning progression over time '''
   df = df.copy()
 
@@ -99,7 +102,7 @@ def plot_iter_progressions(df):
       obs = df[(df['program'] == prog) & (df['aot_opt'] == opt)]
       obs = extrapolate_iters(obs)
       title = prog + "_" + opt
-      plot_progression(obs, title, title)
+      plot_progression(obs, title, title, zero)
 
 
 
@@ -107,14 +110,16 @@ def plot_iter_progressions(df):
 @click.argument('csv_filename')
 @click.option("--dir", default="./", type=str,
                help="Output directory for the plots")
-def main(csv_filename, dir):
+@click.option("--zero", default=True, type=bool,
+               help="If True, Y-axis will start at zero")
+def main(csv_filename, dir, zero):
   global output_dir
   output_dir = dir
 
   configure_seaborn()
 
   pd = rm.read_csv(csv_filename)
-  plot_iter_progressions(pd)
+  plot_iter_progressions(pd, zero)
 
 
 
