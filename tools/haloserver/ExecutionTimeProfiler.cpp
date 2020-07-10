@@ -66,7 +66,7 @@ void ExecutionTimeProfiler::observeOne(ClientID ID, CodeRegionInfo const& CRI, p
 
     Avg.SamplesSeen += 1;
 
-    clogs(LC_Warning) << FuncName << ": elapsed calls = " << ElapsedCalls
+    clogs(LC_Info) << FuncName << ": elapsed calls = " << ElapsedCalls
                       << ", calls per " << MILLIS << "ms = " << CallsPerTimeUnit
                       << ", avg = " << Avg.Value << "\n";
   }
