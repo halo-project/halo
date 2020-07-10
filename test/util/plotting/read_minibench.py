@@ -18,6 +18,7 @@ def cleanup_flags(flag):
   flag = re.sub(r'withserver *-fhalo *; *--halo-strategy=', '', flag)
   flag = re.sub(r'aggressive', 'halo', flag)
   flag = re.sub(r'--halo-threads=', 't', flag)
+  flag = re.sub(r'--halo-metric=', '', flag)
   flag = re.sub(r' *-fhalo *', 'no-srv', flag)
   flag = re.sub(r'.*none.*', 'dflt', flag)
   return flag
