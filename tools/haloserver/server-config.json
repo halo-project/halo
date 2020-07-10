@@ -50,6 +50,19 @@
       "default": false
     },
     {
+      "kind": "flag",
+      "name": "loop-prefetch-writes",
+      "default": false
+    },
+    {
+      "kind": "int",
+      "name": "loop-prefetch-distance",
+      "scale": "1/1",
+      "default": 0,
+      "min": 0,
+      "max": 100
+    },
+    {
       "kind": "int",
       "name": "inline-threshold-default",
       "scale": "1/100",

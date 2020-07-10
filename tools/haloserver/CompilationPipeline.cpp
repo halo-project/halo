@@ -40,6 +40,10 @@ extern cl::opt<float> LVInvarThreshold;   // the minimum percent of loop invaria
 extern cl::opt<bool> EnableLoopInterchange;
 extern cl::opt<int> LoopInterchangeCostThreshold; // Interchange if you gain more than this number
 
+// loop data prefetch
+extern cl::opt<unsigned> PrefetchDistance;
+extern cl::opt<cl::boolOrDefault> PrefetchWrites;
+
 namespace halo {
 
 void setCLOptions(KnobSet const& Knobs) {
@@ -61,6 +65,11 @@ void setCLOptions(KnobSet const& Knobs) {
 
   EnableLoopInterchange = false;
   LoopInterchangeCostThreshold = 0;
+
+  PrefetchDistance = 0;
+  PrefetchWrites = cl::boolOrDefault::BOU_UNSET;
+  ////////////////////////////////////
+
 
   Knobs.lookup<FlagKnob>(named_knob::AttributorEnable).applyFlag([&](bool Flag) {
     if (Flag)
@@ -99,6 +108,15 @@ void setCLOptions(KnobSet const& Knobs) {
           LoopInterchangeCostThreshold = Val;
           EnableLoopInterchange = true;
        });
+
+
+  Knobs.lookup<IntKnob>(named_knob::LoopPrefetchDistance).applyScaledVal(PrefetchDistance);
+
+  Knobs.lookup<FlagKnob>(named_knob::LoopPrefetchWrites)
+       .applyFlag([&](bool Flag) {
+         PrefetchWrites = (Flag ? cl::boolOrDefault::BOU_TRUE : cl::boolOrDefault::BOU_FALSE);
+       });
+
 }
 
 Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
@@ -219,6 +237,11 @@ void annotateLoops(Module &Module, TargetMachine &TM, KnobSet const& Knobs, bool
   MPM.run(Module, PB.getAnalyses(Triple(Module.getTargetTriple())));
 }
 
+void addLoopDataPrefetchPass(const PassManagerBuilder &Builder,
+                                     legacy::PassManagerBase &PM) {
+  PM.add(createLoopDataPrefetchPass());
+}
+
 
 /// Implementation is based on Clang's EmitAssemblyHelper::EmitAssembly
 // which uses the Legacy / Old Pass Manager. I had to use the old pass
@@ -309,6 +332,8 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
 
   // < A lot of stuff dealing with instrumentation-based profiling
   // and other odd codegen things were here >
+
+  PMBuilder.addExtension(PassManagerBuilder::EP_OptimizerLast, addLoopDataPrefetchPass);
 
   PMBuilder.populateFunctionPassManager(FPM);
   PMBuilder.populateModulePassManager(MPM);

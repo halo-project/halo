@@ -32,12 +32,14 @@ namespace halo {
     static const ty NewGVNHoistEnable = {"new-gvn-hoist-enable",  Knob::KK_Flag};
     static const ty ExtraVectorizerPasses = {"extra-vectorizer-passes",  Knob::KK_Flag};
     static const ty ExperimentalAlias = {"experimental-alias-analyses",  Knob::KK_Flag};
+    static const ty LoopPrefetchWrites = {"loop-prefetch-writes",  Knob::KK_Flag};
 
     static const ty InlineThreshold = {"inline-threshold-default", Knob::KK_Int};
     static const ty SLPThreshold = {"slp-vectorize-threshold", Knob::KK_Int};
     static const ty LoopVersioningLICMThreshold = {"loop-versioning-pct-invariant-threshold",  Knob::KK_Int};
     static const ty JumpThreadingThreshold = {"jump-threading-threshold",  Knob::KK_Int};
     static const ty InterchangeCostThreshold = {"loop-interchange-cost-threshold",  Knob::KK_Int};
+    static const ty LoopPrefetchDistance = {"loop-prefetch-distance",  Knob::KK_Int};
 
     static const ty OptimizeLevel = {"optimize-pipeline-level", Knob::KK_OptLvl};
     static const ty CodegenLevel = {"codegen-optimize-level", Knob::KK_OptLvl};
@@ -81,12 +83,14 @@ namespace halo {
       NewGVNHoistEnable,
       ExtraVectorizerPasses,
       ExperimentalAlias,
+      LoopPrefetchWrites,
 
       InlineThreshold,
       SLPThreshold,
       LoopVersioningLICMThreshold,
       JumpThreadingThreshold,
       InterchangeCostThreshold,
+      LoopPrefetchDistance,
 
       OptimizeLevel,
       CodegenLevel,
