@@ -91,25 +91,33 @@ namespace halo {
   }
 
   bool CodeVersion::updateQuality(Profiler &Prof, FunctionGroup const& FG) {
-    SampledQuantity SQ;
+    // first, check for fresh perf_event info
+    SampledQuantity SQ = Prof.currentIPC(FG, LibName);
+    assert(PerfSamplesSeen <= SQ.Samples && "non-increasing sample count?");
 
-    // first, check for fresh perf info
-    if (CL_Metric == Metric::IPC)
-      SQ = Prof.currentIPC(FG, LibName);
-    else if (CL_Metric == Metric::CallFreq)
-      SQ = Prof.currentCallFreq(FG);
-    else
-      fatal_error("unhandled metric");
-
-    assert(SamplesSeen <= SQ.Samples && "non-increasing sample count?");
-
-    // not enough new samples? can't update.
-    if ((SamplesSeen - SQ.Samples) < 2)
+    // not enough new samples in this library? can't update.
+    if ((SQ.Samples - PerfSamplesSeen) < 2)
       return false;
     else
-      SamplesSeen = SQ.Samples;
+      PerfSamplesSeen = SQ.Samples;
 
-    Quality.observe(SQ.Quantity);
+    if (CL_Metric == Metric::IPC) {
+      Quality.observe(SQ.Quantity);
+      return true;
+    }
+
+    // handle the case of call frequency
+    assert(CL_Metric == Metric::CallFreq);
+
+    SampledQuantity CallFreqSQ = Prof.currentCallFreq(FG);
+    assert(CallSamplesSeen <= CallFreqSQ.Samples && "non-increasing sample count?");
+
+    if ((CallFreqSQ.Samples - CallSamplesSeen) < 2)
+      return false; // not enough call samples
+    else
+      CallSamplesSeen = CallFreqSQ.Samples;
+
+    Quality.observe(CallFreqSQ.Quantity);
     return true;
   }
 

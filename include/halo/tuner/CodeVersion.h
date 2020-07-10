@@ -59,7 +59,8 @@ class CodeVersion {
 
   void clearQuality() {
     Quality.clear();
-    SamplesSeen = 0;
+    PerfSamplesSeen = 0;
+    CallSamplesSeen = 0;
   }
 
   private:
@@ -72,7 +73,8 @@ class CodeVersion {
   std::vector<KnobSet> Configs;
 
   RandomQuantity Quality{50};
-  size_t SamplesSeen{0};
+  size_t PerfSamplesSeen{0};
+  size_t CallSamplesSeen{0};
 
 };
 

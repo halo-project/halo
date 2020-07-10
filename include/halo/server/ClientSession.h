@@ -40,7 +40,7 @@ namespace halo {
   struct SessionState {
     SessionState() {
       DeployedLibs.insert(CodeRegionInfo::OriginalLib);
-      CurrentLib = CodeRegionInfo::OriginalLib;
+      CurrentLib = "UNPATCHED_" + CodeRegionInfo::OriginalLib;
       SamplingPeriod = 0;
     }
 
