@@ -2,6 +2,27 @@
 #include "halo/compiler/CodeRegionInfo.h"
 #include "llvm/Support/SHA1.h"
 
+#include "llvm/Support/CommandLine.h"
+
+namespace cl = llvm::cl;
+
+namespace halo {
+  namespace Metric {
+    enum Kind {
+      IPC,
+      CallFreq
+    };
+  }
+}
+
+
+static cl::opt<halo::Metric::Kind> CL_Metric(
+  "halo-metric",
+  cl::desc("The metric to use when evaluating code quality."),
+  cl::init(halo::Metric::IPC),
+  cl::values(clEnumValN(halo::Metric::IPC, "ipc", "instructions-per-cycle"),
+             clEnumValN(halo::Metric::CallFreq, "calls", "Tuning-group call frequency")));
+
 
 namespace halo {
 
@@ -70,18 +91,25 @@ namespace halo {
   }
 
   bool CodeVersion::updateQuality(Profiler &Prof, FunctionGroup const& FG) {
-    // first, check for fresh perf info
-    SampledQuantity Perf = Prof.currentIPC(FG, LibName);
+    SampledQuantity SQ;
 
-    assert(SamplesSeen <= Perf.Samples && "non-increasing sample count?");
+    // first, check for fresh perf info
+    if (CL_Metric == Metric::IPC)
+      SQ = Prof.currentIPC(FG, LibName);
+    else if (CL_Metric == Metric::CallFreq)
+      SQ = Prof.currentCallFreq(FG);
+    else
+      fatal_error("unhandled metric");
+
+    assert(SamplesSeen <= SQ.Samples && "non-increasing sample count?");
 
     // not enough new samples? can't update.
-    if ((SamplesSeen - Perf.Samples) < 2)
+    if ((SamplesSeen - SQ.Samples) < 2)
       return false;
     else
-      SamplesSeen = Perf.Samples;
+      SamplesSeen = SQ.Samples;
 
-    Quality.observe(Perf.Quantity);
+    Quality.observe(SQ.Quantity);
     return true;
   }
 

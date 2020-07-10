@@ -52,6 +52,14 @@ SampledQuantity Profiler::currentIPC(FunctionGroup const& FnGroup, llvm::Optiona
   return SQ;
 }
 
+SampledQuantity Profiler::currentCallFreq(FunctionGroup const& FnGroup) {
+  auto Info = ETP.get(FnGroup.Root);
+  SampledQuantity SQ;
+  SQ.Quantity = Info.Value;
+  SQ.Samples = Info.SamplesSeen;
+  return SQ;
+}
+
 llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {
   // find the hottest VID
   using VertexID = CCTNode;

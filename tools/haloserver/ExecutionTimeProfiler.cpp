@@ -2,11 +2,9 @@
 
 namespace halo {
 
-llvm::Optional<double> ExecutionTimeProfiler::getAvg(std::string const& FuncName) {
-  auto Result = AvgTime.find(FuncName);
-  if (Result == AvgTime.end())
-    return llvm::None;
-  return Result->second;
+CallFreq ExecutionTimeProfiler::get(std::string const& FuncName) {
+  // construct from default init if not found.
+  return Data[FuncName];
 }
 
 void ExecutionTimeProfiler::observe(ClientID ID, CodeRegionInfo const& CRI, std::vector<pb::CallCountData> const& AllData) {
@@ -53,21 +51,24 @@ void ExecutionTimeProfiler::observeOne(ClientID ID, CodeRegionInfo const& CRI, p
     const double TimeUnits = ElapsedTime / (MILLIS * NANO_PER_MILLI);
 
     const double CallsPerTimeUnit = ElapsedCalls /  TimeUnits;
+    auto &Avg = Data[FuncName];
 
     // not seen before? start at this observation.
-    if (AvgTime.find(FuncName) == AvgTime.end()) {
-      AvgTime[FuncName] = CallsPerTimeUnit;
+    if (Avg.SamplesSeen == 0) {
+      Avg.Value = CallsPerTimeUnit;
 
     } else {
       // update with discount.
       const double DISCOUNT = 0.7;
-      AvgTime[FuncName] += DISCOUNT * (CallsPerTimeUnit - AvgTime[FuncName]);
+      Avg.Value += DISCOUNT * (CallsPerTimeUnit - Avg.Value);
 
     }
 
+    Avg.SamplesSeen += 1;
+
     clogs(LC_Warning) << FuncName << ": elapsed calls = " << ElapsedCalls
                       << ", calls per " << MILLIS << "ms = " << CallsPerTimeUnit
-                      << ", avg = " << AvgTime[FuncName] << "\n";
+                      << ", avg = " << Avg.Value << "\n";
   }
 
 }

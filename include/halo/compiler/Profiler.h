@@ -33,6 +33,8 @@ public:
   /// returns an IPC rating for the entire group, optionally, specific to a library.
   SampledQuantity currentIPC(FunctionGroup const&, llvm::Optional<std::string> LibName);
 
+  SampledQuantity currentCallFreq(FunctionGroup const&);
+
   /// updates the profiler with new performance data found in the clients
   /// and then decays the data by one time step.
   void consumePerfData(GroupState &);

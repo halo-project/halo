@@ -10,13 +10,19 @@ namespace halo {
 
 using ClientID = size_t;
 
+struct CallFreq {
+  double Value{0};
+  size_t SamplesSeen{0};
+};
+
 class ExecutionTimeProfiler {
 public:
+
   void observe(ClientID ID, CodeRegionInfo const& CRI, std::vector<pb::CallCountData> const&);
   void observeOne(ClientID ID, CodeRegionInfo const& CRI, pb::CallCountData const&);
 
-  // returns the average number of calls per millisecond
-  llvm::Optional<double> getAvg(std::string const& FuncName);
+  // returns the average number of calls per time unit
+  CallFreq get(std::string const& FuncName);
 
 private:
 
@@ -28,7 +34,7 @@ private:
   using State = std::unordered_map<std::string, Data>;
 
   std::unordered_map<ClientID, State> Last;
-  std::unordered_map<std::string, double> AvgTime;
+  std::unordered_map<std::string, CallFreq> Data;
 };
 
 }
