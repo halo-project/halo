@@ -46,7 +46,7 @@ void ExecutionTimeProfiler::observeOne(ClientID ID, CodeRegionInfo const& CRI, p
 
     // tweak the time unit
     const double NANO_PER_MILLI = 1000000.0;
-    const int MILLIS = 10;
+    const int MILLIS = 20;
 
     const double TimeUnits = ElapsedTime / (MILLIS * NANO_PER_MILLI);
 
