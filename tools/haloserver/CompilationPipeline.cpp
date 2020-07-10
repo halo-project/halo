@@ -28,12 +28,17 @@ extern cl::opt<bool> EnableUnrollAndJam;
 extern cl::opt<bool> EnableGVNSink;
 extern cl::opt<bool> RunNewGVN;
 extern cl::opt<bool> EnableGVNHoist;
+extern cl::opt<bool> ExtraVectorizerPasses;
 extern cl::opt<int> SLPCostThreshold; // N means it it gains N in performance / profit. So negative numbers make it more willing to vectorize.
 extern cl::opt<unsigned> BBDuplicateThreshold; // max number of instructions in BB for jump-threading
+extern cl::opt<CFLAAType> UseCFLAA;
 
 // these two are related but in separate parts of LLVM
 extern cl::opt<bool> UseLoopVersioningLICM;
 extern cl::opt<float> LVInvarThreshold;   // the minimum percent of loop invariant loads/stores in the loop body
+
+extern cl::opt<bool> EnableLoopInterchange;
+extern cl::opt<int> LoopInterchangeCostThreshold; // Interchange if you gain more than this number
 
 namespace halo {
 
@@ -46,9 +51,16 @@ void setCLOptions(KnobSet const& Knobs) {
   EnableGVNSink = false;
   RunNewGVN = false;
   EnableGVNHoist = false;
+  ExtraVectorizerPasses = false;
   SLPCostThreshold = 0;
   BBDuplicateThreshold = 6;
+  UseCFLAA = CFLAAType::None;
+
+  UseLoopVersioningLICM = false;
   LVInvarThreshold = 25;
+
+  EnableLoopInterchange = false;
+  LoopInterchangeCostThreshold = 0;
 
   Knobs.lookup<FlagKnob>(named_knob::AttributorEnable).applyFlag([&](bool Flag) {
     if (Flag)
@@ -62,12 +74,31 @@ void setCLOptions(KnobSet const& Knobs) {
   Knobs.lookup<FlagKnob>(named_knob::GVNSinkEnable).applyFlag(EnableGVNSink);
   Knobs.lookup<FlagKnob>(named_knob::NewGVNEnable).applyFlag(RunNewGVN);
   Knobs.lookup<FlagKnob>(named_knob::NewGVNHoistEnable).applyFlag(EnableGVNHoist);
+  Knobs.lookup<FlagKnob>(named_knob::ExtraVectorizerPasses).applyFlag(ExtraVectorizerPasses);
+
+  Knobs.lookup<FlagKnob>(named_knob::ExperimentalAlias)
+       .applyFlag([&](bool Enabled) {
+          if (Enabled)
+            UseCFLAA = CFLAAType::Both;
+          else
+            UseCFLAA = CFLAAType::None;
+       });
 
   Knobs.lookup<IntKnob>(named_knob::SLPThreshold).applyScaledVal(SLPCostThreshold);
   Knobs.lookup<IntKnob>(named_knob::JumpThreadingThreshold).applyScaledVal(BBDuplicateThreshold);
 
-  UseLoopVersioningLICM = true; // We want it always on cause we tune the threshold instead.
-  Knobs.lookup<IntKnob>(named_knob::LoopVersioningLICMThreshold).applyScaledVal(LVInvarThreshold);
+  Knobs.lookup<IntKnob>(named_knob::LoopVersioningLICMThreshold)
+       .applyScaledVal([&](int Val) {
+          LVInvarThreshold = Val;
+          UseLoopVersioningLICM = true;
+       });
+
+
+  Knobs.lookup<IntKnob>(named_knob::InterchangeCostThreshold)
+       .applyScaledVal([&](int Val) {
+          LoopInterchangeCostThreshold = Val;
+          EnableLoopInterchange = true;
+       });
 }
 
 Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
