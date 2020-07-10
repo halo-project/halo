@@ -16,6 +16,11 @@ namespace halo {
 class ClientSession;
 class GroupState;
 
+struct SampledQuantity {
+  double Quantity{0};
+  size_t Samples{0};
+};
+
 /// Tracks all profiling information.
 class Profiler {
 public:
@@ -26,7 +31,7 @@ public:
 
   /// given a set of functions that form sub-trees of the CCT,
   /// returns an IPC rating for the entire group, optionally, specific to a library.
-  TSPerf currentPerf(FunctionGroup const&, llvm::Optional<std::string> LibName);
+  SampledQuantity currentIPC(FunctionGroup const&, llvm::Optional<std::string> LibName);
 
   /// updates the profiler with new performance data found in the clients
   /// and then decays the data by one time step.

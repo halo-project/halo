@@ -23,11 +23,11 @@ namespace halo {
   using Graph = CallingContextTree::Graph;
 
 
-void TSPerf::dump() const {
+void GroupIPC::dump() const {
   clogs() << "hot = " << Hotness << ", ipc = " << IPC << ", samplesSeen = " << SamplesSeen << "\n";
 }
 
-bool operator==(TSPerf const& A, TSPerf const& B) {
+bool operator==(GroupIPC const& A, GroupIPC const& B) {
   return std::tie(A.Hotness, A.IPC, A.SamplesSeen)
       == std::tie(B.Hotness, B.IPC, B.SamplesSeen);
 }
@@ -889,7 +889,7 @@ AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
   return Result;
 }
 
-TSPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> Lib) {
+GroupIPC CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> Lib) {
   // First, we need to collect all of the starting context vertex IDs.
   // Specifically, we find all vertices in the CCT that match the root fn.
   std::vector<VertexID> RootContexts;
@@ -934,7 +934,7 @@ TSPerf CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Optio
   // NOTE: we ignore the hotness from this final norm.
   AttrPair TotalNorm = euclideanNorm(AllNorms);
 
-  TSPerf Perf;
+  GroupIPC Perf;
   Perf.IPC = TotalNorm.IPC;
   Perf.Hotness = TotalNorm.Hotness;
   Perf.SamplesSeen = TotalSamples;

@@ -15,8 +15,8 @@ bool StatisticalStopper::shouldStop(std::string const& BestLib,
                                     ConfigManager const& Manager) const {
 
 
-  // float IPCOrig = Versions.at(CodeRegionInfo::OriginalLib).getIPC().mean();
-  // float IPCCurrent = Versions.at(BestLib).getIPC().mean();
+  // float IPCOrig = Versions.at(CodeRegionInfo::OriginalLib).getQuality().mean();
+  // float IPCCurrent = Versions.at(BestLib).getQuality().mean();
 
   // float Diff = IPCCurrent - IPCOrig;
   // if (Diff / IPCOrig > 0.2)

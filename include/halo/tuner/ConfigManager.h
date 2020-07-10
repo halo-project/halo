@@ -49,7 +49,7 @@ public:
   llvm::Optional<KnobSet> genExpertOpinion(KnobSet const& BaseKnobs);
 
   void setPredictedQuality(KnobSet const& KS, float Quality) {
-    Database[KS].IPC = Quality;
+    Database[KS].Quality = Quality;
   }
 
   // returns ConfigManager::MISSING_QUALITY for unseen KnobSets.
@@ -57,7 +57,7 @@ public:
     if (Database.count(KS) == 0)
       return MISSING_QUALITY;
 
-    return Database.at(KS).IPC;
+    return Database.at(KS).Quality;
   }
 
   size_t size() const { return Database.size(); }
@@ -71,7 +71,7 @@ public:
 private:
 
   struct Metadata {
-    float IPC = ConfigManager::MISSING_QUALITY;
+    float Quality = ConfigManager::MISSING_QUALITY;
     bool BeenInTop = false;
   };
 

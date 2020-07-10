@@ -59,20 +59,34 @@ namespace halo {
     for (auto KS : CV.Configs)
       Configs.push_back(std::move(KS));
 
-    IPC.merge(CV.IPC);
+    Quality.merge(CV.Quality);
 
     // empty out the other one for safety.
     CV.Configs.clear();
     CV.ObjFileHashes.clear();
-    CV.IPC.clear();
+    CV.clearQuality();
 
+    return true;
+  }
+
+  bool CodeVersion::updateQuality(Profiler &Prof, FunctionGroup const& FG) {
+    // first, check for fresh perf info
+    SampledQuantity Perf = Prof.currentIPC(FG, LibName);
+
+    assert(SamplesSeen <= Perf.Samples && "non-increasing sample count?");
+
+    // not enough new samples? can't update.
+    if ((SamplesSeen - Perf.Samples) < 2)
+      return false;
+    else
+      SamplesSeen = Perf.Samples;
+
+    Quality.observe(Perf.Quantity);
     return true;
   }
 
   bool CodeVersion::isBroken() const { return Broken; }
 
   bool CodeVersion::isOriginalLib() const { return LibName == CodeRegionInfo::OriginalLib; }
-
-  void CodeVersion::observeIPC(double value) { IPC.observe(value); }
 
 } // end namespace

@@ -42,13 +42,11 @@ Bakeoff::Bakeoff(GroupState &State, TuningSection *TS, BakeoffParameters BP, std
   StepsUntilSwitch = BP.SWITCH_RATE;
 
   // start off by clearing out previous performance data from both versions.
-  auto &CurIPC = TS->Versions[Current].getIPC();
-  assert(CurIPC.capacity() > 0);
-  CurIPC.clear();
+  TS->Versions[Current].clearQuality();
+  assert(TS->Versions[Current].getQuality().capacity() > 0);
 
-  auto &NewIPC = TS->Versions[New].getIPC();
-  assert(NewIPC.capacity() > 0);
-  NewIPC.clear();
+  TS->Versions[New].clearQuality();
+  assert(TS->Versions[New].getQuality().capacity() > 0);
 
   // make sure the clients are in the state we expect
   deploy(State, Deployed.first);
@@ -103,7 +101,7 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
 
   auto updateBestIPC = [&](double &BestIPC, Bakeoff::Snapshot const& S) {
     if (S.first == Deployed.first)
-      BestIPC = std::max(BestIPC, S.second.IPC);
+      BestIPC = std::max(BestIPC, S.second);
   };
 
   // the maximum IPC for the deployed library
@@ -114,8 +112,8 @@ Bakeoff::Result Bakeoff::transition_to_debt_repayment(GroupState &State) {
   for (size_t i = 1; i < History.size(); ++i) {
     updateBestIPC(DeployedMaxIPC, History[i]);
 
-    const double left = History[i-1].second.IPC;
-    const double right = History[i].second.IPC;
+    const double left = History[i-1].second;
+    const double right = History[i].second;
     const double y = (left + right) / 2; // take midpoint.
     // x is always = 1, so x*y = y
     ObservedPerf += y;
@@ -188,27 +186,20 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   // decay CCT
   TS->Profile.decay();
 
-  // first, check for fresh perf info
-  TSPerf Perf = TS->Profile.currentPerf(TS->FnGroup, Deployed.first);
-
-  // no new samples in this library? can't make progress
-  if ((Perf.SamplesSeen - Deployed.second.SamplesSeen) < 2 || Perf.IPC <= 0) {
+  // try to update the deployed lib with fresh quality info
+  bool Updated = TS->Versions[Deployed.first].updateQuality(TS->Profile, TS->FnGroup);
+  if (!Updated) {
     info("Bakeoff can't make progress b/c insufficient samples observed in the deployed library.");
     return Status;
-  } else {
-    Deployed.second = Perf;
   }
 
-  History.emplace_back(Deployed.first, Perf);
+  auto &DeployedQual = TS->Versions.at(Deployed.first).getQuality();
+  auto &OtherQual = TS->Versions.at(Other.first).getQuality();
 
-  auto &DeployedIPC = TS->Versions.at(Deployed.first).getIPC();
-  auto &OtherIPC = TS->Versions.at(Other.first).getIPC();
-
-  // add the new IPC reading
-  DeployedIPC.observe(Perf.IPC);
+  History.emplace_back(Deployed.first, DeployedQual.last());
 
   // try to determine a winner
-  switch(compare_ttest(DeployedIPC, OtherIPC)) {
+  switch(compare_ttest(DeployedQual, OtherQual)) {
     case ComparisonResult::GreaterThan: {
       Winner = Deployed.first;
       return transition_to_debt_repayment(State);
@@ -453,8 +444,9 @@ void Bakeoff::dump() const {
           << "\n\t\tHistory = [\n";
 
   for (auto const& Entry : History) {
-    clogs() << "\t\t\t" << Entry.first << " : ";
-    Entry.second.dump();
+    clogs() << "\t\t\t" << Entry.first
+            << " : quality = " << Entry.second
+            << "\n";
   }
 
 

@@ -44,8 +44,12 @@ void Profiler::decay() {
   CCT.decay();
 }
 
-TSPerf Profiler::currentPerf(FunctionGroup const& FnGroup, llvm::Optional<std::string> LibName) {
-  return CCT.currentPerf(FnGroup, LibName);
+SampledQuantity Profiler::currentIPC(FunctionGroup const& FnGroup, llvm::Optional<std::string> LibName) {
+  auto Info = CCT.currentPerf(FnGroup, LibName);
+  SampledQuantity SQ;
+  SQ.Quantity = Info.IPC;
+  SQ.Samples = Info.SamplesSeen;
+  return SQ;
 }
 
 llvm::Optional<Profiler::CCTNode> Profiler::hottestNode() {

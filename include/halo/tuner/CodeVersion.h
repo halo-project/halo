@@ -50,10 +50,17 @@ class CodeVersion {
 
   bool isOriginalLib() const;
 
-  void observeIPC(double value);
+  // returns the numeric quality of this code version.
+  // larger qualities are assumed to be better.
+  RandomQuantity const& getQuality() const { return Quality; };
 
-  RandomQuantity& getIPC() { return IPC; };
-  RandomQuantity const& getIPC() const { return IPC; };
+  // returns true if an update was able to occur
+  bool updateQuality(Profiler &Prof, FunctionGroup const& FG);
+
+  void clearQuality() {
+    Quality.clear();
+    SamplesSeen = 0;
+  }
 
   private:
   using SHAHash = std::array<uint8_t, 20>;
@@ -63,7 +70,10 @@ class CodeVersion {
   std::unique_ptr<llvm::MemoryBuffer> ObjFile;
   std::set<SHAHash> ObjFileHashes;
   std::vector<KnobSet> Configs;
-  RandomQuantity IPC{50};
+
+  RandomQuantity Quality{50};
+  size_t SamplesSeen{0};
+
 };
 
 } // end namespace

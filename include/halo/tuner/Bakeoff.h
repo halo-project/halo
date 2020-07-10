@@ -56,7 +56,7 @@ public:
 
 private:
 
-  using Snapshot = std::pair<std::string, TSPerf>;
+  using Snapshot = std::pair<std::string, double>;
 
   Bakeoff::Result transition_to_debt_repayment(GroupState &);
   Bakeoff::Result debt_payment_step(GroupState &);

@@ -85,9 +85,16 @@ public:
     Count = 0;
   }
 
+  // returns the most recent observation
+  double last() const {
+    assert(Count > 0);
+    size_t LastIdx = NextFree == 0 ? Obs.capacity()-1 : NextFree-1;
+    return Obs.get(LastIdx);
+  }
+
   /// returns the maximum capacity of this random quantity's ability to
   /// remember observations.
-  size_t capacity() {
+  size_t capacity() const {
     return Obs.capacity();
   }
 

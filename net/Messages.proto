@@ -90,8 +90,8 @@ message RawSample {
 }
 
 message CallCountData {
-  uint64 timestamp = 1;
-  map<uint64, uint64> function_counts = 2;
+  uint64 timestamp = 1;   // in nanoseconds since an arbitrary, fixed point in time.
+  map<uint64, uint64> function_counts = 2;  // function addr -> call count
 }
 
 message DyLibInfo {

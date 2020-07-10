@@ -2,6 +2,7 @@
 
 #include "Messages.pb.h"
 #include "halo/compiler/CodeRegionInfo.h"
+#include "llvm/ADT/Optional.h"
 
 #include <unordered_map>
 
@@ -13,6 +14,9 @@ class ExecutionTimeProfiler {
 public:
   void observe(ClientID ID, CodeRegionInfo const& CRI, std::vector<pb::CallCountData> const&);
   void observeOne(ClientID ID, CodeRegionInfo const& CRI, pb::CallCountData const&);
+
+  // returns the average number of calls per millisecond
+  llvm::Optional<double> getAvg(std::string const& FuncName);
 
 private:
 

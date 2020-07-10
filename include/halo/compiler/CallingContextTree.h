@@ -140,14 +140,14 @@ public:
 
 
 // Profiling-based attributes of a function group.
-struct TSPerf {
+struct GroupIPC {
   double Hotness{0};
   double IPC{0};
   size_t SamplesSeen{0};
   void dump() const;
 };
 
-bool operator==(TSPerf const& A, TSPerf const& B);
+bool operator==(GroupIPC const& A, GroupIPC const& B);
 
 
 /// A container for context-sensitive profiling data.
@@ -214,7 +214,7 @@ public:
   llvm::Optional<std::list<VertexID>> shortestPath(VertexID Start, std::shared_ptr<FunctionInfo> const& Tgt) const;
 
   /// Gather some performance information about this function group. Optionally, for a specific library version
-  TSPerf currentPerf(FunctionGroup const& FuncGroup, llvm::Optional<std::string> Lib);
+  GroupIPC currentPerf(FunctionGroup const& FuncGroup, llvm::Optional<std::string> Lib);
 
   /// dumps the graph in DOT format
   void dumpDOT(std::ostream &);

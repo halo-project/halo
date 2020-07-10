@@ -118,11 +118,11 @@ public:
       }
 
   // writes to the next row of the matrix, using the provided information
-  void emplace_back(KnobSet const* Config, RandomQuantity const* IPC) {
+  void emplace_back(KnobSet const* Config, RandomQuantity const* RQ) {
     if (nextFree == NUM_ROWS)
       fatal_error("ConfigMatrix is full!");
 
-    setResult(nextFree, IPC->mean());
+    setResult(nextFree, RQ->mean());
     emplace_back(Config);
   }
 
@@ -175,7 +175,7 @@ public:
   // returns a pointer to the CFG matrix
   FloatTy const* getCFG() const { return cfg.get(); }
 
-  // return a pointer to the results / IPC vector
+  // return a pointer to the results / quality vector
   FloatTy const* getResults() const { return result.get(); }
 
   // get a specific result from the results array
@@ -265,7 +265,7 @@ void initializeDMatrixHandle(DMatrixHandle *handle, ConfigMatrix const& Data) {
                               Data.rows(), Data.cols(),
                               ConfigMatrix::MISSING_VAL, handle));
 
-  // add labels, aka, IPCs corresponding to each configuration
+  // add labels, aka, quality ratings corresponding to each configuration
   safe_xgboost(XGDMatrixSetFloatInfo(*handle, "label", Data.getResults(), Data.rows()));
 }
 
@@ -466,24 +466,24 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
   };
 
   // TODO: what if we pruned the top N predictions so that only those
-  // which are higher than the mean predicted IPC of the best version
+  // which are higher than the mean predicted quality of the best version
   // appear in that list. It could be the case that the model doesn't think
   // _anything_ is better than what we've got, and we should return an error
   // in that case so the tuner generates a random one instead.
 
-  // the IPCs contained in this multiset are the negative of the predicted IPC.
+  // the qualities contained in this multiset are the negative of the predicted quality.
   // this is done so that the multiset works for us in keeping the smallest N
-  // elements, where the smallest negative IPC = largest IPC
+  // elements, where the smallest negative quality = largest quality
   std::multiset<SetKey, lessThan> Best;
 
   for (size_t i = 0; i < searchMatrix.rows(); i++) {
-    float predictedIPC = out[i];
+    float predictedQual = out[i];
 
-    Manager.setPredictedQuality(searchConfig.at(i), predictedIPC);
+    Manager.setPredictedQuality(searchConfig.at(i), predictedQual);
 
-    // clogs() << "prediction[" << i << "]=" << predictedIPC << "\n";
+    // clogs() << "prediction[" << i << "]=" << predictedQual << "\n";
 
-    auto Cur = std::make_pair(i, -predictedIPC);
+    auto Cur = std::make_pair(i, -predictedQual);
 
     if (Best.size() < ExploitBatchSz) {
       Best.insert(Cur);
@@ -502,7 +502,7 @@ llvm::Error PseudoBayesTuner::surrogateSearch(std::vector<char> const& Serialize
   for (auto Entry : Best) {
     auto Chosen = Entry.first;
     clogs() << "chose config " << Chosen
-            << " with estimated IPC " << -Entry.second
+            << " with estimated quality " << -Entry.second
             << "\n";
     Manager.addTop(searchConfig[Chosen]);
   }
@@ -540,7 +540,7 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
     for (auto const& Entry : Versions) {
 
       // a code version is only usable if it has some observations.
-      auto const& RQ = Entry.second.getIPC();
+      auto const& RQ = Entry.second.getQuality();
       if (RQ.size() == 0)
         continue;
 
@@ -563,7 +563,7 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
 
   const size_t numConfigs = allConfigs.size();
   if (numConfigs < MIN_PRIOR)
-    return makeError("insufficient usable configurations. please collect more IPC measurements with varying configs.");
+    return makeError("insufficient usable configurations. please collect more quality measurements with varying configs.");
 
   CodeVersion const& bestVersion = Versions.at(CurrentLib);
 
@@ -583,7 +583,7 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
   ///////////
   // train an XGBoost model on the trainData dataset w.r.t the validation dataset.
   //
-  // we want a model which has learned whether a configuration will yield a good IPC or not.
+  // we want a model which has learned whether a configuration will yield a good quality or not.
   {
     ConfigMatrix trainData(trainingRows, knobsPerConfig, KnobToCol);
     ConfigMatrix validateData(validateRows, knobsPerConfig, KnobToCol);
