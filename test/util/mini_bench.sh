@@ -63,8 +63,8 @@ declare -a AOT_OPTS=(
 declare -a OPTIONS=(
   # "none"
   "-fhalo"
-  # "withserver -fhalo;--halo-strategy=aggressive"
-  "withserver -fhalo;--halo-strategy=aggressive --halo-threads=2"
+  "withserver -fhalo;--halo-strategy=aggressive --halo-threads=2 --halo-metric=calls"
+  "withserver -fhalo;--halo-strategy=aggressive --halo-threads=2 --halo-metric=ipc"
   "withserver -fhalo;--halo-strategy=jitonce"
 )
 
