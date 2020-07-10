@@ -147,7 +147,7 @@
     {
       "kind": "int",
       "name": "llvm.loop.interleave.count",
-      "scale": "log",
+      "scale": "1/1",
       "default": null,
       "min": -1,
       "max": 4
