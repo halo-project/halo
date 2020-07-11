@@ -104,17 +104,7 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode H
     float Hotness = VI.getHotness(llvm::None);
     clogs() << "\tConsidering " << VI.getFuncName()
             << " for TS root (Patchable = " << Patchable << ", Hotness = " << Hotness << ")\n";
-    return Patchable && Hotness >= MINIMUM_ROOT_HOTNESS;
-  };
-
-  // asks the call-graph if the Src function's callsites to Tgt are all within loops.
-  auto AllCallsFromLoops = [&](VertexInfo const& Src, VertexInfo const& Tgt) -> bool {
-    auto MaybeEdge = CG.getCallEdge(Src.getFuncName(), Tgt.getFuncName());
-    if (!MaybeEdge)
-      return false;
-    CallGraph::Edge Edge = MaybeEdge.getValue();
-    assert(Edge.totalCallsites() > 0 && "the callgraph edge info is invalid");
-    return (Edge.totalCallsites() == Edge.LoopBodyCallsites);
+    return Patchable; // && Hotness >= MINIMUM_ROOT_HOTNESS;
   };
 
   // CCT.dumpDOT(clogs());
@@ -122,6 +112,34 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode H
   // walk the context of this hot node. the context always includes the node itself at the start.
   auto CxtIDs = CCT.contextOf(HotVID);
   assert(*(CxtIDs.rbegin()) == HotVID);
+
+  using rev_iter = std::reverse_iterator<std::vector<CCTNode>::iterator>;
+
+  // asks the call-graph if, starting at the given candidate, whether
+  // one of the parent functions in this calling-context is calls the child (transitively)
+  // only from within loops.
+  auto SomeParentCallsFromLoops = [&](CCTNode CandID, rev_iter Parent, rev_iter End) -> bool {
+    bool FoundLoopParent = false;
+    CCTNode ChildID = CandID;
+
+    for (; !FoundLoopParent && Parent != End; Parent++) {
+      CCTNode ParentID = *Parent;
+      auto const& Src = CCT.getInfo(ParentID);
+      auto const& Tgt = CCT.getInfo(ChildID);
+
+      auto MaybeEdge = CG.getCallEdge(Src.getFuncName(), Tgt.getFuncName());
+      if (!MaybeEdge)
+        return false; // no edge? then we can't determine if its true.
+
+      CallGraph::Edge Edge = MaybeEdge.getValue();
+      assert(Edge.totalCallsites() > 0 && "the callgraph edge info is invalid");
+
+      FoundLoopParent = Edge.totalCallsites() == Edge.LoopBodyCallsites;
+      ChildID = ParentID;
+    }
+
+    return FoundLoopParent;
+  };  // end SomeParentCallsFromLoops
 
   for (auto IDI = CxtIDs.rbegin(); IDI != CxtIDs.rend(); IDI++) {
     auto const& Parent = CCT.getInfo(*IDI);
@@ -131,6 +149,7 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode H
       // check if this one is okay
       if (SuitableTuningRoot(Parent)) {
         CandidateID = *IDI;
+        Suitable = Parent.getFuncName();
       }
        continue; // keep looking
     }
@@ -140,12 +159,13 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode H
 
     float ParentHotness = Parent.getHotness(llvm::None);
     float CandidateCalledFreq = CCT.getCallFrequency(CandID);
-    bool OnlyCalledFromLoop = AllCallsFromLoops(Parent, Candidate);
+    bool OnlyCalledFromLoop = SomeParentCallsFromLoops(CandID, IDI, CxtIDs.rend());
+
     clogs() << "Inspecting Parent of " << Candidate.getFuncName()
             << " (" << Parent.getFuncName()
             << "): Hotness = " << ParentHotness
             << ", CandidateCalledFreq = " << CandidateCalledFreq
-            << ", CandidateOnlyCalledFromLoop = " << OnlyCalledFromLoop
+            << ", CandidateOnlyCalledFromLoopInCxt = " << OnlyCalledFromLoop
             <<  "\n";
 
     // the candidate is suitable if its parent is either
