@@ -112,6 +112,10 @@ namespace halo {
     SampledQuantity CallFreqSQ = Prof.currentCallFreq(FG);
     assert(CallSamplesSeen <= CallFreqSQ.Samples && "non-increasing sample count?");
 
+    // FIXME: we should have a higher standard for number of samples
+    // due to the transition lag. we don't (currently)
+    // separate the call frequency by library, since it's
+    // not feasible to determine which counts belong to what library.
     if ((CallFreqSQ.Samples - CallSamplesSeen) < 2)
       return false; // not enough call samples
     else

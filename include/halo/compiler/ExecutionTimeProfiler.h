@@ -11,8 +11,9 @@ namespace halo {
 using ClientID = size_t;
 
 struct CallFreq {
-  double Value{0};
+  double Value{0};  // calls per time unit
   size_t SamplesSeen{0};
+  unsigned MilliPerCall{0}; // the time unit: milliseconds per call
 };
 
 class ExecutionTimeProfiler {

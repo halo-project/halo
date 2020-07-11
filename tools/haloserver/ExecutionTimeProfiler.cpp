@@ -44,30 +44,37 @@ void ExecutionTimeProfiler::observeOne(ClientID ID, CodeRegionInfo const& CRI, p
     assert(ElapsedCalls > 0);
     assert(ElapsedTime > 0);
 
-    // tweak the time unit
-    const double NANO_PER_MILLI = 1000000.0;
-    const int MILLIS = 20;
-
-    const double TimeUnits = ElapsedTime / (MILLIS * NANO_PER_MILLI);
-
-    const double CallsPerTimeUnit = ElapsedCalls /  TimeUnits;
     auto &Avg = Data[FuncName];
 
-    // not seen before? start at this observation.
-    if (Avg.SamplesSeen == 0) {
-      Avg.Value = CallsPerTimeUnit;
+    const double NANO_PER_MILLI = 1000000.0;
 
-    } else {
+    auto ComputeCallsPerTimeUnit = [&](unsigned msPerCall) -> double {
+      assert(msPerCall != 0);
+      const double TimeUnits = ElapsedTime / (msPerCall * NANO_PER_MILLI);
+      const double CallsPerTimeUnit = ElapsedCalls /  TimeUnits;
+      return CallsPerTimeUnit;
+    };
+
+    if (Avg.MilliPerCall != 0) {
       // update with discount.
       const double DISCOUNT = 0.7;
-      Avg.Value += DISCOUNT * (CallsPerTimeUnit - Avg.Value);
+      Avg.Value += DISCOUNT * (ComputeCallsPerTimeUnit(Avg.MilliPerCall) - Avg.Value);
 
+    } else { // initialize based on this observation.
+
+      // we compute this function's MilliPerCall and initialize the average
+      Avg.MilliPerCall = std::ceil((ElapsedTime / ElapsedCalls) / NANO_PER_MILLI);
+      assert(Avg.MilliPerCall != 0);
+
+      Avg.Value = ComputeCallsPerTimeUnit(Avg.MilliPerCall);
     }
 
     Avg.SamplesSeen += 1;
 
+
     clogs(LC_Info) << FuncName << ": elapsed calls = " << ElapsedCalls
-                      << ", calls per " << MILLIS << "ms = " << CallsPerTimeUnit
+                      << ", calls per " << Avg.MilliPerCall
+                      << "ms = " << (Avg.MilliPerCall == 0 ? 0 : ComputeCallsPerTimeUnit(Avg.MilliPerCall))
                       << ", avg = " << Avg.Value << "\n";
   }
 
