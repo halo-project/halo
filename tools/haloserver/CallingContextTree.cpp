@@ -301,15 +301,24 @@ skipThisCallee:
 
     // FIXME: the call-graph doesn't account for FunctionInfo that has multiple
     // aliases (and new dynamic aliases)!
+    // also, the call-graph doesn't account for cases where, after optimization,
+    // LLVM will produce new functions. This is seen in the spectral benchmark
+    // where it produces a function: @eval_AtA_times_u.1.for.body.us.preheader.i
+    //
+    // For now we're going to just going to stub those out to unknown function
+    // nodes because compilation happens in parallel with updates to the CCT,
+    // so we'd need to add a lock to all of the CCT's methods and
+    // include a ref to it during the compilation job. Big pain for little gain
+    // at the moment.
 
     bool ImaginaryCaller = CallerFI->isUnknown();
     bool ImaginaryCallee = Callee->isUnknown();
     bool DirectlyCalled = Callee->isKnown() && CG.hasCall(CallerV.getFuncName(), Callee->getCanonicalName());
-    bool HasOpaqueCallee = CG.hasOpaqueCall(CallerV.getFuncName());
+    // bool HasOpaqueCallee = CG.hasOpaqueCall(CallerV.getFuncName());
 
     logs(LC_CCT) << "Calling context contains " << CallerV.getFuncName() << " -> " << Callee->getCanonicalName()
            << "\n\tand DirectlyCalled = " << DirectlyCalled
-           << ", HasOpaqueCallee = " << HasOpaqueCallee
+          //  << ", HasOpaqueCallee = " << HasOpaqueCallee
            << ", ImaginaryCaller = " << ImaginaryCaller
            << ", ImaginaryCallee = " << ImaginaryCallee
            << "\n";
@@ -319,10 +328,11 @@ skipThisCallee:
     if (ImaginaryCaller && ImaginaryCallee)
       goto skipThisCallee;
 
-    if (!ImaginaryCaller && !DirectlyCalled && !HasOpaqueCallee) {
+    if (!ImaginaryCaller && !DirectlyCalled) {
       // Then the calling context data from perf is incorrect, because
       // it's not possible for the current function to have called the next one
-      // according to the call graph.
+      // according to the call graph. See FIXME: above, however, the call-graph can
+      // also become out-of-date.
       //
       // To avoid throwing out this data, we will check the CCT for existing paths from Current -> Callee.
 
@@ -333,13 +343,14 @@ skipThisCallee:
 
       auto MaybePath = shortestPath(CallerVID, Callee);
       if (!MaybePath) {
-        logs(LC_CCT) << "warning: no path found. skipping sample.\n";
-        return;
+        // to further avoid throwing out this sample, let's just assume the callee is correct
+        // because the call-graph may be out of date.
+        goto addCallee;
       }
 
       auto ChosenPath = MaybePath.getValue();
 
-      if (ChosenPath.size() < 3) {
+      if (ChosenPath.size() < 2) {
         logs(LC_Error) << "Shortest-path returned an invalid path from "
                         << CallerV.getFuncName()
                         << " [" << CallerVID << "] --> "
@@ -367,7 +378,13 @@ skipThisCallee:
       // before we continue processing the BTB.
       IntermediateFns = ChosenPath;
 
-      assert(IntermediateFns.size() > 0);
+      if (IntermediateFns.size() == 0) {
+        // turns out there's no intermediates.
+        // this can happen if an edge exists in the CCT
+        // but not in the call graph. This is due to the call-graph
+        // being out of date and the optimizer creating new functions.
+        goto addCallee;
+      }
 
       // now we handle the first callee in the intermediate fns, to preserve
       // the progress of the loop.
@@ -379,6 +396,7 @@ skipThisCallee:
       IPI--;
     }
 
+addCallee:
     logs(LC_CCT) << "Adding CCT call " << bgl::get(Gr, CallerVID).getFuncName() << " -> " << Callee->getCanonicalName() << "\n";
     CallerVID = bgl::add_cct_call(LP, Gr, Ancestors, CallerVID, Callee, Callee->isKnown());
     CallerFI = Callee;
@@ -906,8 +924,14 @@ GroupIPC CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Opt
     std::unordered_set<VertexID> &Group = Groups.emplace_back();
 
     // We only want to include reachable vertices that are part of the specified group.
+    //
+    // FIXME: actually, for now, we include all reachable vertices. The reason is that
+    // the function groups are (currently) static. Thus, if an optimization produces an additional
+    // function, we would accidentially miss including that vertex in the calculation if it's
+    // not in the set.
     std::function<bool(VertexID, Graph const&)> Filter = [&FnGroup](VertexID u, Graph const& g) {
-      return FnGroup.AllFuncs.count(g[u].getFuncName()) != 0;
+      // return FnGroup.AllFuncs.count(g[u].getFuncName()) != 0;
+      return true;
     };
 
     ReachableVisitor<Graph> Visitor(Group, RootID, Filter);

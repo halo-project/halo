@@ -41,6 +41,14 @@ namespace halo {
       bool ELFVisible = (ELFBinding == STB_GLOBAL) || (ELFBinding == STB_WEAK);
     #endif
 
+      bool JITVisible = (Name == ExternalFn);
+      OneJITVisible = OneJITVisible || JITVisible;
+
+      // logs() << "Symb: " << Symb.getELFTypeName()
+      //       << ", " << Name
+      //       << ", elf-visible = " << ELFVisible
+      //       << ", jit-visible = " << JITVisible << "\n";
+
       // All function symbols in the ELF are expected to be externally visible.
       // This is needed because the JIT dynamic linker respects the visibility of
       // the object file. However, we need to know where in memory the linker has
@@ -54,14 +62,6 @@ namespace halo {
       // So, jit-visible means it's got a standard calling convention and can participate in code patching.
       //
       assert(ELFVisible && "Did you run ExposeSymbolTablePass prior to compiling?");
-
-      bool JITVisible = (Name == ExternalFn);
-      OneJITVisible = OneJITVisible || JITVisible;
-
-      // logs() << "Symb: " << Symb.getELFTypeName()
-      //       << ", " << Name
-      //       << ", elf-visible = " << ELFVisible
-      //       << ", jit-visible = " << JITVisible << "\n";
 
       FS = Msg.add_symbols();
       FS->set_label(Name.str());

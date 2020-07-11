@@ -27,7 +27,7 @@ namespace llvm {
         if (F.isDeclaration())
           continue;
 
-        if (F.hasPrivateLinkage()) {
+        if (F.hasPrivateLinkage() || F.hasInternalLinkage()) {
           F.setLinkage(GlobalValue::LinkageTypes::ExternalLinkage);
           F.setDSOLocal(true);
         }
