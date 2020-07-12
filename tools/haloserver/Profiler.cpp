@@ -102,8 +102,8 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode H
   auto SuitableTuningRoot = [&](VertexInfo const& VI) -> bool {
     bool Patchable = VI.isPatchable();
     float Hotness = VI.getHotness(llvm::None);
-    clogs() << "\tConsidering " << VI.getFuncName()
-            << " for TS root (Patchable = " << Patchable << ", Hotness = " << Hotness << ")\n";
+    clogs() << "\tConsidering '" << VI.getFuncName()
+            << "' for TS root (Patchable = " << Patchable << ", Hotness = " << Hotness << ")\n";
     return Patchable; // && Hotness >= MINIMUM_ROOT_HOTNESS;
   };
 
@@ -161,9 +161,9 @@ llvm::Optional<std::string> Profiler::findSuitableTuningRoot(Profiler::CCTNode H
     float CandidateCalledFreq = CCT.getCallFrequency(CandID);
     bool OnlyCalledFromLoop = SomeParentCallsFromLoops(CandID, IDI, CxtIDs.rend());
 
-    clogs() << "Inspecting Parent of " << Candidate.getFuncName()
-            << " (" << Parent.getFuncName()
-            << "): Hotness = " << ParentHotness
+    clogs() << "Inspecting '" <<  Parent.getFuncName()
+            << "', (the parent of '" << Candidate.getFuncName()
+            << "'): Hotness = " << ParentHotness
             << ", CandidateCalledFreq = " << CandidateCalledFreq
             << ", CandidateOnlyCalledFromLoopInCxt = " << OnlyCalledFromLoop
             <<  "\n";
