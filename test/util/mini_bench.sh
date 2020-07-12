@@ -47,6 +47,7 @@ TEST_DIR="$SELF_DIR/.."
 declare -a BENCHMARKS=(
   "bench/cpp/matrix.cpp"
   "bench/c/spectralnorm.c"
+  "bench/c/n-body.c"
   # "basic/fixed_workload.c"
   # "basic/random_workload.c"
   # "bench/c/almabench.c"
@@ -55,7 +56,7 @@ declare -a BENCHMARKS=(
 )
 
 declare -a AOT_OPTS=(
-  "-O0"
+  # "-O0"
   "-O1"
   "-O2"
   "-O3"
