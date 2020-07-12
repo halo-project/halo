@@ -1,6 +1,5 @@
 // RUN: %clang -DSMALL_PROBLEM_SIZE -O1 -fhalo %s -o %t
 // RUN: %testhalo %server 1 %t %t-out.txt
-// RUN: diff -w %t-out.txt %s.expected
 
 
 /*
@@ -141,7 +140,7 @@ struct planet bodies[NBODIES] = {
 };
 
 
-// returns true if successful
+// returns difference in energy.
 double __attribute__((noinline)) workFn() {
   int n = 5000000;
   int i;
@@ -162,6 +161,10 @@ int main(int argc, char ** argv)
   for (int i = 0; i < ITERS; ++i)
     energyLoss += workFn();
 
-  printf("%f\n", energyLoss);
-  return 0;
+  // some very unlikely number, since the energy
+  // loss is normally close to 0
+  if (energyLoss != 5000)
+    return 0;
+
+  return 1;
 }
