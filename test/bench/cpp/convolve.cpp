@@ -1,0 +1,56 @@
+// RUN: %clang -DSMALL_PROBLEM_SIZE -O1 -fhalo %s -o %t
+// RUN: %testhalo %server 1 %t %t-out.txt
+// RUN: diff -w %t-out.txt %s.expected
+
+#include <vector>
+#include <cstdio>
+#include <cinttypes>
+
+#define IMAGE_N 512
+#define ITERS 10000
+
+
+void __attribute__((noinline)) kernel(int n, int m, int * image, int const * mask, int* out) {
+  for(int i = 0; i < n - m; ++i)
+    for(int j = 0; j < n - m; ++j)
+      for(int k = 0; k < m; ++k)
+        for(int l = 0; l < m; ++l)
+          out[i * (n-m+1) + j] += image[(i+k) * n + j+l] * mask[k *m + l];
+}
+
+const int MASK_N = 3;
+const int mask[MASK_N*MASK_N] = {
+  1, 2, 3,
+  0, 0, 0,
+  3, 2, 1
+};
+
+/* The state word must be initialized to non-zero */
+uint32_t xorshift32(uint32_t *state) {
+	/* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+	uint32_t x = *state;
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	return (*state = x);
+}
+
+void fillImage(uint32_t *state, std::vector<int> &image) {
+  for (int i = 0; i < image.size(); i++)
+    image[i] = xorshift32(state);
+}
+
+int main () {
+  uint32_t state = 875081831;
+  std::vector<int> image(IMAGE_N*IMAGE_N,0);
+  std::vector<int> out((IMAGE_N-MASK_N)*(IMAGE_N-MASK_N),0);
+
+  fillImage(&state, image);
+
+  for (int i = 0; i < ITERS; i++) {
+    kernel(IMAGE_N, MASK_N, image.data(), &mask[0], out.data());
+  }
+
+  printf("%i\n", out[0]);
+  return 0;
+}
