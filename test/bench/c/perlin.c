@@ -64,7 +64,14 @@ static double noise(double x, double y, double z) {
 
 #define NUM_LOOPS 40
 
+static void init() {
+  int i = 0;
+  for (i=0; i < 256 ; i++)
+    p[256+i] = p[i] = permutation[i];
+}
+
 NO_INLINE static double doWork() {
+  init();
   double x, y, z, sum = 0.0;
 // #ifdef SMALL_PROBLEM_SIZE
   for (x = -11352.57; x < 23561.57; x += 1.235)
@@ -80,17 +87,10 @@ NO_INLINE static double doWork() {
   return sum;
 }
 
-static void init() {
-  int i = 0;
-  for (i=0; i < 256 ; i++)
-    p[256+i] = p[i] = permutation[i];
-}
-
 volatile double total = 0;
 
 int main() {
   for (int i = 0; i < NUM_LOOPS; i++) {
-    init();
     total = doWork();
   }
 
