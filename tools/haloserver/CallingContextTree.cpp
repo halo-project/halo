@@ -273,6 +273,7 @@ void CallingContextTree::insertSample(CallGraph const& CG, ClientID ID, CodeRegi
   auto CallerVID = RootVertex;
   auto CallerFI = CRI.getUnknown();
   std::list<VertexID> IntermediateFns;
+  bool IgnoreCallGraph = false;
 
   // now we actually process the call chain.
   while (true) {
@@ -292,6 +293,7 @@ skipThisCallee:
       auto VID = IntermediateFns.front();
       IntermediateFns.pop_front();
       Callee = CRI.lookup(bgl::get(Gr, VID).getFuncName());
+      IgnoreCallGraph = true;
     } else {
       // lookup the current entry in the calling context
       uint64_t IP = *IPI;
@@ -321,23 +323,21 @@ skipThisCallee:
           //  << ", HasOpaqueCallee = " << HasOpaqueCallee
            << ", ImaginaryCaller = " << ImaginaryCaller
            << ", ImaginaryCallee = " << ImaginaryCallee
+           << ", IgnoreCallGraph = " << IgnoreCallGraph
            << "\n";
 
     // It's pointless to create an edge from ??? -> ???, or from root -> ???
     // so we skip the callee and remain in-place in the CCT.
-    if (ImaginaryCaller && ImaginaryCallee)
+    if (!IgnoreCallGraph && ImaginaryCaller && ImaginaryCallee)
       goto skipThisCallee;
 
-    if (!ImaginaryCaller && !DirectlyCalled) {
+    if (!IgnoreCallGraph && !ImaginaryCaller && !DirectlyCalled) {
       // Then the calling context data from perf is incorrect, because
       // it's not possible for the current function to have called the next one
       // according to the call graph. See FIXME: above, however, the call-graph can
       // also become out-of-date.
       //
       // To avoid throwing out this data, we will check the CCT for existing paths from Current -> Callee.
-
-      assert(IntermediateFns.size() == 0
-          && "an intermediate function failed the call-graph test... CCT was bogus from the start?");
 
       logs(LC_CCT) << "\t\tNeed path from " << CallerV.getFuncName() << " [" << CallerVID << "] --> " << Callee->getCanonicalName() << "\n";
 
