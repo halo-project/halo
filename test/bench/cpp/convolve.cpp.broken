@@ -2,6 +2,21 @@
 // RUN: %testhalo %server 1 %t %t-out.txt
 // RUN: diff -w %t-out.txt %s.expected
 
+/*
+
+TODO: try updating LLVM to a newer version to get around bugs in
+its tranformations that hit assertion errors (in LoopInterchange)
+or straight up produces invalid LLVM IR:
+
+Instruction does not dominate all uses!
+  %indvars.iv14 = phi i64 [ 0, %for.body13 ], [ %indvars.iv.next15, %for.body13.split32 ]
+  %5 = add nuw nsw i64 %indvars.iv14, %indvars.iv27
+Instruction does not dominate all uses!
+  %indvars.iv14 = phi i64 [ 0, %for.body13 ], [ %indvars.iv.next15, %for.body13.split32 ]
+  %8 = mul nsw i64 %indvars.iv14, %0
+haloserver: /home/kavon/phd/halo/llvm-project/llvm/lib/Transforms/Vectorize/SLPVectorizer.cpp:2369: llvm::slpvectorizer::BoUpSLP::~BoUpSLP(): Assertion `!verifyFunction(*F, &dbgs())' failed.
+*/
+
 #include <vector>
 #include <cstdio>
 #include <cinttypes>
