@@ -3,9 +3,9 @@
 // RUN: diff -w %t-out.txt %s.expected
 
 #ifdef SMALL_PROBLEM_SIZE
-#define LENGTH 150000
+#define ITERS 150000
 #else
-#define LENGTH 300000
+#define ITERS 300000
 #endif
 
 
@@ -438,33 +438,39 @@ uint32_t xorshift32(uint32_t *state) {
 	return (*state = x);
 }
 
+
+void __attribute__((noinline)) workFn(
+    uint32_t *state, const size_t RS_LENGTH, unsigned char *rs_in, unsigned char *rs_out) {
+
+  int j, k;
+#define random() xorshift32(state)
+
+  /* Generate random data */
+  for (j=0; j<188; ++j) {
+    rs_in[j] = (random() & 0xFF);
+  }
+  rsenc_204(rs_out, rs_in);
+  /* Number of errors to insert */
+  k = random() & 0x7F;
+
+  for (j=0; j<k; ++j) {
+    rs_out[random() % RS_LENGTH] = (random() & 0xFF);
+  }
+
+  rsdec_204(rs_in, rs_out);
+}
+
+
 int main(void) {
   const size_t RS_LENGTH = 204;
   unsigned char rs_in[RS_LENGTH], rs_out[RS_LENGTH];
+  uint32_t state = 1947722; // fixed seed
 
   memset((void*)rs_in, 0, RS_LENGTH);
   memset((void*)rs_out, 0, RS_LENGTH);
 
-  int i, j, k;
-
-  uint32_t state = 1947722; // fixed sed
-
-#define random() xorshift32(&state)
-
-  for (i=0; i<LENGTH; ++i) {
-    /* Generate random data */
-    for (j=0; j<188; ++j) {
-      rs_in[j] = (random() & 0xFF);
-    }
-    rsenc_204(rs_out, rs_in);
-    /* Number of errors to insert */
-    k = random() & 0x7F;
-
-    for (j=0; j<k; ++j) {
-      rs_out[random() % RS_LENGTH] = (random() & 0xFF);
-    }
-
-    rsdec_204(rs_in, rs_out);
+  for (int i = 0; i<ITERS; ++i) {
+    workFn(&state, RS_LENGTH, rs_in, rs_out);
   }
 
   for (unsigned idx = 0; idx < RS_LENGTH; ++idx)
