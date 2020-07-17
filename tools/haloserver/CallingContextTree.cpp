@@ -341,10 +341,43 @@ skipThisCallee:
 
       logs(LC_CCT) << "\t\tNeed path from " << CallerV.getFuncName() << " [" << CallerVID << "] --> " << Callee->getCanonicalName() << "\n";
 
+      // first, consult the CCT for a possible path.
       auto MaybePath = shortestPath(CallerVID, Callee);
       if (!MaybePath) {
-        // to further avoid throwing out this sample, let's just assume the callee is correct
-        // because the call-graph may be out of date.
+
+        // if the callee is known, we can consult the call graph
+        if (!ImaginaryCallee) {
+          auto CGPaths = CG.allPaths(CallerV.getFuncName(), Callee->getCanonicalName());
+
+          // If the call-graph has exactly one path to the node, it must be that one.
+          if (CGPaths.size() == 1) {
+            // splice this fresh path right onto the CCT
+            std::list<CallGraph::Vertex> CGPath = CGPaths.front();
+
+            assert(CGPath.size() > 2);
+            assert(CGPath.front() == CallerV.getFuncName());
+            assert(CGPath.back() == Callee->getCanonicalName());
+
+            // drop the end-caps. we just want what's missing
+            CGPath.pop_front();
+            CGPath.pop_back();
+
+            // add the missing CCT edges & nodes, up to but not including the callee we had trouble with.
+            for (auto const& CGCalleeInfo : CGPath) {
+              logs(LC_CCT) << "Adding CCT call (based on CG) " << bgl::get(Gr, CallerVID).getFuncName() << " -> " << CGCalleeInfo.Name << "\n";
+              auto CGCallee = CRI.lookup(CGCalleeInfo.Name);
+              assert(CGCallee->isKnown());
+
+              CallerVID = bgl::add_cct_call(LP, Gr, Ancestors, CallerVID, CGCallee, CGCallee->isKnown());
+              CallerFI = CGCallee;
+              Ancestors.push({CallerVID,  bgl::get(Gr, CallerVID).getFuncName()});
+            }
+          }
+        }
+
+        // whether the call graph helped us out or not, we avoid throwing out the
+        // sample by simply assuming that the caller could call the callee, because in some
+        // cases, the call graph goes out of date due to optimizations creating new functions.
         goto addCallee;
       }
 

@@ -3,6 +3,7 @@
 #include "boost/graph/adjacency_list.hpp"
 #include "llvm/ADT/Optional.h"
 #include <set>
+#include <list>
 
 namespace halo {
 
@@ -88,7 +89,10 @@ public:
   ///
   /// The set will always at least contain the Src itself, unless if
   /// the Src is not in the graph!
-  std::set<Vertex> allReachable(Vertex src);
+  std::set<Vertex> allReachable(Vertex src) const;
+
+  // returns a set of all paths from src to tgt.
+  std::list<std::list<Vertex>> allPaths(Vertex src, Vertex tgt) const;
 
   // returns true iff the call-graph has a node for the given function
   bool contains(Vertex Func) const;

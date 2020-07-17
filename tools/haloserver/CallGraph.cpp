@@ -149,7 +149,7 @@ EdgeID CallGraph::getEdgeID(VertexID Src, VertexID Tgt) {
   return boost::add_edge(Src, Tgt, Gr).first;
 }
 
-std::set<Vertex> CallGraph::allReachable(Vertex Root) {
+std::set<Vertex> CallGraph::allReachable(Vertex Root) const {
   std::set<Vertex> Reachable;
 
   if (!contains(Root))
@@ -158,7 +158,7 @@ std::set<Vertex> CallGraph::allReachable(Vertex Root) {
   Reachable.insert(Root); // can always reach self, since it's in the graph.
 
   // perform the search
-  VertexID RootID = getVertexID(Root);
+  VertexID RootID = findVertex(Root, Gr).getValue();
   std::unordered_set<VertexID> ReachableIDs;
   ReachableVisitor<Graph> CV(ReachableIDs, RootID);
   // https://www.boost.org/doc/libs/1_73_0/libs/graph/doc/bgl_named_params.html
@@ -169,6 +169,72 @@ std::set<Vertex> CallGraph::allReachable(Vertex Root) {
     Reachable.insert(Gr[ID]);
 
   return Reachable;
+}
+
+std::list<std::list<Vertex>> CallGraph::allPaths(Vertex Src, Vertex Tgt) const {
+  std::list<std::list<Vertex>> Paths;
+
+  if (!contains(Src) || !contains(Tgt))
+    return Paths;
+
+  class PathSearch : public boost::default_dfs_visitor {
+  public:
+    PathSearch(VertexID SrcID, Vertex const& tgt, std::list<std::list<VertexID>>& p)
+      : Source(SrcID), Target(tgt), Paths(p) {}
+
+    void start_vertex(VertexID u, const Graph& g) {
+      if (Source == u)
+        CurPath.push_back(u);
+    }
+
+    // invoked on each vertex at the start of DFS-VISIT
+    void discover_vertex(VertexID u, const Graph& g) {
+      if (CurPath.front() != Source)
+        return; // then we're not in the sub-tree
+
+      if (Source == u)
+        return; // we've already accounted for it in start_vertex
+
+      CurPath.push_back(u);
+
+      // we've found a new path?
+      auto const& UInfo = g[u];
+      if (Target == UInfo)
+        Paths.push_back(CurPath);
+    }
+
+    void finish_vertex(VertexID u, const Graph& g) {
+      if (CurPath.front() != Source)
+        return;
+
+      CurPath.pop_back();
+    }
+
+  private:
+    VertexID Source;
+    Vertex const& Target;
+    std::list<std::list<VertexID>>& Paths;
+    std::list<VertexID> CurPath;
+  }; // end class
+
+  // search for all paths
+  VertexID SrcID = findVertex(Src, Gr).getValue();
+  std::list<std::list<VertexID>> PathIDs;
+  PathSearch PS(SrcID, Tgt, PathIDs);
+  // https://www.boost.org/doc/libs/1_73_0/libs/graph/doc/bgl_named_params.html
+  boost::depth_first_search(Gr, boost::visitor(PS).root_vertex(SrcID));
+
+  // convert IDs to Vertices
+  for (auto const& IDPath : PathIDs) {
+    std::list<Vertex> Path;
+
+    for (auto ID : IDPath)
+      Path.push_back(Gr[ID]);
+
+    Paths.push_back(Path);
+  }
+
+  return Paths;
 }
 
 
