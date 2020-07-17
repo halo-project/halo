@@ -1,7 +1,7 @@
 {
   "serverSettings": {
     "seed": 310428590257,
-    "heartbeats-per-second": 10,
+    "heartbeats-per-second": 50,
     "group-service-per-second": 10,
     "perf-sample-period": 15485867,
 
