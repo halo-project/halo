@@ -183,9 +183,6 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   // make sure all clients are sampling right now
   ClientGroup::broadcastSamplingPeriod(State, TS->Profile.getSamplePeriod());
 
-  // decay CCT
-  TS->Profile.decay();
-
   // try to update the deployed lib with fresh quality info
   bool Updated = TS->Versions[Deployed.first].updateQuality(TS->Profile, TS->FnGroup);
   if (!Updated) {

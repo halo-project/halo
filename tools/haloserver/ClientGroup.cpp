@@ -62,8 +62,6 @@ namespace halo {
     }
 
     broadcastSamplingPeriod(State, Profile.getSamplePeriod());
-    Profile.consumePerfData(State);
-    Profile.decay();
 
     size_t TotalSamples = Profile.samplesConsumed();
 
@@ -84,12 +82,15 @@ namespace halo {
   void ClientGroup::run_service_loop() {
     withState([this] (GroupState &State) {
 
+      // decay and then consume fresh data
+      Profile.decay();
+      Profile.consumePerfData(State);
+
       if (State.Clients.size() == 0)
         return end_service_iteration();
 
       // Do we need to create a tuning section?
       if (TS == nullptr) {
-
 
         if (!identifyTuningSection(State))
           return end_service_iteration();

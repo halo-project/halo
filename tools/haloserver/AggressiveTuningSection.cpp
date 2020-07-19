@@ -49,8 +49,6 @@ std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, C
 /// attempted on every step to make sure they're in the right state.
 void AggressiveTuningSection::take_step(GroupState &State) {
   Steps++;
-  Profile.consumePerfData(State);
-  // hold off on decaying
 
   /////////////////////////// BAKEOFF
   if (Status == ActivityState::Bakeoff) {
