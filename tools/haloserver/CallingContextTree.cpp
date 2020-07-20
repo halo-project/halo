@@ -956,15 +956,24 @@ GroupIPC CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Opt
   for (auto RootID : RootContexts) {
     std::unordered_set<VertexID> &Group = Groups.emplace_back();
 
-    // We only want to include reachable vertices that are part of the specified group.
-    //
-    // FIXME: actually, for now, we include all reachable vertices. The reason is that
-    // the function groups are (currently) static. Thus, if an optimization produces an additional
-    // function, we would accidentially miss including that vertex in the calculation if it's
-    // not in the set.
-    std::function<bool(VertexID, Graph const&)> Filter = [&FnGroup](VertexID u, Graph const& g) {
-      // return FnGroup.AllFuncs.count(g[u].getFuncName()) != 0;
-      return true;
+    // We only want to include reachable vertices that are part of the specified group
+    // and those nodes that don't represent a node we've encountered already, in the case of a loop.
+    std::unordered_set<std::string> SeenFuncs;
+    std::function<bool(VertexID, Graph const&)> Filter = [&FnGroup, &SeenFuncs](VertexID u, Graph const& g) {
+      std::string const& FuncName = g[u].getFuncName();
+
+      bool InGroup = true; // FnGroup.AllFuncs.count(g[u].getFuncName()) != 0;
+      // FIXME: actually, for now, we include all reachable vertices as long as we haven't already
+      // encountered one representing the same function already.
+      //
+      // The reason is that the function groups are (currently) static. Thus, if an optimization produces an additional
+      // function, we would accidentially miss including that vertex in the IPC calculation because it's
+      // not in the set, but it should be in the set!
+
+      bool NotSeen = SeenFuncs.count(FuncName) == 0;
+      SeenFuncs.insert(FuncName);
+
+      return NotSeen && InGroup;
     };
 
     ReachableVisitor<Graph> Visitor(Group, RootID, Filter);
