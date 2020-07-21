@@ -945,7 +945,6 @@ AttrPair weightedPowerMean(std::vector<AttrPair> const& Vector, float p = -1.0f)
 
   std::vector<double> Weight;
   double TotalWeight = 0;
-  double HotnessFrac = 0;
   for (auto const& Component : Vector) {
     double Heat = Component.Hotness;
     TotalWeight += Heat;
@@ -954,7 +953,6 @@ AttrPair weightedPowerMean(std::vector<AttrPair> const& Vector, float p = -1.0f)
 
   // calculate each _function_'s weight.
   if (TotalWeight != 0) {
-    HotnessFrac = 1.0 / TotalWeight;
     for (unsigned i = 0; i < Weight.size(); i++)
         Weight[i] /= TotalWeight;
   }
@@ -962,17 +960,13 @@ AttrPair weightedPowerMean(std::vector<AttrPair> const& Vector, float p = -1.0f)
   int i = 0;
   AttrPair Result;
   for (auto const& Component : Vector) {
-    Result.Hotness += Component.Hotness == 0
-                      ? 0
-                      : HotnessFrac * std::pow(Component.Hotness, p);
-
     Result.IPC += Component.IPC == 0
                   ? 0
                   : Weight[i] * std::pow(Component.IPC, p);
     i++;
   }
 
-  Result.Hotness = Result.Hotness == 0 ? 0 : std::pow(Result.Hotness, 1.0f / p);
+  Result.Hotness = TotalWeight;
   Result.IPC = Result.IPC == 0 ? 0 : std::pow(Result.IPC, 1.0f / p);
 
   return Result;
