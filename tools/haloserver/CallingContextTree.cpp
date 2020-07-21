@@ -929,7 +929,12 @@ std::vector<AttrPair> toVector(CallingContextTree::Graph const& Gr,
 ///
 /// https://en.wikipedia.org/wiki/Root_mean_square#Relationship_to_other_statistics
 ///
-AttrPair weightedPowerMean(std::vector<AttrPair> const& Vector, float p=2.0f) {
+/// The haromic mean provides the truest mean value when comparing values that are
+/// rates or ratios, such as speed or density:
+///
+/// https://en.wikipedia.org/wiki/Harmonic_mean
+///
+AttrPair weightedPowerMean(std::vector<AttrPair> const& Vector, float p = -1.0f) {
   // I think if p == 0, we need to use std::complex
   // https://en.cppreference.com/w/cpp/numeric/complex/pow
   assert(p != 0 && "don't know how to make this work for a geometric mean");
@@ -940,6 +945,7 @@ AttrPair weightedPowerMean(std::vector<AttrPair> const& Vector, float p=2.0f) {
 
   std::vector<double> Weight;
   double TotalWeight = 0;
+  double HotnessFrac = 0;
   for (auto const& Component : Vector) {
     double Heat = Component.Hotness;
     TotalWeight += Heat;
@@ -947,15 +953,22 @@ AttrPair weightedPowerMean(std::vector<AttrPair> const& Vector, float p=2.0f) {
   }
 
   // calculate each _function_'s weight.
-  if (TotalWeight != 0)
+  if (TotalWeight != 0) {
+    HotnessFrac = 1.0 / TotalWeight;
     for (unsigned i = 0; i < Weight.size(); i++)
         Weight[i] /= TotalWeight;
+  }
 
   int i = 0;
   AttrPair Result;
   for (auto const& Component : Vector) {
-    Result.Hotness += std::pow(Component.Hotness, p);
-    Result.IPC += std::pow(Weight[i] * Component.IPC, p);
+    Result.Hotness += Component.Hotness == 0
+                      ? 0
+                      : HotnessFrac * std::pow(Component.Hotness, p);
+
+    Result.IPC += Component.IPC == 0
+                  ? 0
+                  : Weight[i] * std::pow(Component.IPC, p);
     i++;
   }
 
