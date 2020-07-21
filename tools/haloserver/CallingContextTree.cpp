@@ -907,8 +907,33 @@ std::vector<AttrPair> toVector(CallingContextTree::Graph const& Gr,
 }
 
 
-/// a hotness-weighted norm function.
-AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
+/// a hotness-weighted power mean function:
+///
+/// https://www.planetmath.org/weightedpowermean
+///
+/// the power mean is a generalized mean function where
+/// different values of p yield different types of means:
+///
+/// https://mathworld.wolfram.com/PowerMean.html
+///
+/// https://en.wikipedia.org/wiki/Generalized_mean
+///
+/// Some useful p's to be aware of:
+///
+///   p = -1.0f yields a harmonic mean
+///   p = 1.0f  yields an arithmetic mean
+///   p = 2.0f  yields a quadradic mean
+///
+/// Note that a quadratic mean is always >= the arithmetic mean,
+/// because it includes the variance in its computation:
+///
+/// https://en.wikipedia.org/wiki/Root_mean_square#Relationship_to_other_statistics
+///
+AttrPair weightedPowerMean(std::vector<AttrPair> const& Vector, float p=2.0f) {
+  // I think if p == 0, we need to use std::complex
+  // https://en.cppreference.com/w/cpp/numeric/complex/pow
+  assert(p != 0 && "don't know how to make this work for a geometric mean");
+
   // First, we need to apply a hotness-weighting to the raw IPCs,
   // so that an IPC for a function that's not being called / used
   // does not contribute to its rating in the vector
@@ -929,13 +954,13 @@ AttrPair euclideanNorm(std::vector<AttrPair> const& Vector) {
   int i = 0;
   AttrPair Result;
   for (auto const& Component : Vector) {
-    Result.Hotness += std::pow(Component.Hotness, 2);
-    Result.IPC += std::pow(Weight[i] * Component.IPC, 2);
+    Result.Hotness += std::pow(Component.Hotness, p);
+    Result.IPC += std::pow(Weight[i] * Component.IPC, p);
     i++;
   }
 
-  Result.Hotness = Result.Hotness == 0 ? 0 : std::sqrt(Result.Hotness);
-  Result.IPC = Result.IPC == 0 ? 0 : std::sqrt(Result.IPC);
+  Result.Hotness = Result.Hotness == 0 ? 0 : std::pow(Result.Hotness, 1.0f / p);
+  Result.IPC = Result.IPC == 0 ? 0 : std::pow(Result.IPC, 1.0f / p);
 
   return Result;
 }
@@ -992,13 +1017,13 @@ GroupIPC CallingContextTree::currentPerf(FunctionGroup const& FnGroup, llvm::Opt
     for (auto const& ID : Group)
       TotalSamples += Gr[ID].getSamplesSeen(Lib);
 
-    AllNorms.push_back(euclideanNorm(toVector(Gr, Group, Lib)));
+    AllNorms.push_back(weightedPowerMean(toVector(Gr, Group, Lib)));
   }
 
   // Finally, we consider each group to be again another vector in
   // another space, and take the norm of _that_.
   // NOTE: we ignore the hotness from this final norm.
-  AttrPair TotalNorm = euclideanNorm(AllNorms);
+  AttrPair TotalNorm = weightedPowerMean(AllNorms);
 
   GroupIPC Perf;
   Perf.IPC = TotalNorm.IPC;
@@ -1161,7 +1186,7 @@ float VertexInfo::getIPC(llvm::Optional<std::string> Lib) const {
     Obs.push_back(Info);
   });
 
-  return euclideanNorm(Obs).IPC;
+  return weightedPowerMean(Obs).IPC;
 }
 
 
@@ -1185,7 +1210,7 @@ float VertexInfo::getHotness(llvm::Optional<std::string> Lib) const {
     Obs.push_back(Info);
   });
 
-  return euclideanNorm(Obs).Hotness;
+  return weightedPowerMean(Obs).Hotness;
 }
 
 
