@@ -31,7 +31,7 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
       bool CalledInLoopBody = false;
       if (HaveBitcode) {
         auto &LI = FAM.getResult<LoopAnalysis>(Func);
-        if (CallBase *CB = dyn_cast_or_null<CallBase>(Record.first)) // should always be true
+        if (CallBase *CB = dyn_cast_or_null<CallBase>(Record.first.getValueOr(nullptr))) // should always be true
           if (LI.getLoopFor(CB->getParent()) != nullptr)
             CalledInLoopBody = true;
       }
