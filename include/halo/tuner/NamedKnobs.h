@@ -62,14 +62,9 @@ namespace halo {
     /// the width will be determined automatically.
     static const ty LoopVectorizeWidth = {"llvm.loop.vectorize.width", Knob::KK_Int};
 
-    /// This metadata suggests that the loop should be fully unrolled if the trip count
-    /// is known at compile time and partially unrolled if the trip count is not known at compile time.
-    static const ty LoopUnrollEnable = {"llvm.loop.unroll.enable", Knob::KK_Flag};
-
-    /// This metadata disables runtime loop unrolling, which means unrolling for loops where
-    /// the loop bound is a runtime value. Disabling this would basically prevent unrolling if
-    /// a residual loop would be required.
-    static const ty LoopRuntimeUnrollDisable = {"llvm.loop.unroll.runtime.disable", Knob::KK_Flag};
+    /// This metadata suggests that the loop should be distributed to allow for partial vectorization
+    // this is a three-valued loop flag.
+    static const ty LoopDistributeEnable = {"llvm.loop.distribute.enable", Knob::KK_Flag};
 
 
     static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
@@ -98,8 +93,7 @@ namespace halo {
       LoopUnrollCount,
       LoopInterleaveCount,
       LoopVectorizeWidth,
-      LoopUnrollEnable,
-      LoopRuntimeUnrollDisable
+      LoopDistributeEnable
     };
 
     // NB: you must add all loop options here too, or else the LoopAnnotatorPass will
@@ -108,8 +102,7 @@ namespace halo {
       LoopUnrollCount,
       LoopInterleaveCount,
       LoopVectorizeWidth,
-      LoopUnrollEnable,
-      LoopRuntimeUnrollDisable
+      LoopDistributeEnable
     };
 
   } // end namespace named_knob

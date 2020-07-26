@@ -175,13 +175,8 @@
     },
     {
       "kind": "flag",
-      "name": "llvm.loop.unroll.enable",
-      "default": false
-    },
-    {
-      "kind": "flag",
-      "name": "llvm.loop.unroll.runtime.disable",
-      "default": false
+      "name": "llvm.loop.distribute.enable",
+      "default": null
     }
   ]
 
