@@ -309,18 +309,22 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   PMBuilder.SizeLevel = 0; // 0 = none
   PMBuilder.SLPVectorize = true;
 
-  PMBuilder.DisableUnrollLoops = false; // we want loop unrolling
+  PMBuilder.DisableUnrollLoops = false; // we want loop unrolling pass
 
-  // // Loop interleaving in the loop vectorizer has historically been set to be
-  // // enabled when loop unrolling is enabled.
-  // PMBuilder.LoopsInterleaved = !PMBuilder.DisableUnrollLoops;
-  // PMBuilder.LoopVectorize = true;
+  // if there are no loop knobs "present", then use the default interleave / vectorize passes
+  if (Knobs.getNumLoops() == 0) {
+    // Loop interleaving in the loop vectorizer has historically been set to be
+    // enabled when loop unrolling is enabled.
+    PMBuilder.LoopsInterleaved = !PMBuilder.DisableUnrollLoops;
+    PMBuilder.LoopVectorize = true;
 
-  // setting this to false means that interleaving & vectorization will only
-  // happen for loops we have annotated, i.e., the "forced" cases.
-  // see the usage of llvm::createLoopVectorizePass in PassManagerBuilder for more info.
-  PMBuilder.LoopsInterleaved = false;
-  PMBuilder.LoopVectorize = false;
+  } else {
+    // setting these to false means that interleaving & vectorization will only
+    // happen for loops we have annotated, i.e., the "forced" cases.
+    // see the usage of llvm::createLoopVectorizePass in PassManagerBuilder for more info.
+    PMBuilder.LoopsInterleaved = false;
+    PMBuilder.LoopVectorize = false;
+  }
 
   PMBuilder.MergeFunctions = true; // why not? we have the time.
   PMBuilder.PrepareForThinLTO = false;

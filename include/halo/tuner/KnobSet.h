@@ -103,6 +103,9 @@ namespace halo {
     }
 
     void setNumLoops(unsigned Sz) { NumLoopIDs = Sz; }
+
+    // indicates the number of loops for which this loop knob has coverage for.
+    // specifically, this value helps you determine the loop IDs covered.
     unsigned getNumLoops() const { return NumLoopIDs; }
 
     // all knobs will be set to 'none',

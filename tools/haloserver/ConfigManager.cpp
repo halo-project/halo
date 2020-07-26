@@ -75,6 +75,7 @@ KnobSet ConfigManager::genPrevious(std::mt19937_64 &RNG, bool ExcludeTop) {
 llvm::Optional<KnobSet> ConfigManager::genExpertOpinion(KnobSet const& BaseKnobs) {
   KnobSet KS(BaseKnobs);
   KS.unsetAll();
+  KS.setNumLoops(0); // opinions are not loop-knob specific
 
   switch(Opines) {
     case 0: {
