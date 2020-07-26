@@ -49,7 +49,7 @@ namespace halo {
     // The following options are for loops
 
     /// This metadata suggests an unroll factor to the loop unroller.
-    static const ty LoopUnrollCount = {"llvm.loop.unroll.count", Knob::KK_Int};
+    static const ty LoopUnroll = {"halo.unroll.factor", Knob::KK_Int};
 
     /// This metadata suggests an interleave count to the loop interleaver.
     /// Note that setting llvm.loop.interleave.count to 1 disables interleaving multiple iterations of the loop.
@@ -90,7 +90,7 @@ namespace halo {
       OptimizeLevel,
       CodegenLevel,
 
-      LoopUnrollCount,
+      LoopUnroll,
       LoopInterleaveCount,
       LoopVectorizeWidth,
       LoopDistributeEnable
@@ -99,7 +99,7 @@ namespace halo {
     // NB: you must add all loop options here too, or else the LoopAnnotatorPass will
     // not apply the knob's setting to the program!!
     static const std::vector<ty> LoopOptions = {
-      LoopUnrollCount,
+      LoopUnroll,
       LoopInterleaveCount,
       LoopVectorizeWidth,
       LoopDistributeEnable

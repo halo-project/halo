@@ -42,6 +42,30 @@ namespace halo {
       return updateLMD(LMD, OptName, mkMDInt(i1, AsInt));
     }
 
+    static constexpr char const* UNROLL_DISABLE = "llvm.loop.unroll.disable";
+    static constexpr char const* UNROLL_COUNT = "llvm.loop.unroll.count";
+    static constexpr char const* UNROLL_FULL_OR_PARTIAL = "llvm.loop.unroll.enable";
+    static constexpr char const* UNROLL_FULL = "llvm.loop.unroll.full";
+
+    llvm::MDNode* setUnrollingOption(llvm::MDNode *LMD, int ScaledVal, bool isMax) {
+      if (isMax) {
+        // add both UNROLL_FULL and UNROLL_FULL_OR_PARTIAL flags to suggest going hog-wild.
+        LMD = updateLMD(LMD, UNROLL_FULL, nullptr);
+        return updateLMD(LMD, UNROLL_FULL_OR_PARTIAL, nullptr);
+      }
+
+      if (ScaledVal == 0)
+        return updateLMD(LMD, UNROLL_DISABLE, nullptr);
+
+      assert(ScaledVal > 0 && "invalid unroll count");
+
+      llvm::LLVMContext &C = LMD->getContext();
+      llvm::IntegerType* i32 = llvm::IntegerType::get(C, 32);
+
+      // annotate with specific unroll count
+      return updateLMD(LMD, UNROLL_COUNT, mkMDInt(i32, ScaledVal));
+    }
+
   public:
     LoopAnnotatorPass (KnobSet const& knobs) : Knobs(knobs) {}
 
@@ -72,10 +96,23 @@ namespace halo {
             } break;
 
             case Knob::KK_Int: {
-              Knobs.lookup<IntKnob>(named_knob::forLoop(ID, Option)).applyScaledVal(
-                [&](int ScaledVal) {
-                  LMD = updateLMD(LMD, Option.first, mkMDInt(i32, ScaledVal));
-                });
+              auto const& IK = Knobs.lookup<IntKnob>(named_knob::forLoop(ID, Option));
+
+              // handle special knobs
+              if (Option == named_knob::LoopUnroll) {
+                IK.applyScaledVal(
+                  [&](int ScaledVal) {
+                    LMD = setUnrollingOption(LMD, ScaledVal, IK.equalsUnscaled(IK.getMax()));
+                  });
+              } else {
+                // generic handler for well-behaved loop knobs
+                IK.applyScaledVal(
+                  [&](int ScaledVal) {
+                    LMD = updateLMD(LMD, Option.first, mkMDInt(i32, ScaledVal));
+                  });
+              }
+
+
 
             } break;
 

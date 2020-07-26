@@ -131,6 +131,14 @@ namespace halo {
     ValTy getMin() const { return Min; }
     ValTy getMax() const { return Max; }
 
+    // compares the raw current value of this knob with the provided value.
+    // if the knob is unset / has no value, then false is returned.
+    bool equalsUnscaled(ValTy Val) const {
+      if (!hasVal())
+        return false;
+      return Current.getValue() == Val;
+    }
+
   }; // end class ScalarKnob
 
 

@@ -151,11 +151,11 @@
   "loopKnobs": [
     {
       "kind": "int",
-      "name": "llvm.loop.unroll.count",
+      "name": "halo.unroll.factor",
       "scale": "1/2",
       "default": null,
-      "min": 1,
-      "max": 8
+      "min": 0,
+      "max": 32
     },
     {
       "kind": "int",
