@@ -2,6 +2,15 @@
 #include "halo/server/ClientGroup.h"
 #include "halo/nlohmann/util.hpp"
 
+#include "llvm/Support/CommandLine.h"
+
+namespace cl = llvm::cl;
+
+static cl::opt<bool> CL_ForceMerge(
+  "halo-forcemerge",
+  cl::desc("Forcibly merge the libraries if a bakeoff timed out."),
+  cl::init(false));
+
 namespace halo
 {
 
@@ -75,17 +84,19 @@ void AggressiveTuningSection::take_step(GroupState &State) {
       };
 
       case Bakeoff::Result::Timeout: {
-        // the two libraries are too similar. we'll merge them.
+        // the two libraries are too similar.
         BakeoffTimeouts++;
         assert(Bakeoff.getDeployed() != Bakeoff.getOther());
 
         // we'll keep the currently deployed version
         BestLib = Bakeoff.getDeployed();
 
-        // merge and then remove the other version
-        auto Other = Bakeoff.getOther();
-        Versions[BestLib].forceMerge(Versions[Other]);
-        Versions.erase(Other);
+        if (CL_ForceMerge) {
+          // merge and then remove the other version
+          auto Other = Bakeoff.getOther();
+          Versions[BestLib].forceMerge(Versions[Other]);
+          Versions.erase(Other);
+        }
 
         Bakery = llvm::None;
         return transitionTo(ActivityState::ConsiderStopping);
