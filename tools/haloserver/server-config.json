@@ -177,6 +177,11 @@
       "kind": "flag",
       "name": "llvm.loop.distribute.enable",
       "default": null
+    },
+    {
+      "kind": "flag",
+      "name": "llvm.loop.unroll.runtime.disable",
+      "default": false
     }
   ]
 

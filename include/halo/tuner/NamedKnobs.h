@@ -66,6 +66,10 @@ namespace halo {
     // this is a three-valued loop flag.
     static const ty LoopDistributeEnable = {"llvm.loop.distribute.enable", Knob::KK_Flag};
 
+    /// This metadata disables runtime loop unrolling, which means unrolling for loops where
+    /// the loop bound is a runtime value. Disabling this would basically prevent unrolling if
+    /// a residual loop would be required.
+    static const ty LoopRuntimeUnrollDisable = {"llvm.loop.unroll.runtime.disable", Knob::KK_Flag};
 
     static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
       NativeCPU,
@@ -93,7 +97,8 @@ namespace halo {
       LoopUnroll,
       LoopInterleaveCount,
       LoopVectorizeWidth,
-      LoopDistributeEnable
+      LoopDistributeEnable,
+      LoopRuntimeUnrollDisable
     };
 
     // NB: you must add all loop options here too, or else the LoopAnnotatorPass will
@@ -102,7 +107,8 @@ namespace halo {
       LoopUnroll,
       LoopInterleaveCount,
       LoopVectorizeWidth,
-      LoopDistributeEnable
+      LoopDistributeEnable,
+      LoopRuntimeUnrollDisable
     };
 
   } // end namespace named_knob

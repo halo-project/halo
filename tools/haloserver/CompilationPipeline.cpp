@@ -299,7 +299,7 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
     PMBuilder.Inliner = createFunctionInliningPass(IP);
   }
 
-  PMBuilder.OptLevel = 3; // internal default
+  PMBuilder.OptLevel = 2; // internal default
 
   Knobs.lookup<OptLvlKnob>(named_knob::OptimizeLevel)
        .applyVal([&](OptLvlKnob::LevelTy Lvl) {
