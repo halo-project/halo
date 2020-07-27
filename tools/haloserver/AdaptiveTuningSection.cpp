@@ -1,4 +1,4 @@
-#include "halo/tuner/AggressiveTuningSection.h"
+#include "halo/tuner/AdaptiveTuningSection.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/nlohmann/util.hpp"
 
@@ -14,7 +14,7 @@ static cl::opt<bool> CL_ForceMerge(
 namespace halo
 {
 
-  void AggressiveTuningSection::transitionTo(ActivityState S) {
+  void AdaptiveTuningSection::transitionTo(ActivityState S) {
   ActivityState From = Status;
   ActivityState To = S;
 
@@ -56,7 +56,7 @@ std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, C
 /// a client has joined at an arbitrary time. So actions such as
 /// enabling/disabling sampling, or sending the current code, should be
 /// attempted on every step to make sure they're in the right state.
-void AggressiveTuningSection::take_step(GroupState &State) {
+void AdaptiveTuningSection::take_step(GroupState &State) {
   Steps++;
 
   /////////////////////////// BAKEOFF
@@ -211,7 +211,7 @@ retryNonBakeoffStep:
 }
 
 
-void AggressiveTuningSection::dump() const {
+void AdaptiveTuningSection::dump() const {
   clogs() << "TuningSection for " << FnGroup.Root << " {"\
           << "\n\tAllFuncs = ";
 
@@ -244,7 +244,7 @@ void AggressiveTuningSection::dump() const {
   clogs() << "}\n\n";
 }
 
-AggressiveTuningSection::AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
+AdaptiveTuningSection::AdaptiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
   : TuningSection(TSI, RootFunc),
     PBT(TSI.Config, BaseKnobs, Versions),
     Stopper(BaseKnobs),

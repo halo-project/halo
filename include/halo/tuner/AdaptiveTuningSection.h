@@ -7,11 +7,10 @@
 
 namespace halo {
 
-/// The main one with the fancy stuff. The name is inaccurate
-/// and a hold-over from what it use to be.
-class AggressiveTuningSection : public TuningSection {
+/// The main one with the fancy stuff.
+class AdaptiveTuningSection : public TuningSection {
 public:
-  AggressiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc);
+  AdaptiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc);
   void take_step(GroupState &) override;
   void dump() const override;
 

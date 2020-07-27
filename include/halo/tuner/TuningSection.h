@@ -33,7 +33,7 @@ struct TuningSectionInitializer {
 
 namespace Strategy {
   enum Kind {
-    Aggressive,
+    Adaptive,
     JitOnce
   };
 }

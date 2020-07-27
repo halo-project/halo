@@ -1,6 +1,6 @@
 #include "halo/tuner/TuningSection.h"
 #include "halo/tuner/CompileOnceTuningSection.h"
-#include "halo/tuner/AggressiveTuningSection.h"
+#include "halo/tuner/AdaptiveTuningSection.h"
 #include "halo/server/ClientGroup.h"
 #include "halo/compiler/ReadELF.h"
 #include "halo/tuner/NamedKnobs.h"
@@ -13,9 +13,9 @@ namespace cl = llvm::cl;
 static cl::opt<halo::Strategy::Kind> CL_Strategy(
   "halo-strategy",
   cl::desc("The strategy to use when optimizing hot code regions."),
-  cl::init(halo::Strategy::Aggressive),
-  cl::values(clEnumValN(halo::Strategy::Aggressive, "aggressive", "The main tuning strategy that uses the PseudoBayesTuner."),
-             clEnumValN(halo::Strategy::JitOnce, "jitonce", "Does not tune. Instead compiles the hot code once at high default optimization.")));
+  cl::init(halo::Strategy::Adaptive),
+  cl::values(clEnumValN(halo::Strategy::Adaptive, "adapt", "The main adaptive tuning strategy."),
+             clEnumValN(halo::Strategy::JitOnce, "jit", "Does not tune. Instead compiles the hot code once at high default optimization.")));
 
 namespace halo {
 
@@ -43,8 +43,8 @@ llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(TuningSecti
   TuningSection *TS = nullptr;
 
   switch (CL_Strategy) {
-    case Strategy::Aggressive: {
-      TS = new AggressiveTuningSection(TSI, PatchableAncestorName);
+    case Strategy::Adaptive: {
+      TS = new AdaptiveTuningSection(TSI, PatchableAncestorName);
     } break;
 
     case Strategy::JitOnce: {
