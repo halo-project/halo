@@ -54,23 +54,20 @@ KnobSet PseudoBayesTuner::getConfig(std::string CurrentLib) {
     auto Error = generateConfigs(CurrentLib);
 
     if (Error) {
-      // log it. an error can happen if we have an insufficient prior.
+      // log it.
       info(Error);
+      llvm::consumeError(std::move(Error));
 
-      // do we have an insufficient prior?
-      if (Manager.size() < MIN_PRIOR) {
-        llvm::consumeError(std::move(Error));
+      // an error can happen if we have an insufficient prior, so we
+      // assume that is the reason and work on developing a prior instead.
 
-        // check for expert configs first.
-        auto MaybeExpertConfig = Manager.genExpertOpinion(BaseKnobs);
-        if (MaybeExpertConfig)
-          return MaybeExpertConfig.getValue();
+      // check for expert configs first.
+      auto MaybeExpertConfig = Manager.genExpertOpinion(BaseKnobs);
+      if (MaybeExpertConfig)
+        return MaybeExpertConfig.getValue();
 
-        // just give a random one then.
-        return Manager.genRandom(BaseKnobs, RNG);
-      }
-
-      fatal_error("some other issue occurred");
+      // just give a random one then.
+      return Manager.genRandom(BaseKnobs, RNG);
     }
 
     // we always want to make sure we're not overfitting to what we already know,
@@ -534,10 +531,21 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
   std::vector<std::pair<KnobSet const*, RandomQuantity const*>> allConfigs;
   std::unordered_map<std::string, size_t> KnobToCol;
   size_t knobsPerConfig = 0;
+  size_t UsefulPriorData = 0;
   { // we need to count how many configs and knobs we are working with, and determine a stable mapping
     // of knob names to column numbers.
     size_t freeCol = 0;
     for (auto const& Entry : Versions) {
+
+      // I don't think we actually learn anything useful from the original lib, because it's
+      // quite different from what a JIT compiled version would be like (since the JIT creates
+      // new versions of functions in the tuning section).
+      //
+      // TODO: Plus, we don't know the correct build flags for the original lib at the moment due to
+      // abug / issue regarding when the snapshot of the bitcode was taken in the pipeline.
+      // Didn't seem like a priority to fix.
+      if (Entry.second.isOriginalLib() || Entry.second.isBroken())
+        continue;
 
       // a code version is only usable if it has some observations.
       auto const& RQ = Entry.second.getQuality();
@@ -548,11 +556,15 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
       if (Configs.size() == 0)
         return makeError("A code version is missing a knob configuration!");
 
-      // check for any new knobs we haven't seen in a prior config.
+      // then, this code version provides useful training data.
+      UsefulPriorData++;
+
+      // add all of the configs that correspond to this library.
       for (auto const& Config : Configs) {
         allConfigs.push_back({&Config, &RQ});
         knobsPerConfig = std::max(knobsPerConfig, Config.size());
 
+        // check for any new knobs we haven't seen before
         for (auto const& Entry : Config)
           if (KnobToCol.find(Entry.first) == KnobToCol.end())
             KnobToCol[Entry.first] = freeCol++;
@@ -562,7 +574,7 @@ llvm::Error PseudoBayesTuner::generateConfigs(std::string CurrentLib) {
   } // end block
 
   const size_t numConfigs = allConfigs.size();
-  if (numConfigs < MIN_PRIOR)
+  if (UsefulPriorData < MIN_PRIOR)
     return makeError("insufficient usable configurations. please collect more quality measurements with varying configs.");
 
   CodeVersion const& bestVersion = Versions.at(CurrentLib);
