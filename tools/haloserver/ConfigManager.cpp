@@ -75,9 +75,17 @@ KnobSet ConfigManager::genPrevious(std::mt19937_64 &RNG, bool ExcludeTop) {
 llvm::Optional<KnobSet> ConfigManager::genExpertOpinion(KnobSet const& BaseKnobs) {
   KnobSet KS(BaseKnobs);
   KS.unsetAll();
-  KS.setNumLoops(0); // opinions are not loop-knob specific
 
   switch(Opines) {
+
+    case 1: {
+      // set the lesser-used but seemingly safe & good flags
+      KS.lookup<FlagKnob>(named_knob::NativeCPU).setFlag(true);
+      KS.lookup<FlagKnob>(named_knob::IPRA).setFlag(true);
+      KS.lookup<FlagKnob>(named_knob::AttributorEnable).setFlag(true);
+      KS.lookup<FlagKnob>(named_knob::ExperimentalAlias).setFlag(true);
+    }; // FALL-THROUGH
+
     case 0: {
       // just -O3
       KS.lookup<OptLvlKnob>(named_knob::OptimizeLevel)

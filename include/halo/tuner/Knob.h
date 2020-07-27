@@ -183,6 +183,10 @@ namespace halo {
     bool isTrue() const { return Current.getValueOr(FALSE) == TRUE; }
     bool isNeither() const { return !hasVal(); }
 
+    void setFlag(bool Val) {
+      Current = (Val ? TRUE : FALSE);
+    }
+
     size_t cardinality() const override {
       // true, false, neither
       return 2 + 1;
