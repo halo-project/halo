@@ -51,11 +51,6 @@ namespace halo {
     /// This metadata suggests an unroll factor to the loop unroller.
     static const ty LoopUnroll = {"halo.unroll.factor", Knob::KK_Int};
 
-    /// This metadata suggests an interleave count to the loop interleaver.
-    /// Note that setting llvm.loop.interleave.count to 1 disables interleaving multiple iterations of the loop.
-    /// If llvm.loop.interleave.count is set to 0 then the interleave count will be determined automatically.
-    static const ty LoopInterleaveCount = {"llvm.loop.interleave.count", Knob::KK_Int};
-
     /// This metadata sets the target width of the vectorizer.
     /// Note that setting llvm.loop.vectorize.width to 1 disables vectorization of the loop.
     /// If llvm.loop.vectorize.width is set to 0 or if the loop does not have this metadata,
@@ -95,7 +90,6 @@ namespace halo {
       CodegenLevel,
 
       LoopUnroll,
-      LoopInterleaveCount,
       LoopVectorizeWidth,
       LoopDistributeEnable,
       LoopRuntimeUnrollDisable
@@ -105,7 +99,6 @@ namespace halo {
     // not apply the knob's setting to the program!!
     static const std::vector<ty> LoopOptions = {
       LoopUnroll,
-      LoopInterleaveCount,
       LoopVectorizeWidth,
       LoopDistributeEnable,
       LoopRuntimeUnrollDisable
