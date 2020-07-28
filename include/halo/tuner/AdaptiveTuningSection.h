@@ -43,13 +43,14 @@ private:
   StatisticalStopper Stopper;
 
   unsigned DuplicateCompilesInARow{0};
+  uint64_t DuplicateCompiles{0};
+  uint64_t TotalCompiles{0};
 
   // statistics for myself during development!!
   uint64_t Steps{0};
   uint64_t Bakeoffs{0};
   uint64_t SuccessfulBakeoffs{0};
   uint64_t BakeoffTimeouts{0};
-  uint64_t DuplicateCompiles{0};
 
   BakeoffParameters BP;
   llvm::Optional<Bakeoff> Bakery;

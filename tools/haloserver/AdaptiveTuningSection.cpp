@@ -154,6 +154,7 @@ retryNonBakeoffStep:
       return transitionTo(ActivityState::Compiling);
 
     CodeVersion NewCV {std::move(CompileDone.getValue())};
+    TotalCompiles++;
 
     clogs(LC_Info) << "config for library " << NewCV.getLibraryName() << "\n";
     NewCV.getConfigs().front().dump();
@@ -226,6 +227,8 @@ void AdaptiveTuningSection::dump() const {
                       ? 0
                       : 100.0 * ( ((float)BakeoffTimeouts) / ((float)Bakeoffs) );
 
+  float UniqueCompileRate = TotalCompiles == 0 ? 0
+                            : 100.0 * (1.0 - (DuplicateCompiles / static_cast<double>(TotalCompiles)));
 
   clogs() << "\n\tStatus = " << stateToString(Status)
           << "\n\tBestLib = " << BestLib
@@ -233,7 +236,7 @@ void AdaptiveTuningSection::dump() const {
           << "\n\t# Bakeoffs = " << Bakeoffs
           << "\n\tBakeoff Timeout Rate = " << TimeoutRate << "%"
           << "\n\tExperiment Success Rate = " << SuccessRate << "%"
-          << "\n\tDuplicateCompiles = " << DuplicateCompiles
+          << "\n\tUniqueCompileRate = " << UniqueCompileRate << "%"
           << "\n\tDB Size = " << PBT.getConfigManager().size()
           << "\n";
 
