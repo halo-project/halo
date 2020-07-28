@@ -28,6 +28,26 @@ double get_time(void);
 #define TRIES 1000000
 #endif
 
+
+void __attribute__((noinline)) doWork(double *ref, double *cmp, double *src, double *w, int *ip) {
+  int k;
+
+  memcpy(cmp, src, 2*N*sizeof(double));
+  cdft(2*N, 1, cmp, ip, w);
+
+  for (k=0; k<N; ++k) {
+    double re1 = cmp[2*k];
+    double re2 = ref[2*k];
+    double im1 = cmp[2*k+1];
+    double im2 = ref[2*k+1];
+    cmp[2*k]   = re1*re2 - im1*im2;
+    cmp[2*k+1] = re1*im2 + im1*re2;
+  }
+
+  cdft(2*N, -1, cmp, ip, w);
+}
+
+
 int main()
 {
   int i, j;
@@ -84,21 +104,7 @@ int main()
 
   t_start = get_time();
   for (i=0; i<TRIES; ++i) {
-    int k;
-
-    memcpy(cmp, src, 2*N*sizeof(double));
-    cdft(2*N, 1, cmp, ip, w);
-
-    for (k=0; k<N; ++k) {
-      double re1 = cmp[2*k];
-      double re2 = ref[2*k];
-      double im1 = cmp[2*k+1];
-      double im2 = ref[2*k+1];
-      cmp[2*k]   = re1*re2 - im1*im2;
-      cmp[2*k+1] = re1*im2 + im1*re2;
-    }
-
-    cdft(2*N, -1, cmp, ip, w);
+    doWork(ref, cmp, src, w, ip);
   }
   t_end = get_time();
   t_total += t_end - t_start - t_overhead;
