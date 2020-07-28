@@ -90,16 +90,26 @@ namespace halo {
     return true;
   }
 
+  bool sampledQuantityValid(size_t &LastSamplesSeen, SampledQuantity const& SQ) {
+    assert(LastSamplesSeen <= SQ.Samples && "non-increasing sample count?");
+
+    // not enough new samples in this library? not ready yet.
+    if ((SQ.Samples - LastSamplesSeen) < 2)
+      return false;
+
+    if (SQ.Quantity == 0)
+      return false;
+
+    LastSamplesSeen = SQ.Samples;
+    return true;
+  }
+
   bool CodeVersion::updateQuality(Profiler &Prof, FunctionGroup const& FG) {
     // first, check for fresh perf_event info
     SampledQuantity SQ = Prof.currentIPC(FG, LibName);
-    assert(PerfSamplesSeen <= SQ.Samples && "non-increasing sample count?");
 
-    // not enough new samples in this library? can't update.
-    if ((SQ.Samples - PerfSamplesSeen) < 2)
+    if (!sampledQuantityValid(PerfSamplesSeen, SQ))
       return false;
-    else
-      PerfSamplesSeen = SQ.Samples;
 
     if (CL_Metric == Metric::IPC) {
       Quality.observe(SQ.Quantity);
@@ -110,16 +120,13 @@ namespace halo {
     assert(CL_Metric == Metric::CallFreq);
 
     SampledQuantity CallFreqSQ = Prof.currentCallFreq(FG);
-    assert(CallSamplesSeen <= CallFreqSQ.Samples && "non-increasing sample count?");
 
     // FIXME: we should have a higher standard for number of samples
     // due to the transition lag. we don't (currently)
     // separate the call frequency by library, since it's
     // not feasible to determine which counts belong to what library.
-    if ((CallFreqSQ.Samples - CallSamplesSeen) < 2)
-      return false; // not enough call samples
-    else
-      CallSamplesSeen = CallFreqSQ.Samples;
+    if (!sampledQuantityValid(CallSamplesSeen, CallFreqSQ))
+      return false;
 
     Quality.observe(CallFreqSQ.Quantity);
     return true;
