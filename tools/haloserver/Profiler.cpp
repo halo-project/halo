@@ -12,6 +12,7 @@ Profiler::Profiler(JSON const& Config)
   : SamplePeriod(config::getServerSetting<uint64_t>("perf-sample-period", Config))
   , LP(Config)
   , CCT(&LP, SamplePeriod)
+  , ETP(Config)
   {}
 
 void Profiler::consumePerfData(GroupState &State) {

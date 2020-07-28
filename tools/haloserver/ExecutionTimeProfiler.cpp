@@ -1,6 +1,10 @@
 #include "halo/compiler/ExecutionTimeProfiler.h"
+#include "halo/nlohmann/util.hpp"
 
 namespace halo {
+
+ExecutionTimeProfiler::ExecutionTimeProfiler(JSON const& Config)
+  : DISCOUNT(config::getServerSetting<double>("callfreq-discount", Config)) {}
 
 CallFreq ExecutionTimeProfiler::get(std::string const& FuncName) {
   // construct from default init if not found.
@@ -57,7 +61,6 @@ void ExecutionTimeProfiler::observeOne(ClientID ID, CodeRegionInfo const& CRI, p
 
     if (Avg.MilliPerCall != 0) {
       // update with discount.
-      const double DISCOUNT = 0.7;
       Avg.Value += DISCOUNT * (ComputeCallsPerTimeUnit(Avg.MilliPerCall) - Avg.Value);
 
     } else { // initialize based on this observation.

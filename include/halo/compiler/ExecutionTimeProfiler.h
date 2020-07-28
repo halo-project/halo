@@ -3,8 +3,11 @@
 #include "Messages.pb.h"
 #include "halo/compiler/CodeRegionInfo.h"
 #include "llvm/ADT/Optional.h"
+#include "halo/nlohmann/json_fwd.hpp"
 
 #include <unordered_map>
+
+using JSON = nlohmann::json;
 
 namespace halo {
 
@@ -18,6 +21,8 @@ struct CallFreq {
 
 class ExecutionTimeProfiler {
 public:
+
+  ExecutionTimeProfiler(JSON const&);
 
   void observe(ClientID ID, CodeRegionInfo const& CRI, std::vector<pb::CallCountData> const&);
   void observeOne(ClientID ID, CodeRegionInfo const& CRI, pb::CallCountData const&);
@@ -34,6 +39,7 @@ private:
 
   using State = std::unordered_map<std::string, Data>;
 
+  const double DISCOUNT;
   std::unordered_map<ClientID, State> Last;
   std::unordered_map<std::string, CallFreq> Data;
 };

@@ -10,6 +10,8 @@
     "cct-hotness-ipsample": 1,
     "cct-hotness-recentlyactive": 0.05,
 
+    "callfreq-discount": 0.4,
+
     "ts-max-dupes-row": 25,
 
     "bakeoff-switch-rate": 4,
