@@ -53,12 +53,12 @@ int main()
   int i, j;
   int *ip;
   double *ref, *cmp, *src, *w;
-  double t_start, t_end, t_overhead, t_total = 0, err_val;
+  // double t_start, t_end, t_overhead, t_total = 0, err_val;
 
   /* Measure overhead of get_time() call */
-  t_start = get_time();
-  t_end = get_time();
-  t_overhead = t_end - t_start;
+  // t_start = get_time();
+  // t_end = get_time();
+  // t_overhead = t_end - t_start;
 
   /* Prepare aux data */
 #if !defined(__APPLE__) && !defined(__FreeBSD__) && !defined(__NetBSD__) /* Darwin always 16-byte aligns malloc data */
@@ -82,14 +82,14 @@ int main()
 #endif
 
   /* Perform sanity check of FFT */
-  putdata(0, 2*N - 1, ref);
-  cdft(2*N,  1, ref, ip, w);
-  cdft(2*N, -1, ref, ip, w);
-  err_val = errorcheck(0, 2*N - 1, 1.0/N, ref);
-  if (fabs(err_val) > 1e-10) {
-    printf("FFT sanity check failed! Difference is: %le\n", err_val);
-    abort();
-  }
+  // putdata(0, 2*N - 1, ref);
+  // cdft(2*N,  1, ref, ip, w);
+  // cdft(2*N, -1, ref, ip, w);
+  // err_val = errorcheck(0, 2*N - 1, 1.0/N, ref);
+  // if (fabs(err_val) > 1e-10) {
+  //   printf("FFT sanity check failed! Difference is: %le\n", err_val);
+  //   abort();
+  // }
 
   /* Prepare reference sequence */
   memset(ref, 0, 2*N*sizeof(double));
@@ -102,12 +102,12 @@ int main()
   memset(src, 0, 2*N*sizeof(double));
   putdata(0, N-1, src);
 
-  t_start = get_time();
+  // t_start = get_time();
   for (i=0; i<TRIES; ++i) {
     doWork(ref, cmp, src, w, ip);
   }
-  t_end = get_time();
-  t_total += t_end - t_start - t_overhead;
+  // t_end = get_time();
+  // t_total += t_end - t_start - t_overhead;
 
   for (j=0; j<N; ++j) {
     printf("%e %e\n",
