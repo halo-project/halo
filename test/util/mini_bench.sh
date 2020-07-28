@@ -58,9 +58,9 @@ declare -a BENCHMARKS=(
 
 declare -a AOT_OPTS=(
   # "-O0"
-  # "-O1"
+  "-O1"
   "-O2"
-  "-O3"
+  # "-O3"
 )
 
 declare -a OPTIONS=(
