@@ -36,12 +36,15 @@ fi
 
 ##################
 # make sure xgboost is built. we assume the sources have been pulled to 'root' already
-if [[ ! ${ENV_KIND} =~ rpi.* ]]; then
-  pushd xgboost/root || exit 1
+pushd xgboost/root || exit 1
+if [[ ${ENV_KIND} =~ rpi.* ]]; then
+  XG_BUILD_CPUS="2"
+else
   XG_BUILD_CPUS=$((NUM_CPUS / 2 + 1))
-  make -j ${XG_BUILD_CPUS} || (echo "did you run xgboost/get.sh to download the sources?" && exit 1)
-  popd || exit 1
 fi
+make -j ${XG_BUILD_CPUS} || (echo "did you run xgboost/get.sh to download the sources?" && exit 1)
+popd || exit 1
+
 
 
 #########
