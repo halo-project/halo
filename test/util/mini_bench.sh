@@ -3,6 +3,8 @@
 # quit if anything fails
 set -eEuo pipefail
 
+# set -x  # show commands as they're run for debugging
+
 ROOT=$1
 NUM_TRIALS=$2   # number of fresh trials, to average the results.
 NUM_ITERS=$3    # number of times to run the program _per_ trial
@@ -25,8 +27,8 @@ if [[ ! $NUM_ITERS =~ [0-9]+ ]]; then
   exit 1
 fi
 
-SERVER_EXE="$ROOT/bin/haloserver"
-CLANG_EXE="$ROOT/bin/clang"
+BIN_DIR="$ROOT/bin"
+SERVER_EXE="$BIN_DIR/haloserver"
 TIME_EXE=$(command -v time)  # do not want built-in bash 'time'
 
 if [ -z "$TIME_EXE" ]; then
@@ -39,6 +41,10 @@ LIBS="-lm"
 
 # control problem-size, etc.
 PREPROCESSOR_FLAGS="-DSMALL_PROBLEM_SIZE"
+
+# files for managing PGO compilation
+PROFILE_RAW_FILE="default.profraw" # the default file that is written to if LLVM_PROFILE_FILE is not set
+PROFILE_DATA_FILE="code.profdata"
 
 # get directory of this script
 SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -60,11 +66,12 @@ declare -a AOT_OPTS=(
   # "-O0"
   "-O1"
   "-O2"
-  # "-O3"
+  "-O3"
 )
 
 declare -a OPTIONS=(
-  # "none"
+  "none"
+  "pgo"
   "-fhalo"
   "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=calls"
   "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=ipc"
@@ -88,7 +95,7 @@ cleanup() {
       kill -9 $SERVER_PID
     fi
   fi
-  rm -f "$TIME_OUTPUT_FILE"
+  rm -f "$TIME_OUTPUT_FILE $PROFILE_RAW_FILE $PROFILE_DATA_FILE"
 }
 
 # if we hit an error, try to print the server log if it exists, then clean-up
@@ -111,15 +118,42 @@ for PROG in "${BENCHMARKS[@]}"; do
     for FLAGS in "${OPTIONS[@]}"; do
       CLIENT_BIN="./a.out"
 
+      if [[ $PROG =~ .*\.cpp$ ]]; then
+        CLANG_EXE="${BIN_DIR}/clang++"
+      else
+        CLANG_EXE="${BIN_DIR}/clang"
+      fi
+
       COMPILE_FLAGS=${FLAGS//withserver/}       # remove 'withserver' from flags
       COMPILE_FLAGS=${COMPILE_FLAGS//none/}     # remove 'none' from flags
+      COMPILE_FLAGS=${COMPILE_FLAGS//pgo/}     # remove 'pgo' from flags
       COMPILE_FLAGS=$(echo "$COMPILE_FLAGS" | cut -d ";" -f 1)  # take the first field, (separated by ;)
       COMPILE_FLAGS="$COMPILE_FLAGS $AOT_OPT"   # add aot opt
 
+      ALL_FLAGS="${PREPROCESSOR_FLAGS} ${COMPILE_FLAGS}"
+
+      if [[ $FLAGS == "pgo" ]]; then
+        # compile and run once with instrumentation-based profiling
+        # based on: https://clang.llvm.org/docs/UsersManual.html#profile-guided-optimization
+
+        rm -f ${PROFILE_RAW_FILE} ${PROFILE_DATA_FILE} &> /dev/null
+
+        # compile with profiling enabled
+        ${CLANG_EXE} ${ALL_FLAGS} -fprofile-instr-generate "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN} &> /dev/null
+
+        # run the profiling-enabled binary to generate data
+        ${CLIENT_BIN} &> /dev/null
+
+        # turn the "raw" profile data into one suitable for feeding into compiler
+        ${BIN_DIR}/llvm-profdata merge -output=${PROFILE_DATA_FILE} ${PROFILE_RAW_FILE} &> /dev/null
+
+        # add profile use flag to compilation flag
+        ALL_FLAGS="${ALL_FLAGS} -fprofile-instr-use=${PROFILE_DATA_FILE}"
+      fi
+
       # compile!
-      # NOTE: do NOT double-quote COMPILE_FLAGS!!! ignore shellcheck here.
-      ${CLANG_EXE} ${PREPROCESSOR_FLAGS} ${COMPILE_FLAGS} \
-          "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN} &> /dev/null
+      # NOTE: do NOT double-quote compilation flags!!! ignore shellcheck here.
+      ${CLANG_EXE} ${ALL_FLAGS} "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN} &> /dev/null
 
       for TRIAL in $(seq 1 "$NUM_TRIALS"); do
         THIS_NUM_ITERS=${NUM_ITERS}
@@ -165,3 +199,5 @@ for PROG in "${BENCHMARKS[@]}"; do
     done # flag loop end
   done # aot opt loop end
 done #prog loop end
+
+cleanup
