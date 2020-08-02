@@ -65,7 +65,7 @@ declare -a BENCHMARKS=(
 declare -a AOT_OPTS=(
   # "-O0"
   "-O1"
-  "-O2"
+  # "-O2"
   "-O3"
 )
 
