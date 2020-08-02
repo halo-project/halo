@@ -36,10 +36,12 @@ fi
 
 ##################
 # make sure xgboost is built. we assume the sources have been pulled to 'root' already
-pushd xgboost/root || exit 1
-XG_BUILD_CPUS=$((NUM_CPUS / 2 + 1))
-make -j ${XG_BUILD_CPUS} || (echo "did you run xgboost/get.sh to download the sources?" && exit 1)
-popd || exit 1
+if [[ ! ${ENV_KIND} =~ rpi.* ]]; then
+  pushd xgboost/root || exit 1
+  XG_BUILD_CPUS=$((NUM_CPUS / 2 + 1))
+  make -j ${XG_BUILD_CPUS} || (echo "did you run xgboost/get.sh to download the sources?" && exit 1)
+  popd || exit 1
+fi
 
 
 #########
@@ -77,6 +79,7 @@ elif [[ ${ENV_KIND} =~ local.* ]]; then
 elif [[ ${ENV_KIND} =~ rpi.* ]]; then
   BACKENDS="Native"
   OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=lld -DLLVM_PARALLEL_LINK_JOBS=1 -DLLVM_PARALLEL_COMPILE_JOBS=2 $DEVELOPMENT_FLAGS"
+  BUILD_TARGETS="install-halomon install-clang install-clang-resource-headers"  # no server needed
 
 elif [[ ${ENV_KIND} =~ kavon.* ]]; then
   BACKENDS="Native"
