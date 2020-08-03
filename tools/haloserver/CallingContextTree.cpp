@@ -450,8 +450,7 @@ addCallee:
   }
 
   LibraryName = CallerDef.getValue().Library;
-  auto &CurrentV = bgl::get(Gr, CallerVID);
-  CurrentV.observeSampledIP(ID, LibraryName, Sample, SamplePeriod); // add the sample to the vertex!
+  bgl::get(Gr, CallerVID).observeSampledIP(ID, LibraryName, Sample, SamplePeriod); // add the sample to the vertex!
 
   logs(LC_CCT) << "Observed sample at IP in " << CallerFI->getCanonicalName() << "\n";
 
