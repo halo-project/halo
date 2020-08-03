@@ -85,7 +85,7 @@ elif [[ ${ENV_KIND} =~ rpi.* ]]; then
   BUILD_TARGETS="install-halomon install-clang install-clang-resource-headers"  # no server needed
 
 elif [[ ${ENV_KIND} =~ kavon.* ]]; then
-  BACKENDS="Native"
+  BACKENDS="X86;ARM"
   OPTIONS="${OPTIONS} -DLLVM_USE_LINKER=gold -DLLVM_CCACHE_BUILD=ON $DEVELOPMENT_FLAGS"
 
 else
