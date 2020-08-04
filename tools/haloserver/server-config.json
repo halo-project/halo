@@ -14,10 +14,10 @@
 
     "ts-max-dupes-row": 25,
 
-    "bakeoff-switch-rate": 4,
-    "bakeoff-max-switches": 9,
-    "bakeoff-confidence": 99,
-    "bakeoff-min-samples": 3,
+    "bakeoff-switch-rate": 5,
+    "bakeoff-max-switches": 10,
+    "bakeoff-confidence": 95,
+    "bakeoff-min-samples": 4,
     "bakeoff-assumed-overhead": 0.05,
 
     "pbtuner-batch-size": 10,

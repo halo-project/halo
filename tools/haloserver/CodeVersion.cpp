@@ -6,16 +6,6 @@
 
 namespace cl = llvm::cl;
 
-namespace halo {
-  namespace Metric {
-    enum Kind {
-      IPC,
-      CallFreq
-    };
-  }
-}
-
-
 static cl::opt<halo::Metric::Kind> CL_Metric(
   "halo-metric",
   cl::desc("The metric to use when evaluating code quality."),
@@ -102,6 +92,10 @@ namespace halo {
 
     LastSamplesSeen = SQ.Samples;
     return true;
+  }
+
+  Metric::Kind CodeVersion::getMetricKind() {
+    return CL_Metric;
   }
 
   bool CodeVersion::updateQuality(Profiler &Prof, FunctionGroup const& FG) {

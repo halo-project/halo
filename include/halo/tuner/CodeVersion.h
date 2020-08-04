@@ -14,6 +14,13 @@
 
 namespace halo {
 
+  namespace Metric {
+    enum Kind {
+      IPC,
+      CallFreq
+    };
+  }
+
 /// A compiled instance of a configuration with respect to the bitcode.
 /// colloquially a "dylib" or library.
 class CodeVersion {
@@ -53,6 +60,8 @@ class CodeVersion {
   // returns the numeric quality of this code version.
   // larger qualities are assumed to be better.
   RandomQuantity const& getQuality() const { return Quality; };
+
+  static Metric::Kind getMetricKind();
 
   // returns true if an update was able to occur
   bool updateQuality(Profiler &Prof, FunctionGroup const& FG);

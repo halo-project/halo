@@ -184,16 +184,24 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   ClientGroup::broadcastSamplingPeriod(State, TS->Profile.getSamplePeriod());
 
   // try to update the deployed lib with fresh quality info
-  bool Updated = TS->Versions[Deployed.first].updateQuality(TS->Profile, TS->FnGroup);
-  if (!Updated) {
-    info("Bakeoff can't make progress b/c insufficient samples observed in the deployed library.");
-    return Status;
+  bool SawDeployedQuality = TS->Versions[Deployed.first].updateQuality(TS->Profile, TS->FnGroup);
+
+  bool SawOtherQuality = false;
+  if (CodeVersion::getMetricKind() == Metric::IPC) {
+    // if the IPC metric is in use, then we can accurately differentiate between samples
+    // between two library versions. thus, it is safe to continue gathering profile data
+    // if the client is still using the other version.
+    SawOtherQuality = TS->Versions[Other.first].updateQuality(TS->Profile, TS->FnGroup);
   }
 
   auto &DeployedQual = TS->Versions.at(Deployed.first).getQuality();
   auto &OtherQual = TS->Versions.at(Other.first).getQuality();
 
-  History.emplace_back(Deployed.first, DeployedQual.last());
+  if (SawOtherQuality)
+    History.emplace_back(Other.first, OtherQual.last());
+
+  if (SawDeployedQuality)
+    History.emplace_back(Deployed.first, DeployedQual.last());
 
   // try to determine a winner
   switch(compare_ttest(DeployedQual, OtherQual)) {
@@ -209,8 +217,14 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
     }; break;
 
     case ComparisonResult::NoAnswer: {
-      // set-up for the next iteration of the bake-off
 
+      // we may have no answer here because we didn't get fresh data for the deployed lib
+      if (!SawDeployedQuality) {
+        info("Bakeoff can't make progress b/c fresh samples have not been observed in the deployed library.");
+        return Status;
+      }
+
+      // set-up for the next iteration of the bake-off
       if (Switches >= BP.MAX_SWITCHES) {
         // we give up... don't know which one is better!
 
