@@ -14,7 +14,7 @@ static cl::opt<bool> CL_ForceMerge(
 namespace halo
 {
 
-  void AdaptiveTuningSection::transitionTo(ActivityState S) {
+void AdaptiveTuningSection::transitionTo(ActivityState S) {
   ActivityState From = Status;
   ActivityState To = S;
 
@@ -23,6 +23,13 @@ namespace halo
     return;
   else
     Status = To;  // we actually changed to a different state.
+}
+
+void AdaptiveTuningSection::transitionToBakeoff(GroupState &State, std::string const& NewLib) {
+  // ok let's evaluate the two libs!
+  Bakery = Bakeoff(State, this, BP, BestLib, NewLib);
+  Bakeoffs++;
+  return transitionTo(ActivityState::Bakeoff);
 }
 
 
@@ -115,15 +122,12 @@ retryNonBakeoffStep:
   sendLib(State, Versions[BestLib]);
   redirectTo(State, Versions[BestLib]);
 
+  // make sure all clients are not sampling right now
+  ClientGroup::broadcastSamplingPeriod(State, 0);
+
   /////////////////////////////// STOPPED
   if (Status == ActivityState::Stopped)
     return transitionTo(ActivityState::Stopped);
-
-  // if we're not stopped yet, then we are responsible for controlling the
-  // sampling, etc.
-
-  // make sure all clients are not sampling right now
-  ClientGroup::broadcastSamplingPeriod(State, 0);
 
 
   //////////////////////////// CHECK IF WE SHOULD STOP
@@ -176,14 +180,12 @@ retryNonBakeoffStep:
 
       DuplicateCompilesInARow = 0; // reset
 
-      return transitionTo(ActivityState::ConsiderStopping);
+      if (Versions.size() < 2)
+        // we can't explore at all. there's seemingly no code we can generate that's different.
+        return transitionTo(ActivityState::ConsiderStopping);
 
-      // if (Versions.size() < 2)
-      //   // we can't explore at all. there's seemingly no code we can generate that's different.
-      //   return transitionTo(ActivityState::ConsiderStopping);
-
-      // clogs() << "Unable to generate a new code version, but we'll retry an existing one.\n";
-      // NewLib = pickRandomly(PBT.getRNG(), Versions, BestLib);
+      clogs(LC_Info) << "Unable to generate a new code version, but we'll retry an existing one.\n";
+      NewLib = pickRandomly(PBT.getRNG(), Versions, BestLib);
 
     } else {
       // not a duplicate!
@@ -192,9 +194,7 @@ retryNonBakeoffStep:
     }
 
     // ok let's evaluate the two libs!
-    Bakery = Bakeoff(State, this, BP, BestLib, NewLib);
-    Bakeoffs++;
-    return transitionTo(ActivityState::Bakeoff);
+    return transitionToBakeoff(State, NewLib);
   }
 
 

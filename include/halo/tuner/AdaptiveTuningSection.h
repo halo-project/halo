@@ -29,12 +29,14 @@ private:
       case ActivityState::ConsiderStopping:   return "CONSIDER_STOPPING";
       case ActivityState::Compiling:          return "COMPILING";
       case ActivityState::Bakeoff:            return "BAKEOFF";
-      case ActivityState::Stopped:             return "STOPPED";
+      case ActivityState::Stopped:            return "STOPPED";
     };
     return "?";
   }
 
   void transitionTo(ActivityState S);
+
+  void transitionToBakeoff(GroupState &, std::string const&);
 
   // adjusts the Exploit factor based on the result of the bakeoff
   void adjustAfterBakeoff(Bakeoff::Result);
