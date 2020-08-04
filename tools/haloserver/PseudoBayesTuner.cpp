@@ -11,6 +11,15 @@
 #include <set>
 #include <regex>
 
+#include "llvm/Support/CommandLine.h"
+
+namespace cl = llvm::cl;
+
+static cl::opt<bool> CL_OnlyRandom(
+  "halo-only-random",
+  cl::desc("Only try purely-random configurations, instead of the PB Tuner"),
+  cl::init(false));
+
 
 // checks the return value of calls to XGBoost C API
 #define safe_xgboost(call) {                                                \
@@ -51,23 +60,26 @@ PseudoBayesTuner::PseudoBayesTuner(nlohmann::json const& Config, KnobSet const& 
 // obtains a config, generating them if we've run out of cached ones
 KnobSet PseudoBayesTuner::getConfig(std::string CurrentLib) {
   if (Manager.sizeTop() == 0) {
-    auto Error = generateConfigs(CurrentLib);
 
-    if (Error) {
-      // log it.
-      info(Error);
-      llvm::consumeError(std::move(Error));
+    if (!CL_OnlyRandom) {
+      // try to generate configs according to PB Tuner
+      auto Error = generateConfigs(CurrentLib);
+      if (Error) {
+        // log it.
+        info(Error);
+        llvm::consumeError(std::move(Error));
 
-      // an error can happen if we have an insufficient prior, so we
-      // assume that is the reason and work on developing a prior instead.
+        // an error can happen if we have an insufficient prior, so we
+        // assume that is the reason and work on developing a prior instead.
 
-      // check for expert configs first.
-      auto MaybeExpertConfig = Manager.genExpertOpinion(BaseKnobs);
-      if (MaybeExpertConfig)
-        return MaybeExpertConfig.getValue();
+        // check for expert configs first.
+        auto MaybeExpertConfig = Manager.genExpertOpinion(BaseKnobs);
+        if (MaybeExpertConfig)
+          return MaybeExpertConfig.getValue();
 
-      // just give a random one then.
-      return Manager.genRandom(BaseKnobs, RNG);
+        // just give a single random one then.
+        return Manager.genRandom(BaseKnobs, RNG);
+      }
     }
 
     // we always want to make sure we're not overfitting to what we already know,
