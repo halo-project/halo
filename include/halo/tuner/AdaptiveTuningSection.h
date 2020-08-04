@@ -17,19 +17,19 @@ public:
 private:
   enum class ActivityState {
     Experiment,
-    ConsiderStopping,
+    MakeDecision,
     Compiling,
     Bakeoff,
-    Stopped
+    Waiting
   };
 
   std::string stateToString(ActivityState S) const {
     switch(S) {
       case ActivityState::Experiment:         return "EXPERIMENT";
-      case ActivityState::ConsiderStopping:   return "CONSIDER_STOPPING";
+      case ActivityState::MakeDecision:       return "MAKE_DECISION";
       case ActivityState::Compiling:          return "COMPILING";
       case ActivityState::Bakeoff:            return "BAKEOFF";
-      case ActivityState::Stopped:            return "STOPPED";
+      case ActivityState::Waiting:            return "WAITING";
     };
     return "?";
   }

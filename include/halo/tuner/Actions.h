@@ -5,13 +5,13 @@
 namespace halo {
 
   enum RootAction {
-    Optimize,
-    DoNothing
+    RunExperiment,
+    Wait
   };
 
   const static std::set<RootAction> RootActions = {
-    RootAction::Optimize,
-    RootAction::DoNothing
+    RootAction::RunExperiment,
+    RootAction::Wait
   };
 
 

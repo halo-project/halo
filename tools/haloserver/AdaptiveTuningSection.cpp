@@ -87,7 +87,7 @@ void AdaptiveTuningSection::take_step(GroupState &State) {
         BestLib = NewBest.getValue();
 
         Bakery = llvm::None;
-        return transitionTo(ActivityState::ConsiderStopping);
+        return transitionTo(ActivityState::MakeDecision);
       };
 
       case Bakeoff::Result::Timeout: {
@@ -106,7 +106,7 @@ void AdaptiveTuningSection::take_step(GroupState &State) {
         }
 
         Bakery = llvm::None;
-        return transitionTo(ActivityState::ConsiderStopping);
+        return transitionTo(ActivityState::MakeDecision);
       };
     };
     fatal_error("unhandled bakeoff case");
@@ -125,18 +125,21 @@ retryNonBakeoffStep:
   // make sure all clients are not sampling right now
   ClientGroup::broadcastSamplingPeriod(State, 0);
 
-  /////////////////////////////// STOPPED
-  if (Status == ActivityState::Stopped)
-    return transitionTo(ActivityState::Stopped);
+  /////////////////////////////// WAITING
+  // the stopped state means we've given up on trying to compile a
+  // new version of code, and instead will now just periodically
+  // retry some of the better ones.
+  if (Status == ActivityState::Waiting)
+    return transitionTo(ActivityState::Waiting);
 
 
-  //////////////////////////// CHECK IF WE SHOULD STOP
-  if (Status == ActivityState::ConsiderStopping) {
+  //////////////////////////// WHAT SHOULD WE DO?
+  if (Status == ActivityState::MakeDecision) {
 
     if (Stopper.shouldStop(BestLib, Versions, PBT.getConfigManager())) {
       // make sure all clients are not sampling right now
       ClientGroup::broadcastSamplingPeriod(State, 0);
-      return transitionTo(ActivityState::Stopped);
+      return transitionTo(ActivityState::Waiting);
     }
 
     // let's keep going
@@ -182,7 +185,7 @@ retryNonBakeoffStep:
 
       if (Versions.size() < 2)
         // we can't explore at all. there's seemingly no code we can generate that's different.
-        return transitionTo(ActivityState::ConsiderStopping);
+        return transitionTo(ActivityState::MakeDecision);
 
       clogs(LC_Info) << "Unable to generate a new code version, but we'll retry an existing one.\n";
       NewLib = pickRandomly(PBT.getRNG(), Versions, BestLib);
