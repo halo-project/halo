@@ -3,7 +3,8 @@
 #include "halo/tuner/TuningSection.h"
 #include "halo/tuner/PseudoBayesTuner.h"
 #include "halo/tuner/Bakeoff.h"
-#include "halo/tuner/StatisticalStopper.h"
+#include "halo/tuner/Actions.h"
+#include "halo/tuner/Bandit.h"
 
 namespace halo {
 
@@ -37,16 +38,21 @@ private:
   void transitionTo(ActivityState S);
 
   void transitionToBakeoff(GroupState &, std::string const&);
+  void transitionToWait();
+  void transitionToDecision(float Reward);
 
-  // adjusts the Exploit factor based on the result of the bakeoff
-  void adjustAfterBakeoff(Bakeoff::Result);
+  // consumes the current bakery and returns a MAB reward.
+  float computeReward();
 
   PseudoBayesTuner PBT;
-  StatisticalStopper Stopper;
+  RecencyWeightedBandit<RootAction> MAB;
+  const float BakeoffPenalty;
+  const uint32_t StepsPerWaitAction;
 
   unsigned DuplicateCompilesInARow{0};
   uint64_t DuplicateCompiles{0};
   uint64_t TotalCompiles{0};
+  uint32_t WaitStepsRemaining{0};
 
   // statistics for myself during development!!
   uint64_t Steps{0};
@@ -57,6 +63,7 @@ private:
   BakeoffParameters BP;
   llvm::Optional<Bakeoff> Bakery;
   ActivityState Status{ActivityState::Experiment};
+  RootAction CurrentAction = RunExperiment;
   std::string BestLib;
 
   // for choosing a new code version

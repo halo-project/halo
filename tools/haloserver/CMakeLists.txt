@@ -65,7 +65,6 @@ add_executable(${SERVER_BIN}
   ProgramInfoPass.cpp
   PseudoBayesTuner.cpp
   RandomTuner.cpp
-  StatisticalStopper.cpp
   TuningSection.cpp
   ${HALO_NET_DIR}/Logging.cpp
   ${PROTO_SRCS}

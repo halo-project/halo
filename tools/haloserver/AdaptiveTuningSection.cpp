@@ -21,15 +21,35 @@ void AdaptiveTuningSection::transitionTo(ActivityState S) {
   // self-loop?
   if (From == To)
     return;
-  else
-    Status = To;  // we actually changed to a different state.
+
+  assert(S != ActivityState::Bakeoff && "bakeoff has a dedicated fresh-transition function!");
+  assert(S != ActivityState::Waiting && "waiting has dedicated fresh-transition function!");
+  assert(S != ActivityState::MakeDecision && "make-decision has dedicated fresh-transition function!");
+
+  Status = To;  // we actually changed to a different state.
+}
+
+void AdaptiveTuningSection::transitionToWait() {
+  assert(Status != ActivityState::Waiting);
+
+  WaitStepsRemaining = StepsPerWaitAction;
+  Status = ActivityState::Waiting;
 }
 
 void AdaptiveTuningSection::transitionToBakeoff(GroupState &State, std::string const& NewLib) {
+  assert(Status != ActivityState::Bakeoff);
+
   // ok let's evaluate the two libs!
   Bakery = Bakeoff(State, this, BP, BestLib, NewLib);
   Bakeoffs++;
-  return transitionTo(ActivityState::Bakeoff);
+  Status = ActivityState::Bakeoff;
+}
+
+void AdaptiveTuningSection::transitionToDecision(float Reward) {
+  assert(Status != ActivityState::MakeDecision);
+
+  MAB.reward(CurrentAction, Reward);
+  Status = ActivityState::MakeDecision;
 }
 
 
@@ -55,8 +75,25 @@ std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, C
   } while (NewLib == ToAvoid);
 
   return NewLib;
-
 }
+
+float AdaptiveTuningSection::computeReward() {
+  // NOTE: relying on assumption that larger "quality"  means better
+  auto const& CurrentQ = Versions.at(BestLib).getQuality();
+  float Reward = CurrentQ.mean();
+
+  // big reward for this action if the bake-off succeeded
+  if (Bakery.hasValue()) {
+    auto &Bakeoff = Bakery.getValue();
+    if (Bakeoff.lastResult() == Bakeoff::Result::NewIsBetter)
+      Reward *= 10;
+
+    Bakery = llvm::None;
+  }
+
+  return Reward;
+}
+
 
 
 /// The implementation of this take-step always must assume that
@@ -86,8 +123,7 @@ void AdaptiveTuningSection::take_step(GroupState &State) {
           fatal_error("bakeoff successfully finished but no winner?");
         BestLib = NewBest.getValue();
 
-        Bakery = llvm::None;
-        return transitionTo(ActivityState::MakeDecision);
+        return transitionToDecision(computeReward());
       };
 
       case Bakeoff::Result::Timeout: {
@@ -105,8 +141,7 @@ void AdaptiveTuningSection::take_step(GroupState &State) {
           Versions.erase(Other);
         }
 
-        Bakery = llvm::None;
-        return transitionTo(ActivityState::MakeDecision);
+        return transitionToDecision(computeReward());
       };
     };
     fatal_error("unhandled bakeoff case");
@@ -129,21 +164,27 @@ retryNonBakeoffStep:
   // the stopped state means we've given up on trying to compile a
   // new version of code, and instead will now just periodically
   // retry some of the better ones.
-  if (Status == ActivityState::Waiting)
-    return transitionTo(ActivityState::Waiting);
+  if (Status == ActivityState::Waiting) {
+    if (WaitStepsRemaining) {
+      WaitStepsRemaining--;
+      return transitionTo(ActivityState::Waiting);
+    }
+    return transitionToDecision(computeReward());
+  }
 
 
   //////////////////////////// WHAT SHOULD WE DO?
   if (Status == ActivityState::MakeDecision) {
+    // consult MAB
+    CurrentAction = MAB.choose();
 
-    if (Stopper.shouldStop(BestLib, Versions, PBT.getConfigManager())) {
-      // make sure all clients are not sampling right now
-      ClientGroup::broadcastSamplingPeriod(State, 0);
-      return transitionTo(ActivityState::Waiting);
-    }
+    if (CurrentAction == RunExperiment)
+      return transitionTo(ActivityState::Experiment);
 
-    // let's keep going
-    return transitionTo(ActivityState::Experiment);
+    if (CurrentAction == Wait)
+      return transitionToWait();
+
+    fatal_error("unhandled decision from MAB!");
   }
 
 
@@ -185,7 +226,7 @@ retryNonBakeoffStep:
 
       if (Versions.size() < 2)
         // we can't explore at all. there's seemingly no code we can generate that's different.
-        return transitionTo(ActivityState::MakeDecision);
+        return transitionToWait();
 
       clogs(LC_Info) << "Unable to generate a new code version, but we'll retry an existing one.\n";
       NewLib = pickRandomly(PBT.getRNG(), Versions, BestLib);
@@ -253,7 +294,9 @@ void AdaptiveTuningSection::dump() const {
 AdaptiveTuningSection::AdaptiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
   : TuningSection(TSI, RootFunc),
     PBT(TSI.Config, BaseKnobs, Versions),
-    Stopper(BaseKnobs),
+    MAB(RootActions),
+    BakeoffPenalty(1.0f - config::getServerSetting<float>("bakeoff-assumed-overhead", TSI.Config)),
+    StepsPerWaitAction(config::getServerSetting<unsigned>("ts-steps-per-wait", TSI.Config)),
     BP(TSI.Config),
     MAX_DUPES_IN_ROW(config::getServerSetting<unsigned>("ts-max-dupes-row", TSI.Config))
   {

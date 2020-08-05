@@ -13,6 +13,7 @@
     "callfreq-discount": 0.4,
 
     "ts-max-dupes-row": 2,
+    "ts-steps-per-wait": 10,
 
     "bakeoff-switch-rate": 5,
     "bakeoff-max-switches": 10,
