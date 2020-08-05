@@ -66,6 +66,13 @@ void Bakeoff::deploy(GroupState &State, std::string const& Name) {
 
 
 void Bakeoff::switchVersions(GroupState &State) {
+
+  // since both versions share the same call count, we need to
+  // sync their samples-seen before swapping to help prevent stale
+  // data next time.
+  if (CodeVersion::getMetricKind() == Metric::CallFreq)
+    TS->Versions[Other.first].copyCallSamplesSeen(TS->Versions[Deployed.first]);
+
   std::swap(Deployed, Other);
 
   Switches += 1;

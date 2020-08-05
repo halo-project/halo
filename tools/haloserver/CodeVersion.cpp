@@ -115,7 +115,7 @@ namespace halo {
 
     SampledQuantity CallFreqSQ = Prof.currentCallFreq(FG);
 
-    // FIXME: we should have a higher standard for number of samples
+    // NOTE: we should maybe have a higher standard for number of samples
     // due to the transition lag. we don't (currently)
     // separate the call frequency by library, since it's
     // not feasible to determine which counts belong to what library.

@@ -66,6 +66,10 @@ class CodeVersion {
   // returns true if an update was able to occur
   bool updateQuality(Profiler &Prof, FunctionGroup const& FG);
 
+  void copyCallSamplesSeen(CodeVersion const& Other) {
+    CallSamplesSeen = Other.CallSamplesSeen;
+  }
+
   void clearQuality() {
     Quality.clear();
     PerfSamplesSeen = 0;
