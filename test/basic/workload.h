@@ -49,14 +49,14 @@ unsigned random_getLevel() {
 
 int driverFn (int ITERS, unsigned (*getMult)(), unsigned (*getLevel)()) {
   // some junk specially crafted to subvert totally eliminating the computation I want it to perform.
-  const unsigned long UNLIKELY_NUMBER = 5210382193801;
+  const unsigned long UNLIKELY_NUMBER = 22193801;
   const unsigned long UNLIKELY_DIVISOR = 5861;
 
   unsigned long result = 1;
   for (int i = 0; i < ITERS; i++) {
     result += workFn(getMult(), getLevel());
     if (result > UNLIKELY_DIVISOR && (result % UNLIKELY_DIVISOR) == 0)
-      i += 2;
+      i += 2; // NOTE: we do NOT want this to happen!
   }
 
   if (result == UNLIKELY_NUMBER) {
