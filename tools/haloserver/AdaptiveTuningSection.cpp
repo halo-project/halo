@@ -52,29 +52,47 @@ void AdaptiveTuningSection::transitionToDecision(float Reward) {
   Status = ActivityState::MakeDecision;
 }
 
-
-std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, CodeVersion> const& Versions, std::string const& ToAvoid) {
+// chooses among the libraries in the given Versions map, either uniformly at random
+// or with a bias for the best performing ones. Must have at least 2 versions available.
+std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, CodeVersion> const& Versions, std::string const& ToAvoid, bool Uniformly) {
   assert(Versions.size() > 1);
-  std::uniform_int_distribution<size_t> dist(0, Versions.size()-1);
-  std::string NewLib = ToAvoid;
+  using Elm = std::pair<std::string, double>;
 
-  do {
-    size_t Chosen = dist(RNG);
-    size_t I = 0;
-    for (auto const& Entry : Versions) {
+  clogs(LC_Info) << "choosing among existing libraries, "
+                 << (Uniformly ? "AT RANDOM" : "WITH BIAS")
+                 << "\n";
 
-      if (I != Chosen) {
-        I++;
-        continue;
-      }
+  // collect the libs and qualities, omitting the one to avoid
+  std::vector<Elm> Libs;
+  for (auto const& V : Versions) {
+    if (V.first == ToAvoid)
+      continue;
+    Libs.emplace_back(V.first, V.second.getQuality().mean());
+  }
 
-      NewLib = Entry.first;
-      break;
-    }
+  if (Uniformly) {
+    // pick uniformly at random
+    std::uniform_int_distribution<size_t> dist(0, Libs.size()-1);
+    return Libs[dist(RNG)].first;
+  }
 
-  } while (NewLib == ToAvoid);
+  ///////
+  // pick with a strong bias towards the best ones
 
-  return NewLib;
+  // sort from best to worst
+  std::sort(Libs.begin(), Libs.end(), [](Elm const& A, Elm const& B) {
+    return A.second >= B.second;
+  });
+  assert(Libs.front().second >= Libs.back().second);
+
+  // probability of heads, which for 0.5 gives us an expected value of 0 (aka 1 coin-flip)
+  // so that we are biased towards picking the best one available
+  std::geometric_distribution<size_t> dist(0.5);
+
+  // clamp
+  const size_t Idx = std::min(dist(RNG), Libs.size()-1);
+
+  return Libs[Idx].first;
 }
 
 float AdaptiveTuningSection::computeReward() {
@@ -186,10 +204,10 @@ retryNonBakeoffStep:
     // consult MAB
     CurrentAction = MAB.choose();
 
-    if (CurrentAction == RunExperiment)
+    if (CurrentAction == RA_RunExperiment || CurrentAction == RA_RetryBest)
       return transitionTo(ActivityState::Experiment);
 
-    if (CurrentAction == Wait)
+    if (CurrentAction == RA_Wait)
       return transitionToWait();
 
     fatal_error("unhandled decision from MAB!");
@@ -236,8 +254,7 @@ retryNonBakeoffStep:
         // we can't explore at all. there's seemingly no code we can generate that's different.
         return transitionToWait();
 
-      clogs(LC_Info) << "Unable to generate a new code version, but we'll retry an existing one.\n";
-      NewLib = pickRandomly(PBT.getRNG(), Versions, BestLib);
+      NewLib = pickRandomly(PBT.getRNG(), Versions, BestLib, /*Uniformly=*/ true);
 
     } else {
       // not a duplicate!
@@ -254,13 +271,25 @@ retryNonBakeoffStep:
   ///////////////////////////////// EXPERIMENT
   assert(Status == ActivityState::Experiment);
 
-  // Ask for one config initially, and then keep enqueuing more
-  // if it has already pre-determined the next few.
-  do {
-    Compiler.enqueueCompilation(*Bitcode, std::move(PBT.getConfig(BestLib)));
-  } while (PBT.nextIsPredetermined());
+  assert(CurrentAction == RootAction::RA_RetryBest || CurrentAction == RootAction::RA_RunExperiment);
 
-  transitionTo(ActivityState::Compiling);
+  if (CurrentAction == RootAction::RA_RetryBest && Versions.size() > 1) {
+
+    // go right into a bake-off using an existing, top-performing library.
+    // the library chosen is biased towards the best-performing ones seen already.
+    return transitionToBakeoff(State, pickRandomly(PBT.getRNG(), Versions, BestLib, /*Uniformly=*/ false));
+
+  } else {
+    // Run an experiment with either a freshly generated config or one chosen uniformly at random
+
+    // Ask for one fresh config initially, and then keep enqueuing more
+    // if it has already pre-determined the next few.
+    do {
+      Compiler.enqueueCompilation(*Bitcode, std::move(PBT.getConfig(BestLib)));
+    } while (PBT.nextIsPredetermined());
+
+    return transitionTo(ActivityState::Compiling);
+  }
 }
 
 

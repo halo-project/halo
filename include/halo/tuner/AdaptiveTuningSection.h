@@ -63,7 +63,7 @@ private:
   BakeoffParameters BP;
   llvm::Optional<Bakeoff> Bakery;
   ActivityState Status{ActivityState::Experiment};
-  RootAction CurrentAction = RunExperiment;
+  RootAction CurrentAction = RA_RunExperiment;
   std::string BestLib;
 
   // for choosing a new code version
