@@ -27,29 +27,36 @@ if [[ ! $NUM_ITERS =~ [0-9]+ ]]; then
   exit 1
 fi
 
-BIN_DIR="$ROOT/bin"
-SERVER_EXE="$BIN_DIR/haloserver"
-TIME_EXE=$(command -v time)  # do not want built-in bash 'time'
-
-if [ -z "$TIME_EXE" ]; then
-  echo "GNU time command is missing!"
-  exit 1
-fi
-
 # the superset of all libs possibly needed by all benchmarks.
 LIBS="-lm"
 
-# control problem-size, etc.
-# PREPROCESSOR_FLAGS="-DSMALL_PROBLEM_SIZE"
-PREPROCESSOR_FLAGS=""
+# control problem-size and dirs etc.
+if [[ $USE_ARMENTA == 1 ]]; then
+  PREPROCESSOR_FLAGS="-DSMALL_PROBLEM_SIZE"
+  SERVER_EXE="./$ROOT/bin/haloserver"  # still local on this machine!
+
+  # armenta-specific paths
+  TEST_DIR="/home/kavon/halo/test"
+  BIN_DIR="/home/kavon/halo/$ROOT/bin"
+  TIME_EXE="/usr/bin/time"
+
+else
+  PREPROCESSOR_FLAGS=""
+  TEST_DIR="./test"
+  BIN_DIR="./$ROOT/bin"
+  SERVER_EXE="$BIN_DIR/haloserver"
+
+  TIME_EXE=$(command -v time)  # do not want built-in bash 'time'
+
+  if [ -z "$TIME_EXE" ]; then
+    echo "GNU time command is missing!"
+    exit 1
+  fi
+fi
 
 # files for managing PGO compilation
 PROFILE_RAW_FILE="default.profraw" # the default file that is written to if LLVM_PROFILE_FILE is not set
 PROFILE_DATA_FILE="code.profdata"
-
-# get directory of this script
-SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-TEST_DIR="$SELF_DIR/.."
 
 declare -a BENCHMARKS=(
   "bench/cpp/matrix.cpp"
@@ -84,8 +91,8 @@ HEADER="program,flags,aot_opt,trial,iter,time"
 echo "${HEADER}" | tee "${CSVFILE}"
 
 
-# we need to send output of the time command to a separate file.
-TIME_OUTPUT_FILE=$(mktemp)
+# we need to send output of client commands to a local file.
+CLIENT_CMD_OUT=$(mktemp)
 SERVER_PID="" # clear it to make sure we don't kill something random!
 SERVER_LOG=""
 
@@ -95,7 +102,7 @@ cleanup() {
       kill -9 $SERVER_PID
     fi
   fi
-  rm -f "$TIME_OUTPUT_FILE $PROFILE_RAW_FILE $PROFILE_DATA_FILE"
+  rm -f "$CLIENT_BIN $CLIENT_CMD_OUT $PROFILE_RAW_FILE $PROFILE_DATA_FILE"
 }
 
 # if we hit an error, try to print the server log if it exists, then clean-up
@@ -111,6 +118,16 @@ err_handler() {
 
 trap cleanup SIGINT EXIT
 trap err_handler ERR
+
+# the abstraction for running the given command either locally or on armenta.
+# all output of the command is saved to the output file.
+clientRun() {
+  if [[ $USE_ARMENTA == 1 ]]; then
+    ssh pi@armenta "cd ~/halo ; $@" &> "$CLIENT_CMD_OUT"
+  else
+    "$@" &> "$CLIENT_CMD_OUT"
+  fi
+}
 
 
 for PROG in "${BENCHMARKS[@]}"; do
@@ -136,16 +153,16 @@ for PROG in "${BENCHMARKS[@]}"; do
         # compile and run once with instrumentation-based profiling
         # based on: https://clang.llvm.org/docs/UsersManual.html#profile-guided-optimization
 
-        rm -f ${PROFILE_RAW_FILE} ${PROFILE_DATA_FILE} &> /dev/null
+        clientRun rm -f ${PROFILE_RAW_FILE} ${PROFILE_DATA_FILE}
 
         # compile with profiling enabled
-        ${CLANG_EXE} ${ALL_FLAGS} -fprofile-instr-generate "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN} &> /dev/null
+        clientRun "${CLANG_EXE}" ${ALL_FLAGS} -fprofile-instr-generate "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN}
 
         # run the profiling-enabled binary to generate data
-        ${CLIENT_BIN} &> /dev/null
+        clientRun "${CLIENT_BIN}"
 
         # turn the "raw" profile data into one suitable for feeding into compiler
-        ${BIN_DIR}/llvm-profdata merge -output=${PROFILE_DATA_FILE} ${PROFILE_RAW_FILE} &> /dev/null
+        clientRun "${BIN_DIR}/llvm-profdata" merge -output=${PROFILE_DATA_FILE} ${PROFILE_RAW_FILE}
 
         # add profile use flag to compilation flag
         ALL_FLAGS="${ALL_FLAGS} -fprofile-instr-use=${PROFILE_DATA_FILE}"
@@ -153,7 +170,7 @@ for PROG in "${BENCHMARKS[@]}"; do
 
       # compile!
       # NOTE: do NOT double-quote compilation flags!!! ignore shellcheck here.
-      ${CLANG_EXE} ${ALL_FLAGS} "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN} &> /dev/null
+      clientRun "${CLANG_EXE}" ${ALL_FLAGS} "${TEST_DIR}/${PROG}" ${LIBS} -o ${CLIENT_BIN}
 
       for TRIAL in $(seq 1 "$NUM_TRIALS"); do
         THIS_NUM_ITERS=${NUM_ITERS}
@@ -178,9 +195,9 @@ for PROG in "${BENCHMARKS[@]}"; do
           fi
 
           # run the program under 'time'
-          ${TIME_EXE} --format="%e" --output="${TIME_OUTPUT_FILE}" ${CLIENT_BIN} &> /dev/null
+          clientRun "${TIME_EXE}" --format="%e" ${CLIENT_BIN} "2>&1 | tail -n1"
 
-          ELAPSED_TIME=$(cat "${TIME_OUTPUT_FILE}")
+          ELAPSED_TIME=$(cat "${CLIENT_CMD_OUT}")
           CSV_ROW=$(printf "%s\n" "$PROG" "$FLAGS" "$AOT_OPT" "$TRIAL" "$ITER" "$ELAPSED_TIME"\
                                               | paste -sd ",")
 

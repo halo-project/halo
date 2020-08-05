@@ -1,7 +1,14 @@
 #!/bin/bash
 
 # quit if anything fails
-set -euo pipefail
+set -eo pipefail
+
+SELF_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+if [[ ! -f "$SELF_DIR/minibench.sh" ]]; then
+  echo "must run minibench.sh from the same directory in which the file resides."
+  exit 1
+fi
 
 TRIALS=5
 TUNING_ITERS=30
@@ -13,4 +20,8 @@ if [[ $# -gt 0 ]]; then
   fi
 fi
 
-./test/util/mini_bench.sh ./build $TRIALS $TUNING_ITERS
+if [[ -z $USE_ARMENTA ]]; then
+  export USE_ARMENTA=0
+fi
+
+./test/util/mini_bench.sh build $TRIALS $TUNING_ITERS
