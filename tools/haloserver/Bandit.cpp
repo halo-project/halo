@@ -40,7 +40,7 @@ namespace halo {
 
     // make sure first-ever choice is random
     Action bestAction = Actions[actionDice(RNG)];
-    float bestReward = 0.0;
+    float bestReward = ActionValue[bestAction].Expected;
 
     for (auto const& Entry : ActionValue) {
       Action Act = Entry.first;
