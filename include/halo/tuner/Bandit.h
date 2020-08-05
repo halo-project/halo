@@ -31,6 +31,8 @@ class RecencyWeightedBandit : public Bandit<Action> {
 public:
     /// @param actions  the options the bandit has to choose among
     ///
+    /// @param generator  the random number generator to use
+    ///
     /// @param stepSize must be in the range [0, 1], with the higher-end of
     ///                 the scale biasing towards more recently seen rewards,
     ///                 i.e., our opinion changes more strongly with newer info.
@@ -45,8 +47,7 @@ public:
     ///                 meaning 10% chance of exploration instead of exploitation.
     ///                 Must be in the range [0, 1].
     ///
-    /// @param seed     sets the internal random number generator's seed.
-    RecencyWeightedBandit(std::set<Action> actions, float stepSize=0.1, float epsilon=0.1, uint32_t seed=475391234);
+    RecencyWeightedBandit(std::set<Action> actions, std::mt19937_64& generator, float stepSize=0.2, float epsilon=0.1);
 
     Action choose() override;
 
@@ -66,7 +67,7 @@ private:
     float StepSize;
     float Epsilon;
     std::map<Action, Metadata> ActionValue;
-    std::mt19937 RNG;
+    std::mt19937_64& RNG;
 };
 
 } // end namespace

@@ -23,8 +23,8 @@ namespace halo {
   //
 
   template <typename Action>
-  RecencyWeightedBandit<Action>::RecencyWeightedBandit(std::set<Action> actions, float stepSize, float epsilon, uint32_t seed)
-    : Bandit<Action>(), Actions(actions.begin(), actions.end()), StepSize(stepSize), Epsilon(epsilon), RNG(seed) {
+  RecencyWeightedBandit<Action>::RecencyWeightedBandit(std::set<Action> actions, std::mt19937_64& generator, float stepSize, float epsilon)
+    : Bandit<Action>(), Actions(actions.begin(), actions.end()), StepSize(stepSize), Epsilon(epsilon), RNG(generator) {
       if (StepSize < 0.0 || StepSize > 1.0)
         fatal_error("invalid step size.");
 

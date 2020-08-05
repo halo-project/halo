@@ -16,9 +16,9 @@
     "ts-steps-per-wait": 10,
 
     "bakeoff-switch-rate": 5,
-    "bakeoff-max-switches": 10,
+    "bakeoff-max-switches": 12,
     "bakeoff-confidence": 95,
-    "bakeoff-min-samples": 4,
+    "bakeoff-min-samples": 5,
     "bakeoff-assumed-overhead": 0.05,
 
     "pbtuner-batch-size": 10,
