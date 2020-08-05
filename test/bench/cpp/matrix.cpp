@@ -1,4 +1,4 @@
-// RUN: %clang -DSMALL_PROBLEM_SIZE -O1 -fhalo %s -o %t
+// RUN: %clang -O1 -fhalo %s -o %t
 // RUN: %testhalo %server 1 %t %t-out.txt
 
 #include "matmul.hpp"
@@ -47,9 +47,9 @@ using ElmTy = double;
 #define DIM 256
 
 #ifdef SMALL_PROBLEM_SIZE
-  #define ITERS 500
+  #define ITERS 125
 #else
-  #define ITERS 1000
+  #define ITERS 500
 #endif
 
 int main() {

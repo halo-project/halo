@@ -1,4 +1,4 @@
-// RUN: %clang -DSMALL_PROBLEM_SIZE -O1 -fhalo %s -o %t
+// RUN: %clang -O1 -fhalo %s -o %t
 // RUN: %testhalo %server 1 %t %t-out.txt
 // RUN: diff -w %t-out.txt %s.expected
 
@@ -23,9 +23,9 @@ double get_time(void);
 
 #define N 1024
 #ifdef SMALL_PROBLEM_SIZE
-#define TRIES 500000
+  #define TRIES 125000
 #else
-#define TRIES 1000000
+  #define TRIES 500000
 #endif
 
 

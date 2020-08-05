@@ -40,7 +40,8 @@ fi
 LIBS="-lm"
 
 # control problem-size, etc.
-PREPROCESSOR_FLAGS="-DSMALL_PROBLEM_SIZE"
+# PREPROCESSOR_FLAGS="-DSMALL_PROBLEM_SIZE"
+PREPROCESSOR_FLAGS=""
 
 # files for managing PGO compilation
 PROFILE_RAW_FILE="default.profraw" # the default file that is written to if LLVM_PROFILE_FILE is not set
@@ -55,11 +56,10 @@ declare -a BENCHMARKS=(
   "bench/c/spectralnorm.c"
   "bench/c/oourafft.c"
   "bench/c/n-body.c"
-  # "basic/fixed_workload.c"
-  # "basic/random_workload.c"
-  # "bench/c/almabench.c"
   "bench/c/perlin.c"
   "bench/c/ReedSolomon.c"
+  "basic/fixed_workload.c"
+  "basic/random_workload.c"
 )
 
 declare -a AOT_OPTS=(
@@ -73,9 +73,9 @@ declare -a OPTIONS=(
   "none"
   "pgo"
   "-fhalo"
+  "withserver -fhalo;--halo-strategy=jit"
   "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=calls"
   "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=ipc"
-  "withserver -fhalo;--halo-strategy=jit"
 )
 
 # overwrite and create the file

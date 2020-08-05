@@ -1,4 +1,4 @@
-// RUN: %clang -DSMALL_PROBLEM_SIZE -O1 -fhalo %s -o %t
+// RUN: %clang -O1 -fhalo %s -o %t
 // RUN: %testhalo %server 1 %t %t-out.txt
 // RUN: diff -w %t-out.txt %s.expected
 
@@ -13,9 +13,9 @@
 #define SPECTRAL_N 2000
 
 #ifdef SMALL_PROBLEM_SIZE
-  #define ITERS 64
+  #define ITERS 16
 #else
-  #define ITERS 128
+  #define ITERS 64
 #endif
 
  ///////////////////////////

@@ -2,6 +2,12 @@
 // RUN: %testhalo %server 1 %t %t-out.txt
 // RUN: diff -w %t-out.txt %s.expected
 
+#ifdef SMALL_PROBLEM_SIZE
+  #define NUM_LOOPS 10
+#else
+  #define NUM_LOOPS 40
+#endif
+
 #define NO_INLINE __attribute__((noinline))
 
 // perlin noise, derived from the Java reference implementation at
@@ -61,8 +67,6 @@ static double noise(double x, double y, double z) {
                                  grad(p[BB+1], x-1, y-1, z-1 ))));
 }
 
-
-#define NUM_LOOPS 40
 
 static void init() {
   int i = 0;

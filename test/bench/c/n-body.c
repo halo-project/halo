@@ -1,4 +1,4 @@
-// RUN: %clang -DSMALL_PROBLEM_SIZE -O1 -fhalo %s -o %t
+// RUN: %clang -O1 -fhalo %s -o %t
 // RUN: %testhalo %server 1 %t %t-out.txt
 
 
@@ -12,9 +12,9 @@
  */
 
 #ifdef SMALL_PROBLEM_SIZE
-  #define ITERS 50
+  #define ITERS 12
 #else
-  #define ITERS 100
+  #define ITERS 50
 #endif
 
 #include <math.h>

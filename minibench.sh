@@ -3,8 +3,8 @@
 # quit if anything fails
 set -euo pipefail
 
-TRIALS=4
-TUNING_ITERS=20
+TRIALS=5
+TUNING_ITERS=30
 
 # limit running time when only doing regression testing
 if [[ $# -gt 0 ]]; then

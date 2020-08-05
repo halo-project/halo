@@ -3,9 +3,9 @@
 // RUN: diff -w %t-out.txt %s.expected
 
 #ifdef SMALL_PROBLEM_SIZE
-#define ITERS 150000
+  #define ITERS 75000
 #else
-#define ITERS 300000
+  #define ITERS 300000
 #endif
 
 
