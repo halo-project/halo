@@ -334,7 +334,9 @@ void AdaptiveTuningSection::dump() const {
 AdaptiveTuningSection::AdaptiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
   : TuningSection(TSI, RootFunc),
     PBT(TSI.Config, BaseKnobs, Versions),
-    MAB(RootActions, PBT.getRNG()),
+    MAB(RootActions, PBT.getRNG(),
+      config::getServerSetting<float>("mab-step-size", TSI.Config),
+      config::getServerSetting<float>("mab-epsilon", TSI.Config)),
     BakeoffPenalty(1.0f - config::getServerSetting<float>("bakeoff-assumed-overhead", TSI.Config)),
     StepsPerWaitAction(config::getServerSetting<unsigned>("ts-steps-per-wait", TSI.Config)),
     BP(TSI.Config),
