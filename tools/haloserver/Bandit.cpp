@@ -2,8 +2,19 @@
 #include "halo/tuner/Bandit.h"
 #include "llvm/Support/Error.h"
 
+#include "Logging.h"
+
 
 namespace halo {
+
+  std::string actionAsString(RootAction A) {
+    switch (A) {
+      case RootAction::RA_RunExperiment:  return "Experiment";
+      case RootAction::RA_RetryBest:      return "Retry";
+      case RootAction::RA_Wait:           return "Wait";
+    }
+    fatal_error("unknown action in actionAsString");
+  }
 
   // NOTE: ideas for tweaking based on existing work include:
   //
@@ -15,10 +26,10 @@ namespace halo {
   RecencyWeightedBandit<Action>::RecencyWeightedBandit(std::set<Action> actions, float stepSize, float epsilon, uint32_t seed)
     : Bandit<Action>(), Actions(actions.begin(), actions.end()), StepSize(stepSize), Epsilon(epsilon), RNG(seed) {
       if (StepSize < 0.0 || StepSize > 1.0)
-        llvm::report_fatal_error("invalid step size.");
+        fatal_error("invalid step size.");
 
       if (Epsilon < 0.0 || Epsilon > 1.0)
-        llvm::report_fatal_error("invalid probability for epsilon.");
+        fatal_error("invalid probability for epsilon.");
     }
 
 
@@ -80,6 +91,13 @@ namespace halo {
       step = StepSize;
 
     MD.Expected += step * (newReward - MD.Expected);
+  }
+
+  template <typename Action>
+  void RecencyWeightedBandit<Action>::dump(LoggingContext LC) const {
+      for (auto const& Entry : ActionValue) {
+        clogs(LC) << "\t" << actionAsString(Entry.first) << " --> " << Entry.second.Expected << "\n";
+      }
   }
 
 

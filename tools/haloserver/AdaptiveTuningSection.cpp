@@ -311,6 +311,9 @@ void AdaptiveTuningSection::dump() const {
   float UniqueCompileRate = TotalCompiles == 0 ? 0
                             : 100.0 * (1.0 - (DuplicateCompiles / static_cast<double>(TotalCompiles)));
 
+  clogs() << "\nMAB ActionValues = \n";
+  MAB.dump(LC_Anywhere);
+
   clogs() << "\n\tStatus = " << stateToString(Status)
           << "\n\tBestLib = " << BestLib
           << "\n\t# Steps = " << Steps

@@ -3,6 +3,7 @@
 #include <set>
 #include <map>
 #include <random>
+#include "Logging.h"
 
 namespace halo {
 
@@ -19,6 +20,8 @@ public:
 
     /// Provide the model with a reward for the given action.
     virtual void reward(Action, float) = 0;
+
+    virtual void dump(LoggingContext) const = 0;
 };
 
 
@@ -48,6 +51,8 @@ public:
     Action choose() override;
 
     void reward(Action, float) override;
+
+    void dump(LoggingContext LC=LC_Info) const override;
 
 private:
     // The defaults of these members must be valid for actions that have
