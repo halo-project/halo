@@ -66,7 +66,10 @@ void ExecutionTimeProfiler::observeOne(ClientID ID, CodeRegionInfo const& CRI, p
     } else { // initialize based on this observation.
 
       // we compute this function's MilliPerCall and initialize the average
+      // we adjust the time unit so that the baseline is ~2 calls per time unit,
+      // with the hope of better emphasizing differences in implementations
       Avg.MilliPerCall = std::ceil((ElapsedTime / ElapsedCalls) / NANO_PER_MILLI);
+      Avg.MilliPerCall *= 2;
       assert(Avg.MilliPerCall != 0);
 
       Avg.Value = ComputeCallsPerTimeUnit(Avg.MilliPerCall);
