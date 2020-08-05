@@ -79,14 +79,22 @@ std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, C
 
 float AdaptiveTuningSection::computeReward() {
   // NOTE: relying on assumption that larger "quality"  means better
-  auto const& CurrentQ = Versions.at(BestLib).getQuality();
-  float Reward = CurrentQ.mean();
+  // auto const& CurrentQ = Versions.at(BestLib).getQuality();
 
-  // big reward for this action if the bake-off succeeded
+  float Reward = 0;
+
   if (Bakery.hasValue()) {
     auto &Bakeoff = Bakery.getValue();
-    if (Bakeoff.lastResult() == Bakeoff::Result::NewIsBetter)
-      Reward *= 10;
+    auto Result = Bakeoff.lastResult();
+
+    if (Result == Bakeoff::Result::NewIsBetter)
+      Reward = 1;
+    else if (Result == Bakeoff::Result::CurrentIsBetter)
+      Reward = -1;
+    else if (Result == Bakeoff::Result::Timeout)
+      Reward = -0.25;
+    else
+      fatal_error("Unexpected Bakeoff Result during reward computation");
 
     Bakery = llvm::None;
   }
