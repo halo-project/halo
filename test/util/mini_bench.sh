@@ -90,13 +90,23 @@ CLIENT_CMD_OUT=$(mktemp)
 SERVER_PID="" # clear it to make sure we don't kill something random!
 SERVER_LOG=""
 
+# the abstraction for running the given command either locally or on armenta.
+# all output of the command is saved to the output file.
+clientRun() {
+  if [[ $USE_ARMENTA != 0 ]]; then
+    ssh pi@armenta "cd halo ; HALO_HOSTNAME=${USE_ARMENTA} $@" &> "$CLIENT_CMD_OUT"
+  else
+    "$@" &> "$CLIENT_CMD_OUT"
+  fi
+}
+
 cleanup() {
   if [[ -n "$SERVER_PID" ]]; then
     if kill -0 $SERVER_PID 2> /dev/null ; then
       kill -9 $SERVER_PID
     fi
   fi
-  rm -f "$CLIENT_BIN $CLIENT_CMD_OUT $PROFILE_RAW_FILE $PROFILE_DATA_FILE"
+  clientRun rm -f "$CLIENT_BIN" "$CLIENT_CMD_OUT" "$PROFILE_RAW_FILE" "$PROFILE_DATA_FILE"
 }
 
 # if we hit an error, try to print the server log if it exists, then clean-up
@@ -116,16 +126,6 @@ err_handler() {
 
 trap cleanup SIGINT EXIT
 trap err_handler ERR
-
-# the abstraction for running the given command either locally or on armenta.
-# all output of the command is saved to the output file.
-clientRun() {
-  if [[ $USE_ARMENTA != 0 ]]; then
-    ssh pi@armenta "cd halo ; HALO_HOSTNAME=${USE_ARMENTA} $@" &> "$CLIENT_CMD_OUT"
-  else
-    "$@" &> "$CLIENT_CMD_OUT"
-  fi
-}
 
 
 for PROG in "${BENCHMARKS[@]}"; do
