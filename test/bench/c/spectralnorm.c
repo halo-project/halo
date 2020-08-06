@@ -14,8 +14,10 @@
 
 #ifdef SMALL_PROBLEM_SIZE
   #define ITERS 16
+  #define FLOAT_TY float
 #else
   #define ITERS 64
+  #define FLOAT_TY double
 #endif
 
  ///////////////////////////
@@ -25,9 +27,9 @@
 #include "math.h"
 #include "stdio.h"
 
-double eval_A(int i, int j) { return 1.0/((i+j)*(i+j+1)/2+i+1); }
+FLOAT_TY eval_A(int i, int j) { return 1.0/((i+j)*(i+j+1)/2+i+1); }
 
-void eval_A_times_u(int N, const double u[], double Au[])
+void eval_A_times_u(int N, const FLOAT_TY u[], FLOAT_TY Au[])
 {
   int i,j;
   for(i=0;i<N;i++)
@@ -37,7 +39,7 @@ void eval_A_times_u(int N, const double u[], double Au[])
     }
 }
 
-void eval_At_times_u(int N, const double u[], double Au[])
+void eval_At_times_u(int N, const FLOAT_TY u[], FLOAT_TY Au[])
 {
   int i,j;
   for(i=0;i<N;i++)
@@ -47,8 +49,8 @@ void eval_At_times_u(int N, const double u[], double Au[])
     }
 }
 
-void eval_AtA_times_u(int N, const double u[], double AtAu[]) {
-  double* v = (double*) malloc(sizeof(double) * N);
+void eval_AtA_times_u(int N, const FLOAT_TY u[], FLOAT_TY AtAu[]) {
+  FLOAT_TY* v = (FLOAT_TY*) malloc(sizeof(FLOAT_TY) * N);
   eval_A_times_u(N,u,v);
   eval_At_times_u(N,v,AtAu);
   free(v);
@@ -59,11 +61,11 @@ void eval_AtA_times_u(int N, const double u[], double AtAu[]) {
 // start of benchmark. default N is 2000
 //
 // for N = 100, output should be 1.274219991
-double __attribute__((noinline)) spectralnorm (const int N) {
+FLOAT_TY __attribute__((noinline)) spectralnorm (const int N) {
   int i;
-  double* u = (double*) malloc(sizeof(double) * N);
-  double* v = (double*) malloc(sizeof(double) * N);
-  double vBv,vv;
+  FLOAT_TY* u = (FLOAT_TY*) malloc(sizeof(FLOAT_TY) * N);
+  FLOAT_TY* v = (FLOAT_TY*) malloc(sizeof(FLOAT_TY) * N);
+  FLOAT_TY vBv,vv;
   for(i=0;i<N;i++) u[i]=1;
   for(i=0;i<10;i++)
     {
@@ -79,7 +81,7 @@ double __attribute__((noinline)) spectralnorm (const int N) {
 
 /////////////////////////////////////////////////////////////////
 
-volatile double ans = 0;
+volatile FLOAT_TY ans = 0;
 
 int main() {
   for (unsigned i = 0; i < ITERS; i++) {

@@ -42,14 +42,14 @@ bool verifyCheck(int N, ElmTy *C) {
 }
 
 
-
-using ElmTy = double;
 #define DIM 256
 
 #ifdef SMALL_PROBLEM_SIZE
   #define ITERS 125
+  using ElmTy = float;
 #else
   #define ITERS 500
+  using ElmTy = double;
 #endif
 
 int main() {

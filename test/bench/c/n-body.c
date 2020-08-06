@@ -13,8 +13,10 @@
 
 #ifdef SMALL_PROBLEM_SIZE
   #define ITERS 12
+  #define FLOAT_TY float
 #else
   #define ITERS 50
+  #define FLOAT_TY double
 #endif
 
 #include <math.h>
@@ -27,12 +29,12 @@
 #define days_per_year 365.24
 
 struct planet {
-  double x, y, z;
-  double vx, vy, vz;
-  double mass;
+  FLOAT_TY x, y, z;
+  FLOAT_TY vx, vy, vz;
+  FLOAT_TY mass;
 };
 
-void advance(int nbodies, struct planet * bodies, double dt)
+void advance(int nbodies, struct planet * bodies, FLOAT_TY dt)
 {
   int i, j;
 
@@ -40,11 +42,11 @@ void advance(int nbodies, struct planet * bodies, double dt)
     struct planet * b = &(bodies[i]);
     for (j = i + 1; j < nbodies; j++) {
       struct planet * b2 = &(bodies[j]);
-      double dx = b->x - b2->x;
-      double dy = b->y - b2->y;
-      double dz = b->z - b2->z;
-      double distance = sqrt(dx * dx + dy * dy + dz * dz);
-      double mag = dt / (distance * distance * distance);
+      FLOAT_TY dx = b->x - b2->x;
+      FLOAT_TY dy = b->y - b2->y;
+      FLOAT_TY dz = b->z - b2->z;
+      FLOAT_TY distance = sqrt(dx * dx + dy * dy + dz * dz);
+      FLOAT_TY mag = dt / (distance * distance * distance);
       b->vx -= dx * b2->mass * mag;
       b->vy -= dy * b2->mass * mag;
       b->vz -= dz * b2->mass * mag;
@@ -61,9 +63,9 @@ void advance(int nbodies, struct planet * bodies, double dt)
   }
 }
 
-double energy(int nbodies, struct planet * bodies)
+FLOAT_TY energy(int nbodies, struct planet * bodies)
 {
-  double e;
+  FLOAT_TY e;
   int i, j;
 
   e = 0.0;
@@ -72,10 +74,10 @@ double energy(int nbodies, struct planet * bodies)
     e += 0.5 * b->mass * (b->vx * b->vx + b->vy * b->vy + b->vz * b->vz);
     for (j = i + 1; j < nbodies; j++) {
       struct planet * b2 = &(bodies[j]);
-      double dx = b->x - b2->x;
-      double dy = b->y - b2->y;
-      double dz = b->z - b2->z;
-      double distance = sqrt(dx * dx + dy * dy + dz * dz);
+      FLOAT_TY dx = b->x - b2->x;
+      FLOAT_TY dy = b->y - b2->y;
+      FLOAT_TY dz = b->z - b2->z;
+      FLOAT_TY distance = sqrt(dx * dx + dy * dy + dz * dz);
       e -= (b->mass * b2->mass) / distance;
     }
   }
@@ -84,7 +86,7 @@ double energy(int nbodies, struct planet * bodies)
 
 void offset_momentum(int nbodies, struct planet * bodies)
 {
-  double px = 0.0, py = 0.0, pz = 0.0;
+  FLOAT_TY px = 0.0, py = 0.0, pz = 0.0;
   int i;
   for (i = 0; i < nbodies; i++) {
     px += bodies[i].vx * bodies[i].mass;
@@ -141,20 +143,20 @@ struct planet bodies[NBODIES] = {
 
 
 // returns difference in energy.
-double __attribute__((noinline)) workFn() {
+FLOAT_TY __attribute__((noinline)) workFn() {
   int n = 5000000;
   int i;
 
   offset_momentum(NBODIES, bodies);
-  double beforeEnergy = energy(NBODIES, bodies);
+  FLOAT_TY beforeEnergy = energy(NBODIES, bodies);
   for (i = 1; i <= n; i++)
     advance(NBODIES, bodies, 0.01);
-  double afterEnergy = energy(NBODIES, bodies);
+  FLOAT_TY afterEnergy = energy(NBODIES, bodies);
 
   return beforeEnergy - afterEnergy;
 }
 
-volatile double energyLoss = 0;
+volatile FLOAT_TY energyLoss = 0;
 
 int main(int argc, char ** argv)
 {
