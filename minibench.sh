@@ -20,6 +20,10 @@ if [[ $# -gt 0 ]]; then
   fi
 fi
 
+# if USE_ARMENTA is set, then that's the ip address of this local host
+# and then we run the client on armenta.
+#
+# otherwise we set it to 0 to indicate local client.
 if [[ -z $USE_ARMENTA ]]; then
   export USE_ARMENTA=0
 fi

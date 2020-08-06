@@ -31,7 +31,7 @@ fi
 LIBS="-lm"
 
 # control problem-size and dirs etc.
-if [[ $USE_ARMENTA == 1 ]]; then
+if [[ $USE_ARMENTA != 0 ]]; then
   PREPROCESSOR_FLAGS="-DSMALL_PROBLEM_SIZE"
   SERVER_EXE="./$ROOT/bin/haloserver"  # still local on this machine!
 
@@ -116,8 +116,8 @@ trap err_handler ERR
 # the abstraction for running the given command either locally or on armenta.
 # all output of the command is saved to the output file.
 clientRun() {
-  if [[ $USE_ARMENTA == 1 ]]; then
-    ssh pi@armenta "cd ~/halo ; $@" &> "$CLIENT_CMD_OUT"
+  if [[ $USE_ARMENTA != 0 ]]; then
+    ssh pi@armenta "cd ~/halo ; HALO_HOSTNAME=${USE_ARMENTA} $@" &> "$CLIENT_CMD_OUT"
   else
     "$@" &> "$CLIENT_CMD_OUT"
   fi
