@@ -3,7 +3,7 @@
 
 // controls the NxN image resolution
 #ifdef SMALL_PROBLEM_SIZE
-	#define TEST_SIZE 512
+	#define TEST_SIZE 640
 #else
 	#define TEST_SIZE 2048
 #endif
