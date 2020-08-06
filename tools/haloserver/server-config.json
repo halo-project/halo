@@ -48,6 +48,11 @@
     },
     {
       "kind": "flag",
+      "name": "pbqp-regalloc",
+      "default": false
+    },
+    {
+      "kind": "flag",
       "name": "extra-vectorizer-passes",
       "default": false
     },

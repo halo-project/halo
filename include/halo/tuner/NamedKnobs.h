@@ -24,6 +24,7 @@ namespace halo {
 
     static const ty NativeCPU       = {"native-cpu",       Knob::KK_Flag};
     static const ty IPRA            = {"ipra",             Knob::KK_Flag};
+    static const ty PBQP            = {"pbqp-regalloc",             Knob::KK_Flag};
     static const ty AttributorEnable    = {"attributor-enable",           Knob::KK_Flag};
     static const ty PartialInlineEnable = {"partial-inliner-enable",      Knob::KK_Flag};
     static const ty UnrollAndJamEnable  = {"unroll-and-jam-pass-enable",  Knob::KK_Flag};
@@ -69,6 +70,7 @@ namespace halo {
     static const std::unordered_map<std::string, Knob::KnobKind> Corpus = {
       NativeCPU,
       IPRA,
+      PBQP,
       AttributorEnable,
       PartialInlineEnable,
       UnrollAndJamEnable,

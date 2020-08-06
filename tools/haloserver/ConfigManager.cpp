@@ -80,19 +80,21 @@ llvm::Optional<KnobSet> ConfigManager::genExpertOpinion(KnobSet const& BaseKnobs
 
     case 1: {
       // set the lesser-used but seemingly safe & good flags
-      KS.lookup<FlagKnob>(named_knob::NativeCPU).setFlag(true);
       KS.lookup<FlagKnob>(named_knob::IPRA).setFlag(true);
+      KS.lookup<FlagKnob>(named_knob::PBQP).setFlag(true);
       KS.lookup<FlagKnob>(named_knob::AttributorEnable).setFlag(true);
       KS.lookup<FlagKnob>(named_knob::ExperimentalAlias).setFlag(true);
     }; // FALL-THROUGH
 
     case 0: {
-      // just -O3
+      // equivalent to -O3 -mcpu=native
       KS.lookup<OptLvlKnob>(named_knob::OptimizeLevel)
         .setVal(llvm::PassBuilder::OptimizationLevel::O3);
 
       KS.lookup<OptLvlKnob>(named_knob::CodegenLevel)
         .setVal(llvm::PassBuilder::OptimizationLevel::O3);
+
+      KS.lookup<FlagKnob>(named_knob::NativeCPU).setFlag(true);
     } break;
 
 

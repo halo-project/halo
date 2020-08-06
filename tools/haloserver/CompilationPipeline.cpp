@@ -16,6 +16,8 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Support/PrettyStackTrace.h"
 #include "llvm/Support/TimeProfiler.h"
+#include "llvm/CodeGen/RegAllocRegistry.h"
+#include "llvm/CodeGen/RegAllocPBQP.h"
 
 #include "Logging.h"
 
@@ -32,6 +34,11 @@ extern cl::opt<bool> ExtraVectorizerPasses;
 extern cl::opt<int> SLPCostThreshold; // N means it it gains N in performance / profit. So negative numbers make it more willing to vectorize.
 extern cl::opt<unsigned> BBDuplicateThreshold; // max number of instructions in BB for jump-threading
 extern cl::opt<CFLAAType> UseCFLAA;
+
+// for controlling register allocation
+extern cl::opt<RegisterRegAlloc::FunctionPassCtor, false, RegisterPassParser<RegisterRegAlloc>> RegAlloc;
+extern FunctionPass *useDefaultRegisterAllocator();
+// there's also createDefaultPBQPRegisterAllocator(), etc.
 
 // these two are related but in separate parts of LLVM
 extern cl::opt<bool> UseLoopVersioningLICM;
@@ -59,6 +66,7 @@ void setCLOptions(KnobSet const& Knobs) {
   SLPCostThreshold = 0;
   BBDuplicateThreshold = 6;
   UseCFLAA = CFLAAType::None;
+  RegAlloc = &useDefaultRegisterAllocator;
 
   UseLoopVersioningLICM = false;
   LVInvarThreshold = 25;
@@ -117,6 +125,13 @@ void setCLOptions(KnobSet const& Knobs) {
          PrefetchWrites = (Flag ? cl::boolOrDefault::BOU_TRUE : cl::boolOrDefault::BOU_FALSE);
        });
 
+  Knobs.lookup<FlagKnob>(named_knob::PBQP)
+       .applyFlag([&](bool Enabled) {
+          if (Enabled)
+            RegAlloc = &createDefaultPBQPRegisterAllocator;
+          else
+            RegAlloc = &useDefaultRegisterAllocator;
+       });
 }
 
 Expected<std::unique_ptr<MemoryBuffer>> compile(TargetMachine &TM, Module &M) {
