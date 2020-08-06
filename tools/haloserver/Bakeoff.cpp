@@ -194,7 +194,7 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
   bool SawDeployedQuality = TS->Versions[Deployed.first].updateQuality(TS->Profile, TS->FnGroup);
 
   bool SawOtherQuality = false;
-  if (CodeVersion::getMetricKind() == Metric::IPC) {
+  if (!SawDeployedQuality && CodeVersion::getMetricKind() == Metric::IPC) {
     // if the IPC metric is in use, then we can accurately differentiate between samples
     // between two library versions. thus, it is safe to continue gathering profile data
     // if the client is still using the other version.

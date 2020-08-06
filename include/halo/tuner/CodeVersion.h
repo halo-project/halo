@@ -85,7 +85,7 @@ class CodeVersion {
   std::set<SHAHash> ObjFileHashes;
   std::vector<KnobSet> Configs;
 
-  RandomQuantity Quality{50};
+  RandomQuantity Quality{128};
   size_t PerfSamplesSeen{0};
   size_t CallSamplesSeen{0};
 

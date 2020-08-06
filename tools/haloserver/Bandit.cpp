@@ -101,7 +101,9 @@ namespace halo {
   template <typename Action>
   void RecencyWeightedBandit<Action>::dump(LoggingContext LC) const {
       for (auto const& Entry : ActionValue) {
-        clogs(LC) << "\t" << actionAsString(Entry.first) << " --> " << Entry.second.Expected << "\n";
+        clogs(LC) << "\t" << actionAsString(Entry.first)
+                  << " x " << Entry.second.NumOccurred
+                  << " --> " << Entry.second.Expected << "\n";
       }
   }
 

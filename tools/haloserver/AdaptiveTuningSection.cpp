@@ -322,7 +322,7 @@ float AdaptiveTuningSection::computeReward() {
     else if (Result == Bakeoff::Result::CurrentIsBetter)
       Reward = -1;
     else if (Result == Bakeoff::Result::Timeout)
-      Reward = -0.33333333f;
+      Reward = -0.5f;
     else
       fatal_error("Unexpected Bakeoff Result during reward computation");
 
@@ -353,7 +353,7 @@ AdaptiveTuningSection::AdaptiveTuningSection(TuningSectionInitializer TSI, std::
     // seed the MAB with our initial, highly optimistic guess to force a bit of
     // exploration when starting off on to help seed the surrogate model.
     const std::map<RootAction, float> InitialRewards = {
-      {RootAction::RA_RunExperiment, 5},
+      {RootAction::RA_RunExperiment, 0.25},
       {RootAction::RA_RetryBest, 0},
       {RootAction::RA_Wait, 0}
     };
