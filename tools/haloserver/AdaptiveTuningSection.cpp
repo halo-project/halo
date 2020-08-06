@@ -350,10 +350,9 @@ AdaptiveTuningSection::AdaptiveTuningSection(TuningSectionInitializer TSI, std::
     Versions[Name] = std::move(OriginalLib);
     BestLib = Name;
 
-    // seed the MAB with our initial, highly optimistic guess to force a bit of
-    // exploration when starting off on to help seed the surrogate model.
+    // seed the MAB with our initial guess about the rewards for exploring.
     const std::map<RootAction, float> InitialRewards = {
-      {RootAction::RA_RunExperiment, 0.25},
+      {RootAction::RA_RunExperiment, config::getServerSetting<float>("mab-initial-explore-reward", TSI.Config)},
       {RootAction::RA_RetryBest, 0},
       {RootAction::RA_Wait, 0}
     };

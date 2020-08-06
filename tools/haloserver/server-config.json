@@ -17,6 +17,7 @@
 
     "mab-step-size": 0.1,
     "mab-epsilon": 0.1,
+    "mab-initial-explore-reward": 0.33333,
 
     "bakeoff-switch-rate": 5,
     "bakeoff-max-switches": 12,
