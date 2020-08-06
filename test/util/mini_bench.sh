@@ -53,12 +53,12 @@ PROFILE_RAW_FILE="default.profraw" # the default file that is written to if LLVM
 PROFILE_DATA_FILE="code.profdata"
 
 declare -a BENCHMARKS=(
+  "bench/cpp/smallpt.cpp"
   "bench/cpp/matrix.cpp"
   "bench/c/spectralnorm.c"
   "bench/c/oourafft.c"
   "bench/c/n-body.c"
   "bench/c/perlin.c"
-  "bench/c/ReedSolomon.c"
   # "basic/fixed_workload.c"
   # "basic/random_workload.c"
 )
