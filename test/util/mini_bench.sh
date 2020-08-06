@@ -36,8 +36,8 @@ if [[ $USE_ARMENTA != 0 ]]; then
   SERVER_EXE="./$ROOT/bin/haloserver"  # still local on this machine!
 
   # armenta-specific paths
-  TEST_DIR="/home/kavon/halo/test"
-  BIN_DIR="/home/kavon/halo/$ROOT/bin"
+  TEST_DIR="/home/pi/halo/test"
+  BIN_DIR="/home/pi/halo/$ROOT/bin"
 
 else
   PREPROCESSOR_FLAGS=""
@@ -107,6 +107,10 @@ err_handler() {
     tail -n 50 "$SERVER_LOG"
     echo "See more in the log at $SERVER_LOG"
   fi
+  # clear out running a.out processes on armenta
+  if [[ $USE_ARMENTA != 0 ]]; then
+    ssh pi@armenta pkill -u pi a.out
+  fi
   cleanup
 }
 
@@ -117,7 +121,7 @@ trap err_handler ERR
 # all output of the command is saved to the output file.
 clientRun() {
   if [[ $USE_ARMENTA != 0 ]]; then
-    ssh pi@armenta "cd ~/halo ; HALO_HOSTNAME=${USE_ARMENTA} $@" &> "$CLIENT_CMD_OUT"
+    ssh pi@armenta "cd halo ; HALO_HOSTNAME=${USE_ARMENTA} $@" &> "$CLIENT_CMD_OUT"
   else
     "$@" &> "$CLIENT_CMD_OUT"
   fi
