@@ -10,14 +10,14 @@
  * Adapted by Kavon Farvardin
  */
 
-#define SPECTRAL_N 2000
-
 #ifdef SMALL_PROBLEM_SIZE
-  #define ITERS 16
+  #define ITERS 64
   #define FLOAT_TY float
+  #define SPECTRAL_N 1000
 #else
   #define ITERS 64
   #define FLOAT_TY double
+  #define SPECTRAL_N 2000
 #endif
 
  ///////////////////////////

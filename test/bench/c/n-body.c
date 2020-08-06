@@ -12,10 +12,10 @@
  */
 
 #ifdef SMALL_PROBLEM_SIZE
-  #define ITERS 12
+  #define ITERS 125
   #define FLOAT_TY float
 #else
-  #define ITERS 50
+  #define ITERS 500
   #define FLOAT_TY double
 #endif
 
@@ -144,7 +144,7 @@ struct planet bodies[NBODIES] = {
 
 // returns difference in energy.
 FLOAT_TY __attribute__((noinline)) workFn() {
-  int n = 5000000;
+  int n = 250000;
   int i;
 
   offset_momentum(NBODIES, bodies);
