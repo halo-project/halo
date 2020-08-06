@@ -67,13 +67,13 @@ declare -a AOT_OPTS=(
   # "-O0"
   "-O1"
   # "-O2"
-  "-O3"
+  # "-O3"
 )
 
 declare -a OPTIONS=(
   "none"
-  "pgo"
   "-fhalo"
+  "pgo"
   "withserver -fhalo;--halo-strategy=jit"
   "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=calls"
   "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=ipc"
@@ -162,8 +162,8 @@ for PROG in "${BENCHMARKS[@]}"; do
         # turn the "raw" profile data into one suitable for feeding into compiler
         clientRun "${BIN_DIR}/llvm-profdata" merge -output=${PROFILE_DATA_FILE} ${PROFILE_RAW_FILE}
 
-        # add profile use flag to compilation flag
-        ALL_FLAGS="${ALL_FLAGS} -fprofile-instr-use=${PROFILE_DATA_FILE}"
+        # add profile-use flag to compilation flags and pick very aggressive options for final compile
+        ALL_FLAGS="${ALL_FLAGS} -fprofile-instr-use=${PROFILE_DATA_FILE} -O3 -mcpu=native"
       fi
 
       # compile!
