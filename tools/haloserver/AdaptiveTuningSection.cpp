@@ -95,31 +95,6 @@ std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, C
   return Libs[Idx].first;
 }
 
-float AdaptiveTuningSection::computeReward() {
-  // NOTE: relying on assumption that larger "quality"  means better
-  // auto const& CurrentQ = Versions.at(BestLib).getQuality();
-
-  float Reward = 0;
-
-  if (Bakery.hasValue()) {
-    auto &Bakeoff = Bakery.getValue();
-    auto Result = Bakeoff.lastResult();
-
-    if (Result == Bakeoff::Result::NewIsBetter)
-      Reward = 1;
-    else if (Result == Bakeoff::Result::CurrentIsBetter)
-      Reward = -1;
-    else if (Result == Bakeoff::Result::Timeout)
-      Reward = -0.25;
-    else
-      fatal_error("Unexpected Bakeoff Result during reward computation");
-
-    Bakery = llvm::None;
-  }
-
-  return Reward;
-}
-
 
 
 /// The implementation of this take-step always must assume that
@@ -331,6 +306,33 @@ void AdaptiveTuningSection::dump() const {
   clogs() << "}\n\n";
 }
 
+
+float AdaptiveTuningSection::computeReward() {
+  // NOTE: relying on assumption that larger "quality"  means better
+  // auto const& CurrentQ = Versions.at(BestLib).getQuality();
+
+  float Reward = 0;
+
+  if (Bakery.hasValue()) {
+    auto &Bakeoff = Bakery.getValue();
+    auto Result = Bakeoff.lastResult();
+
+    if (Result == Bakeoff::Result::NewIsBetter)
+      Reward = 1;
+    else if (Result == Bakeoff::Result::CurrentIsBetter)
+      Reward = -1;
+    else if (Result == Bakeoff::Result::Timeout)
+      Reward = -0.33333333f;
+    else
+      fatal_error("Unexpected Bakeoff Result during reward computation");
+
+    Bakery = llvm::None;
+  }
+
+  return Reward;
+}
+
+
 AdaptiveTuningSection::AdaptiveTuningSection(TuningSectionInitializer TSI, std::string RootFunc)
   : TuningSection(TSI, RootFunc),
     PBT(TSI.Config, BaseKnobs, Versions),
@@ -347,5 +349,15 @@ AdaptiveTuningSection::AdaptiveTuningSection(TuningSectionInitializer TSI, std::
     std::string Name = OriginalLib.getLibraryName();
     Versions[Name] = std::move(OriginalLib);
     BestLib = Name;
+
+    // seed the MAB with our initial, highly optimistic guess to force a bit of
+    // exploration when starting off on to help seed the surrogate model.
+    const std::map<RootAction, float> InitialRewards = {
+      {RootAction::RA_RunExperiment, 5},
+      {RootAction::RA_RetryBest, 0},
+      {RootAction::RA_Wait, 0}
+    };
+    MAB.setActionValues(InitialRewards);
+
   }
 } // namespace halo

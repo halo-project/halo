@@ -47,7 +47,11 @@ public:
     ///                 meaning 10% chance of exploration instead of exploitation.
     ///                 Must be in the range [0, 1].
     ///
-    RecencyWeightedBandit(std::set<Action> actions, std::mt19937_64& generator, float stepSize=0.2, float epsilon=0.1);
+    RecencyWeightedBandit(std::set<Action> actions, std::mt19937_64& generator, float stepSize=0.1, float epsilon=0.1);
+
+    /// overwrites the expected reward of each action in this MAB
+    /// with the rewards in the given map.
+    void setActionValues(std::map<Action, float> const&);
 
     Action choose() override;
 

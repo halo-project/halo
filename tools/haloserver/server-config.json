@@ -15,7 +15,7 @@
     "ts-max-dupes-row": 2,
     "ts-steps-per-wait": 10,
 
-    "mab-step-size": 0.2,
+    "mab-step-size": 0.1,
     "mab-epsilon": 0.1,
 
     "bakeoff-switch-rate": 5,

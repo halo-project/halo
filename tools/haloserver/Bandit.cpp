@@ -19,7 +19,6 @@ namespace halo {
   // NOTE: ideas for tweaking based on existing work include:
   //
   // 1. Have epsilon decrease over time, and start with a higher initial value.
-  // 2. Optimistic initial expected rewards.
   //
 
   template <typename Action>
@@ -32,6 +31,12 @@ namespace halo {
         fatal_error("invalid probability for epsilon.");
     }
 
+
+  template <typename Action>
+  void RecencyWeightedBandit<Action>::setActionValues(std::map<Action, float> const& Init) {
+    for (auto const& Entry : Init)
+      ActionValue[Entry.first].Expected = Entry.second;
+  }
 
 
   template <typename Action>
