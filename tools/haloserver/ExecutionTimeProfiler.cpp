@@ -28,8 +28,6 @@ void ExecutionTimeProfiler::observeOne(ClientID ID, CodeRegionInfo const& CRI, p
     uint64_t LastCallCount = State[FuncName].CallCount;
     State[FuncName].CallCount = ThisCallCount;
 
-    assert(ThisCallCount >= LastCallCount && "decreasing call count?");
-
     if (ThisCallCount == LastCallCount)
       continue; // no calls have occurred since the last time. keep old timestamp.
 
@@ -37,8 +35,9 @@ void ExecutionTimeProfiler::observeOne(ClientID ID, CodeRegionInfo const& CRI, p
     auto LastTime = State[FuncName].Timestamp;
     State[FuncName].Timestamp = ThisTime;
 
-    if (LastTime == 0)
-      continue; // need 2 timestamps to compute an elapsed time
+    // check for no calls or if the call-counter has overflowed
+    if (LastTime == 0 || LastCallCount > ThisCallCount)
+      continue; // need 2 timestamps with increasing call-counts to compute an elapsed time
 
     assert(ThisTime >= LastTime && "time went backwards?");
 
