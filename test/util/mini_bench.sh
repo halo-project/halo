@@ -38,21 +38,15 @@ if [[ $USE_ARMENTA == 1 ]]; then
   # armenta-specific paths
   TEST_DIR="/home/kavon/halo/test"
   BIN_DIR="/home/kavon/halo/$ROOT/bin"
-  TIME_EXE="/usr/bin/time"
 
 else
   PREPROCESSOR_FLAGS=""
   TEST_DIR="./test"
   BIN_DIR="./$ROOT/bin"
   SERVER_EXE="$BIN_DIR/haloserver"
-
-  TIME_EXE=$(command -v time)  # do not want built-in bash 'time'
-
-  if [ -z "$TIME_EXE" ]; then
-    echo "GNU time command is missing!"
-    exit 1
-  fi
 fi
+
+TIME_EXE="$TEST_DIR/util/timeit.sh"
 
 # files for managing PGO compilation
 PROFILE_RAW_FILE="default.profraw" # the default file that is written to if LLVM_PROFILE_FILE is not set
@@ -195,7 +189,7 @@ for PROG in "${BENCHMARKS[@]}"; do
           fi
 
           # run the program under 'time'
-          clientRun "${TIME_EXE}" --format="%e" ${CLIENT_BIN} "2>&1 | tail -n1"
+          clientRun ${TIME_EXE} ${CLIENT_BIN}
 
           ELAPSED_TIME=$(cat "${CLIENT_CMD_OUT}")
           CSV_ROW=$(printf "%s\n" "$PROG" "$FLAGS" "$AOT_OPT" "$TRIAL" "$ITER" "$ELAPSED_TIME"\
