@@ -59,8 +59,8 @@ declare -a BENCHMARKS=(
   "bench/c/n-body.c"
   "bench/c/perlin.c"
   "bench/c/ReedSolomon.c"
-  "basic/fixed_workload.c"
-  "basic/random_workload.c"
+  # "basic/fixed_workload.c"
+  # "basic/random_workload.c"
 )
 
 declare -a AOT_OPTS=(

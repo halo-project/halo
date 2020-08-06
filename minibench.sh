@@ -17,6 +17,7 @@ TUNING_ITERS=30
 if [[ $# -gt 0 ]]; then
   if [[ $1 == "test" ]]; then
     TRIALS=1
+    TUNING_ITERS=20
   fi
 fi
 
