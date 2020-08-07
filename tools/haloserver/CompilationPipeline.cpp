@@ -449,15 +449,15 @@ Expected<CompilationPipeline::compile_result>
     if (Flag) {
       std::string CPUName = getCPUName().str();
 
-      JTMB.setCPU(CPUName);
-      SubtargetFeatures &Features = JTMB.getFeatures();
-
       // FIXME: there's a bug with the rpi where adding these features
       // will generate invalid code causing a crash on the client.
-      if (CPUName != "cortex-a53") {
-        for (auto &F : getCPUFeatures())
-          Features.AddFeature(F.first(), F.second);
-      }
+      if (CPUName == "cortex-a53")
+        return;
+
+      JTMB.setCPU(CPUName);
+      SubtargetFeatures &Features = JTMB.getFeatures();
+      for (auto &F : getCPUFeatures())
+        Features.AddFeature(F.first(), F.second);
 
       overrideFunctionAttributes(getCPUName(), Features.getString(), Module);
     }
