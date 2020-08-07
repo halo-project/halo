@@ -4,7 +4,7 @@
     "heartbeats-per-second": 50,
     "group-service-per-second": 10,
     "perf-sample-period": 15485867,
-    "min-samples-tss": 300,
+    "min-samples-tss": 125,
 
     "cct-ipc-discount": 0.4,
     "cct-cooldown-discount": 0.3,
