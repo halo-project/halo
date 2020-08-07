@@ -5,7 +5,7 @@
 #ifdef SMALL_PROBLEM_SIZE
 	#define TEST_SIZE 640
 #else
-	#define TEST_SIZE 2048
+	#define TEST_SIZE 1280
 #endif
 
 
