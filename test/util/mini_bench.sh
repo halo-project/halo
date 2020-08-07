@@ -54,9 +54,9 @@ PROFILE_DATA_FILE="code.profdata"
 
 declare -a BENCHMARKS=(
   "bench/cpp/sphereflake.cpp"
+  "bench/c/lpbench.c"
   "bench/cpp/matrix.cpp"
   "bench/c/spectralnorm.c"
-  "bench/c/oourafft.c"
   "bench/c/n-body.c"
   "bench/c/perlin.c"
   # "basic/fixed_workload.c"

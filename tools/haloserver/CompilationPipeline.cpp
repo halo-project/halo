@@ -447,14 +447,8 @@ Expected<CompilationPipeline::compile_result>
 
   Knobs.lookup<FlagKnob>(named_knob::NativeCPU).applyFlag([&](bool Flag) {
     if (Flag) {
-      std::string CPUName = getCPUName().str();
+      JTMB.setCPU(getCPUName().str());
 
-      // FIXME: there's a bug with the rpi where adding these features
-      // will generate invalid code causing a crash on the client.
-      if (CPUName == "cortex-a53")
-        return;
-
-      JTMB.setCPU(CPUName);
       SubtargetFeatures &Features = JTMB.getFeatures();
       for (auto &F : getCPUFeatures())
         Features.AddFeature(F.first(), F.second);
