@@ -97,6 +97,7 @@ private:
 
   static constexpr int IDENTIFY_STEP_FACTOR = 8;
   int IdentifySteps{IDENTIFY_STEP_FACTOR};
+  const unsigned MinSamplesTSS;
 
   std::unique_ptr<std::string> BitcodeStorage;
   std::unique_ptr<llvm::MemoryBuffer> Bitcode;

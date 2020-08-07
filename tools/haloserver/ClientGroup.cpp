@@ -65,7 +65,7 @@ namespace halo {
 
     size_t TotalSamples = Profile.samplesConsumed();
 
-    if (TotalSamples < 100)
+    if (TotalSamples < MinSamplesTSS)
       return false; // not enough samples to create a TS
 
     auto MaybeTS = TuningSection::Create({Config, CompilerPool, Pipeline, Profile, *Bitcode, OriginalSettings});
@@ -186,7 +186,9 @@ void analyzeBuildFlags(BuildSettings &Settings, pb::ModuleInfo const& MI) {
 
 ClientGroup::ClientGroup(JSON const& Config, ThreadPool &Pool, ThreadPool &CompilerPool, ClientSession *CS, std::array<uint8_t, 20> &BitcodeSHA1)
     : SequentialAccess(Pool), NumActive(1), ServiceLoopActive(false),
-      ShouldStop(false), Pool(Pool), CompilerPool(CompilerPool), Config(Config), Profile(Config), BitcodeHash(BitcodeSHA1) {
+      ShouldStop(false), Pool(Pool), CompilerPool(CompilerPool), Config(Config), Profile(Config),
+      MinSamplesTSS(config::getServerSetting<unsigned>("min-samples-tss", Config)),
+      BitcodeHash(BitcodeSHA1) {
 
       // the amount of time to sleep before enqueueing another ASIO service iteration.
       size_t ItersPerSec = config::getServerSetting<size_t>("group-service-per-second", Config);
