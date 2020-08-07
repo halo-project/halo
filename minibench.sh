@@ -10,8 +10,8 @@ if [[ ! -f "$SELF_DIR/minibench.sh" ]]; then
   exit 1
 fi
 
-TRIALS=5
-TUNING_ITERS=30
+TRIALS=3
+TUNING_ITERS=60
 
 # limit running time when only doing regression testing
 if [[ $# -gt 0 ]]; then

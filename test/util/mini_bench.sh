@@ -180,7 +180,16 @@ for PROG in "${BENCHMARKS[@]}"; do
           ${SERVER_EXE} ${SERVER_ARGS} &> "$SERVER_LOG" &
           SERVER_PID=$!
           sleep 2s
+
+          # Save time by not running the JIT strategy for the full # of training iters,
+          # since all of the current benchmarks have a fixed input / workload.
+          # I will extrapolate from fewer iterations.
+          if [[ ${SERVER_ARGS} =~ .*jit.* ]]; then
+            THIS_NUM_ITERS=$((NUM_ITERS / 2))
+          fi
+
         else
+          # this config doesn't need a server, so no tuning iters
           THIS_NUM_ITERS="1"
         fi
 
