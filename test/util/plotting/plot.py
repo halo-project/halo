@@ -72,11 +72,22 @@ def extrapolate_iters(df):
   return df
 
 
-def plot_progression(df, title, file_prefix, zero):
+def plot_progression(df, title, file_prefix, zero, baseline):
+  df = df.copy()
+
+  df, did_normalize = do_normalize(df, baseline)
+
   g = sns.lineplot(x='iter', y='time', hue='flags', data=df, legend='brief')
+
+  ylab = "Speedup" if did_normalize else "Time"
+  g.set(ylabel=ylab, xlabel="Tuning Iterations")
 
   if zero:
     plt.ylim(0, None)
+
+  xMin = min(df['iter'])
+  xMax = max(df['iter'])
+  plt.xlim(xMin-1, xMax+1)
 
   # https://stackoverflow.com/questions/51579215/remove-seaborn-lineplot-legend-title?rq=1
   handles, labels = g.get_legend_handles_labels()
@@ -84,14 +95,14 @@ def plot_progression(df, title, file_prefix, zero):
   # https://matplotlib.org/3.1.1/tutorials/intermediate/legend_guide.html
   # https://stackoverflow.com/questions/30490740/move-legend-outside-figure-in-seaborn-tsplot
   lgd = plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-           ncol=3, mode="expand", borderaxespad=0., title="",
+           ncol=3, mode="expand", borderaxespad=0., title=title,
            handles=handles[1:], labels=labels[1:])
 
   # https://stackoverflow.com/questions/10101700/moving-matplotlib-legend-outside-of-the-axis-makes-it-cutoff-by-the-figure-box
   export_fig(g, file_prefix, [lgd])
 
 
-def plot_iter_progressions(df, zero):
+def plot_iter_progressions(df, zero, baseline):
   ''' produces multiple plots showing tuning progression over time '''
   df = df.copy()
 
@@ -102,24 +113,52 @@ def plot_iter_progressions(df, zero):
       obs = df[(df['program'] == prog) & (df['aot_opt'] == opt)]
       obs = extrapolate_iters(obs)
       title = prog + "_" + opt
-      plot_progression(obs, title, title, zero)
+      plot_progression(obs, prog, title, zero, baseline)
 
+
+def do_normalize(df, baseline):
+  ''' returns new dataframe and whether it was normalized or not '''
+
+  if len(baseline) == 0:
+    return (df, False)
+
+  for prog, progGrp in df.groupby('program'):
+    for it, iterGrp in progGrp.groupby('iter'):
+      baselineVal = iterGrp[iterGrp['flags'] == baseline]['time'].mean()
+
+      # compute speed-up: old-time / new-time
+      temp = iterGrp['time'].apply(lambda x: baselineVal / x)
+
+      df.loc[(df['program'] == prog) & (df['iter'] == it), 'time'] = temp
+
+  return (df, True)
 
 
 @click.command()
 @click.argument('csv_filename')
 @click.option("--dir", default="./", type=str,
                help="Output directory for the plots")
+@click.option("--exclude", default="default,halomon", type=str,
+               help="Exclude some flag configurations from plots")
 @click.option("--zero", default=True, type=bool,
                help="If True, Y-axis will start at zero")
-def main(csv_filename, dir, zero):
+@click.option("--baseline", default="aot", type=str,
+               help="Normalize the data relative to a flag configuration")
+def main(csv_filename, dir, exclude, zero, baseline):
   global output_dir
   output_dir = dir
+
+  excluded = set(exclude.split(","))
 
   configure_seaborn()
 
   pd = rm.read_csv(csv_filename)
-  plot_iter_progressions(pd, zero)
+
+  # drop data for the excluded flags
+  for flag in excluded:
+    pd = pd[pd['flags'] != flag]
+
+  plot_iter_progressions(pd, zero, baseline)
 
 
 

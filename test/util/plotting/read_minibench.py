@@ -5,7 +5,7 @@ import re
 def cleanup_program_name(name):
   ''' strip off junk from program's name '''
   name = re.sub(r'.+/', '', name)
-  name = re.sub(r'\.[a-z]$', '', name)
+  name = re.sub(r'\.[a-z]+$', '', name)
   return name
 
 
@@ -14,13 +14,17 @@ def cleanup_aot_opt(opt):
   opt = re.sub(r'-', '', opt)
   return opt
 
+
 def cleanup_flags(flag):
   flag = re.sub(r'withserver *-fhalo *; *--halo-strategy=', '', flag)
-  flag = re.sub(r'aggressive', 'halo', flag)
-  flag = re.sub(r'--halo-threads=', 't', flag)
+  flag = re.sub(r'adapt', 'halo', flag)
+  flag = re.sub(r'--halo-threads=[0-9]+', '', flag)
   flag = re.sub(r'--halo-metric=', '', flag)
-  flag = re.sub(r' *-fhalo *', 'no-srv', flag)
-  flag = re.sub(r'.*none.*', 'dflt', flag)
+  flag = re.sub(r' *ipc', '-ipc', flag)
+  flag = re.sub(r' *calls', '-calls', flag)
+  flag = re.sub(r' *-fhalo *', 'halomon', flag)
+  flag = re.sub(r'.*none.*', 'default', flag)
+  flag = re.sub(r'pgo', 'aot', flag)
   return flag
 
 
