@@ -16,8 +16,10 @@ import matplotlib.pyplot as plt
 
 output_dir="./"
 
-def export_fig(g, filename, extraArtists=[]):
+def export_fig(g, filename, legendFig=None, extraArtists=[]):
     fig = g.get_figure()
+    if legendFig:
+      legendFig.savefig(os.path.join(output_dir, filename + "_legend.pdf"), bbox_inches='tight')
     fig.savefig(os.path.join(output_dir, filename + ".pdf"), bbox_extra_artists=extraArtists, bbox_inches='tight')
     plt.close(fig)
 
@@ -77,7 +79,14 @@ def plot_progression(df, title, file_prefix, zero, baseline):
 
   df, did_normalize = do_normalize(df, baseline)
 
-  g = sns.lineplot(x='iter', y='time', hue='flags', data=df, legend='brief')
+  hueCol = 'flags'
+  numHues = len(df[hueCol].unique())
+  palette = sns.color_palette("cubehelix", numHues)
+
+  # NOTE: for individual lines per trial, you can use:
+  #   units='trial', estimator=None, lw=1,
+  g = sns.lineplot(x='iter', y='time', hue=hueCol, data=df, legend='brief',
+                   palette=palette)
 
   ylab = "Speedup" if did_normalize else "Time"
   g.set(ylabel=ylab, xlabel="Tuning Iterations")
@@ -95,12 +104,11 @@ def plot_progression(df, title, file_prefix, zero, baseline):
   # https://matplotlib.org/3.1.1/tutorials/intermediate/legend_guide.html
   # https://stackoverflow.com/questions/30490740/move-legend-outside-figure-in-seaborn-tsplot
   lgd = plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-           ncol=3, mode="expand", borderaxespad=0., title=title,
-           handles=handles[1:], labels=labels[1:])
+           ncol=4, mode="expand", borderaxespad=0., title='',
+           handles=handles[1:], labels=labels[1:], prop={'size': 14})
 
   # https://stackoverflow.com/questions/10101700/moving-matplotlib-legend-outside-of-the-axis-makes-it-cutoff-by-the-figure-box
-  export_fig(g, file_prefix, [lgd])
-
+  export_fig(g, file_prefix, None, [lgd])
 
 def plot_iter_progressions(df, zero, baseline):
   ''' produces multiple plots showing tuning progression over time '''
