@@ -231,20 +231,21 @@ Bakeoff::Result Bakeoff::take_step(GroupState &State) {
         return Status;
       }
 
-      // set-up for the next iteration of the bake-off
-      if (Switches >= BP.MAX_SWITCHES) {
-        // we give up... don't know which one is better!
-
-        // prefer going back to the original one when timing out.
-        if (Deployed.first == NEW_LIBNAME)
-          switchVersions(State);
-
-        return transition_to_debt_repayment(State);
-      }
-
       StepsUntilSwitch -= 1;
-      if (StepsUntilSwitch == 0)
+      if (StepsUntilSwitch == 0) {
+        if (Switches >= BP.MAX_SWITCHES) {
+          // we give up... don't know which one is better!
+
+          // prefer going back to the original one when timing out.
+          if (Deployed.first == NEW_LIBNAME)
+            switchVersions(State);
+
+          return transition_to_debt_repayment(State);
+        }
+
+        // set-up for the next iteration of the bake-off
         switchVersions(State);
+      }
 
     };
   };
