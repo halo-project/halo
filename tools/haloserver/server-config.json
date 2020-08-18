@@ -13,7 +13,7 @@
 
     "callfreq-discount": 0.4,
 
-    "ts-max-dupes-row": 2,
+    "ts-max-dupes-row": 25,
     "ts-steps-per-wait": 15,
 
     "mab-step-size": 0.1,
