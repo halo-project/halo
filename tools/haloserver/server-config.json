@@ -15,6 +15,7 @@
 
     "ts-max-dupes-row": 25,
     "ts-steps-per-wait": 15,
+    "ts-coin-bias-pct": 33,
 
     "mab-step-size": 0.1,
     "mab-epsilon": 0.1,

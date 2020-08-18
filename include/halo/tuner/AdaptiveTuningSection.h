@@ -68,6 +68,7 @@ private:
 
   // for choosing a new code version
   const unsigned MAX_DUPES_IN_ROW; // max duplicate compiles in a row before we give up.
+  const unsigned RETRY_COIN_BIAS; // [1, 100]
 };
 
 } // namespace halo

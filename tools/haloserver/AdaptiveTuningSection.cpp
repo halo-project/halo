@@ -54,12 +54,13 @@ void AdaptiveTuningSection::transitionToDecision(float Reward) {
 
 // chooses among the libraries in the given Versions map, either uniformly at random
 // or with a bias for the best performing ones. Must have at least 2 versions available.
-std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, CodeVersion> const& Versions, std::string const& ToAvoid, bool Uniformly) {
+// Bias == 0 means pick uniformly. or else its the coinflip bias
+std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, CodeVersion> const& Versions, std::string const& ToAvoid, unsigned Bias) {
   assert(Versions.size() > 1);
   using Elm = std::pair<std::string, double>;
 
   clogs(LC_Info) << "choosing among existing libraries, "
-                 << (Uniformly ? "AT RANDOM" : "WITH BIAS")
+                 << (Bias == 0 ? "AT RANDOM" : "WITH BIAS")
                  << "\n";
 
   // collect the libs and qualities, omitting the one to avoid
@@ -70,7 +71,7 @@ std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, C
     Libs.emplace_back(V.first, V.second.getQuality().mean());
   }
 
-  if (Uniformly) {
+  if (Bias == 0) {
     // pick uniformly at random
     std::uniform_int_distribution<size_t> dist(0, Libs.size()-1);
     return Libs[dist(RNG)].first;
@@ -87,7 +88,7 @@ std::string pickRandomly(std::mt19937_64 &RNG, std::unordered_map<std::string, C
 
   // probability of heads, which for 0.5 gives us an expected value of 0 (aka 1 coin-flip)
   // so that we are biased towards picking the best one available
-  std::geometric_distribution<size_t> dist(0.5);
+  std::geometric_distribution<size_t> dist(((double)Bias) / 100.0);
 
   // clamp
   const size_t Idx = std::min(dist(RNG), Libs.size()-1);
@@ -229,7 +230,7 @@ retryNonBakeoffStep:
         // we can't explore at all. there's seemingly no code we can generate that's different.
         return transitionToWait();
 
-      NewLib = pickRandomly(PBT.getRNG(), Versions, BestLib, /*Uniformly=*/ true);
+      NewLib = pickRandomly(PBT.getRNG(), Versions, BestLib, /*Bias=*/ 0);
 
     } else {
       // not a duplicate!
@@ -252,7 +253,7 @@ retryNonBakeoffStep:
 
     // go right into a bake-off using an existing, top-performing library.
     // the library chosen is biased towards the best-performing ones seen already.
-    return transitionToBakeoff(State, pickRandomly(PBT.getRNG(), Versions, BestLib, /*Uniformly=*/ false));
+    return transitionToBakeoff(State, pickRandomly(PBT.getRNG(), Versions, BestLib, /*Bias=*/ RETRY_COIN_BIAS));
 
   } else {
     // Run an experiment with either a freshly generated config or one chosen uniformly at random
@@ -342,8 +343,12 @@ AdaptiveTuningSection::AdaptiveTuningSection(TuningSectionInitializer TSI, std::
     BakeoffPenalty(1.0f - config::getServerSetting<float>("bakeoff-assumed-overhead", TSI.Config)),
     StepsPerWaitAction(config::getServerSetting<unsigned>("ts-steps-per-wait", TSI.Config)),
     BP(TSI.Config),
-    MAX_DUPES_IN_ROW(config::getServerSetting<unsigned>("ts-max-dupes-row", TSI.Config))
+    MAX_DUPES_IN_ROW(config::getServerSetting<unsigned>("ts-max-dupes-row", TSI.Config)),
+    RETRY_COIN_BIAS(config::getServerSetting<unsigned>("ts-coin-bias-pct", TSI.Config))
   {
+
+    assert(1 <= RETRY_COIN_BIAS && RETRY_COIN_BIAS <= 100);
+
     // create a version for the original library to record its performance, etc.
     CodeVersion OriginalLib{OriginalLibKnobs};
     std::string Name = OriginalLib.getLibraryName();
