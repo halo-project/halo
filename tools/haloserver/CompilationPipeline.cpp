@@ -294,9 +294,14 @@ Error optimize(Module &Module, TargetMachine &TM, KnobSet const& Knobs) {
   { // INLINER
 
     // internally we default to aggressive inlining thresholds.
-    int Threshold = llvm::InlineConstants::OptAggressiveThreshold;
-    Knobs.lookup<IntKnob>(named_knob::InlineThreshold).applyScaledVal(Threshold);
-    InlineParams IP = llvm::getInlineParams(Threshold);
+    InlineParams IP = llvm::getInlineParams(llvm::InlineConstants::OptAggressiveThreshold);
+    Knobs.lookup<IntKnob>(named_knob::InlineThreshold)
+         .applyScaledVal([&](int Threshold) {
+           InlineParams Override;
+           Override.DefaultThreshold = Threshold;
+           IP = Override;
+         });
+
 
     /// NOTE: I use to think this was worth tuning, but I believe it is just pessimistically
     /// stopping the cost estimation before it's been fully computed to limit compile time
