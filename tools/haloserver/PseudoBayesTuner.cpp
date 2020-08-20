@@ -315,7 +315,7 @@ void analyzeFeatureImportance(BoosterHandle booster, std::unordered_map<std::str
       FeatureNames.size(), FeatureNames.data(), FeatureTypes.data(), /*with_stats=*/ 1, &out_len, &out_models));
 
   for (unsigned i = 0; i < out_len; ++i)
-    clogs() << out_models[i];
+    clogs(LC_DecisionTree) << out_models[i];
 
   // TODO: Parse the dump to calculate importance metric that we care to know about.
 }

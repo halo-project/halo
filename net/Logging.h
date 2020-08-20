@@ -46,6 +46,7 @@ namespace halo {
     LC_CCT,      // calling context tree (debugging)
     LC_CCT_DUMP, // calling context tree (pretty dumps of current state)
     LC_CallGraph,
+    LC_DecisionTree,
     LC_MonitorState,
     LC_Channel,
     LC_Compiler,
@@ -63,6 +64,7 @@ namespace halo {
       // case LC_CCT_DUMP:
       // case LC_CCT:
       // case LC_CallGraph:
+      // case LC_DecisionTree:
       // case LC_MonitorState:
       case LC_Compiler:
       case LC_Channel:
