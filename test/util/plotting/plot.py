@@ -92,9 +92,9 @@ def plot_progression(df, title, file_prefix, baseline, palette_name):
   numHues = len(df[hueCol].unique())
 
   if palette_name == "cubehelix":
-    numHues += 2  # avoid v bright and pale colors
-
-  palette = sns.color_palette(palette_name, numHues)
+    palette = sns.cubehelix_palette(numHues)
+  else:
+    palette = sns.color_palette(palette_name, numHues)
 
   # NOTE: for individual lines per trial, you can use:
   #   units='trial', estimator=None, lw=1,
