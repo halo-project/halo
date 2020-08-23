@@ -45,6 +45,14 @@ def configure_seaborn():
   # size of labels, scaled for: paper, notebook, talk, poster in smallest -> largest
   sns.set_context("notebook")
 
+  # override some sizes
+  # https://stackoverflow.com/questions/43670164/font-size-of-axis-labels-in-seaborn?rq=1
+  matplotlib.rcParams["axes.titlesize"] = 14
+  matplotlib.rcParams["axes.labelsize"] = 14
+  matplotlib.rcParams["xtick.labelsize"] = 14
+  matplotlib.rcParams["ytick.labelsize"] = 14
+  matplotlib.rcParams["lines.linewidth"] = 3
+
 
 def extrapolate_iters(df):
   '''
@@ -75,14 +83,18 @@ def extrapolate_iters(df):
   return df
 
 
-def plot_progression(df, title, file_prefix, baseline):
+def plot_progression(df, title, file_prefix, baseline, palette_name):
   df = df.copy()
 
   df, did_normalize = do_normalize(df, baseline)
 
   hueCol = 'flags'
   numHues = len(df[hueCol].unique())
-  palette = sns.color_palette("cubehelix", numHues)
+
+  if palette_name == "cubehelix":
+    numHues += 2  # avoid v bright and pale colors
+
+  palette = sns.color_palette(palette_name, numHues)
 
   # NOTE: for individual lines per trial, you can use:
   #   units='trial', estimator=None, lw=1,
@@ -114,17 +126,10 @@ def plot_progression(df, title, file_prefix, baseline):
            ncol=4, mode="expand", borderaxespad=0., title='',
            handles=handles[1:], labels=labels[1:], prop={'size': 14})
 
-  # https://stackoverflow.com/questions/43670164/font-size-of-axis-labels-in-seaborn?rq=1
-  plt.rcParams["axes.titlesize"] = 14
-  plt.rcParams["axes.labelsize"] = 14
-  plt.rcParams["xtick.labelsize"] = 14
-  plt.rcParams["ytick.labelsize"] = 14
-  plt.rcParams["lines.linewidth"] = 3
-
   # https://stackoverflow.com/questions/10101700/moving-matplotlib-legend-outside-of-the-axis-makes-it-cutoff-by-the-figure-box
   export_fig(g, file_prefix, None, [lgd])
 
-def plot_iter_progressions(df, baseline):
+def plot_iter_progressions(df, baseline, palette):
   ''' produces multiple plots showing tuning progression over time '''
   df = df.copy()
 
@@ -135,7 +140,7 @@ def plot_iter_progressions(df, baseline):
       obs = df[(df['program'] == prog) & (df['aot_opt'] == opt)]
       obs = extrapolate_iters(obs)
       title = prog + "_" + opt
-      plot_progression(obs, prog, title, baseline)
+      plot_progression(obs, prog, title, baseline, palette)
 
 
 def do_normalize(df, baseline):
@@ -164,9 +169,13 @@ def do_normalize(df, baseline):
                help="Exclude some flag configurations from plots")
 @click.option("--baseline", default="aot", type=str,
                help="Normalize the data relative to a flag configuration")
-def main(csv_filename, dir, exclude, baseline):
+@click.option("--palette", default="cubehelix", type=str,
+               help="Name of the color palette")
+def main(csv_filename, dir, exclude, baseline, palette):
   global output_dir
   output_dir = dir
+
+  os.makedirs(output_dir, exist_ok=True)
 
   excluded = set(exclude.split(","))
 
@@ -178,7 +187,7 @@ def main(csv_filename, dir, exclude, baseline):
   for flag in excluded:
     pd = pd[pd['flags'] != flag]
 
-  plot_iter_progressions(pd, baseline)
+  plot_iter_progressions(pd, baseline, palette)
 
 
 
