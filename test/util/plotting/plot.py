@@ -28,7 +28,8 @@ def configure_seaborn():
   ''' stylistic configuration of seaborn '''
   # There are five preset seaborn themes: darkgrid, whitegrid, dark, white, and ticks
   # https://seaborn.pydata.org/tutorial/aesthetics.html
-  sns.set_style("whitegrid")
+  # also turn on ticks with
+  sns.set_style("whitegrid", rc={"xtick.bottom" : True, "ytick.left" : True})
 
   # request TrueType fonts and not Type 3.
   # src: http://phyletica.org/matplotlib-fonts/
@@ -42,7 +43,7 @@ def configure_seaborn():
   # sns.set_style(currentStyle)
 
   # size of labels, scaled for: paper, notebook, talk, poster in smallest -> largest
-  sns.set_context("talk")
+  sns.set_context("notebook")
 
 
 def extrapolate_iters(df):
@@ -74,7 +75,7 @@ def extrapolate_iters(df):
   return df
 
 
-def plot_progression(df, title, file_prefix, zero, baseline):
+def plot_progression(df, title, file_prefix, baseline):
   df = df.copy()
 
   df, did_normalize = do_normalize(df, baseline)
@@ -91,12 +92,18 @@ def plot_progression(df, title, file_prefix, zero, baseline):
   ylab = "Speedup" if did_normalize else "Time"
   g.set(ylabel=ylab, xlabel="Tuning Iterations")
 
-  if zero:
-    plt.ylim(0, None)
+  # Y AXIS LIMITS
+  buffer = 0.1
+  yMin = round(min(float(min(df['time'])), 0.5), 2) - buffer
+  yMax = round(max(float(max(df['time'])), 1.5), 2) + buffer
+  plt.ylim(yMin, yMax)
+  g.yaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(2))
+
 
   xMin = min(df['iter'])
   xMax = max(df['iter'])
   plt.xlim(xMin-1, xMax+1)
+  g.xaxis.set_minor_locator(matplotlib.ticker.AutoMinorLocator(2))
 
   # https://stackoverflow.com/questions/51579215/remove-seaborn-lineplot-legend-title?rq=1
   handles, labels = g.get_legend_handles_labels()
@@ -107,10 +114,17 @@ def plot_progression(df, title, file_prefix, zero, baseline):
            ncol=4, mode="expand", borderaxespad=0., title='',
            handles=handles[1:], labels=labels[1:], prop={'size': 14})
 
+  # https://stackoverflow.com/questions/43670164/font-size-of-axis-labels-in-seaborn?rq=1
+  plt.rcParams["axes.titlesize"] = 14
+  plt.rcParams["axes.labelsize"] = 14
+  plt.rcParams["xtick.labelsize"] = 14
+  plt.rcParams["ytick.labelsize"] = 14
+  plt.rcParams["lines.linewidth"] = 3
+
   # https://stackoverflow.com/questions/10101700/moving-matplotlib-legend-outside-of-the-axis-makes-it-cutoff-by-the-figure-box
   export_fig(g, file_prefix, None, [lgd])
 
-def plot_iter_progressions(df, zero, baseline):
+def plot_iter_progressions(df, baseline):
   ''' produces multiple plots showing tuning progression over time '''
   df = df.copy()
 
@@ -121,7 +135,7 @@ def plot_iter_progressions(df, zero, baseline):
       obs = df[(df['program'] == prog) & (df['aot_opt'] == opt)]
       obs = extrapolate_iters(obs)
       title = prog + "_" + opt
-      plot_progression(obs, prog, title, zero, baseline)
+      plot_progression(obs, prog, title, baseline)
 
 
 def do_normalize(df, baseline):
@@ -148,11 +162,9 @@ def do_normalize(df, baseline):
                help="Output directory for the plots")
 @click.option("--exclude", default="default,halomon", type=str,
                help="Exclude some flag configurations from plots")
-@click.option("--zero", default=True, type=bool,
-               help="If True, Y-axis will start at zero")
 @click.option("--baseline", default="aot", type=str,
                help="Normalize the data relative to a flag configuration")
-def main(csv_filename, dir, exclude, zero, baseline):
+def main(csv_filename, dir, exclude, baseline):
   global output_dir
   output_dir = dir
 
@@ -166,7 +178,7 @@ def main(csv_filename, dir, exclude, zero, baseline):
   for flag in excluded:
     pd = pd[pd['flags'] != flag]
 
-  plot_iter_progressions(pd, zero, baseline)
+  plot_iter_progressions(pd, baseline)
 
 
 
