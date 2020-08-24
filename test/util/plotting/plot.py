@@ -16,15 +16,19 @@ import matplotlib.pyplot as plt
 
 output_dir="./"
 
-def export_fig(g, filename, legendFig=None, extraArtists=[]):
-    fig = g.get_figure()
+def export_fig(g, filename, legendFig=None, extraArtists=[], lineplot=True):
+    if lineplot:
+      fig = g.get_figure()
+    else:
+      fig = g.fig
+
     if legendFig:
       legendFig.savefig(os.path.join(output_dir, filename + "_legend.pdf"), bbox_inches='tight')
     fig.savefig(os.path.join(output_dir, filename + ".pdf"), bbox_extra_artists=extraArtists, bbox_inches='tight')
     plt.close(fig)
 
 
-def configure_seaborn():
+def configure_seaborn(bars):
   ''' stylistic configuration of seaborn '''
   # There are five preset seaborn themes: darkgrid, whitegrid, dark, white, and ticks
   # https://seaborn.pydata.org/tutorial/aesthetics.html
@@ -43,15 +47,18 @@ def configure_seaborn():
   # sns.set_style(currentStyle)
 
   # size of labels, scaled for: paper, notebook, talk, poster in smallest -> largest
-  sns.set_context("notebook")
+  if bars:
+    sns.set_context("notebook")
 
-  # override some sizes
-  # https://stackoverflow.com/questions/43670164/font-size-of-axis-labels-in-seaborn?rq=1
-  matplotlib.rcParams["axes.titlesize"] = 14
-  matplotlib.rcParams["axes.labelsize"] = 14
-  matplotlib.rcParams["xtick.labelsize"] = 14
-  matplotlib.rcParams["ytick.labelsize"] = 14
-  matplotlib.rcParams["lines.linewidth"] = 3
+  else:
+    sns.set_context("notebook")
+    # override some sizes
+    # https://stackoverflow.com/questions/43670164/font-size-of-axis-labels-in-seaborn?rq=1
+    matplotlib.rcParams["axes.titlesize"] = 14
+    matplotlib.rcParams["axes.labelsize"] = 14
+    matplotlib.rcParams["xtick.labelsize"] = 14
+    matplotlib.rcParams["ytick.labelsize"] = 14
+    matplotlib.rcParams["lines.linewidth"] = 3
 
 
 def extrapolate_iters(df):
@@ -143,6 +150,37 @@ def plot_iter_progressions(df, baseline, palette):
       plot_progression(obs, prog, title, baseline, palette)
 
 
+def plot_bar_chart(df, baseline, palette_name):
+  df = df.copy()
+
+  df, did_normalize = do_normalize(df, baseline)
+
+  hueCol = 'flags'
+  numHues = len(df[hueCol].unique())
+
+  if palette_name == "cubehelix":
+    palette = sns.cubehelix_palette(numHues)
+  else:
+    palette = sns.color_palette(palette_name, numHues)
+
+  g = sns.catplot(data=df, kind='bar', x='program', y='time',
+                  hue=hueCol, palette=palette, errwidth=1.125, capsize=0.0625,
+                  legend_out=False)
+
+  plt.ylim(0.5, 1.5)
+
+  leg = g.axes.flat[0].get_legend()
+  new_title = ''
+  leg.set_title(new_title)
+
+  yaxis_label = "Speedup" if did_normalize else "Time"
+  g.set_axis_labels(x_var="", y_var=yaxis_label)
+
+  plt.xticks(rotation=20)
+
+  export_fig(g, "bars", None, [], lineplot=False)
+
+
 def do_normalize(df, baseline):
   ''' returns new dataframe and whether it was normalized or not '''
 
@@ -171,7 +209,9 @@ def do_normalize(df, baseline):
                help="Normalize the data relative to a flag configuration")
 @click.option("--palette", default="cubehelix", type=str,
                help="Name of the color palette")
-def main(csv_filename, dir, exclude, baseline, palette):
+@click.option("--bars", default=False, type=bool,
+               help="Generate cumulative average bar chart instead of line plots.")
+def main(csv_filename, dir, exclude, baseline, palette, bars):
   global output_dir
   output_dir = dir
 
@@ -179,7 +219,7 @@ def main(csv_filename, dir, exclude, baseline, palette):
 
   excluded = set(exclude.split(","))
 
-  configure_seaborn()
+  configure_seaborn(bars)
 
   pd = rm.read_csv(csv_filename)
 
@@ -187,7 +227,10 @@ def main(csv_filename, dir, exclude, baseline, palette):
   for flag in excluded:
     pd = pd[pd['flags'] != flag]
 
-  plot_iter_progressions(pd, baseline, palette)
+  if bars:
+    plot_bar_chart(pd, baseline, palette)
+  else:
+    plot_iter_progressions(pd, baseline, palette)
 
 
 
