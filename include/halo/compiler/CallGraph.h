@@ -60,13 +60,16 @@ public:
 
   // tries to add the call-graph node. If the node already exists, then
   // its bitcode status is updated to the given status.
-  void addNode(std::string const& Name, bool HaveBitcode);
+  void addNode(std::string const& Name, bool HaveBitcode, bool HintedRoot);
 
   // Records the existence of a call-site
   // within the function Src that calls Tgt.
   // The bool indicates whether the call-site is within a loop
   // of Src.
   void addCall(Vertex Src, Vertex Tgt, bool WithinLoopBody);
+
+  // obtains all vertices marked as a hinted tuning section root.
+  std::set<Vertex> const& getHintedRoots() const;
 
   /// query the call graph for the existence of an edge.
   /// @return true iff Src exists and contains a call-site to Tgt.
@@ -114,6 +117,8 @@ private:
 
   Graph Gr;
   VertexID UnknownID;
+
+  std::set<Vertex> HintedRoots;
 };
 
 } // end namespace halo

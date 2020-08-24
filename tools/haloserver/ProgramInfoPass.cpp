@@ -17,8 +17,19 @@ PreservedAnalyses ProgramInfoPass::run(Module &M, ModuleAnalysisManager &MAM) {
   for (auto &Func : M.functions()) {
     // record whether we have bitcode for the function, which is if it's not a decl.
     bool HaveBitcode = !Func.isDeclaration();
+
+    // FIXME: this is a hack only for the raspberry pi and is specific to
+    // my benchmarks, which typically mark the worker function invoked
+    // from main to be noinline. ideally we would have specific annotation.
+    //
+    // Why do we have hinted roots?
+    // The raspberry pi is sending empty calling-context
+    // data in the perf samples. I don't know why and don't have time
+    // to fix that, so manually hinted-roots are a workaround!
+    bool HintedRoot = Func.hasFnAttribute(Attribute::NoInline);
+
     std::string ThisFunc = Func.getName().str();
-    CallGraph.addNode(ThisFunc, HaveBitcode);
+    CallGraph.addNode(ThisFunc, HaveBitcode, HintedRoot);
 
     // check the function's call-sites to populate the call-graph.
     CallGraphNode *CGNode = CGR[&Func];

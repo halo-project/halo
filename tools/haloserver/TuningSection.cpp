@@ -17,6 +17,12 @@ static cl::opt<halo::Strategy::Kind> CL_Strategy(
   cl::values(clEnumValN(halo::Strategy::Adaptive, "adapt", "The main adaptive tuning strategy."),
              clEnumValN(halo::Strategy::JitOnce, "jit", "Does not tune. Instead compiles the hot code once at high default optimization.")));
 
+static cl::opt<bool> CL_HintedRoot(
+  "halo-hintedroot",
+  cl::desc("Override TSS and rely on manually-annotated TS roots."),
+  cl::init(false)
+);
+
 namespace halo {
 
 
@@ -27,13 +33,32 @@ llvm::Optional<std::unique_ptr<TuningSection>> TuningSection::Create(TuningSecti
     return llvm::None;
   }
 
-  auto MaybeAncestor = TSI.Profile.findSuitableTuningRoot(MaybeHotNode.getValue());
-  if (!MaybeAncestor) {
-    info("TuningSection::Create -- no suitable tuning root.");
-    return llvm::None;
-  }
+  std::string PatchableAncestorName;
 
-  std::string PatchableAncestorName = MaybeAncestor.getValue();
+  if (CL_HintedRoot) {
+    auto HottestNode = TSI.Profile.getCallingContextTree().getInfo(MaybeHotNode.getValue());
+    CallGraph &CG = TSI.Profile.getCallGraph();
+    auto AnnotatedRoots = CG.getHintedRoots();
+
+    for (auto Root : AnnotatedRoots) {
+      // can this root reach the hottest function?
+      if (CG.allReachable(Root).count(HottestNode.getFuncName())) {
+        PatchableAncestorName = Root.Name;
+        break; // just stop at the first for now
+      }
+    }
+
+
+  } else {
+    // standard TSS selection
+    auto MaybeAncestor = TSI.Profile.findSuitableTuningRoot(MaybeHotNode.getValue());
+    if (!MaybeAncestor) {
+      info("TuningSection::Create -- no suitable tuning root.");
+      return llvm::None;
+    }
+
+    PatchableAncestorName = MaybeAncestor.getValue();
+  }
 
   if (!TSI.Profile.haveBitcode(PatchableAncestorName)) {
     info("TuningSection::Create -- no bitcode available for tuning root.");

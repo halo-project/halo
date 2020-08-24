@@ -66,6 +66,8 @@ public:
   // obtains the profiler's static call graph.
   CallGraph& getCallGraph() { return CG; }
 
+  CallingContextTree const& getCallingContextTree() const { return CCT; }
+
   void dump(llvm::raw_ostream &);
 
 private:

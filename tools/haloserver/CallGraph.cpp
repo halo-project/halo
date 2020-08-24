@@ -54,6 +54,10 @@ void CallGraph::addCall(Vertex Src, Vertex Tgt, bool WithinLoopBody) {
   Edge.addCallsite(WithinLoopBody);
 }
 
+std::set<Vertex> const& CallGraph::getHintedRoots() const {
+  return HintedRoots;
+}
+
 llvm::Optional<Edge> CallGraph::getCallEdge(Vertex Src, Vertex Tgt) const {
   auto MaybeSrc = findVertex(Src, Gr);
   if (!MaybeSrc)
@@ -96,9 +100,19 @@ bool CallGraph::hasOpaqueCall(Vertex Src) const {
   return false;
 }
 
-void CallGraph::addNode(std::string const& Name, bool HaveBitcode) {
+void CallGraph::addNode(std::string const& Name, bool HaveBitcode, bool HintedRoot) {
   VertexID VID = UnknownID;
   Vertex V(Name, HaveBitcode);
+
+  // sadly, Vertex::operator== was implemented to ignore bitcode setting differences,
+  // and the way addNode is designed was to mutate/update once we discover
+  // that the function does actually have bitcode. So, to make sure the set
+  // has fresh and correct vertex data, we add and remove. it looks odd but is needed :/
+  // FIXME: more dissertation rush hacking!
+  if (HaveBitcode && HintedRoot) {
+    HintedRoots.erase(V);
+    HintedRoots.insert(V);
+  }
 
   auto MaybeID = findVertex(V, Gr);
   if (!MaybeID)
