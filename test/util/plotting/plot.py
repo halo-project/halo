@@ -136,6 +136,7 @@ def plot_progression(df, title, file_prefix, baseline, palette_name):
   # https://stackoverflow.com/questions/10101700/moving-matplotlib-legend-outside-of-the-axis-makes-it-cutoff-by-the-figure-box
   export_fig(g, file_prefix, None, [lgd])
 
+
 def plot_iter_progressions(df, baseline, palette):
   ''' produces multiple plots showing tuning progression over time '''
   df = df.copy()
@@ -148,6 +149,50 @@ def plot_iter_progressions(df, baseline, palette):
       obs = extrapolate_iters(obs)
       title = prog + "_" + opt
       plot_progression(obs, prog, title, baseline, palette)
+
+# https://stackoverflow.com/questions/28931224/adding-value-labels-on-a-matplotlib-bar-chart
+def add_value_labels(ax, spacing=5):
+    """Add labels to the end of each bar in a bar chart.
+
+    Arguments:
+        ax (matplotlib.axes.Axes): The matplotlib object containing the axes
+            of the plot to annotate.
+        spacing (int): The distance between the labels and the bars.
+    """
+
+    # For each bar: Place a label
+    for rect in ax.patches:
+        # Get X and Y placement of label from rect.
+        y_value = rect.get_height()
+        x_value = rect.get_x() + rect.get_width() / 2
+
+        # Number of points between bar and label. Change to your liking.
+        space = spacing
+        # Vertical alignment for positive values
+        va = 'bottom'
+
+        # If value of bar is negative: Place label below bar
+        if y_value < 0:
+            # Invert space to place label below
+            space *= -1
+            # Vertically align label at top
+            va = 'top'
+
+        # Use Y value as label and format number with one decimal place
+        label = "{:.2f}".format(y_value)
+
+        # Create annotation
+        ax.annotate(
+            label,                      # Use `label` as label
+            (x_value, y_value),         # Place label at end of the bar
+            fontsize=8,
+            xytext=(0, space),          # Vertically shift label by `space`
+            textcoords="offset points", # Interpret `xytext` as offset in points
+            ha='center',                # Horizontally center label
+            va=va)                      # Vertically align label differently for
+                                        # positive and negative values.
+
+
 
 
 def plot_bar_chart(df, baseline, palette_name):
@@ -167,9 +212,15 @@ def plot_bar_chart(df, baseline, palette_name):
                   hue=hueCol, palette=palette, errwidth=1.125, capsize=0.0625,
                   legend_out=False)
 
-  plt.ylim(0.5, 1.5)
+  yMin = 0.5
+  yMax = 1.5
 
-  leg = g.axes.flat[0].get_legend()
+  plt.ylim(yMin, yMax)
+
+  axis = g.axes.flat[0]  # i think this is y axis?? whatever. it works
+  add_value_labels(axis)
+
+  leg = axis.get_legend()
   new_title = ''
   leg.set_title(new_title)
 
