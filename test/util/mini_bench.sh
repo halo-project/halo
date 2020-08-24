@@ -85,6 +85,7 @@ declare -a AOT_OPTS=(
   # "-O3"
 )
 
+# for ARMENTA: --halo-hintedroot=true
 declare -a OPTIONS=(
   "none"
   "-fhalo"
