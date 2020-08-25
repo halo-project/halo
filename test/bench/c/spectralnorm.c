@@ -11,7 +11,7 @@
  */
 
 #ifdef SMALL_PROBLEM_SIZE
-  #define ITERS 64
+  #define ITERS 32
   #define FLOAT_TY float
   #define SPECTRAL_N 1000
 #else
