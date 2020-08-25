@@ -85,15 +85,28 @@ declare -a AOT_OPTS=(
   # "-O3"
 )
 
-# for ARMENTA: --halo-hintedroot=true
-declare -a OPTIONS=(
-  "none"
-  "-fhalo"
-  "pgo"
-  "withserver -fhalo;--halo-strategy=jit"
-  "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=calls"
-  "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=ipc"
-)
+if [[ $USE_ARMENTA != 0 ]]; then
+
+# for ARMENTA, we need --halo-hintedroot=true
+  declare -a OPTIONS=(
+      "none"
+      "-fhalo"
+      "pgo"
+      "withserver -fhalo;--halo-strategy=jit --halo-hintedroot=true"
+      "withserver -fhalo;--halo-strategy=adapt --halo-hintedroot=true --halo-threads=2 --halo-metric=calls"
+    )
+
+else
+  # for normal configurations
+  declare -a OPTIONS=(
+    "none"
+    "-fhalo"
+    "pgo"
+    "withserver -fhalo;--halo-strategy=jit"
+    "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=calls"
+    "withserver -fhalo;--halo-strategy=adapt --halo-threads=2 --halo-metric=ipc"
+  )
+fi
 
 # overwrite and create the file
 
