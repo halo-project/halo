@@ -20,6 +20,7 @@ def cleanup_flags(flag):
   flag = re.sub(r'adapt', 'halo', flag)
   flag = re.sub(r'--halo-threads=[0-9]+', '', flag)
   flag = re.sub(r'--halo-metric=', '', flag)
+  flag = re.sub(r' *--halo-hintedroot=true', '', flag)
   flag = re.sub(r' *ipc', '-ipc', flag)
   flag = re.sub(r' *calls', '-calls', flag)
   flag = re.sub(r' *-fhalo *', 'halomon', flag)
