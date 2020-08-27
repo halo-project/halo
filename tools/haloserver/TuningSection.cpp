@@ -17,9 +17,9 @@ static cl::opt<halo::Strategy::Kind> CL_Strategy(
   cl::values(clEnumValN(halo::Strategy::Adaptive, "adapt", "The main adaptive tuning strategy."),
              clEnumValN(halo::Strategy::JitOnce, "jit", "Does not tune. Instead compiles the hot code once at high default optimization.")));
 
-static cl::opt<bool> CL_HintedRoot(
+cl::opt<bool> CL_HintedRoot(
   "halo-hintedroot",
-  cl::desc("Override TSS and rely on manually-annotated TS roots."),
+  cl::desc("(HACK) Override TSS and rely on manually-annotated TS roots."),
   cl::init(false)
 );
 

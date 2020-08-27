@@ -13,6 +13,7 @@ static cl::opt<halo::Metric::Kind> CL_Metric(
   cl::values(clEnumValN(halo::Metric::IPC, "ipc", "instructions-per-cycle"),
              clEnumValN(halo::Metric::CallFreq, "calls", "Tuning-group call frequency")));
 
+extern cl::opt<bool> CL_HintedRoot;
 
 namespace halo {
 
@@ -99,15 +100,22 @@ namespace halo {
   }
 
   bool CodeVersion::updateQuality(Profiler &Prof, FunctionGroup const& FG) {
-    // first, check for fresh perf_event info
-    SampledQuantity SQ = Prof.currentIPC(FG, LibName);
 
-    if (!sampledQuantityValid(PerfSamplesSeen, SQ))
-      return false;
+    // NOTE: HintedRoot currently assumes the perf sample data is unreliable,
+    // so if it's enabled, we skip the check of perf samples in the library.
+    // this also means you should not (logically) be using HintedRoot with
+    // any metric other than call frequency!
+    if (!CL_HintedRoot) {
+      // first, check for fresh perf_event info
+      SampledQuantity SQ = Prof.currentIPC(FG, LibName);
 
-    if (CL_Metric == Metric::IPC) {
-      Quality.observe(SQ.Quantity);
-      return true;
+      if (!sampledQuantityValid(PerfSamplesSeen, SQ))
+        return false;
+
+      if (CL_Metric == Metric::IPC) {
+        Quality.observe(SQ.Quantity);
+        return true;
+      }
     }
 
     // handle the case of call frequency
