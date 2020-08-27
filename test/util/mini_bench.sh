@@ -52,21 +52,6 @@ TIME_EXE="$TEST_DIR/util/timeit.sh"
 PROFILE_RAW_FILE="default.profraw" # the default file that is written to if LLVM_PROFILE_FILE is not set
 PROFILE_DATA_FILE="code.profdata"
 
-# only the following subset of benchmarks work on armenta right now:
-# - matrix
-#
-# the reason is that the calling context information is missing
-# from the perf samples on ARM, along with the code layout info being
-# rather wonky. I don't have time to fix it. To work around this
-# problem, one has to ensure that the main workload of the program
-# takes place within a single leaf function that is called repeatedly.
-# otherwise, the TSS will pick really silly tuning sections that contain
-# just one function.
-#
-# NOTE: this limitation is not just a problem for performance, there are also
-# random segfaults that I'm hitting and don't know what's going on with those
-# at all yet.
-
 declare -a BENCHMARKS=(
   "bench/cpp/sphereflake.cpp"
   "bench/c/lpbench.c"
@@ -88,6 +73,8 @@ declare -a AOT_OPTS=(
 if [[ $USE_ARMENTA != 0 ]]; then
 
 # for ARMENTA, we need --halo-hintedroot=true
+# it's a hack that skips using the CCT because the perf samples
+# sent from armenta are missing calling-context data.
   declare -a OPTIONS=(
       "none"
       "-fhalo"
