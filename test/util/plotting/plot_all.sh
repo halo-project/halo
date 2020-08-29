@@ -3,7 +3,7 @@
 DATA_DIR=/home/kavon/research/papers/private-repo/dissertation/data
 TORMENTA_DATA=${DATA_DIR}/tormenta-8-24.csv
 DONNER_DATA=${DATA_DIR}/donner-8-24.csv
-ARMENTA_DATA=${DATA_DIR}/armenta-8-24.csv
+ARMENTA_DATA=${DATA_DIR}/armenta-8-27.csv
 
 PAPER_FIGURE_DIR=/home/kavon/research/papers/private-repo/dissertation/figures
 HALO_ROOT_DIR=/home/kavon/phd/halo
